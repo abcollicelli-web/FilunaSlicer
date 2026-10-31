@@ -289,6 +289,12 @@ TEST_CASE("Filament-saving grouping puts a filament on the extruder the printer 
                              {{loaded_filament("#F98C36", "PLA", "A1"), loaded_filament("#BCBCBC", "PETG", "A2")},
                               {loaded_filament("#F95D73", "PETG", "Ext")}});
 
+    print.apply(model, master_second_extruder_config(1, {"#F98C36"}));
+    print.is_BBL_printer() = true;
+    // Only the first (non-master) extruder holds the printed PLA.
+    print.set_extruder_filament_info({{loaded_filament("#F98C36", "PLA", "A1"), loaded_filament("#BCBCBC", "PETG", "A2")},
+                                      {loaded_filament("#F95D73", "PETG", "Ext")}});
+
     auto result = ToolOrdering::get_recommended_filament_maps({{0}, {0}, {0}}, &print, FilamentMapMode::fmmAutoForFlush, {}, {});
 
     REQUIRE(result.get_extruder_id(0) == 0);
@@ -319,6 +325,10 @@ TEST_CASE("Filament-saving grouping prefers the master extruder when the printer
     apply_with_filament_info(print, model, master_second_extruder_config(1, {"#FFFFFF", "#000000", "#808080"}, {10., 100.}),
                              {{loaded_filament("#FF0000", "PETG", "A1")}, {loaded_filament("#F95D73", "PETG", "Ext")}});
 
+    print.apply(model, master_second_extruder_config(1, {"#FFFFFF", "#000000", "#808080"}, {10., 100.}));
+    print.is_BBL_printer() = true;
+    print.set_extruder_filament_info({{loaded_filament("#FF0000", "PETG", "A1")}, {loaded_filament("#F95D73", "PETG", "Ext")}});
+
     auto result = ToolOrdering::get_recommended_filament_maps({{0}, {1}, {2}, {0}, {1}, {2}}, &print, FilamentMapMode::fmmAutoForFlush, {}, {});
 
     int on_master = 0;
@@ -342,6 +352,11 @@ TEST_CASE("Convenience-mode grouping puts a filament where the printer holds its
                              {{loaded_filament("#FFFFFF", "PLA", "A1", "GFL99")},
                               {loaded_filament("#FFFFFF", "PLA", "A1", "GFA00")}});
 
+    print.apply(model, config);
+    print.is_BBL_printer() = true;
+    print.set_extruder_filament_info({{loaded_filament("#FFFFFF", "PLA", "A1", "GFL99")},
+                                      {loaded_filament("#FFFFFF", "PLA", "A1", "GFA00")}});
+
     auto result = ToolOrdering::get_recommended_filament_maps({{0}, {0}, {0}}, &print, FilamentMapMode::fmmAutoForMatch, {}, {});
 
     INFO("Nozzles on the second extruder: " << second_extruder_nozzles);
@@ -360,6 +375,11 @@ TEST_CASE("Filament-saving grouping on a multi-nozzle printer keeps filaments on
     apply_with_filament_info(print, model, master_second_extruder_config(6, {"#F98C36", "#FFFFFF"}),
                              {{loaded_filament("#F98C36", "PLA", "A1"), loaded_filament("#FFFFFF", "PLA", "A2")},
                               {loaded_filament("#F95D73", "PETG", "Ext")}});
+
+    print.apply(model, master_second_extruder_config(6, {"#F98C36", "#FFFFFF"}));
+    print.is_BBL_printer() = true;
+    print.set_extruder_filament_info({{loaded_filament("#F98C36", "PLA", "A1"), loaded_filament("#FFFFFF", "PLA", "A2")},
+                                      {loaded_filament("#F95D73", "PETG", "Ext")}});
 
     auto result = ToolOrdering::get_recommended_filament_maps({{0}, {1}, {0}}, &print, FilamentMapMode::fmmAutoForFlush, {}, {});
 
