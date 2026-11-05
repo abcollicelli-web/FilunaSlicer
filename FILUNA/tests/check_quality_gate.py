@@ -2,6 +2,7 @@
 """Verificações estáticas da fundação Filuna. NÃO substitui QA de Windows/hardware."""
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -31,6 +32,33 @@ def contract_checks() -> None:
     readme = read_required("FILUNA/README.md")
     acceptance = read_required("FILUNA/TEST-ACCEPTANCE.md")
     architecture = read_required("FILUNA/ARCHITECTURE.md")
+    identity = read_required("FILUNA/IDENTIDADE-VISUAL-E-MASCOTE.md")
+    manifest_text = read_required("FILUNA/brand/REFERENCIAS-MANIFESTO.json")
+    try:
+        manifest = json.loads(manifest_text)
+    except (ValueError, TypeError):
+        manifest = {}
+    assets = manifest.get("originals", []) if isinstance(manifest, dict) else []
+    assert_true(isinstance(assets, list) and len(assets) == 5,
+                "cinco referências visuais registradas no manifesto")
+    expected = {
+        "FLN-BRAND-LOGO-01", "FLN-BRAND-PALETTE-01", "FLN-BRAND-ICON-01",
+        "FLN-MASCOT-CIRCLE-01", "FLN-MASCOT-CUTOUT-01",
+    }
+    assert_true({a.get("id") for a in assets if isinstance(a, dict)} == expected,
+                "logo, paleta, ícone e duas variantes da mascote identificados")
+    assert_true(all(
+        isinstance(a, dict)
+        and bool(re.fullmatch(r"[0-9a-f]{64}", a.get("sha256", "")))
+        and isinstance(a.get("repo_asset_present"), bool)
+        and a.get("width", 0) > 0 and a.get("height", 0) > 0
+        for a in assets),
+        "integridade, dimensões e status de integração registrados")
+    assert_true("mascote oficial" in identity.lower() and
+                "Filuna 3D" in identity and "Filuna Slicer" in identity,
+                "identidade mãe, produto e mascote vinculados")
+    assert_true("IDENTIDADE-VISUAL-E-MASCOTE.md" in readme,
+                "README aponta para as referências atuais de marca")
     source = read_required("src/libslic3r/libslic3r.h")
     read_required("src/libslic3r/Print.cpp")
     read_required("src/slic3r/GUI/MainFrame.cpp")
@@ -113,6 +141,27 @@ def release_checks() -> None:
                 and bool(doc.get("package", {}).get("sha256"))
                 and bool(doc.get("package", {}).get("rollback_evidence_url")),
                 "pacote assinado, hash e rollback documentados")
+    # Validação de origem das imagens em cada release.
+    manifest_file = ROOT / "FILUNA/brand/REFERENCIAS-MANIFESTO.json"
+    if not manifest_file.is_file():
+        assert_true(False, "release: manifesto visual não encontrado")
+    else:
+        try:
+            manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+            originals = manifest.get("originals", [])
+        except (ValueError, OSError, AttributeError):
+            originals = []
+        assert_true(len(originals) == 5,
+                    "release: cinco referências visuais catalogadas")
+        for asset in originals:
+            name = asset.get("name", "")
+            file = ROOT / "FILUNA/brand/assets/original" / name
+            if not file.is_file():
+                assert_true(False, f"release bloqueado: asset original não versionado: {name}")
+                continue
+            digest = hashlib.sha256(file.read_bytes()).hexdigest()
+            assert_true(digest == asset.get("sha256"),
+                        f"release: hash original confere: {name}")
     # Evidência documental também exige revisão humana externa ao script.
 
 
