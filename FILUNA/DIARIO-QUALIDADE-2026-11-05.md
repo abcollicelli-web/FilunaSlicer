@@ -39,3 +39,11 @@
 - Manter pacote Windows em compilação de `filuna/rebrand-1` independente; não publicar atualização ao cliente como homologada.
 
 **Decisão operacional:** até G0 completar, a única evolução permitida é leitura, investigação, especificação e teste da mesma etapa. Nenhuma promoção, merge, release ou modificação de UI comercial nesta entrega.
+
+## Adendo — identidade visual oficial e mascote (05/11/2026)
+
+Após a fundação de QA, o proprietário entregou referências visuais para **Filuna 3D**: (1) logotipo Filuna rosa e 3D laranja; (2) paleta creme/vinho/rosa/laranja/cinza; (3) ícone de aplicativo F; (4) mascote 3D em composição circular; (5) mascote recortada transparente. Foram criados `FILUNA/IDENTIDADE-VISUAL-E-MASCOTE.md` e `FILUNA/brand/REFERENCIAS-MANIFESTO.json` com identificação, dimensões e SHA-256 das cinco imagens.
+
+**Limite do registro:** os bytes originais constam das imagens anexadas pelo proprietário e de um pacote ZIP íntegro de preparação, mas NÃO foram versionados como arquivos binários neste repositório; até isso ocorrer, o gate G1 não poderá ser marcado PASS. As cores medidas no JPG são aproximações e precisam de tabela de tokens aprovada antes de qualquer edição visual. A mascote não substitui o ícone F do aplicativo.
+
+O CI de fundação passou em https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42109636393 no commit `c4d74b91a60a894d942063baa48326e272667e5b`. O verificador do gate de release agora exige arquivos originais no repositório e hashes conferidos; nenhuma versão foi promovida, nenhum código de GUI/Orca alterado. PR #2 permanece em DRAFT.
