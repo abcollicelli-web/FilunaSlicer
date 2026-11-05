@@ -2,7 +2,7 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:00:49 CET  
+**Atualizado** 2026-11-05 23:02:32 CET  
 **Estado do gate G0** EM ANDAMENTO (não PASS)  
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
@@ -61,7 +61,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 | Onda / Gate | Status | Notas |
 |---|---|---|
-| 00 Genealogia / **G0** | **PENDING / EM ANDAMENTO** | Lote prioritário: **13/13 lidos** (G0-INVENTARIO-LEITURA). Restam 128/141. Plano final tip `d1935aef` (52/149/SRV-00..11; audit 113/113 documental). Assets marca ausentes; SBOM F pendente |
+| 00 Genealogia / **G0** | **PENDING / EM ANDAMENTO** | Manifesto **141/141 caminhos lidos** (119 blobs novos + 13 prévios; 9 dedup). Assets marca versionados. SBOM F apenas inicial. Conflitos CF-06..08 registrados. G0 **não PASS** |
 | 01 Fundação / G1–G3 fundação | PENDING | Checks estáticos existem; baseline G-code/Windows real não |
 | 02 Qualidade Orca nativa | PENDING | |
 | 03 Identidade/Home | BLOCKED até G0 PASS + tokens/QA visual (originais **já no repo**) | |
@@ -105,12 +105,8 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 ## 6. Última tarefa e próxima ação exata
 
-- **Última tarefa (2026-11-05 22:55:50 CET):** leitura integral do lote prioritário S/W (13 fontes, hashes = manifesto); REQ/conflitos em [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md); tip plano final `d1935aef` confirmada (52/149/SRV-00..11; 113/113 só documental); 5 assets de marca ausentes no GitHub/attachments.
-- **Próxima ação executável:**
-  1. Reler este REGISTRO + tip `filuna/quality-master-20261105`.
-  2. Ler próximo lote do manifesto (lista no inventário G0 §7).
-  3. Continuar G0: ler fontes restantes do manifesto (lote em andamento).
-  4. Sem Home/DeviceBridge/provisionamento SRV; sem merge PR #1/#2/#3. G1 visual ainda precisa tokens HEX + QA (não só assets).
+- **Última tarefa (2026-11-05 23:02:32 CET):** (a) 5 originais de marca validados/incorporados; (b) leitura integral dos **128** caminhos restantes do manifesto (119 blobs únicos, 9 dedup), inventário atualizado.
+- **Próxima ação:** consolidar conflitos órfãos + SBOM F real de deps Windows; G1 tokens HEX; sem Home/DeviceBridge/SRV; sem merge PRs.
 
 
 ## 7. Commits / PRs deste lote (preencher no push)
@@ -155,3 +151,10 @@ ZIP dono `01M6PVH7P1FCG8M8SC5MB3JEB9.zip` (sha256 `02b3c8426ebdf481754f3658c42a1
 Validação segura (zipfile, sem traversal/symlink): **5/5 SHA-256 = manifesto**. Nomes no ZIP estáveis; alias de conversa preservados via hardlink.
 Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP e `MANIFESTO-IMAGENS.json` extras **não** commitados).
 **G1 não PASS:** faltam tokens HEX homologados, derivados e QA Windows. G0 continua independente da marca.
+
+
+## 12. Checkpoint leitura manifesto 141 (2026-11-05 23:02:32 CET)
+
+- 141/141 caminhos do manifesto cobertos por leitura de conteúdo (texto); 9 pares S↔W deduplicados por SHA.
+- Inventário: [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) rev .3.
+- G0 **ainda não PASS** (SBOM completo, aceite de conflitos herdados, evidências Windows).

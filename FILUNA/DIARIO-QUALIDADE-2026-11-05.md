@@ -73,3 +73,8 @@ Confirmado tip plano final  (sem avanço posterior no remoto): DAG 52/149, SRV-0
 ## Adendo — originais de marca versionados (2026-11-05 23:00:49 CET)
 
 ZIP do proprietário validado: 5/5 hashes SHA-256 idênticos ao [REFERENCIAS-MANIFESTO.json](brand/REFERENCIAS-MANIFESTO.json). Arquivos em `FILUNA/brand/assets/original/` com nomes estáveis + hardlinks dos nomes de conversa. **G1 visual permanece não homologado** (tokens/QA). Não altera motor/UI.
+
+
+## Adendo — leitura manifesto 141 (2026-11-05 23:02:32 CET)
+
+Concluída cobertura dos 141 caminhos do manifesto legado (119 blobs novos verificados por hash + 13 do lote anterior; 9 deduplicações S/W). Detalhe em [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md). G0 permanece EM ANDAMENTO; SBOM do fork F só inicial.

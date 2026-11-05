@@ -127,3 +127,8 @@ Cada linha de MIG-01 a MIG-26 deve receber, na execução de G0/G1:
 ## 8. Adendo G0 — leitura prioritária 05/11 (Europe/Rome)
 
 Inventário detalhado de 13 fontes lidas com hashes e REQ: [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md). Confirma CF da seção 4 (quatro motores SUPERADO; Home 03/11 a reimplementar; print-only; updates A/B/C/D). Não esgota as 141 fontes.
+
+
+### Conflitos adicionais após leitura 141 (05/11)
+
+Ver [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) CF-06..08 (updates multi-motor, pendências W não herdáveis, Filuna ID/cofre).
