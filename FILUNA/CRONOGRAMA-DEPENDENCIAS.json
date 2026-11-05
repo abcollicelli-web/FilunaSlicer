@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "recorded_at": "2026-11-05",
-  "revision": "FLN-DAG-2026-11-05.1",
+  "revision": "FLN-DAG-2026-11-05.2-server",
   "intent": "nenhuma funcionalidade ativa sem dependências e testes aceitos; calendário relativo não é promessa",
   "root": "GOV-00",
   "release_node": "RELEASE-38",
-  "status": "PLAN_NOT_APPROVED_FOR_RELEASE",
+  "status": "PLAN_NOT_APPROVED_FOR_RELEASE;REMOTE_CONTROL_DISABLED",
   "nodes": [
     {
       "id": "GOV-00",
@@ -470,7 +470,8 @@
       "depends_on": [
         "AUTH-12",
         "TRUST-11",
-        "LEGAL-02"
+        "LEGAL-02",
+        "SRV-03"
       ],
       "priority": "P1",
       "exit_gate": "G3",
@@ -658,7 +659,8 @@
         "AI-35",
         "PORTAL-36",
         "TRUST-11",
-        "UPSTREAM-37"
+        "UPSTREAM-37",
+        "SRV-04"
       ],
       "priority": "P0",
       "exit_gate": "G6",
@@ -683,6 +685,204 @@
       "state": "NOT_STARTED",
       "owner_role": "responsável de engenharia/QA a definir",
       "acceptance_required": true
+    },
+    {
+      "id": "SRV-00",
+      "title": "Inventário privado de servidor, domínio, IP e riscos",
+      "depends_on": [
+        "GOV-00",
+        "SRC-01",
+        "LEGAL-02"
+      ],
+      "priority": "P0",
+      "exit_gate": "G0",
+      "relative_window": "semanas 1–4",
+      "tests": "SRV-QA-*",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-01",
+      "title": "Hub API HTTPS, gateway/DB privado e schemas",
+      "depends_on": [
+        "SRV-00",
+        "QA-03"
+      ],
+      "priority": "P0",
+      "exit_gate": "G3",
+      "relative_window": "semanas 4–9",
+      "tests": "SRV-QA-001",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-02",
+      "title": "Filuna ID servidor, sessões, consentimentos e RBAC",
+      "depends_on": [
+        "SRV-01",
+        "AUTH-12"
+      ],
+      "priority": "P1",
+      "exit_gate": "G3",
+      "relative_window": "semanas 10–15",
+      "tests": "SRV-QA-002",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-03",
+      "title": "Sincronização segura, ledger, backup e restauração",
+      "depends_on": [
+        "SRV-02",
+        "DATA-05"
+      ],
+      "priority": "P0",
+      "exit_gate": "G4",
+      "relative_window": "semanas 12–20",
+      "tests": "SRV-QA-004,SRV-QA-005,SRV-QA-006",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-04",
+      "title": "Diagnóstico sanitizado de aplicativo e painel read-only",
+      "depends_on": [
+        "SRV-02",
+        "QA-03",
+        "LEGAL-02"
+      ],
+      "priority": "P0",
+      "exit_gate": "G4",
+      "relative_window": "semanas 13–19",
+      "tests": "SRV-QA-007,SRV-QA-008",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-05",
+      "title": "Telemetria opt-in do estado de impressoras sem controle",
+      "depends_on": [
+        "SRV-04",
+        "BRIDGE-14",
+        "DEVICE-UI-15"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semanas 18–24",
+      "tests": "SRV-QA-009",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-06",
+      "title": "Portal e mobile leitura própria de impressoras",
+      "depends_on": [
+        "SRV-03",
+        "SRV-05"
+      ],
+      "priority": "P2",
+      "exit_gate": "G4",
+      "relative_window": "semanas 24–33",
+      "tests": "SRV-QA-010",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-07",
+      "title": "Base remota desligada, fila assinada, policy engine e flags OFF",
+      "depends_on": [
+        "SRV-06",
+        "SAFETY-13"
+      ],
+      "priority": "P2",
+      "exit_gate": "G3",
+      "relative_window": "após leitura remota homologada",
+      "tests": "SRV-QA-011,SRV-QA-012",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-08",
+      "title": "Piloto de impressão remota do próprio cliente APÓS local homologado",
+      "depends_on": [
+        "SRV-07",
+        "OEM-ELEGOO-16",
+        "OEM-ANYCUBIC-17"
+      ],
+      "priority": "P2",
+      "exit_gate": "G4",
+      "relative_window": "após testes físicos LAN e autorização",
+      "tests": "SRV-QA-012,SRV-QA-013,SRV-QA-014,SRV-QA-015,SRV-QA-016",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-09",
+      "title": "Comandos remotos web/mobile do cliente e câmera por escopo",
+      "depends_on": [
+        "SRV-08",
+        "PORTAL-36"
+      ],
+      "priority": "P3",
+      "exit_gate": "G5",
+      "relative_window": "após piloto remoto 100% PASS",
+      "tests": "SRV-QA-017,SRV-QA-018",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-10",
+      "title": "Release canário e homologação remota separada",
+      "depends_on": [
+        "SRV-09",
+        "RELEASE-38",
+        "TRUST-11"
+      ],
+      "priority": "P3",
+      "exit_gate": "G6",
+      "relative_window": "após release local e remote 100% PASS",
+      "tests": "SRV-QA-019,SRV-QA-020",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-11",
+      "title": "Operação, revogação e teste desastre/remoto contínuo",
+      "depends_on": [
+        "SRV-10",
+        "OPERATE-39"
+      ],
+      "priority": "P3",
+      "exit_gate": "G6",
+      "relative_window": "contínuo após homologação remota",
+      "tests": "SRV-QA-017,SRV-QA-020",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
     }
-  ]
+  ],
+  "remote_release_node": "SRV-10"
 }
