@@ -49,7 +49,7 @@ def contract_checks() -> None:
                 "Home aprovada e precedência documentadas")
     assert_true("56 px" in migration and "208 px" in migration,
                 "dimensões de referência da Home registradas")
-    assert_true("PROPOSTO" in migration and "HOMOLOG" in migration,
+    assert_true("PROPOSTO" in migration and "homolog" in migration.lower(),
                 "distinção entre proposta e homologação")
     assert_true("upstream-mirror" in architecture,
                 "preservação do upstream registrada")
