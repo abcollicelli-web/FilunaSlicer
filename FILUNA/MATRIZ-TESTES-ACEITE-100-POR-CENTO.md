@@ -215,3 +215,12 @@ REGRA:
 - A inexistência de bugs observados não é prova matemática de “zero defeitos”; o objetivo é **não liberar problemas conhecidos nem itens sem teste**.
 
 **NENHUM CASO DESTE CATÁLOGO FOI EXECUTADO POR SUA CRIAÇÃO.** O check estático de fundação do PR #2 é evidência limitada de documentos presentes e coerentes, não testes de impressoras.
+
+
+## 10. Testes obrigatórios de servidor e impressão remota
+
+Matriz específica [ARQUITETURA-SERVIDOR-DADOS-REMOTO.md](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md) define **SRV-QA-001 a SRV-QA-020**, incluindo HTTPS/DB privado, isolamento por tenant, backup real/restore, sincronização idempotente, monitoramento **sem permissão de comando ao administrador Filuna**, consentimento por dispositivo, revogação, modo remoto default OFF, comandos assinados/anti-replay/timeout e confirmação da impressão. O plano encadeado [CRONOGRAMA-DEPENDENCIAS.json](CRONOGRAMA-DEPENDENCIAS.json) liga implementação de SRV-08 à homologação local de Elegoo CC2 e Anycubic Kobra 3 V2, e SRV-10 ao release local e à validação remota independente.
+
+É obrigatório diferenciar o proprietário do software (**admin Filuna: apenas incidentes e observações permitidas**) do proprietário da **impressora** (**cliente: permissões exclusivas, com compartilhamento explícito e revogável**). O servidor pode administrar a fila de mensagens autenticadas para a instalação do cliente, mas **jamais pode assumir sessão de comando do administrador Filuna**.
+
+O status de todas as fases remotas permanece NOT RUN/BLOCKED até haver teste físico autorizado; a simples criação de schemas/rotas não constitui conexão nem QA.
