@@ -23,3 +23,11 @@ GNU **AGPL-3.0**, a mesma do OrcaSlicer (ver `LICENSE.txt` na raiz). O código-f
 ## Créditos
 Slic3r (Alessandro Ranellucci e comunidade) → PrusaSlicer (Prusa Research) → Bambu Studio (Bambu Lab) → OrcaSlicer (SoftFever e comunidade) → Filuna Slicer.
 Os módulos de fabricante derivam de ElegooSlicer, AnycubicSlicerNext e outros forks AGPL, com crédito aos respectivos autores.
+
+## Regra mestre adicional — qualidade antes de evolução (05/11/2026)
+
+**Fonte obrigatória:** [REGRA-MESTRE-QUALIDADE.md](REGRA-MESTRE-QUALIDADE.md). Nenhuma etapa do novo Filuna Slicer avança enquanto qualquer teste obrigatório estiver em FAIL, NOT RUN ou BLOCKED. Build, artefato, QA técnico, homologação do proprietário e liberação comercial são estados diferentes. Todo requisito, decisão, implementação, evidência e resultado ficam registrados por commit. Nunca declarar pronto um botão ilustrativo, uma integração ainda não testada ou um projeto apenas compilado.
+
+**Referência de personalização do projeto anterior:** [MAPA-MIGRACAO-PERSONALIZACAO.md](MAPA-MIGRACAO-PERSONALIZACAO.md). O antigo C# é fonte de especificações e evidências históricas; não copiar suas bibliotecas para o fork C++ sem design e testes. Todo desenvolvimento visual deve usar a Home Grok homologada de 03/11, conferir regras mais recentes e preservar a experiência de fatiamento real do Orca.
+
+**Estado atual:** somente inventário documental G0 iniciado; a matriz TEST-ACCEPTANCE continua pendente. Esta branch não altera a compilação Windows em curso nem libera publicações.
