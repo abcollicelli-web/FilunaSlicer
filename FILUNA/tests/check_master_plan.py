@@ -156,8 +156,30 @@ def audit() -> None:
     release = graph.get("release_node")
     check(release in index and index[release]["exit_gate"] == "G6",
           "release tem gate G6 e nó real")
-    check(all(index[k]["state"] != "PASS" for k in index),
-          "nenhuma entrega declarada aprovada sem prova")
+    # PASS is permitted only with a dedicated node approval, and after direct dependencies PASS.
+    # This replaces the previous permanent blanket ban on all PASS states.
+    def node_is_allowed_pass(n: dict) -> bool:
+        if n.get("state") != "PASS":
+            return True
+        if any(index[parent].get("state") != "PASS"
+               for parent in n.get("depends_on", [])):
+            return False
+        ap = FILUNA / "qa" / "node-approvals" / (n["id"] + ".json")
+        if not ap.is_file():
+            return False
+        try:
+            v = json.loads(ap.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return False
+        return (v.get("node_id") == n["id"]
+                and v.get("state") == "PASS"
+                and v.get("owner_signoff") is True
+                and isinstance(v.get("evidence_links"), list)
+                and len(v["evidence_links"]) > 0
+                and all(isinstance(q, str) and q.startswith("https://github.com/")
+                        for q in v["evidence_links"]))
+    check(all(node_is_allowed_pass(n) for n in nodes),
+          "PASS somente com dependências PASS + dossiê de aprovação por nó")
     check(len([k for k in ids if k.startswith("OEM-")]) == 10,
           "dez integrações OEM estão previstas")
     pre_release = set()
@@ -189,8 +211,8 @@ def audit() -> None:
     server_nodes = [k for k in ids if k.startswith("SRV-")]
     check(len(server_nodes) == 12,
           "doze fases de servidor e acesso remoto registradas")
-    check(all(index[k]["state"] != "PASS" for k in server_nodes),
-          "nenhuma fase remota marcada homologada sem teste")
+    check(all(node_is_allowed_pass(index[k]) for k in server_nodes),
+          "fases remotas PASS exigem dossiê e predecessores homologados")
     check(all(k in index for k in ("SRV-07","SRV-08","SRV-10","SRV-11")),
           "fases remoto OFF, piloto, release e operação presentes")
     check("SRV-07" in index["SRV-08"]["depends_on"]
