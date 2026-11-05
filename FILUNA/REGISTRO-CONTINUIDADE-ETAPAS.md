@@ -2,7 +2,7 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:40:00 CET
+**Atualizado** 2026-11-05 23:42:00 CET
 **Estado do gate G0** **PASS DOCUMENTAL** (Onda 00 / REGRA G0). G1 NOT RUN · G2–G3 NOT RUN · G4 BLOCKED/NOT RUN (Windows/hardware) · G5–G6 NOT RUN. **Não** é release nem QA funcional.
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
@@ -215,3 +215,11 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - Sem merge/force-push/rebase.
 
 - CI: `filuna-foundation-check` agora também dispara em push `filuna/continuidade-*` (paths FILUNA); base/default/merge intocados.
+
+### CI foundation no tip (2026-11-05 23:42:00 CET)
+
+- Tip remoto = local: `17112fae551bc8510e062d9583f9e6f1cddfb5de` (`17112fae`)
+- Actions: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42121804935 — **success** (foundation + CMP + DATA + unit + release fail-closed)
+- Draft PR #3: https://github.com/abcollicelli-web/FilunaSlicer/pull/3 (sem merge)
+- Próxima ação: baseline G-code **binário** pin↔Filuna Windows permanece **NOT_RUN** até artifacts/job dedicado; G4 físico intacto; sem Home/DeviceBridge/SRV.
+
