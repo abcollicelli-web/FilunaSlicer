@@ -55,3 +55,7 @@
 **Próxima execução permitida:** concluir G0 (inventário de todos os docs relevantes, conflitos e evidências) e validar G1 antes de modificar Home/GUI. Nesta entrega as tabelas são um começo rastreável do inventário, não alegação de leitura exaustiva dos ~17 mil recursos ou de conclusão G0.
 
 **Risco de migração:** o legado C# possuía Orca externo e atualização C# específica; o novo fork é Orca 2.5.0-dev C++/wxWidgets. Não copiar DLL, agente, binário ou comando antigo do servidor; portar contratos e implementar sobre APIs reais do novo fork.
+
+## Identidade visual atualizada pelo proprietário em 05/11/2026
+
+O proprietário anexou novas referências para logo “Filuna 3D”, amostras cromáticas, ícone F e duas imagens da mascote 3D. A identidade agora está catalogada em [IDENTIDADE-VISUAL-E-MASCOTE.md](IDENTIDADE-VISUAL-E-MASCOTE.md) com hashes e manifesto de origem. Esta referência mais recente orienta os novos assets de marca sem revogar automaticamente a disposição de telas da Home homologada de 03/11. Os tons fotografados devem ser tratados como aproximações até confirmação dos tokens finais; **G1 fica bloqueado enquanto os binários oficiais e os critérios de fidelidade não estiverem integrados e aprovados**.
