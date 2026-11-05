@@ -88,14 +88,39 @@ class TestEvidenceSchema(unittest.TestCase):
         errs = validate_evidence(self._good(gate="G4", evidence_kind="hardware", evidence_url="https://example.invalid/x"))
         self.assertTrue(any("hardware" in e for e in errs))
 
-    def test_g4_pass_with_hardware_ok(self):
+    def test_g4_placeholder_hardware_is_rejected(self):
         errs = validate_evidence(self._good(
-            gate="G4",
-            evidence_kind="hardware",
+            gate="G4", evidence_kind="hardware",
             evidence_url="https://example.invalid/x",
             hardware={"model": "Elegoo Centauri Carbon 2", "firmware": "TBD"},
         ))
+        self.assertTrue(errs)
+        self.assertTrue(any("firmware" in e or "URL" in e for e in errs))
+
+    def test_g4_well_formed_schema_only_is_not_physical_proof(self):
+        errs = validate_evidence(self._good(
+            gate="G4", evidence_kind="hardware",
+            evidence_url="https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42124288641",
+            hardware={
+                "manufacturer": "Elegoo", "model": "Centauri Carbon 2",
+                "firmware": "1.2.3", "device_fingerprint": "sha256:" + "c" * 64,
+                "performed_at_utc": "2026-11-05T22:30:00Z",
+            },
+        ))
+        # Syntactic PASS only; external verification and human signoff are required.
         self.assertEqual(errs, [])
+
+    def test_g4_firmware_tbd_rejected_even_with_ci_url(self):
+        errs = validate_evidence(self._good(
+            gate="G4", evidence_kind="hardware",
+            evidence_url="https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42124288641",
+            hardware={
+                "manufacturer": "Elegoo", "model": "Centauri Carbon 2",
+                "firmware": "TBD", "device_fingerprint": "sha256:" + "c" * 64,
+                "performed_at_utc": "2026-11-05T22:30:00Z",
+            },
+        ))
+        self.assertTrue(any("firmware" in e for e in errs))
 
     def test_absent_file_validate_path(self):
         from evidence_schema import validate_evidence_file
