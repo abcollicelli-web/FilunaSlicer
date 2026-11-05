@@ -173,3 +173,12 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 - **Nenhuma dessas ondas foi executada por este commit.** Os checks estáticos da fundação anteriores passaram, mas testes e homologação de hardware do novo fork ainda não.
 - **Definição do produto corrigida** para motor Orca único; fabricantes nativos via adapters. Os 10 nomes são alvo, não certificado de compatibilidade.
 - O PR permanece rascunho; qualquer alteração futura à GUI ou a drivers precisa de SPEC e gate anterior aprovado.
+
+
+## 12. Adendo estrutural — servidor crítico e impressão remota FUTURA (decisão 05/11)
+
+**Contrato específico e subordinado:** [ARQUITETURA-SERVIDOR-DADOS-REMOTO.md](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md). O cronograma executável [CRONOGRAMA-DEPENDENCIAS.json](CRONOGRAMA-DEPENDENCIAS.json) inclui agora **SRV-00 a SRV-11**: inventário de servidor → HTTPS/DB privado → Filuna ID → sync/backup → diagnóstico read-only → estado de impressoras opt-in → portal leitura → fila remota DESLIGADA → piloto de impressão remota do próprio cliente **após homologação física LAN** → controle remoto web/mobile → aceite remoto específico → operação. O nó de release remoto **SRV-10 depende também de RELEASE-38**, e não concede liberação remota em releases anteriores.
+
+**Regras não negociáveis:** suporte Filuna observa apenas erros sanitizados e estado técnico minimizado e consentido; **não acessa LAN, não lê câmeras, não controla, não imprime, não pausa e não cancela impressoras de clientes**. Cliente poderá futuramente controlar **suas** impressoras via opt-in, login seguro, RBAC, sessão e revogação, confirmação explícita por comando e ACK físico. Banco nunca exposto ao aplicativo: Windows usa API HTTPS, IP/DNS de servidor não são constantes no código, credenciais ficam no cofre. Projetos permanecem locais se não houver autorização de upload. Backup, restore comprovado, idempotência e estado de sincronização real são pré-requisitos. Motor Orca funciona offline. Não haverá "imprimir com PC desligado" sem agente/gateway futuro validado.
+
+**Gates específicos de servidor:** \`SRV-QA-001..020\` em contrato; qualquer FAIL/BLOCKED/NOT RUN impede avanço. Esses casos **não foram executados** neste documento. A homologação de impressoras LAN precede toda impressão remota; a existência de botão ou tabela de comandos não autoriza execuções.
