@@ -47,3 +47,14 @@ Após a fundação de QA, o proprietário entregou referências visuais para **F
 **Limite do registro:** os bytes originais constam das imagens anexadas pelo proprietário e de um pacote ZIP íntegro de preparação, mas NÃO foram versionados como arquivos binários neste repositório; até isso ocorrer, o gate G1 não poderá ser marcado PASS. As cores medidas no JPG são aproximações e precisam de tabela de tokens aprovada antes de qualquer edição visual. A mascote não substitui o ícone F do aplicativo.
 
 O CI de fundação passou em https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42109636393 no commit `c4d74b91a60a894d942063baa48326e272667e5b`. O verificador do gate de release agora exige arquivos originais no repositório e hashes conferidos; nenhuma versão foi promovida, nenhum código de GUI/Orca alterado. PR #2 permanece em DRAFT.
+
+
+## Adendo — plano mestre do produto, servidor e futuro remoto
+
+O proprietário definiu o **OrcaSlicer como único motor integral** e integração nativa por adaptadores, incluindo até dez fabricantes, câmeras, controles e multimaterial, sempre conforme protocolos oficiais ou LAN legitimamente autorizada. A pesquisa de SimplyPrint é fonte de mercado, não certificado Filuna; LAN/conta oficial/chave do dispositivo foram documentados.
+
+Foi construído o [plano mestre](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md), [DAG versionado](CRONOGRAMA-DEPENDENCIAS.json) com **52 entregas, 149 vínculos**, [matriz de testes](MATRIZ-TESTES-ACEITE-100-POR-CENTO.md), [normas legais](CONFORMIDADE-LEGAL-NORMAS-E-CERTIFICACOES.md), [inventário de 141 fontes](MANIFESTO-FONTES-LEGADO-2026-11-05.md), DeviceBridge com [10 fabricantes](ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md), [servidor e remoto](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md) e [relatório de auditoria](AUDITORIA-PLANO-MESTRE-2026-11-05.md).
+
+**Nova regra de infraestrutura:** o admin Filuna só recebe erros sanitizados e saúde da conexão conforme consentimento; **não tem comando ou câmera** das impressoras dos clientes. Controle remoto dos próprios clientes é futuro e default OFF; depende de serviço seguro, backup testado e homologação física LAN. Endereço IP, credenciais, DB e domínios de produção não são hardcoded nem declarados validados.
+
+**Evidência:** GitHub Actions [42115301358](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42115301358), SHA \`fdb84688a099a4ab9feaf822c69d9df907c6f97f\`: **113/113 PASS estáticos**, grafo sem ciclo, tentativa de liberação sem dossiê rejeitada conforme esperado. Estado **G0 EM ANDAMENTO**, G1–G6 ainda sem homologação, nenhuma integração Windows/servidor/hardware alterada. A branch continua isolada e não promoveu release.
