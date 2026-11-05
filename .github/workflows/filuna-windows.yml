@@ -7,6 +7,14 @@ name: Filuna Windows build
 # Artefatos: OrcaSlicer_Windows_<ver>_portable (zip) e OrcaSlicer_Windows_<ver> (instalador .exe).
 
 on:
+  # workflow_dispatch só funciona via API quando o arquivo existe na branch padrão (main,
+  # que não tocamos). Por isso também dispara por push em filuna/main ao mudar este
+  # arquivo ou FILUNA/BUILD_TRIGGER.
+  push:
+    branches: [ 'filuna/main' ]
+    paths:
+      - '.github/workflows/filuna-windows.yml'
+      - 'FILUNA/BUILD_TRIGGER'
   workflow_dispatch:
     inputs:
       build-deps-only:
@@ -26,6 +34,6 @@ jobs:
       os: windows-latest
       arch: x64
       compiler: clang
-      build-deps-only: ${{ inputs.build-deps-only }}
+      build-deps-only: ${{ inputs.build-deps-only || false }}
       force-build: true
     secrets: inherit
