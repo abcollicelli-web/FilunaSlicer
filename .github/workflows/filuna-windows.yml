@@ -4,14 +4,15 @@ name: Filuna Windows build
 # (build_check_cache.yml -> build_deps.yml -> build_orca.yml) sem modificá-los.
 # Sem assinatura: os secrets do upstream não existem no fork, e os passos que
 # dependem deles são ignorados/condicionados a github.repository == OrcaSlicer/OrcaSlicer.
-# Artefatos: OrcaSlicer_Windows_<ver>_portable (zip) e OrcaSlicer_Windows_<ver> (instalador .exe).
+# Artefatos do upstream: OrcaSlicer_Windows_<ver>_portable e OrcaSlicer_Windows_<ver> (instalador).
+# O job filuna_artifacts republica os mesmos arquivos como Filuna_Windows_* (sem editar build_orca.yml).
 
 on:
   # workflow_dispatch só funciona via API quando o arquivo existe na branch padrão (main,
   # que não tocamos). Por isso também dispara por push em filuna/main ao mudar este
   # arquivo ou FILUNA/BUILD_TRIGGER.
   push:
-    branches: [ 'filuna/main' ]
+    branches: [ 'filuna/main', 'filuna/rebrand-*' ]
     paths:
       - '.github/workflows/filuna-windows.yml'
       - 'FILUNA/BUILD_TRIGGER'
@@ -37,3 +38,33 @@ jobs:
       build-deps-only: ${{ inputs.build-deps-only || false }}
       force-build: true
     secrets: inherit
+
+  filuna_artifacts:
+    name: Artefatos Filuna
+    needs: build_windows_x64
+    if: ${{ !inputs.build-deps-only }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: OrcaSlicer_Windows_*
+          path: dl
+      - name: Renomear para Filuna
+        run: |
+          set -e
+          mkdir -p out/portable out/installer
+          for d in dl/OrcaSlicer_Windows_*; do
+            case "$d" in
+              *_portable) cp -r "$d"/. out/portable/ ;;
+              *) for f in "$d"/*.exe; do cp "$f" "out/installer/$(basename "$f" | sed 's/^OrcaSlicer_/Filuna_/')"; done ;;
+            esac
+          done
+          ls -R out | head -50
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Filuna_Windows_x64_portable
+          path: out/portable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Filuna_Windows_x64_installer
+          path: out/installer
