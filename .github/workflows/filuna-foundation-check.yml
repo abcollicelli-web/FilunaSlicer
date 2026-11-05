@@ -1,0 +1,25 @@
+name: Filuna foundation quality checks
+
+on:
+  push:
+    branches:
+      - 'filuna/quality-*'
+    paths:
+      - 'FILUNA/**'
+      - '.github/workflows/filuna-foundation-check.yml'
+  pull_request:
+    branches:
+      - 'filuna/main'
+      - 'filuna/rebrand-1'
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code and contracts
+        uses: actions/checkout@v4
+      - name: Validate foundation contract (not hardware/release)
+        run: python3 FILUNA/tests/check_quality_gate.py --mode foundation
