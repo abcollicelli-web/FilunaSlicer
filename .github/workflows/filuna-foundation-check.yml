@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - 'filuna/quality-*'
+      - 'filuna/continuidade-*'
     paths:
       - 'FILUNA/**'
       - '.github/workflows/filuna-foundation-check.yml'
+      - 'FILUNA/tests/**'
   pull_request:
     branches:
       - 'filuna/main'

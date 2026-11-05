@@ -213,3 +213,5 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - Branch: `filuna/continuidade-g0-20261105` · draft PR #3
 - Base anterior: `5349c06f`
 - Sem merge/force-push/rebase.
+
+- CI: `filuna-foundation-check` agora também dispara em push `filuna/continuidade-*` (paths FILUNA); base/default/merge intocados.
