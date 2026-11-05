@@ -56,3 +56,17 @@ Mínimos transversais: aplicação abre no Windows real; STL/3MF e presets antig
 5. `AGENTS.md`, `CONTRIBUTING.md` e licença do Orca para disciplina de código, compatibilidade e tests. Regras legais e de segurança não se anulam por um desenho.
 
 Ver `FILUNA/MAPA-MIGRACAO-PERSONALIZACAO.md` e `FILUNA/TEST-ACCEPTANCE.md`. O primeiro gate habilitado nesta entrega é exclusivamente **G0**: documentar e testar a fundação; nenhum módulo funcional foi declarado pronto.
+
+
+## Regra vinculante adicional — servidor Filuna e impressão remota segura
+
+**Ordem expressa do proprietário (05/11/2026):** o desenvolvimento do Windows estará conectado à arquitetura do servidor desde o início; porém **servidor não poderá comandar impressoras de clientes por conta administrativa Filuna**, mesmo que receba diagnósticos e métricas da conexão. O cliente poderá futuramente monitorar e controlar suas próprias impressoras a distância, mas **somente após o dispositivo local, a conexão LAN e o serviço remoto passarem por 100% de testes obrigatórios com evidências reais**.
+
+1. **Servidor e dados:** o aplicativo usa API HTTPS versionada por DNS, banco privado interno, identidade Filuna ID, segregação de tenant, backups cifrados fora do host, restore efetivamente ensaiado, filas transacionais/idempotentes, status de sincronização confirmado e export dos dados do cliente. IP/credenciais/DSN nunca no executável ou no Git. O legado \`SQLite DEV\` não autoriza declarar banco de produção existente.
+2. **Observabilidade admin:** Filuna pode conhecer **somente** erros de software sanitizados e saúde técnica mínima de impressoras quando o titular autorizar; suporte não pode abrir câmera, ler projeto, executar comandos ou iniciar/pausar/cancelar impressões. É uma fronteira de API e autorização, não apenas um botão escondido.
+3. **Acesso remoto do cliente:** futuro e **desligado por padrão**. Usar conta própria, concessão por dispositivo, consentimento explícito, MFA quando necessário, comando firmado com validade/nonce/ID, verificação local pelo agente, capabilities e ACK verdadeiro. O servidor recebe fila e devolve recibo; não conecta diretamente à LAN do cliente. Com app/agent desligado, não prometer impressão.
+4. **Gate remoto:** o nó \`SRV-08\` só se habilita após local Elegoo CC2 e Anycubic Kobra 3 V2 aprovados, \`SRV-07\` em modo OFF testado e auth/storage/observabilidade concluídos. A liberação \`SRV-10\` sucede ainda o release local \`RELEASE-38\`. Um só requisito **FAIL / BLOCKED / NOT RUN** bloqueia o remoto; os testes \`SRV-QA-001..020\` estão em [ARQUITETURA-SERVIDOR-DADOS-REMOTO.md](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md).
+5. **Proteção de dados é verificável, não promessa absoluta:** nenhum dado com ACK servidor pode sumir sem incidente P0 e restauração; a fila offline só é descrita como salva localmente até confirmação. O cliente mantém o direito à exclusão de dados e à privacidade. Testar restore/backup com hashes e retenção; não declarar “dados impossíveis de apagar”.
+6. **Nova funcionalidade SEM LIGAÇÃO é bloqueada:** qualquer feature nova declara ID, dependências no [CRONOGRAMA-DEPENDENCIAS.json](CRONOGRAMA-DEPENDENCIAS.json), contratos, versão, testes e plano de rollback antes de código. Módulos órfãos não entram em build/release, e uma conexão remota não adquire permissões por herança de outros modos.
+
+**Esta atualização é DOCUMENTAL na branch de qualidade; nenhum endpoint remoto foi ativado nem servidor modificado.**
