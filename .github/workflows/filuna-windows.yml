@@ -51,12 +51,28 @@ jobs:
           path: dl
       - name: Renomear para Filuna
         run: |
-          set -e
+          set -euo pipefail
+          shopt -s nullglob
           mkdir -p out/portable out/installer
           for d in dl/OrcaSlicer_Windows_*; do
             case "$d" in
-              *_portable) cp -r "$d"/. out/portable/ ;;
-              *) for f in "$d"/*.exe; do cp "$f" "out/installer/$(basename "$f" | sed 's/^OrcaSlicer_/Filuna_/')"; done ;;
+              *MSIX*)
+                echo "Ignorando artefato MSIX (sem .exe): $d"
+                continue
+                ;;
+              *_portable)
+                cp -r "$d"/. out/portable/
+                ;;
+              *)
+                exes=("$d"/*.exe)
+                if (( ${#exes[@]} == 0 )); then
+                  echo "Sem .exe em $d; ignorando"
+                  continue
+                fi
+                for f in "${exes[@]}"; do
+                  cp "$f" "out/installer/$(basename "$f" | sed 's/^OrcaSlicer_/Filuna_/')"
+                done
+                ;;
             esac
           done
           ls -R out | head -50
