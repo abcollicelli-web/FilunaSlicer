@@ -1,0 +1,26 @@
+name: Filuna G-code baseline (manual)
+
+# Sob demanda — NÃO roda em push de docs. Não inicia impressão.
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: 'Motivo do ensaio (obrigatório registro)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  normalize-unit-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run synthetic G-code normalize/compare unit tests
+        run: python3 FILUNA/tests/run_fund_tests.py
+      - name: State honesty
+        run: |
+          echo "Este workflow NÃO compara binário Orca pin vs Filuna Windows."
+          echo "Comparação com artifact real permanece NOT_RUN/BLOCKED até job dedicado com binaries."
+          echo "note=${{ inputs.note }}"

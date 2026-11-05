@@ -1,0 +1,95 @@
+{
+  "id": "FLN-CMP-LEGAL-02-2026-11-05.1",
+  "node": "LEGAL-02",
+  "items": [
+    {
+      "id": "CMP-001",
+      "title": "AGPL-3.0 root license present",
+      "paths": [
+        "LICENSE.txt"
+      ],
+      "must_contain": [
+        "GNU AFFERO GENERAL PUBLIC LICENSE",
+        "Version 3"
+      ],
+      "status_rule": "file_exists_and_contains"
+    },
+    {
+      "id": "CMP-002",
+      "title": "Upstream pin documented",
+      "paths": [
+        "FILUNA/UPSTREAM_PIN.md"
+      ],
+      "must_contain": [
+        "a620d804efbe74162c96ad29d755cdab2b823530"
+      ],
+      "status_rule": "file_exists_and_contains"
+    },
+    {
+      "id": "CMP-003",
+      "title": "No proprietary networking plugin packaging policy",
+      "paths": [
+        "FILUNA/G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md",
+        "FILUNA/REGRA-MESTRE-QUALIDADE.md"
+      ],
+      "must_contain_any_per_file": true,
+      "must_contain": [
+        "propriet",
+        "plugin"
+      ],
+      "status_rule": "file_exists_and_contains"
+    },
+    {
+      "id": "CMP-004",
+      "title": "Conformidade legal matrix present",
+      "paths": [
+        "FILUNA/CONFORMIDADE-LEGAL-NORMAS-E-CERTIFICACOES.md"
+      ],
+      "must_contain": [
+        "AGPL",
+        "CMP-001"
+      ],
+      "status_rule": "file_exists_and_contains"
+    },
+    {
+      "id": "CMP-005",
+      "title": "SBOM inicial present and marked partial",
+      "paths": [
+        "FILUNA/sbom/README.md",
+        "FILUNA/sbom/filuna-windows-partial.cdx.json"
+      ],
+      "must_contain": [
+        "PARTIAL"
+      ],
+      "status_rule": "file_exists_and_contains"
+    },
+    {
+      "id": "CMP-006",
+      "title": "Filuna data dir constant is Filuna not OrcaSlicer",
+      "paths": [
+        "src/libslic3r/libslic3r.h"
+      ],
+      "must_contain": [
+        "#define FILUNA_DATA_DIR_NAME \"Filuna\""
+      ],
+      "status_rule": "file_exists_and_contains"
+    },
+    {
+      "id": "CMP-007",
+      "title": "Banned proprietary bundle markers absent from packaging scripts claim",
+      "paths": [
+        "FILUNA/G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md"
+      ],
+      "must_not_claim_bundled": [
+        "bambu_networking.dll",
+        "flashforge_networking"
+      ],
+      "status_rule": "policy_doc_forbids_bundle"
+    }
+  ],
+  "unaudited_explicit": [
+    "Full SPDX of every deps_src transitive dependency (SBOM inicial lacuna)",
+    "MSVC/Windows SDK runtime versions from Actions runner image",
+    "Binary audit of Filuna_Windows installer DLLs"
+  ]
+}

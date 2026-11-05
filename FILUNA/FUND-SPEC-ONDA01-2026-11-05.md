@@ -2,7 +2,7 @@
 
 **ID** FLN-FUND-SPEC-2026-11-05.1  
 **Atualizado** 2026-11-05 23:30:00 CET (Europe/Rome)  
-**Estado documental** PROPOSTO — aguarda **homologação de escopo** do proprietário (PLANO §4: HOMOLOGAR ESCOPO → só então IMPLEMENTAR).  
+**Estado documental** **ESCOPO APROVADO** pelo proprietário 2026-11-05 23:24 Europe/Rome (widget t18s14). Registro: `FILUNA/approvals/FUND-SPEC-2026-11-05.1-owner-approval.json` (não é assinatura criptográfica). Implementação mínima §9 **em andamento/neste lote**.  
 **Não é** G1 visual/Home/tokens HEX (Onda 03 / BRAND-08).  
 **Pré-requisito** Onda 00 / G0 **PASS DOCUMENTAL** @ `ee025544…` (PR #3).  
 **Branch** `filuna/continuidade-g0-20261105` · tip trabalho `ee02554401c026370f7bac19b4a30ba4c8e97aaf`
@@ -76,7 +76,7 @@
 | Ambientes | (A) CI Windows x64 com artifact Filuna + Orca pin build; (B) unit `tests/fff_print` no mesmo runner; (C) G4 físico N/A para baseline de arquivo |
 | Falha | Divergência fora da tolerância = **FAIL** CORE; não rebaseline silencioso |
 
-**Estado agora:** protocolo **especificado**; execução = **NOT RUN** (sem disparar CI Windows novo só por docs).
+**Estado agora:** normalizador/comparador + fixtures sintéticas **implementados e testados**; comparação com binário Windows/artifact real = **NOT_RUN** (workflow manual `filuna-gcode-baseline-manual.yml` só reexecuta unitários sintéticos até haver binaries).
 
 ## 6. Requisitos negativos (fundação)
 
@@ -102,14 +102,15 @@
 
 Para declarar Onda 01 pronta (futuro): LEGAL-02 checklist CMP PASS; QA-03 evidências+CI verdadeiros PASS; CORE-04 baseline com casos obrigatórios PASS no ambiente declarado; DATA-05 isolamento PASS nos casos aplicáveis; instalador privado candidato verificado (hash); logs conforme contrato; **sem** exigir G4 hardware nem G1 visual.
 
-**Este lote não marca G1/G2/G3 PASS.**
+**G1 contrato fundação:** escopo autorizado (sem mudança visual). **G2/G3:** só PASS nos casos com evidência unitária deste lote; comparação G-code binária pin↔Filuna e Windows físico = **NOT_RUN**.
 
-## 9. Após aceite do escopo — próxima ação técnica (proposta)
+## 9. Implementação mínima (autorizada) — estado neste head
 
-1. Implementar só o necessário para LEGAL-02/QA-03 (docs CMP + possivelmente estender checks Python / schema evidência) **sem** tocar `libslic3r`.  
-2. Adicionar `FILUNA/qa/fixtures/` + script de normalização de metadados + job CI **sob demanda** (não a cada push de doc).  
-3. DATA-05: testes documentais + casos Windows quando houver runner já verde.  
-4. Ainda sem Home/DeviceBridge/SRV.
+1. LEGAL-02: `FILUNA/legal/CMP-CHECKLIST-LEGAL-02.json` + `FILUNA/tests/cmp_legal.py` — **PASS 7/7** no box.  
+2. QA-03: `FILUNA/qa/evidence.schema.json` + `evidence_schema.py` + testes negativos fail-closed — **PASS**.  
+3. CORE-04: fixtures + `normalize_gcode.py`/`compare_gcode.py` + unitários sintéticos — **PASS**; pin↔Filuna Windows **NOT_RUN**.  
+4. DATA-05: `data_isolation.py` (fonte + temp) — **PASS**; AppData/registro real **NOT_RUN** (G4).  
+5. Sem Home/DeviceBridge/SRV; `libslic3r` intocado.
 
 ## 10. Pergunta única de aceite (dono)
 

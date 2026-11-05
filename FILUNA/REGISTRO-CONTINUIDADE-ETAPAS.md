@@ -2,7 +2,7 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:30:00 CET
+**Atualizado** 2026-11-05 23:35:00 CET
 **Estado do gate G0** **PASS DOCUMENTAL** (Onda 00 / REGRA G0). G1 NOT RUN · G2–G3 NOT RUN · G4 BLOCKED/NOT RUN (Windows/hardware) · G5–G6 NOT RUN. **Não** é release nem QA funcional.
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
@@ -62,7 +62,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | Onda / Gate | Status | Notas |
 |---|---|---|
 | 00 Genealogia / **G0** | **PASS DOCUMENTAL** | Critérios REGRA G0 + Onda 00 fechados (rev conflitos .3); G4 Windows separado |
-| 01 Fundação / gates fundação | **PROPOSTO** (SPEC) | [FUND-SPEC-ONDA01](FUND-SPEC-ONDA01-2026-11-05.md); 1º nó LEGAL-02→QA-03; baseline G-code NOT RUN; G4 separado |
+| 01 Fundação / gates fundação | **EM IMPLEMENTAÇÃO** | Escopo APROVADO; CMP/QA/normalize/DATA unit PASS; G-code binário NOT_RUN; G4 NOT_RUN |
 | 02 Qualidade Orca nativa | PENDING | |
 | 03 Identidade/Home | BLOCKED até G0 PASS + tokens/QA visual (originais **já no repo**) | |
 | 04–14 e G2–G6 produto | PENDING / BLOCKED por predecessor | |
@@ -107,8 +107,8 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 ## 6. Última tarefa e próxima ação exata
 
-- **Última tarefa (2026-11-05 23:30:00 CET):** contrato Onda 01 Fundação (SPEC/REQ/ADR/TEST) + correção de docs desatualizados (marca no git; G0 EM ANDAMENTO histórico; índice 0d duplicado; próximo passo ≠ visual).
-- **Próxima ação:** obter **aceite de escopo** do FUND-SPEC pelo dono; **não** implementar UI/Home/tokens; **não** merge PR #3 sem ordem; após aceite → LEGAL-02/QA-03 mínimos sem tocar `libslic3r`.
+- **Última tarefa (2026-11-05 23:35:00 CET):** aprovação dono FUND-SPEC registrada; implementação mínima LEGAL-02/QA-03/CORE-04/DATA-05 com testes fail-closed (19 unit + CMP 7/7 + DATA 8/8).
+- **Próxima ação:** (1) job/manual baseline com binaries quando disponível — até lá CORE binário **NOT_RUN**; (2) não Home/DeviceBridge; (3) sem merge PR #3 sem nova ordem; (4) G4 Windows quando dono testar.
 
 
 ## 7. Commits / PRs deste lote (preencher no push)
@@ -196,3 +196,13 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - **G1/G2/G3 fundação:** não marcados PASS; SPEC estado PROPOSTO.
 - **Pergunta única ao dono:** homologa o escopo FLN-FUND-SPEC-2026-11-05.1 para autorizar implementação mínima §9 do SPEC?
 - Correções: plano §3.2 marca no git; §12 cobertura sem “G0 EM ANDAMENTO” corrente; índice 0d/0e/0f/0g.
+
+## 17. Checkpoint implementação FUND pós-aprovação (2026-11-05 23:35:00 CET)
+
+- **Aprovação dono:** 2026-11-05 23:24 Europe/Rome / 22:24 UTC · widget t18s14 · texto em `FILUNA/approvals/FUND-SPEC-2026-11-05.1-owner-approval.json`.
+- **G1 contrato fundação:** escopo autorizado **sem** mudança visual.
+- **Implementado:** CMP LEGAL-02, evidence schema QA-03, gcode normalize/compare + fixtures, DATA-05 isolation tests, workflows foundation+manual.
+- **Resultados box Linux:** unittest **19 OK**; CMP **7/7**; DATA **8/8**; master **113/113**; foundation **0 FAIL**.
+- **NOT_RUN / BLOCKED:** comparação G-code Orca pin↔Filuna com artifact Windows; AppData/registro real; impressoras; release.
+- **Adversarial:** confirmar que sample_c (X21) falha compare (exit 1); meta-only passa; schema rejeita G4 PASS sem hardware; `libslic3r` não diffado neste lote.
+- Base pré-lote: `5349c06ff94953268a6690472d2b3af399296ad6`.

@@ -1,6 +1,6 @@
 # FILUNA — TEST Onda 01 Fundação (casos medíveis)
 
-**ID** FLN-FUND-TEST-2026-11-05.1 · **Atualizado** 2026-11-05 23:30:00 CET  
+**ID** FLN-FUND-TEST-2026-11-05.2 · **Atualizado** 2026-11-05 23:35:00 CET  
 **SPEC/REQ** FUND-SPEC / FUND-REQ  
 **Plataforma destes resultados exploratórios** Linux box · commit `ee02554401c026370f7bac19b4a30ba4c8e97aaf`  
 **Hardware** N/A (G4)
@@ -38,3 +38,25 @@ python3 FILUNA/tests/check_quality_gate.py --mode foundation
 python3 FILUNA/tests/check_quality_gate.py --mode release   # expect fail-closed
 gh api repos/abcollicelli-web/FilunaSlicer/commits/upstream-mirror --jq .sha
 ```
+
+
+## Execução pós-aprovação (2026-11-05 23:35:00 CET)
+
+Aprovação: `FILUNA/approvals/FUND-SPEC-2026-11-05.1-owner-approval.json`.
+
+| case_id | result | evidência |
+|---|---|---|
+| FUND-T01 foundation | **PASS** | check_quality_gate foundation 0 FAIL |
+| FUND-T02 release fail-closed | **PASS** | modo release bloqueia sem dossiê |
+| FUND-T03 master plan | **PASS** | 113/113 |
+| FUND-T04 pin mirror | **PASS** | UPSTREAM_PIN + CMP-002 |
+| FUND-T05 SetAppName Filuna | **PASS** | data_isolation + CMP-006 |
+| FUND-T06 artifact 42102469888 | **PASS** (estado) | Actions success prévio |
+| FUND-T07 gcode pin↔Filuna binary | **NOT_RUN** | sem binário; só sintético PASS |
+| FUND-UNIT-19 | **PASS** | `python3 FILUNA/tests/run_fund_tests.py` → 19 OK |
+| FUND-CMP-7 | **PASS** | cmp_legal 7/7 |
+| FUND-DATA-8 | **PASS** | data_isolation 8/8 |
+| FUND-T09 coexistência URL Windows | **NOT_RUN** | G4 |
+| FUND-T08 start sem confirmação (impl runtime) | **NOT_RUN** | contrato; sem DeviceBridge |
+
+Plataforma dos PASS unitários: **Linux box**. Não equivale a instalação Windows.

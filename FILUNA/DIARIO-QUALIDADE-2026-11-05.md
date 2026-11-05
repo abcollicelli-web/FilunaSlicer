@@ -101,3 +101,8 @@ Revisão do proprietário: critérios derivados que pediam QA Windows e SBOM com
 ## Adendo — Onda 01 FUND contrato (2026-11-05 23:30:00 CET)
 
 Criados FUND-SPEC/REQ/ADR/TEST. Primeiro nó elegível LEGAL-02→QA-03. Corrigidas desatualizações: originais de marca no git; cobertura §12 sem G0 EM ANDAMENTO corrente; índice 0d duplicado; REGISTRO/AGENTS apontam Onda 01 não visual. Checks docs reexecutados. Sem implementação UI/CI Windows novo. G1/G2/G3 não marcados PASS.
+
+
+## Adendo — FUND implementação pós-aprovação (2026-11-05 23:35:00 CET)
+
+Dono aprovou FLN-FUND-SPEC-2026-11-05.1 (t18s14, 23:24 Europe/Rome). Registro JSON sem assinatura/token. Entregues CMP, evidence schema fail-closed, normalizador G-code sintético, DATA-05 temp isolation, CI hooks. 19 unit PASS. Baseline binária Windows **NOT_RUN**. Sem UI/Home/SRV/merge.

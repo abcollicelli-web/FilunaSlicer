@@ -73,11 +73,12 @@ Para qualquer nova função, primeiro verificar as dependências no [cronograma 
 
 ## Onda 01 — Fundação (atual)
 
-Contrato **PROPOSTO** (sem implementação automática):
+Contrato **ESCOPO APROVADO** (dono 2026-11-05 23:24 Europe/Rome); implementação mínima com testes:
 
 - [FUND-SPEC-ONDA01-2026-11-05.md](FUND-SPEC-ONDA01-2026-11-05.md)
 - [FUND-REQ-ONDA01-2026-11-05.md](FUND-REQ-ONDA01-2026-11-05.md)
 - [FUND-TEST-ONDA01-2026-11-05.md](FUND-TEST-ONDA01-2026-11-05.md)
 - [FUND-ADR-BASELINE-DADOS-2026-11-05.md](FUND-ADR-BASELINE-DADOS-2026-11-05.md)
+- [approvals/FUND-SPEC-2026-11-05.1-owner-approval.json](approvals/FUND-SPEC-2026-11-05.1-owner-approval.json)
 
 Próximo passo operacional: aceite de escopo pelo proprietário → LEGAL-02/QA-03. **Não** iniciar Onda 03 (Home/tokens) agora.

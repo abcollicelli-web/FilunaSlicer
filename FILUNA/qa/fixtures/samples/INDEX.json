@@ -1,0 +1,19 @@
+{
+  "samples": [
+    {
+      "name": "sample_a.gcode",
+      "sha256": "3f9fcd3f5ef75524f5a13c374cae91ae583757034345f164c8cc59bce8b03f4c",
+      "role": "reference"
+    },
+    {
+      "name": "sample_b_meta_only_diff.gcode",
+      "sha256": "e738269f4298e941e3aa6099ed670b32331af381a9eda0f7a3c9d6fc6d902da6",
+      "role": "meta_only_should_match_after_normalize"
+    },
+    {
+      "name": "sample_c_functional_diff.gcode",
+      "sha256": "be7020bc640def0387b0bff039821a6ebf4741cf3aa2d5f1b85018df71cc18b8",
+      "role": "functional_must_fail_compare"
+    }
+  ]
+}

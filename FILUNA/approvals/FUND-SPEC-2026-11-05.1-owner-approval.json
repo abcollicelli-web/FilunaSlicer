@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "record_type": "owner_scope_approval",
+  "spec_id": "FLN-FUND-SPEC-2026-11-05.1",
+  "approved": true,
+  "approved_at_europe_rome": "2026-11-05T23:24:00+01:00",
+  "approved_at_utc": "2026-11-05T22:24:00Z",
+  "channel": "widget t18s14",
+  "owner_text_verbatim": "Aprovo o escopo FLN-FUND-SPEC-2026-11-05.1. Pode começar a implementação da fundação técnica.",
+  "agent_ack_verbatim": "Vou registrar sua aprovação no GitHub e começar a implementação da fundação técnica, com testes e checkpoints de continuidade.",
+  "scope_authorized": {
+    "wave": "Onda01-Fundacao",
+    "nodes": [
+      "LEGAL-02",
+      "QA-03",
+      "CORE-04",
+      "DATA-05"
+    ],
+    "includes_visual_ui_home_tokens": false,
+    "includes_devicebridge_srv_release": false
+  },
+  "gates": {
+    "G1_fundacao_contrato": "AUTHORIZED_NO_VISUAL_CHANGE",
+    "G2": "REQUIRES_EVIDENCE",
+    "G3": "REQUIRES_EVIDENCE",
+    "G4": "NOT_RUN"
+  },
+  "not_cryptographic_signature": true,
+  "not_owner_token": true,
+  "base_commit_at_approval_request": "5349c06ff94953268a6690472d2b3af399296ad6",
+  "recorded_in_repo": true
+}

@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "filuna://qa/evidence.schema.json",
+  "title": "Filuna foundation evidence record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "req_id",
+    "gate",
+    "commit_sha",
+    "result",
+    "platform",
+    "evidence_kind",
+    "created_at_utc"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 64
+    },
+    "req_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 64
+    },
+    "gate": {
+      "type": "string",
+      "enum": [
+        "G0",
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6"
+      ]
+    },
+    "commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "BLOCKED",
+        "NOT_RUN"
+      ]
+    },
+    "platform": {
+      "type": "string",
+      "minLength": 3
+    },
+    "evidence_kind": {
+      "type": "string",
+      "enum": [
+        "static",
+        "unit",
+        "integration",
+        "document",
+        "hardware"
+      ]
+    },
+    "created_at_utc": {
+      "type": "string",
+      "minLength": 10
+    },
+    "fixture_sha256": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{64})?$"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "evidence_url": {
+      "type": "string"
+    },
+    "hardware": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "PASS"
+          }
+        },
+        "required": [
+          "result"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "evidence_url"
+            ]
+          },
+          {
+            "properties": {
+              "evidence_kind": {
+                "enum": [
+                  "static",
+                  "unit",
+                  "document"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "gate": {
+            "const": "G4"
+          },
+          "result": {
+            "const": "PASS"
+          }
+        },
+        "required": [
+          "gate",
+          "result"
+        ]
+      },
+      "then": {
+        "required": [
+          "hardware",
+          "evidence_url"
+        ]
+      }
+    }
+  ]
+}
