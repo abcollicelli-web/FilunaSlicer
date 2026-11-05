@@ -47,7 +47,7 @@ def contract_checks() -> None:
     assert_true("2026-11-03-ESTRUTURA-HOME-PREPARAR-CALIBRACAO.md" in migration
                 and "18-HOME-GROK-2026-11-03.md" in migration,
                 "Home aprovada e precedência documentadas")
-    assert_true("56 px" in migration and "208 px" in migration,
+    assert_true(bool(re.search(r"\\b56\\s*px\\b", migration)) and bool(re.search(r"\\b208\\s*px\\b", migration)),
                 "dimensões de referência da Home registradas")
     assert_true("PROPOSTO" in migration and "homolog" in migration.lower(),
                 "distinção entre proposta e homologação")
