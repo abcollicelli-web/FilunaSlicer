@@ -111,3 +111,18 @@ Dono aprovou FLN-FUND-SPEC-2026-11-05.1 (t18s14, 23:24 Europe/Rome). Registro JS
 ## Adendo — baseline binário + correção gates (2026-11-05 23:45:00 CET / UTC 2026-11-05T22:45:00Z)
 
 Corrigido relatório: sem «G2/G3 PASS» por 19 unitários. Normalizador allowlist estrita; evidence UTC-only; runner Windows + extensão `filuna-windows.yml` `baseline-gcode-only`. Fontes pin/Filuna EXACT runs. G4 NOT_RUN.
+
+## 19. VEREDITO DO DONO t19u — 2026-11-05 23:33 Europe/Rome (22:33 UTC) — IMUTÁVEL
+
+Registro: `FILUNA/approvals/FUND-VERDICT-2026-11-05-t19u.json`. **Aprovação com ressalvas, avanço bloqueado.** Autoriza só correção/testes da fundação no gate atual; **não** homologa etapa/release.
+
+| Item | Estado |
+|---|---|
+| LEGAL-02 | checks documentais 7/7 PASS · **auditoria do pacote PARTIAL** (`FILUNA/legal/PACKAGE-INVENTORY-run42102469888.json`: 4062 arquivos, 75 binários, 26 sem proveniência verificada, FFmpeg avcodec/avformat BLOCKED até auditoria; relação instalador↔portable NOT_RUN) |
+| QA-03 | validador + `gate_governance.py` (contrato `FILUNA/qa/required-cases.json` v2026-11-05.3): hoje G2/G3/G4 = **BLOCKED** |
+| CORE-04 | **BLOCKED** (baseline binário Windows em execução/sem PASS) |
+| DATA-05 | **BLOCKED** (AppData Windows real NOT_RUN) |
+| Onda 01 | **BLOCKED**; nenhuma onda avança |
+| G4 | NOT_RUN |
+
+check 113/113, CMP 7/7 e testes unitários **não** são autorização para progredir. Dados sintéticos provam só o validador.

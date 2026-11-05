@@ -106,7 +106,7 @@ Para declarar Onda 01 pronta (futuro): LEGAL-02 checklist CMP PASS; QA-03 evidê
 
 ## 9. Implementação mínima (autorizada) — estado neste head
 
-1. LEGAL-02: `FILUNA/legal/CMP-CHECKLIST-LEGAL-02.json` + `FILUNA/tests/cmp_legal.py` — **PASS 7/7** no box.  
+1. LEGAL-02: `FILUNA/legal/CMP-CHECKLIST-LEGAL-02.json` + `FILUNA/tests/cmp_legal.py` — checks documentais **7/7 PASS**; auditoria de pacote **PARTIAL**.  
 2. QA-03: `FILUNA/qa/evidence.schema.json` + `evidence_schema.py` + testes negativos fail-closed — **PASS**.  
 3. CORE-04: fixtures + `normalize_gcode.py`/`compare_gcode.py` + unitários sintéticos — **PASS**; pin↔Filuna Windows **NOT_RUN**.  
 4. DATA-05: `data_isolation.py` (fonte + temp) — **PASS**; AppData/registro real **NOT_RUN** (G4).  
@@ -115,3 +115,18 @@ Para declarar Onda 01 pronta (futuro): LEGAL-02 checklist CMP PASS; QA-03 evidê
 ## 10. Pergunta única de aceite (dono)
 
 > Homologa o escopo **FLN-FUND-SPEC-2026-11-05.1** (Onda 01 Fundação: LEGAL-02→QA-03→CORE-04→DATA-05; sem UI/Home/tokens) para autorizar a implementação mínima descrita no §9?
+
+## 19. VEREDITO DO DONO t19u — 2026-11-05 23:33 Europe/Rome (22:33 UTC) — IMUTÁVEL
+
+Registro: `FILUNA/approvals/FUND-VERDICT-2026-11-05-t19u.json`. **Aprovação com ressalvas, avanço bloqueado.** Autoriza só correção/testes da fundação no gate atual; **não** homologa etapa/release.
+
+| Item | Estado |
+|---|---|
+| LEGAL-02 | checks documentais 7/7 PASS · **auditoria do pacote PARTIAL** (`FILUNA/legal/PACKAGE-INVENTORY-run42102469888.json`: 4062 arquivos, 75 binários, 26 sem proveniência verificada, FFmpeg avcodec/avformat BLOCKED até auditoria; relação instalador↔portable NOT_RUN) |
+| QA-03 | validador + `gate_governance.py` (contrato `FILUNA/qa/required-cases.json` v2026-11-05.3): hoje G2/G3/G4 = **BLOCKED** |
+| CORE-04 | **BLOCKED** (baseline binário Windows em execução/sem PASS) |
+| DATA-05 | **BLOCKED** (AppData Windows real NOT_RUN) |
+| Onda 01 | **BLOCKED**; nenhuma onda avança |
+| G4 | NOT_RUN |
+
+check 113/113, CMP 7/7 e testes unitários **não** são autorização para progredir. Dados sintéticos provam só o validador.

@@ -62,7 +62,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | Onda / Gate | Status | Notas |
 |---|---|---|
 | 00 Genealogia / **G0** | **PASS DOCUMENTAL** | Critérios REGRA G0 + Onda 00 fechados (rev conflitos .3); G4 Windows separado |
-| 01 Fundação / gates fundação | **EM IMPLEMENTAÇÃO** | Escopo APROVADO; CMP/QA/normalize/DATA unit PASS; G-code binário NOT_RUN; G4 NOT_RUN |
+| 01 Fundação / gates fundação | **BLOCKED (t19u)** | só correção/testes; CMP docs PASS, pacote PARTIAL; G-code binário NOT_RUN; G4 NOT_RUN |
 | 02 Qualidade Orca nativa | PENDING | |
 | 03 Identidade/Home | BLOCKED até G0 PASS + tokens/QA visual (originais **já no repo**) | |
 | 04–14 e G2–G6 produto | PENDING / BLOCKED por predecessor | |
@@ -230,3 +230,18 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - Fontes: Orca run `42037889437` @ `a620d804…`; Filuna run `42102469888` @ `2dace0db…`.
 - Workflow: `filuna-windows.yml` input `baseline-gcode-only=true` despachável `--ref` desta branch.
 - Sintético ≠ binário; G4/instWindows NOT_RUN.
+
+## 19. VEREDITO DO DONO t19u — 2026-11-05 23:33 Europe/Rome (22:33 UTC) — IMUTÁVEL
+
+Registro: `FILUNA/approvals/FUND-VERDICT-2026-11-05-t19u.json`. **Aprovação com ressalvas, avanço bloqueado.** Autoriza só correção/testes da fundação no gate atual; **não** homologa etapa/release.
+
+| Item | Estado |
+|---|---|
+| LEGAL-02 | checks documentais 7/7 PASS · **auditoria do pacote PARTIAL** (`FILUNA/legal/PACKAGE-INVENTORY-run42102469888.json`: 4062 arquivos, 75 binários, 26 sem proveniência verificada, FFmpeg avcodec/avformat BLOCKED até auditoria; relação instalador↔portable NOT_RUN) |
+| QA-03 | validador + `gate_governance.py` (contrato `FILUNA/qa/required-cases.json` v2026-11-05.3): hoje G2/G3/G4 = **BLOCKED** |
+| CORE-04 | **BLOCKED** (baseline binário Windows em execução/sem PASS) |
+| DATA-05 | **BLOCKED** (AppData Windows real NOT_RUN) |
+| Onda 01 | **BLOCKED**; nenhuma onda avança |
+| G4 | NOT_RUN |
+
+check 113/113, CMP 7/7 e testes unitários **não** são autorização para progredir. Dados sintéticos provam só o validador.

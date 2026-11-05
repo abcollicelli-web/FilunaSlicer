@@ -54,7 +54,7 @@ Aprovação: `FILUNA/approvals/FUND-SPEC-2026-11-05.1-owner-approval.json`.
 | FUND-T06 artifact 42102469888 | **PASS** (estado) | Actions success prévio |
 | FUND-T07 gcode pin↔Filuna binary | **NOT_RUN→em execução** | job Windows baseline-gcode-only; sintético separado |
 | FUND-UNIT-19 | **PASS** | `python3 FILUNA/tests/run_fund_tests.py` → 19 OK |
-| FUND-CMP-7 | **PASS** | cmp_legal 7/7 |
+| FUND-CMP-7 | checks documentais PASS; pacote PARTIAL | cmp_legal 7/7 ≠ certificação do instalador |
 | FUND-DATA-8 | **PASS** | data_isolation 8/8 |
 | FUND-T09 coexistência URL Windows | **NOT_RUN** | G4 |
 | FUND-T08 start sem confirmação (impl runtime) | **NOT_RUN** | contrato; sem DeviceBridge |
@@ -74,3 +74,18 @@ Commit implementação: `7ee410ec25e65d85727b96f021cadb38f11970e0`.
 | G4 | **NOT_RUN** | físico intacto |
 
 Atualizado UTC 2026-11-05T22:45:00Z.
+
+## 19. VEREDITO DO DONO t19u — 2026-11-05 23:33 Europe/Rome (22:33 UTC) — IMUTÁVEL
+
+Registro: `FILUNA/approvals/FUND-VERDICT-2026-11-05-t19u.json`. **Aprovação com ressalvas, avanço bloqueado.** Autoriza só correção/testes da fundação no gate atual; **não** homologa etapa/release.
+
+| Item | Estado |
+|---|---|
+| LEGAL-02 | checks documentais 7/7 PASS · **auditoria do pacote PARTIAL** (`FILUNA/legal/PACKAGE-INVENTORY-run42102469888.json`: 4062 arquivos, 75 binários, 26 sem proveniência verificada, FFmpeg avcodec/avformat BLOCKED até auditoria; relação instalador↔portable NOT_RUN) |
+| QA-03 | validador + `gate_governance.py` (contrato `FILUNA/qa/required-cases.json` v2026-11-05.3): hoje G2/G3/G4 = **BLOCKED** |
+| CORE-04 | **BLOCKED** (baseline binário Windows em execução/sem PASS) |
+| DATA-05 | **BLOCKED** (AppData Windows real NOT_RUN) |
+| Onda 01 | **BLOCKED**; nenhuma onda avança |
+| G4 | NOT_RUN |
+
+check 113/113, CMP 7/7 e testes unitários **não** são autorização para progredir. Dados sintéticos provam só o validador.

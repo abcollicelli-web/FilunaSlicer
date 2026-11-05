@@ -1,0 +1,31 @@
+{
+  "record_type": "owner_verdict",
+  "id": "t19u",
+  "at_europe_rome": "2026-11-05T23:33:00+01:00",
+  "at_utc": "2026-11-05T22:33:00Z",
+  "spec_id": "FLN-FUND-SPEC-2026-11-05.1",
+  "verdict": "APROVACAO_COM_RESSALVAS_AVANCO_BLOQUEADO",
+  "owner_text_verbatim": "Os testes de conformidade legal conferem principalmente arquivos e textos, não certificam o conteúdo do instalador. Portanto, não considero o controle automático de 100% de aprovação suficientemente robusto ainda. A validação documental teve progresso real, mas exige correções antes de servir como autorização definitiva para novas etapas. Veredito: aprovação com ressalvas — avanço ainda bloqueado. A primeira validação demonstra progresso real e os testes executados passaram. Porém, o sistema de aprovação ainda não atende integralmente à regra de 100% com evidências verificáveis. Isso significa que o Grok pode continuar corrigindo e testando a fundação, mas não deve declarar CORE-04, DATA-05 ou a Onda 01 integralmente homologados enquanto existirem casos obrigatórios sem execução.",
+  "authorizes": [
+    "correcao_e_testes_fundacao_gate_corrente",
+    "baseline_binario_ja_autorizado"
+  ],
+  "does_not_authorize": [
+    "homologacao CORE-04",
+    "homologacao DATA-05",
+    "homologacao Onda01",
+    "avanco de ondas",
+    "release"
+  ],
+  "states": {
+    "CORE-04": "BLOCKED",
+    "DATA-05": "BLOCKED",
+    "Onda01": "BLOCKED",
+    "G2_global": "BLOCKED",
+    "G3_global": "BLOCKED",
+    "G4": "NOT_RUN",
+    "LEGAL-02": "checks documentais PASS; auditoria de pacote PARTIAL"
+  },
+  "immutable_note": "Não editar; novas decisões = novo arquivo.",
+  "not_cryptographic_signature": true
+}

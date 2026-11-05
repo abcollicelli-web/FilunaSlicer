@@ -13,9 +13,12 @@ def main() -> int:
     cmd = [sys.executable, "-m", "unittest", "FILUNA.tests.test_fundation_onda01", "-v"]
     # unittest module path: run file directly for simplicity
     cmd = [sys.executable, str(ROOT / "FILUNA/tests/test_fundation_onda01.py"), "-v"]
-    print("+", " ".join(cmd), flush=True)
-    r = subprocess.run(cmd, cwd=str(ROOT))
-    return r.returncode
+    rc = 0
+    for f in ("test_fundation_onda01.py", "test_gate_governance.py"):
+        c = [sys.executable, str(ROOT / "FILUNA/tests" / f), "-v"]
+        print("+", " ".join(c), flush=True)
+        rc |= subprocess.run(c, cwd=str(ROOT)).returncode
+    return rc
 
 
 if __name__ == "__main__":

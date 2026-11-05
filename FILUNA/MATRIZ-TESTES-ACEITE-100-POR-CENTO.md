@@ -234,3 +234,7 @@ Casos executados: ver [G0-TESTES-CASOS-2026-11-05.md](G0-TESTES-CASOS-2026-11-05
 ### Onda 01 Fundação (2026-11-05 23:30:00 CET)
 
 Casos: [FUND-TEST-ONDA01-2026-11-05.md](FUND-TEST-ONDA01-2026-11-05.md). Estado SPEC **PROPOSTO**; FUND-T07 baseline G-code **NOT RUN**.
+
+## Fundação Onda 01 — estado após veredito t19u (2026-11-05 22:33 UTC)
+
+Fonte única dos casos obrigatórios: `FILUNA/qa/required-cases.json` (contract_version 2026-11-05.3). Verificador: `FILUNA/tests/gate_governance.py` — exige run de CI, artifact, SHA do binário/instalador, commit e plataforma coerentes, `synthetic=false` e signoff do dono; N/A só com justificativa + aceite. Hoje: G2/G3/G4 **BLOCKED**. CORE-04/DATA-05/Onda01 **BLOCKED**. LEGAL-02: checks documentais PASS, auditoria de pacote PARTIAL.
