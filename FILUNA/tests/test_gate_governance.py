@@ -17,7 +17,7 @@ def rec(cid, kind="integration", platform="windows-actions-x64", **over):
         "evidence": {"schema_version": 1, "case_id": cid, "req_id": "REQ-FUND-004", "gate": "G3",
                      "commit_sha": SHA, "result": "PASS", "platform": platform, "evidence_kind": kind,
                      "created_at_utc": "2026-11-05T22:40:00Z", "fixture_sha256": "d" * 64,
-                     "evidence_url": "https://github.com/o/r/actions/runs/1"},
+                     "evidence_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42124288641"},
     }
     r.update(over)
     return r
