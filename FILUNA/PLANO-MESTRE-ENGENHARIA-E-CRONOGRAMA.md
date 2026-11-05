@@ -184,7 +184,7 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 ## 11. Situação real deste registro
 
 - **Continuidade operacional:** ver [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md) (atualizado em lotes; G0 ainda EM ANDAMENTO).
-- **Tip plano final (quality-master) confirmada:**  — 52 entregas / 149 deps / SRV-00..11; auditoria documental 113/113 ≠ G0 PASS.
+- **Tip plano final (quality-master) confirmada:** `d1935aefa91a1eda86f57b67b342a3857247294e` — 52 entregas / 149 deps / SRV-00..11; auditoria documental 113/113 ≠ G0 PASS.
 - **Planejamento iniciado e matriz de fontes consultada.** O inventário não afirma que TODOS os arquivos do legado foram lidos integralmente; o índice documenta a cobertura e a fila restante por área.
 - **Nenhuma dessas ondas foi executada por este commit.** Os checks estáticos da fundação anteriores passaram, mas testes e homologação de hardware do novo fork ainda não.
 - **Definição do produto corrigida** para motor Orca único; fabricantes nativos via adapters. Os 10 nomes são alvo, não certificado de compatibilidade.
