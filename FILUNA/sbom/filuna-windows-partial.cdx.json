@@ -1,0 +1,1063 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-05 23:05:56 CET",
+    "component": {
+      "type": "application",
+      "name": "FilunaSlicer",
+      "version": "2.5.0-dev",
+      "bom-ref": "filuna@2.5.0-dev"
+    },
+    "properties": [
+      {
+        "name": "filuna:sbom_status",
+        "value": "PARTIAL_NOT_COMPLETE"
+      },
+      {
+        "name": "filuna:upstream_pin",
+        "value": "a620d804efbe74162c96ad29d755cdab2b823530"
+      },
+      {
+        "name": "filuna:windows_base_sha",
+        "value": "2dace0db86d305bec5b9627179f265012e4f5069"
+      },
+      {
+        "name": "filuna:windows_build",
+        "value": "42102469888"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "libpng",
+      "version": "1.6.59",
+      "bom-ref": "libpng@1.6.59",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/glennrp/libpng/archive/refs/tags/v1.6.59.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "6fd97a1e5e2ac55cec0a538a9800a351eb3844086736291844ebd12db72ba433"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/PNG/PNG.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zlib",
+      "version": "1.2.13",
+      "bom-ref": "zlib@1.2.13",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/madler/zlib/archive/refs/tags/v1.2.13.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "c2856951bbf30e30861ace3765595d86ba13f2cf01279d901f6c62258c57f4ff"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/ZLIB/ZLIB.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FFmpeg",
+      "version": "n7.0.3 (Windows prebuild orca-shared)",
+      "bom-ref": "FFmpeg@n7.0.3 (Windows prebuild orca-shared)",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/Noisyfox/FFmpeg-Builds-Orca/.../ffmpeg-n7.0.3-33-...-win64-orca-shared-7.0.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "85da19daf198f5548259d8aabb349db84997a3f6e6886d8d7764114add9c6dae"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/FFMPEG/FFMPEG.cmake PREBUILD_HASH_x64"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "OpenCV",
+      "version": "4.14.0",
+      "bom-ref": "OpenCV@4.14.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/opencv/opencv/archive/refs/tags/4.14.0.tar.gz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "ee8fb9b30eb60850431b4656447080e3737b56e45719c92b67f245950609f86e"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/OpenCV/OpenCV.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "GMP",
+      "version": "6.3.0",
+      "bom-ref": "GMP@6.3.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/GMP/GMP.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "MPFR",
+      "version": "4.2.2",
+      "bom-ref": "MPFR@4.2.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.bz2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "9ad62c7dc910303cd384ff8f1f4767a655124980bb6d8650fe62c815a231bb7b"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/MPFR/MPFR.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "GLFW",
+      "version": "3.4",
+      "bom-ref": "GLFW@3.4",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/glfw/glfw/archive/refs/tags/3.4.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "a133ddc3d3c66143eba9035621db8e0bcf34dba1ee9514a9e23e96afd39fd57a"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/GLFW/GLFW.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Draco",
+      "version": "1.5.7",
+      "bom-ref": "Draco@1.5.7",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/google/draco/archive/refs/tags/1.5.7.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "27b72ba2d5ff3d0a9814ad40d4cb88f8dc89a35491c0866d952473f8f9416b77"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/Draco/Draco.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libdatachannel",
+      "version": "v0.24.5",
+      "bom-ref": "libdatachannel@v0.24.5",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/paullouisageneau/libdatachannel.git"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "N/A (git tag)"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/DataChannel/DataChannel.cmake GIT_TAG"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "WebView2 headers",
+      "version": "product 138.0.3351.48 (from header define)",
+      "bom-ref": "WebView2 headers@product 138.0.3351.48 (from header define)",
+      "externalReferences": [],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "N/A (headers tree)"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/WebView2/include/WebView2EnvironmentOptions.h"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Eigen",
+      "version": "5.0.1",
+      "bom-ref": "Eigen@5.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "0dbb1f9e3aaad66f352c03227d8c983f6f0b49e0b07e71a7300f4abcc01aee12"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/Eigen/Eigen.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "CGAL",
+      "version": "6.2.1",
+      "bom-ref": "CGAL@6.2.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/CGAL/cgal/releases/download/v6.2.1/CGAL-6.2.1.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "eebd737d9b7f0199647ba5c1f9f6c7a3d0651aacef9c2fd4dedc52da6c25edbe"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/CGAL/CGAL.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "OCCT",
+      "version": "V8_0_1",
+      "bom-ref": "OCCT@V8_0_1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/V8_0_1.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "7c033d917ee8f040c0512d289dcc5f02c148889d5bac17c3e25639accb44f0da"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/OCCT/OCCT.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Boost",
+      "version": "1.84.0",
+      "bom-ref": "Boost@1.84.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.gz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "4d27e9efed0f6f152dc28db6430b9d3dfb40c0345da7342eaa5a987dde57bd95"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/Boost/Boost.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "oneTBB",
+      "version": "2021.5.0",
+      "bom-ref": "oneTBB@2021.5.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.5.0.zip"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "83ea786c964a384dd72534f9854b419716f412f9d43c0be88d41874763e7bb47"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/TBB/TBB.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "OpenSSL",
+      "version": "1.1.1w",
+      "bom-ref": "OpenSSL@1.1.1w",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/openssl/openssl/archive/OpenSSL_1_1_1w.tar.gz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "2130E8C2FB3B79D1086186F78E59E8BC8D1A6AEDF17AB3907F4CB9AE20918C41"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/OpenSSL/OpenSSL.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Assimp",
+      "version": "5.3.1|5.4.3 (cmake-gated)",
+      "bom-ref": "Assimp@5.3.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/assimp/assimp/archive/refs/tags/v5.3.1.tar.gz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "a07666be\u2026 OR 66dfbaee\u2026 (see Assimp.cmake)"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/Assimp/Assimp.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wxWidgets (Orca fork)",
+      "version": "git b44c39c100975a0ac0e46f937aa3f3eae5e18631",
+      "bom-ref": "wxWidgets (Orca fork)@git b44c39c100975a0ac0e46f937aa3f3eae5e18631",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/OrcaSlicer/Orca-deps-wxWidgets"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "N/A (git)"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps/wxWidgets/wxWidgets.cmake"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "OrcaSlicer / Filuna core",
+      "version": "2.5.0-dev",
+      "bom-ref": "OrcaSlicer / Filuna core@2.5.0-dev",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/OrcaSlicer/OrcaSlicer"
+        }
+      ],
+      "properties": [
+        {
+          "name": "filuna:sha256_or_git",
+          "value": "git a620d804efbe74162c96ad29d755cdab2b823530"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "FILUNA/UPSTREAM_PIN.md + version.inc SoftFever_VERSION"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Shiny",
+      "version": "3.13",
+      "bom-ref": "deps_src/Shiny",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "admesh",
+      "version": "3.13",
+      "bom-ref": "deps_src/admesh",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "agg",
+      "version": "3.13",
+      "bom-ref": "deps_src/agg",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ankerl",
+      "version": "3.13",
+      "bom-ref": "deps_src/ankerl",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "clipper2",
+      "version": "3.10",
+      "bom-ref": "deps_src/clipper2",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "earcut",
+      "version": "3.13",
+      "bom-ref": "deps_src/earcut",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/earcut/LICENSE"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "expat",
+      "version": "3.13",
+      "bom-ref": "deps_src/expat",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/expat/COPYING"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast_float",
+      "version": "3.13",
+      "bom-ref": "deps_src/fast_float",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "glu-libtess",
+      "version": "3.13",
+      "bom-ref": "deps_src/glu-libtess",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "hidapi",
+      "version": "unknown-in-tree",
+      "bom-ref": "deps_src/hidapi",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "hints",
+      "version": "3.13",
+      "bom-ref": "deps_src/hints",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "imgui",
+      "version": "3.13",
+      "bom-ref": "deps_src/imgui",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/imgui/LICENSE.txt"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "imguizmo",
+      "version": "3.13",
+      "bom-ref": "deps_src/imguizmo",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/imguizmo/LICENSE"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libigl",
+      "version": "3.13",
+      "bom-ref": "deps_src/libigl",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libnest2d",
+      "version": "unknown-in-tree",
+      "bom-ref": "deps_src/libnest2d",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/libnest2d/LICENSE.txt"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mcut",
+      "version": "3.13",
+      "bom-ref": "deps_src/mcut",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/mcut/LICENSE.GPL.txt,deps_src/mcut/LICENSE.txt"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "md4c",
+      "version": "3.5",
+      "bom-ref": "deps_src/md4c",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/md4c/LICENSE.md"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mdns",
+      "version": "3.13",
+      "bom-ref": "deps_src/mdns",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/mdns/NOTICE.md"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "minilzo",
+      "version": "3.13",
+      "bom-ref": "deps_src/minilzo",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/minilzo/COPYING"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "miniz",
+      "version": "3.13",
+      "bom-ref": "deps_src/miniz",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/miniz/LICENSE"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "nanosvg",
+      "version": "3.13",
+      "bom-ref": "deps_src/nanosvg",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "nlohmann",
+      "version": "3.13",
+      "bom-ref": "deps_src/nlohmann",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pybind11",
+      "version": "unknown-in-tree",
+      "bom-ref": "deps_src/pybind11",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/pybind11/LICENSE"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "qhull",
+      "version": "3.13",
+      "bom-ref": "deps_src/qhull",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "deps_src/qhull/COPYING.txt"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "qoi",
+      "version": "3.13",
+      "bom-ref": "deps_src/qoi",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "semver",
+      "version": "3.13",
+      "bom-ref": "deps_src/semver",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "stb_dxt",
+      "version": "3.13",
+      "bom-ref": "deps_src/stb_dxt",
+      "properties": [
+        {
+          "name": "filuna:license_files",
+          "value": "none_found"
+        },
+        {
+          "name": "filuna:license_asserted",
+          "value": "false"
+        },
+        {
+          "name": "filuna:evidence",
+          "value": "deps_src tree"
+        }
+      ]
+    }
+  ]
+}

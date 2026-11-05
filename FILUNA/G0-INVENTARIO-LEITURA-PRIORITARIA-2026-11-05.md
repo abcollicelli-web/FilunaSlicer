@@ -1,21 +1,32 @@
 # FILUNA G0 — Inventário de leitura do manifesto (141 caminhos)
 
-**ID** FLN-G0-READ-2026-11-05.3  
-**Atualizado** 2026-11-05 23:02:32 CET (Europe/Rome)  
-**Gate** G0 EM ANDAMENTO — leitura do manifesto de **fontes legadas** concluída em cobertura de caminhos; **não** marca G0 PASS (ainda faltam critérios: conflitos órfãos resolvidos com aceite, SBOM F completo, etc.).
+**ID** FLN-G0-READ-2026-11-05.4  
+**Atualizado** 2026-11-05 23:07:34 CET (Europe/Rome)
+**Gate** G0 EM ANDAMENTO — **não** PASS.  
+**Correção de honestidade (obrigatória):** afirmar “141 leituras integrais” seria indevido. Há três profundidades (ver tabela). Cobertura de *caminhos/hashes* = 141/141; cobertura *semântica cláusula-a-cláusula* ≠ 141.
 
 ## Cobertura
 
 | Métrica | Valor |
 |---|---|
 | Caminhos no manifesto | 141 |
-| Caminhos lidos (este ciclo total) | **141** |
-| Blobs únicos entre os 128 restantes | **119** (9 SHAs duplicados = mesmo conteúdo em S e W) |
-| Blobs únicos totais (13 prévios + 119) | **132** |
-| Formato | 100% texto/markdown/json neste manifesto (sem PDF/imagem no índice 141) |
-| Método | `gh api` raw + `git hash-object` = blob SHA do manifesto |
+| Caminhos com bytes obtidos + hash conferido | **141** |
+| Blobs únicos (13 prévios + 119) | **132** (9 dedup S≡W) |
+| Formato | 100% texto/markdown/json neste manifesto |
+| Método obtenção | `gh api` raw + `git hash-object` = blob SHA |
 
-### Deduplicação por hash (conteúdo lido uma vez, dois caminhos)
+### Profundidade de leitura (corrigida — não misturar com “lido integral”)
+
+| Classe | Qtd | O que foi feito de fato | Status honesto |
+|---|---|---|---|
+| A — semântica integral | **13** | Texto completo lido; REQ/conflitos narrados (lote prioritário) | `READ_SEMANTIC_FULL` |
+| B — estruturada profunda | **33** | Texto completo carregado; headings + linhas normativas extraídas sistematicamente | `READ_STRUCTURED_DEEP` — útil, **≠** revisão humana cláusula-a-cláusula de todo o corpo |
+| C — cobertura estruturada | **86** | Texto completo baixado; título/excerpt/headings/contagem de hits | `READ_STRUCTURED_COVER` — **não** contar como leitura integral ao dono |
+| Dedup | 9 pares | Conteúdo idêntico; profundidade = a do blob único | `DEDUP_SAME_BLOB` |
+
+**Implicação G0 (N1):** fontes obrigatórias **ainda não** estão esgotadas no sentido normativo se N1 exigir compreensão cláusula-a-cláusula de todo o manifesto. Critérios restantes: ver [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md).
+
+### Deduplicação por hash (conteúdo processado uma vez, dois caminhos)
 
 - `0ec123d37e9b…`: `Filuna-Slicer/CHATGPT-MCP-INSTALL-TROUBLESHOOT-2026-11-03.md` ≡ `docs/CHATGPT-MCP-INSTALL-TROUBLESHOOT-2026-11-03.md`
 - `2a6dca379623…`: `Filuna-Slicer/CHATGPT-MCP-FIX-INSTALL-IDENTIDADE-2026-11-03.md` ≡ `docs/CHATGPT-MCP-FIX-INSTALL-IDENTIDADE-2026-11-03.md`
@@ -536,19 +547,16 @@
 | W | `proposals/filuna.mestre-dispositivos.json` | `f0c065c72ecd…` | 2087 | 53 | { |
 | W | `proposals/filuna.mestre-preparar.json` | `97754a2665af…` | 3401 | 111 | { |
 
-## SBOM inicial do fork F (não completo)
+## SBOM inicial do fork F
 
-Varredura superficial na tip do FilunaSlicer (não é SBOM CycloneDX completo nem deps transitivas fechadas):
+Substituído/expandido por inventário verificável parcial:
 
-- Licença raiz: `LICENSE.txt` AGPL-3.0 (herdada Orca).
-- Créditos documentados em `FILUNA/README.md` (Slic3r→Prusa→BBL→Orca→Filuna).
-- Árvore `deps_src/` contém múltiplos NOTICE/LICENSE de terceiros (imgui, libigl, mcut, qhull, md4c, etc.) — **inventário arquivo-a-arquivo e versões SPDX ainda PENDING**.
-- Plugins de rede proprietários: **não empacotar** (já regra Filuna).
-- **Não declarar SBOM completo** até gerar manifesto com hashes/licenças de deps de build Windows.
+- [sbom/README.md](sbom/README.md) — tabela CMake com versões/hashes  
+- [sbom/filuna-windows-partial.cdx.json](sbom/filuna-windows-partial.cdx.json) — CycloneDX 1.5 **parcial** (`filuna:sbom_status=PARTIAL_NOT_COMPLETE`)  
+- Ainda **não** completo (transitivas, DLLs do artefato, SPDX jurídicos).
 
 ## Próxima ação
 
-1. Reler REGISTRO + tip quality.
-2. Fechar itens G0 restantes: consolidar matriz de conflitos órfãos; iniciar SBOM F real (deps Windows); confirmar com dono exceções CF-07 do legado.
-3. G1 visual: tokens HEX + derivados — assets já versionados.
-4. Sem Home/DeviceBridge/SRV provisionamento; sem merge PRs.
+1. Seguir [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) (N1/N2).  
+2. Opcional: aprofundar classe C → B/A nas fontes normativas restantes.  
+3. Sem Home/DeviceBridge/SRV/G1 UI; sem merge PRs.

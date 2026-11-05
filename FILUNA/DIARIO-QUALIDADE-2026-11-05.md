@@ -78,3 +78,11 @@ ZIP do proprietário validado: 5/5 hashes SHA-256 idênticos ao [REFERENCIAS-MAN
 ## Adendo — leitura manifesto 141 (2026-11-05 23:02:32 CET)
 
 Concluída cobertura dos 141 caminhos do manifesto legado (119 blobs novos verificados por hash + 13 do lote anterior; 9 deduplicações S/W). Detalhe em [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md). G0 permanece EM ANDAMENTO; SBOM do fork F só inicial.
+
+## Adendo — conflitos + SBOM parcial + correção leitura (2026-11-05 23:07:34 CET)
+
+- Inventário rev .4: profundidades A/B/C; **retiro** qualquer leitura como 141 integrais.
+- Novo: `G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md` (CF-01..11; N1–N8).
+- Novo: `FILUNA/sbom/` README + inventory JSON + CycloneDX parcial (licenças **não** afirmadas).
+- G0 continua PENDING (N1, N2). Checks documentais a seguir neste commit.
+

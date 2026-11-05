@@ -132,3 +132,10 @@ Inventário detalhado de 13 fontes lidas com hashes e REQ: [G0-INVENTARIO-LEITUR
 ### Conflitos adicionais após leitura 141 (05/11)
 
 Ver [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) CF-06..08 (updates multi-motor, pendências W não herdáveis, Filuna ID/cofre).
+
+## Adendo G0 — rastreabilidade conflitos + SBOM (2026-11-05 23:07:34 CET)
+
+Detalhe operacional: [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md).  
+SBOM inicial parcial: [sbom/README.md](sbom/README.md).  
+Correção: cobertura do manifesto 141 ≠ 141 leituras semânticas integrais.
+

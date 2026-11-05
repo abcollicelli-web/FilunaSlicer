@@ -2,8 +2,8 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:02:32 CET  
-**Estado do gate G0** EM ANDAMENTO (não PASS)  
+**Atualizado** 2026-11-05 23:07:34 CET
+**Estado do gate G0** EM ANDAMENTO / PENDING (N1 profundidade + N2 conflitos; SBOM inicial parcial OK; **não PASS**)
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
 > **Obrigatório para qualquer IA ou colaborador:** ler este arquivo **antes** de alterar código, docs, CI, UI ou releases. Em seguida ler os documentos normativos listados abaixo. Não depender de chat, memória local, `/workspace` ou histórico de sessão.
@@ -61,7 +61,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 | Onda / Gate | Status | Notas |
 |---|---|---|
-| 00 Genealogia / **G0** | **PENDING / EM ANDAMENTO** | Manifesto **141/141 caminhos lidos** (119 blobs novos + 13 prévios; 9 dedup). Assets marca versionados. SBOM F apenas inicial. Conflitos CF-06..08 registrados. G0 **não PASS** |
+| 00 Genealogia / **G0** | **PENDING** | Mapa N1–N8: baseline+riscos+SBOM parcial OK; N1 profundidade e N2 órfãos ainda abertos; **não PASS** |
 | 01 Fundação / G1–G3 fundação | PENDING | Checks estáticos existem; baseline G-code/Windows real não |
 | 02 Qualidade Orca nativa | PENDING | |
 | 03 Identidade/Home | BLOCKED até G0 PASS + tokens/QA visual (originais **já no repo**) | |
@@ -85,14 +85,16 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | G0-09 | Rodar `check_master_plan.py` | **PASS** estático | 113/113; aviso explícito G0/G1/Windows NÃO homologados |
 | G0-10 | `FILUNA/modules/` fabricante | **PASS** como “ainda inexistente” | API 404 — esperado na Onda 00 |
 | G0-11 | Binários de identidade/mascote no git | **PASS** (bytes) | 5 originais em `FILUNA/brand/assets/original/` SHA=manifesto; G1 visual ainda PENDING (tokens/QA) |
-| G0-12 | Leitura integral das 141 fontes | **NOT RUN / PENDING** | manifesto indexa; auditoria semântica incompleta (já declarado no plano/diário) |
-| G0-13 | SBOM/hash integral do tree C++ do fork | **PENDING** | milhares de fontes; fora deste lote |
+| G0-12 | Leitura das 141 fontes (profundidade honesta) | **PENDING** | 13 FULL + 33 DEEP + 86 COVER; **não** 141 integrais |
+| G0-13 | SBOM inicial Windows (receitas) | **PASS parcial** | `FILUNA/sbom/` PARTIAL; completo ainda PENDING |
 | G0-14 | Teste Windows real / impressoras | **NOT RUN** | autorização atual: testes Windows ficam para depois |
 | G0-15 | Criar este registro + vínculo no plano | **PASS** ao push deste PR | URLs na seção 7 após publish |
 | G0-16 | Leitura integral lote prioritário S/W (13) | **PASS** (leitura) | hashes = manifesto; ver inventário G0 |
 | G0-17 | Confirmar tip plano final 52/149/SRV/113 | **PASS** (documental) | tip `d1935aef`; 113/113 ≠ G0 funcional |
 | G0-18 | Incorporar 5 assets marca do ZIP dono | **PASS** | ZIP `02b3c842…915e`; 5/5 SHA match; nomes estáveis+alias conversa |
 | G0-19 | Mapear SRV prioridades dono sem provisionar | **PASS** (inventário) | SRV-00..11; admin sem controle impressoras |
+| G0-20 | Consolidar conflitos CF-01..11 com rastreio | **PASS** documental | [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md); CF-07 política não-herança |
+| G0-21 | Critérios exatos G0 N1–N8 vs REGRA/PLANO | **PASS** (mapa) | N1/N2 ainda PENDING → G0 não PASS |
 
 
 **Conclusão G0 deste lote:** progresso real de inventário/verificação, **G0 NÃO PASS**. Promoção para Onda 01/G1 **bloqueada**.
@@ -158,3 +160,12 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - 141/141 caminhos do manifesto cobertos por leitura de conteúdo (texto); 9 pares S↔W deduplicados por SHA.
 - Inventário: [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) rev .3.
 - G0 **ainda não PASS** (SBOM completo, aceite de conflitos herdados, evidências Windows).
+
+## 13. Checkpoint conflitos + SBOM parcial (2026-11-05 23:07:34 CET)
+
+- Corrigida honestidade: **não** 141 leituras integrais; classes A/B/C no inventário .4.
+- Conflitos: [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md).
+- SBOM inicial parcial: [sbom/README.md](sbom/README.md) + CDX parcial.
+- Critérios G0 restantes para PASS: **N1** (esgotar fontes obrigatórias na profundidade normativa) e **N2** (sem órfãos obrigatórios — CF-07 política documentada; pergunta única opcional ao dono).
+- G0 **não PASS**. Sem salto para G1/Home/SRV.
+
