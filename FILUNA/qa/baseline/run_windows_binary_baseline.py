@@ -64,9 +64,7 @@ def run_slice(exe: Path, work: Path, model: Path, label: str) -> Path:
         "--datadir", str(datadir),
         "--load-settings", f"{machine};{process}",
         "--load-defaultfila",
-        "--arrange", "0",
         "--slice", "0",
-        "--export-gcode",
         "--outputdir", str(outdir),
         str(model),
     ]
