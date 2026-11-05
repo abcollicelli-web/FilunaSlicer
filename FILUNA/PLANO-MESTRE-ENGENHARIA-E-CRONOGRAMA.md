@@ -176,6 +176,7 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 0. **[REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md)** — etapas realizadas, gates, builds e próxima ação (leitura obrigatória antes de trabalhar).
 0b. [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) — evidência parcial G0 (profundidades A/B/C; não 141 integrais).
 0c. [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) — CF/REQ e critérios N1–N8.
+ 0d. [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md) — definição do conjunto normativo N1 (≠ 141 históricos).
 0d. [sbom/README.md](sbom/README.md) — SBOM Windows parcial (CycloneDX incompleto).
 1. Este plano: ordem de execução, escopo, cronograma e riscos.
 2. [ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md](ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md): protocolos, fontes OEM, limitações, modelo de capacidades e matriz de hardware.

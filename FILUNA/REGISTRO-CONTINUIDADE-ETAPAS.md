@@ -2,8 +2,8 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:07:34 CET
-**Estado do gate G0** EM ANDAMENTO / PENDING (N1 profundidade + N2 conflitos; SBOM inicial parcial OK; **não PASS**)
+**Atualizado** 2026-11-05 23:12:40 CET
+**Estado do gate G0** EM ANDAMENTO / PENDING (N1 PASS · N2 PASS processo · N4–N7 parciais · N8 estático≠Windows; **G0 não PASS**)
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
 > **Obrigatório para qualquer IA ou colaborador:** ler este arquivo **antes** de alterar código, docs, CI, UI ou releases. Em seguida ler os documentos normativos listados abaixo. Não depender de chat, memória local, `/workspace` ou histórico de sessão.
@@ -85,7 +85,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | G0-09 | Rodar `check_master_plan.py` | **PASS** estático | 113/113; aviso explícito G0/G1/Windows NÃO homologados |
 | G0-10 | `FILUNA/modules/` fabricante | **PASS** como “ainda inexistente” | API 404 — esperado na Onda 00 |
 | G0-11 | Binários de identidade/mascote no git | **PASS** (bytes) | 5 originais em `FILUNA/brand/assets/original/` SHA=manifesto; G1 visual ainda PENDING (tokens/QA) |
-| G0-12 | Leitura das 141 fontes (profundidade honesta) | **PENDING** | 13 FULL + 33 DEEP + 86 COVER; **não** 141 integrais |
+| G0-12 | Leitura das 141 fontes (profundidade honesta) | **PASS parcial** | Cobertura path+hash 141; semântica N1 = conjunto obrigatório (não 141); ver G0-FONTES-OBRIGATORIAS |
 | G0-13 | SBOM inicial Windows (receitas) | **PASS parcial** | `FILUNA/sbom/` PARTIAL; completo ainda PENDING |
 | G0-14 | Teste Windows real / impressoras | **NOT RUN** | autorização atual: testes Windows ficam para depois |
 | G0-15 | Criar este registro + vínculo no plano | **PASS** ao push deste PR | URLs na seção 7 após publish |
@@ -94,7 +94,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | G0-18 | Incorporar 5 assets marca do ZIP dono | **PASS** | ZIP `02b3c842…915e`; 5/5 SHA match; nomes estáveis+alias conversa |
 | G0-19 | Mapear SRV prioridades dono sem provisionar | **PASS** (inventário) | SRV-00..11; admin sem controle impressoras |
 | G0-20 | Consolidar conflitos CF-01..11 com rastreio | **PASS** documental | [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md); CF-07 política não-herança |
-| G0-21 | Critérios exatos G0 N1–N8 vs REGRA/PLANO | **PASS** (mapa) | N1/N2 ainda PENDING → G0 não PASS |
+| G0-21 | Critérios exatos G0 N1–N8 vs REGRA/PLANO | **PASS** (mapa) | N1/N2 PASS neste lote; G0 global ainda PENDING (N4–N7 parcial, Windows NOT RUN) |
 
 
 **Conclusão G0 deste lote:** progresso real de inventário/verificação, **G0 NÃO PASS**. Promoção para Onda 01/G1 **bloqueada**.
@@ -107,8 +107,8 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 ## 6. Última tarefa e próxima ação exata
 
-- **Última tarefa (2026-11-05 23:02:32 CET):** (a) 5 originais de marca validados/incorporados; (b) leitura integral dos **128** caminhos restantes do manifesto (119 blobs únicos, 9 dedup), inventário atualizado.
-- **Próxima ação:** consolidar conflitos órfãos + SBOM F real de deps Windows; G1 tokens HEX; sem Home/DeviceBridge/SRV; sem merge PRs.
+- **Última tarefa (2026-11-05 23:12:40 CET):** leitura semântica do conjunto normativo N1 (MIGRACAO §2 + contratos-chave W + regras update/print-only/protocolos); CF-07 enumerado; N1/N2 marcados PASS no mapa; G0 global ainda PENDING.
+- **Próxima ação:** apertar N4–N7 (riscos/MIG/SBOM DLLs artifact 42102469888 read-only); **não** Home/DeviceBridge/SRV/G1; sem merge PRs; Windows QA quando o dono testar.
 
 
 ## 7. Commits / PRs deste lote (preencher no push)
@@ -166,6 +166,16 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - Corrigida honestidade: **não** 141 leituras integrais; classes A/B/C no inventário .4.
 - Conflitos: [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md).
 - SBOM inicial parcial: [sbom/README.md](sbom/README.md) + CDX parcial.
-- Critérios G0 restantes para PASS: **N1** (esgotar fontes obrigatórias na profundidade normativa) e **N2** (sem órfãos obrigatórios — CF-07 política documentada; pergunta única opcional ao dono).
+- Critérios G0 restantes para PASS global: N4–N7 sem lacunas bloqueantes + N8 funcional quando aplicável. **N1/N2 fechados no §14**.
 - G0 **não PASS**. Sem salto para G1/Home/SRV.
 
+
+## 14. Checkpoint N1/N2 semântico (2026-11-05 23:12:40 CET)
+
+- Definição N1 publicada: [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md) — **não** exige 141 cláusula-a-cláusula.
+- ≥19 fontes COVER normativas + reconfirmação §2 promovidas/lidas com SHA=manifesto (`gh api` raw + `git hash-object`).
+- Conflitos rev .2: N1 **PASS**, N2 **PASS** (CF-07 lista BLOQUEANTE W + não-herdar).
+- REQ novos: UPD-03/04, PEI-03, DEV-01..03, PROD-01, CAT-03, SEC-03, BIZ-02, ENG-04 SUPERADO, HOME-01 FORA_G0.
+- Checks: `check_master_plan.py` 113/113; `check_quality_gate.py --mode foundation` 0 FAIL (estático ≠ G0 funcional).
+- **Pergunta única prioritária ao dono (opcional):** confirma CF-07 — nenhum BLOQUEANTE do legado W 0.2.x é critério G0 do FilunaSlicer atual, salvo REQ que você reabrir explicitamente? (exceção candidata já mapeada: Anycubic start → DeviceBridge Onda 06, não G0.)
+- G0 global **PENDING**. Sem merge PR #3.

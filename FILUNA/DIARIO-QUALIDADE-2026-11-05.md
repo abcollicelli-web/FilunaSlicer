@@ -86,3 +86,8 @@ Concluída cobertura dos 141 caminhos do manifesto legado (119 blobs novos verif
 - Novo: `FILUNA/sbom/` README + inventory JSON + CycloneDX parcial (licenças **não** afirmadas).
 - G0 continua PENDING (N1, N2). Checks documentais a seguir neste commit.
 
+
+
+## Adendo — N1/N2 semântico (2026-11-05 23:12:40 CET)
+
+Lote autorizado: leitura semântica real do conjunto normativo (não reclassificação vazia). Novo [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md); conflitos rev .2 com N1/N2 PASS e inventário CF-07. Inventário leitura rev .5. Checks documentais 113/113 e foundation 0 FAIL reexecutados. **G0 continua EM ANDAMENTO** (N4–N7 parciais; Windows/hardware NOT RUN). Sem Home/DeviceBridge/SRV; sem merge.

@@ -1,7 +1,7 @@
 # FILUNA G0 — Inventário de leitura do manifesto (141 caminhos)
 
-**ID** FLN-G0-READ-2026-11-05.4  
-**Atualizado** 2026-11-05 23:07:34 CET (Europe/Rome)
+**ID** FLN-G0-READ-2026-11-05.5  
+**Atualizado** 2026-11-05 23:12:40 CET (Europe/Rome)
 **Gate** G0 EM ANDAMENTO — **não** PASS.  
 **Correção de honestidade (obrigatória):** afirmar “141 leituras integrais” seria indevido. Há três profundidades (ver tabela). Cobertura de *caminhos/hashes* = 141/141; cobertura *semântica cláusula-a-cláusula* ≠ 141.
 
@@ -19,12 +19,12 @@
 
 | Classe | Qtd | O que foi feito de fato | Status honesto |
 |---|---|---|---|
-| A — semântica integral | **13** | Texto completo lido; REQ/conflitos narrados (lote prioritário) | `READ_SEMANTIC_FULL` |
-| B — estruturada profunda | **33** | Texto completo carregado; headings + linhas normativas extraídas sistematicamente | `READ_STRUCTURED_DEEP` — útil, **≠** revisão humana cláusula-a-cláusula de todo o corpo |
-| C — cobertura estruturada | **86** | Texto completo baixado; título/excerpt/headings/contagem de hits | `READ_STRUCTURED_COVER` — **não** contar como leitura integral ao dono |
+| A — semântica integral | **32+** | 13 prioritárias originais + ≥19 normativas promovidas do COVER neste lote (hashes conferidos) | `READ_SEMANTIC_FULL` |
+| B — estruturada profunda | **33** | Texto completo + headings/linhas normativas (cartões §7); vários já cobrem itens §2 | `READ_STRUCTURED_DEEP` |
+| C — cobertura estruturada | **≤67** | Restantes do manifesto **fora** do conjunto N1 obrigatório (MCP QA micro, etc.) ou ainda não promovidos | `READ_STRUCTURED_COVER` |
 | Dedup | 9 pares | Conteúdo idêntico; profundidade = a do blob único | `DEDUP_SAME_BLOB` |
 
-**Implicação G0 (N1):** fontes obrigatórias **ainda não** estão esgotadas no sentido normativo se N1 exigir compreensão cláusula-a-cláusula de todo o manifesto. Critérios restantes: ver [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md).
+**Implicação G0 (N1):** o manifesto 141 **não** é o conjunto obrigatório. Após lote 23:12 CET, o conjunto normativo (MIGRACAO §2 + PLANO §3 + REGRA + dossiê F) está esgotado semanticamente — ver [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md). COVER restante = histórico não-obrigatório.
 
 ### Deduplicação por hash (conteúdo processado uma vez, dois caminhos)
 
@@ -557,6 +557,13 @@ Substituído/expandido por inventário verificável parcial:
 
 ## Próxima ação
 
-1. Seguir [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) (N1/N2).  
-2. Opcional: aprofundar classe C → B/A nas fontes normativas restantes.  
+1. N1/N2: ver [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md) + conflitos rev .2.  
+2. Opcional: SBOM DLLs artifact 42102469888; apertar N4–N7.  
 3. Sem Home/DeviceBridge/SRV/G1 UI; sem merge PRs.
+
+## Checkpoint lote semântico N1 (2026-11-05 23:12:40 CET)
+
+Promovidos a `READ_SEMANTIC_FULL` (amostra; hashes = manifesto):  
+`15-LINHA-DO-TEMPO`, `23-QA-LUA…`, `13-HOME-LANCAMENTO-V3`, `REGRA-CATALOGO-PRINT-ONLY`, `25-REGRA-MESTRE-ATUALIZACOES`, `QA-0.1.9-IMPRESSORAS`, `QA-LUA-LITOFANIA`, `VALIDACAO-0.2.37`, `D5-D6`, `PRODUCAO`, `ARCHITECTURE`, `ESTADO-0.2.0`, `FUP-DESCOBERTA`, `GUIA-DONO…`, `ENGINE_CONTRACT`, `PROTOCOLOS-IMPRESSORAS`, `PENDENCIAS`, `AUDITORIA-SEGURANCA`, `GROK_CONTRACT`, proposals `mestre-dispositivos`/`mestre-preparar`, contracts `engine-job`/`sync-event`/`api`.  
+Reconfirmados FULL: `04-MOTORES`, `14-CONTINUIDADE`, `18-HOME`, `ESTRUTURA-HOME…`, `MESTRE-DISPOSITIVOS/PREPARAR/PARAMETRICOS`.  
+`UPSTREAM-MONITOR/MESTRE-MOTORES…` lido (COVER→semântico parcial): conteúdo multi-motor **SUPERADO** no F — não reabrir.

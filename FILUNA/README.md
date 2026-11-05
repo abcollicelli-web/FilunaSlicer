@@ -38,7 +38,7 @@ Os módulos de fabricante derivam de ElegooSlicer, AnycubicSlicerNext e outros f
 
 ## Identidade visual e mascote — referência de 05/11/2026
 
-O proprietário forneceu as referências do logotipo **Filuna 3D**, paleta creme/vinho/rosa/laranja/cinza-claro, ícone de aplicativo **F** e mascote oficial em duas versões (circular e com fundo transparente). Consultar obrigatoriamente [IDENTIDADE-VISUAL-E-MASCOTE.md](IDENTIDADE-VISUAL-E-MASCOTE.md) e [manifesto de referências](brand/REFERENCIAS-MANIFESTO.json) antes de editar logotipo, ícones, temas, onboarding, Home, instalador ou Sobre. As cinco imagens originais foram identificadas por SHA-256, mas seus arquivos binários ainda não estão integrados a esta branch; não declarar assets finais ou homologação visual concluída até versioná-los, validar versões derivadas e receber aceite.
+O proprietário forneceu as referências do logotipo **Filuna 3D**, paleta creme/vinho/rosa/laranja/cinza-claro, ícone de aplicativo **F** e mascote oficial em duas versões (circular e com fundo transparente). Consultar obrigatoriamente [IDENTIDADE-VISUAL-E-MASCOTE.md](IDENTIDADE-VISUAL-E-MASCOTE.md) e [manifesto de referências](brand/REFERENCIAS-MANIFESTO.json) antes de editar logotipo, ícones, temas, onboarding, Home, instalador ou Sobre. Os cinco originais estão versionados em `FILUNA/brand/assets/original/` com SHA-256 = manifesto (lote continuidade). **G1 visual permanece não homologado** (tokens HEX, derivados e QA Windows).
 
 
 ## Plano central de engenharia e infraestrutura (05/11/2026)
@@ -47,7 +47,7 @@ Para qualquer nova função, primeiro verificar as dependências no [cronograma 
 
 **Servidor e acesso remoto:** [ARQUITETURA-SERVIDOR-DADOS-REMOTO.md](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md) rege Hub, domínio/IP, banco privado, backups/restore, sync, erros e status opt-in, sem controle de impressoras pelo admin Filuna. O controle remoto **exclusivo do próprio cliente**, via web/mobile e autenticação/consentimento, é uma etapa FUTURA: requer antes homologação integral de impressão local em hardware, DeviceBridge, isolamento e gates SRV-00..11, com feature flag OFF até liberação específica. Motor Orca e projetos locais não dependem da nuvem.
 
-**Inventário G0 (leitura prioritária):** [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) · [conflitos G0](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) · [SBOM parcial](sbom/README.md).
+**Inventário G0 (leitura prioritária):** [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) · [conflitos G0](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) · [fontes obrigatórias N1](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md) · [SBOM parcial](sbom/README.md).
 
 **Manifesto de fontes históricas:** [MANIFESTO-FONTES-LEGADO-2026-11-05.md](MANIFESTO-FONTES-LEGADO-2026-11-05.md) lista os **141 arquivos de documentação/contrato** dos dois projetos anteriores com blob SHA e tamanho. O inventário não é leitura integral nem aprovação G0.
 
@@ -55,3 +55,10 @@ Para qualquer nova função, primeiro verificar as dependências no [cronograma 
 ## Auditoria do plano mestre
 
 [Auditoria técnica de 05/11/2026](AUDITORIA-PLANO-MESTRE-2026-11-05.md): apresenta o que foi realmente conferido no GitHub/SentinelX e CI, **113 validações documentais PASS**, 141 fontes inventariadas por SHA, 52 entregas/149 dependências, riscos, conflitos e o estado **G0 EM ANDAMENTO / G1–G6 NÃO HOMOLOGADOS**. A implementação de servidor, controle remoto e impressoras segue pendente; a PR #2 permanece DRAFT.
+
+
+## G0 — fontes obrigatórias (N1)
+
+- [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md) — conjunto normativo vs 141 históricos  
+- [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) — N1–N8 / CF  
+- [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) — profundidades A/B/C  

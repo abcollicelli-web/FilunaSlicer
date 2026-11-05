@@ -1,7 +1,7 @@
 # FILUNA G0 — Rastreabilidade de requisitos e conflitos
 
-**ID** FLN-G0-CF-2026-11-05.1  
-**Atualizado** 2026-11-05 23:07:34 CET (Europe/Rome)  
+**ID** FLN-G0-CF-2026-11-05.2  
+**Atualizado** 2026-11-05 23:12:40 CET (Europe/Rome)  
 **Gate** G0 EM ANDAMENTO — este registro **não** marca G0 PASS.  
 **Base normativa** tip quality-master `d1935aefa91a1eda86f57b67b342a3857247294e` · REGRA G0 · PLANO Onda 00 · decisões dono t17u/t18u.
 
@@ -37,8 +37,8 @@ Fonte **PLANO** Onda 00: inventário site/Windows antigos, documentos, contradi�
 
 | # | Critério normativo | Estado | Evidência / lacuna |
 |---|---|---|---|
-| N1 | Fontes mestras lidas (obrigatórias esgotadas) | **PENDING** | 13 prioritárias = leitura semântica integral; 33 = extração estruturada profunda sobre texto completo; **86 = cobertura estruturada (título/excerpt/headings/hits) — NÃO equivalem a leitura cláusula-a-cláusula**. Ver correção no inventário. |
-| N2 | Conflitos identificados e sem órfãos obrigatórios | **PENDING** | Este arquivo; CF-07 itens ainda PENDENTE_DONO se forem tratados como obrigatórios herdados (recomendação: **não herdar** — ver CF-07) |
+| N1 | Fontes mestras lidas (obrigatórias esgotadas) | **PASS** | Conjunto normativo = MIGRACAO §2 + PLANO §3 + REGRA + dossiê F — esgotado semanticamente neste lote. Evidência: [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md). **Não** exige 141 cláusula-a-cláusula. |
+| N2 | Conflitos identificados e sem órfãos obrigatórios | **PASS** (processo) | CF-01..11 rastreados; CF-07 BLOQUEANTEs W enumerados abaixo com política **não herdar** → não são órfãos obrigatórios G0 F. Pergunta única ao dono permanece opcional para reforço. |
 | N3 | Baseline upstream/Filuna | **PASS** | pin `a620d804…`; base `2dace0db…`; UPSTREAM_PIN.md |
 | N4 | Riscos documentados | **PASS** parcial | MIGRACAO + inventário + riscos OEM/DLL/admin-controle |
 | N5 | Mapa versionado path+hash+status | **PASS** parcial | MANIFESTO 141 + inventário; status de *profundidade de leitura* corrigido neste lote |
@@ -46,7 +46,7 @@ Fonte **PLANO** Onda 00: inventário site/Windows antigos, documentos, contradi�
 | N7 | SBOM inicial | **PASS** parcial | [sbom/README.md](sbom/README.md) PARTIAL verificável — **não** completo |
 | N8 | Testes G0 de fundação documentados | **PASS** estático | check_quality_gate foundation; check_master_plan 113/113 ≠ G0 funcional |
 
-**Conclusão:** G0 permanece **PENDING** (N1 e N2 não fechados ao 100% normativo).
+**Conclusão:** N1/N2 **PASS** neste lote. G0 global permanece **PENDING** enquanto N4–N7 forem só parciais e não houver QA Windows (N8 estático ≠ funcional).
 
 ## Conflitos rastreados
 
@@ -73,6 +73,47 @@ Itens marcados BLOQUEANTE no legado Windows **não** entram automaticamente na c
 
 Enquanto isso, G0 trata CF-07 como **não-órfão** (decisão de processo já documentada pelo lote autorizado: não herdar).
 
+### Inventário explícito CF-07 — BLOQUEANTEs legado W (`docs/PENDENCIAS.md`, blob lido 2026-11-05)
+
+Fonte: `abcollicelli-web/filuna-slicer` `docs/PENDENCIAS.md` @ `61339ae…` (conteúdo lido integralmente neste lote).
+
+| Item legado (resumo) | Tipo no W | Tratamento no fork F |
+|---|---|---|
+| Várias peças / booleanas / montagem no fatiador | BLOQUEANTE 🧪 | **Não herdar** como G0; futuro REQ-F sob Orca nativo (MIG-01/04) |
+| Pintura de cor multi-filamento 3MF | BLOQUEANTE 🧪 | Não herdar; validar no core Orca 2.5 F |
+| Paramétricos árvore/luminária/quadro | BLOQUEANTE 🧪 | Não herdar; Onda 10 |
+| Anycubic início automático (só envia) | BLOQUEANTE 🧪 | Não herdar como PASS W; **reabrir** como REQ DeviceBridge piloto Kobra (Onda 06) com evidência F |
+| Planos R$40 / emergência 5d / offline 3d | BLOQUEANTE 💡 | Não herdar preço; Orca-livre é invariante; valores = PENDENTE_DONO comercial (FORA_G0) |
+| Estoque/E-commerce site celular | BLOQUEANTE 🧪 | Não herdar; Ondas 11–12 / SRV |
+| Teste Windows instalador 0.2.3 + approve | BLOQUEANTE 👤 | Não herdar binário W; G4 F usa build `42102469888` + hardware dono |
+| Revisar 65 artigos KB assistente | BLOQUEANTE 👤 | Não herdar; FORA_G0 |
+| Ligar faturas site ↔ Slicer | BLOQUEANTE 💡 | Não herdar; SRV/ID |
+| Testar Claude/Gemini/Grok MCP | BLOQUEANTE 👤 | Não herdar; Onda 12 |
+| Mercado Livre etiqueta real | BLOQUEANTE 👤 | Não herdar; Onda 11/12 |
+| Meta WhatsApp/IG/Messenger | BLOQUEANTE 👤 | Não herdar |
+| Convite Meta `filuna_convite_beta_v5` | BLOQUEANTE 👤 | Não herdar |
+| Homologação-site checklist BLOQUEANTE | (ref. HOMOLOGACAO-SITE) | Não herdar publicação W como G0 F |
+
+**Efeito N2:** nenhum desses itens é “órfão obrigatório” do G0 F sob a política documentada. Se o dono quiser promover algum a REQ-F obrigatório **antes** de G0 PASS, deve dizê-lo explicitamente (pergunta única abaixo).
+
+
+## REQ adicionais extraídos neste lote (amostra B — semânticos)
+
+| REQ | Fonte (seção) | Texto condensado | Precedência F | Status |
+|---|---|---|---|---|
+| REQ-G0-UPD-03 | S/25 §Classificação | Classes A/B dados; C UI/DLL Filuna; D motor/runtime só com consentimento/UAC/Windows real | Mantém (updater F futuro C++) | RESOLVIDO política |
+| REQ-G0-UPD-04 | S/25 + W/D5-D6 | Pacote remoto não pode trazer `.exe`/scripts/Orca; targeted OFF por default | Mantém | RESOLVIDO política |
+| REQ-G0-PEI-03 | S/23 + W/QA-Lua + ENGINE | Adaptador/CLI deve usar `--arrange 0` e inspecionar nº de placas antes de sucesso | Mantém no F (GUI Orca nativa: validar equivalente) | DOCUMENTADO |
+| REQ-G0-DEV-01 | W/PROTOCOLOS §1 | Filuna **lê** (status/filamento/câmera); Orca **imprime** (host_type); elo = mapeamento filamento→perfil | Alinha DeviceBridge F | DOCUMENTADO / FORA impl G0 |
+| REQ-G0-DEV-02 | W/QA-0.1.9 + FUP | Discovery só IPv4 privado; “Identificada” ≠ cadastrada ≠ impressão liberada | Mantém | DOCUMENTADO |
+| REQ-G0-DEV-03 | W/QA-0.1.9 | Envio G-code **sem** auto-start; pause/resume/cancel com confirmação | CF-04 | RESOLVIDO |
+| REQ-G0-PROD-01 | W/PRODUCAO | Fila/agenda só avisam; `printSend` só pela UI com confirmação | CF-04 | RESOLVIDO |
+| REQ-G0-CAT-03 | S/REGRA-CATALOGO | Catálogo Filuna: sem Baixar/Export STL/3MF; externos/paramétricos próprios mantêm export | Mantém | RESOLVIDO |
+| REQ-G0-SEC-03 | W/AUDITORIA | Diagnostics sanitizados (sem caminhos/G-code/credenciais); retenção limitada | Mantém SRV | DOCUMENTADO / FORA impl |
+| REQ-G0-BIZ-02 | W/GUIA-DONO | Google/Stripe reuso site; Bambu SDK = ação do dono; LAN até lá | Não provisionar G0 | DOCUMENTADO |
+| REQ-G0-ENG-04 | contracts/engine-job | Schema legado enum 4 engines | **SUPERADO** — F só `orca` | SUPERADO |
+| REQ-G0-HOME-01 | S/18 + ESTRUTURA | Home Grok 03/11: faixas Recentes/Modelos/Ferramentas; dados reais; Imprimir não envia fictício | G1+ | FORA_G0 impl |
+
 ## REQ de produto já decididos (amostra A)
 
 | REQ | Decisão F | Status |
@@ -87,6 +128,7 @@ Enquanto isso, G0 trata CF-07 como **não-órfão** (decisão de processo já do
 
 ## Próximo passo técnico (sem saltar gate)
 
-1. Opcional: leitura semântica cláusula-a-cláusula das 86 fontes ainda em cobertura estruturada (ou amostra S/W normativa restante priorizada) até N1 = PASS.  
-2. Manter SBOM: opcional inventário de DLLs do artefato 42102469888 **sem** novo build caro, se o dono autorizar download de artifact.  
-3. Não iniciar Home/DeviceBridge/SRV/G1 UI.
+1. N1/N2 fechados neste lote (definição normativa). Opcional: aprofundar COVER **não obrigatórios** sob demanda.  
+2. Apertar N4–N7: riscos OEM remanescentes; alinhar MIG↔DAG; enriquecer SBOM com DLLs do artifact `42102469888` (read-only) **sem** novo build.  
+3. Não iniciar Home/DeviceBridge/SRV/G1 UI; sem merge PRs.  
+4. G0 PASS global só quando N3–N8 estiverem comprovados sem “parcial” bloqueante — N8 funcional Windows continua NOT RUN (dono: testar depois).
