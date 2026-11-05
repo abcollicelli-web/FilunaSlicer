@@ -1,0 +1,31 @@
+name: Filuna Windows build
+
+# Build manual do Filuna para Windows x64, reutilizando os workflows do upstream
+# (build_check_cache.yml -> build_deps.yml -> build_orca.yml) sem modificá-los.
+# Sem assinatura: os secrets do upstream não existem no fork, e os passos que
+# dependem deles são ignorados/condicionados a github.repository == OrcaSlicer/OrcaSlicer.
+# Artefatos: OrcaSlicer_Windows_<ver>_portable (zip) e OrcaSlicer_Windows_<ver> (instalador .exe).
+
+on:
+  workflow_dispatch:
+    inputs:
+      build-deps-only:
+        description: 'Somente dependências'
+        type: boolean
+        default: false
+
+concurrency:
+  group: filuna-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build_windows_x64:
+    name: Filuna Windows x64
+    uses: ./.github/workflows/build_check_cache.yml
+    with:
+      os: windows-latest
+      arch: x64
+      compiler: clang
+      build-deps-only: ${{ inputs.build-deps-only }}
+      force-build: true
+    secrets: inherit
