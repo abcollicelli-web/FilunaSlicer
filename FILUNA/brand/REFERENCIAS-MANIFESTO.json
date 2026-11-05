@@ -2,8 +2,8 @@
   "schema_version": 1,
   "recorded_at": "2026-11-05",
   "approved_as": "visual_reference",
-  "status": "reference_documented_original_binary_not_yet_in_repo",
-  "implementation_status": "not_implemented",
+  "status": "originals_versioned_in_repo",
+  "implementation_status": "assets_present_ui_not_homologated",
   "source": "owner_supplied_in_conversation",
   "originals": [
     {
@@ -13,7 +13,13 @@
       "width": 1536,
       "height": 1031,
       "sha256": "4533476b9725e50d3f0fe2d5cf0be94419d392c34d0cd563052038ac1fc80639",
-      "repo_asset_present": false
+      "repo_asset_present": true,
+      "repo_path": "FILUNA/brand/assets/original/FILUNA-BRAND-LOGO-original.jpg",
+      "conversation_filename": "105207.jpg",
+      "stable_filename": "FILUNA-BRAND-LOGO-original.jpg",
+      "incorporated_at": "2026-11-05",
+      "source_zip_sha256": "02b3c8426ebdf481754f3658c42a147ce915906f52d36f2476032deeb4f2915e",
+      "source_note": "owner ZIP 01M6PVH7P1FCG8M8SC5MB3JEB9; bytes preserved; matched by SHA-256 to conversation filenames"
     },
     {
       "id": "FLN-BRAND-PALETTE-01",
@@ -22,7 +28,13 @@
       "width": 1536,
       "height": 1031,
       "sha256": "2f35535f444b560ff4f84ead6660e5eb247335c52729b8240be675fa2ba2c33e",
-      "repo_asset_present": false
+      "repo_asset_present": true,
+      "repo_path": "FILUNA/brand/assets/original/FILUNA-BRAND-PALETA-original.jpg",
+      "conversation_filename": "105206.jpg",
+      "stable_filename": "FILUNA-BRAND-PALETA-original.jpg",
+      "incorporated_at": "2026-11-05",
+      "source_zip_sha256": "02b3c8426ebdf481754f3658c42a147ce915906f52d36f2476032deeb4f2915e",
+      "source_note": "owner ZIP 01M6PVH7P1FCG8M8SC5MB3JEB9; bytes preserved; matched by SHA-256 to conversation filenames"
     },
     {
       "id": "FLN-BRAND-ICON-01",
@@ -31,7 +43,13 @@
       "width": 1536,
       "height": 1031,
       "sha256": "770810b28114c6099b4d10379a3fe038325259315a75c952f1b25ec759a8c245",
-      "repo_asset_present": false
+      "repo_asset_present": true,
+      "repo_path": "FILUNA/brand/assets/original/FILUNA-BRAND-ICONE-F-contexto-original.jpg",
+      "conversation_filename": "105208.jpg",
+      "stable_filename": "FILUNA-BRAND-ICONE-F-contexto-original.jpg",
+      "incorporated_at": "2026-11-05",
+      "source_zip_sha256": "02b3c8426ebdf481754f3658c42a147ce915906f52d36f2476032deeb4f2915e",
+      "source_note": "owner ZIP 01M6PVH7P1FCG8M8SC5MB3JEB9; bytes preserved; matched by SHA-256 to conversation filenames"
     },
     {
       "id": "FLN-MASCOT-CIRCLE-01",
@@ -40,7 +58,13 @@
       "width": 1536,
       "height": 1536,
       "sha256": "f5474437ef6efb4143a61b3892ad0eaaff2918aa633d7aa0dd175fed16cc0d11",
-      "repo_asset_present": false
+      "repo_asset_present": true,
+      "repo_path": "FILUNA/brand/assets/original/FILUNA-MASCOTE-CIRCULAR-original.jpg",
+      "conversation_filename": "99422.jpg",
+      "stable_filename": "FILUNA-MASCOTE-CIRCULAR-original.jpg",
+      "incorporated_at": "2026-11-05",
+      "source_zip_sha256": "02b3c8426ebdf481754f3658c42a147ce915906f52d36f2476032deeb4f2915e",
+      "source_note": "owner ZIP 01M6PVH7P1FCG8M8SC5MB3JEB9; bytes preserved; matched by SHA-256 to conversation filenames"
     },
     {
       "id": "FLN-MASCOT-CUTOUT-01",
@@ -50,7 +74,13 @@
       "width": 360,
       "height": 443,
       "sha256": "6ed33f99aaa8444987985202c9cdce14db5d39856f7c5b9a3bcb1d4dd167f8a5",
-      "repo_asset_present": false
+      "repo_asset_present": true,
+      "repo_path": "FILUNA/brand/assets/original/FILUNA-MASCOTE-TRANSPARENTE-original.webp",
+      "conversation_filename": "99421.webp",
+      "stable_filename": "FILUNA-MASCOTE-TRANSPARENTE-original.webp",
+      "incorporated_at": "2026-11-05",
+      "source_zip_sha256": "02b3c8426ebdf481754f3658c42a147ce915906f52d36f2476032deeb4f2915e",
+      "source_note": "owner ZIP 01M6PVH7P1FCG8M8SC5MB3JEB9; bytes preserved; matched by SHA-256 to conversation filenames"
     }
   ],
   "current_reference": {
@@ -60,5 +90,6 @@
     "mascot": "female illustrated 3D character with pink headband, orange-purple printing tool ornament, purple hoodie and white cube icon",
     "palette_source": "105206.jpg"
   },
-  "release_gate": "blocked_until_assets_versioned_and_tests_proven"
+  "release_gate": "assets_present_pending_visual_qa_and_token_approval",
+  "updated_at": "2026-11-05"
 }

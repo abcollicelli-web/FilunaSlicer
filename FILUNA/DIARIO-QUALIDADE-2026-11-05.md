@@ -68,3 +68,8 @@ Por ordem do proprietário (continuar o cronograma sobre a base e documentar eta
 ## Adendo — G0 leitura prioritária (2026-11-05 22:55:30 CET)
 
 Confirmado tip plano final  (sem avanço posterior no remoto): DAG 52/149, SRV-00..11, auditoria documental 113/113. Lidas integralmente 13 fontes prioritárias S/W com blob SHA = manifesto; REQ/conflitos e superação dos quatro motores registrados em [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md). Cinco originais de marca continuam ausentes no GitHub e nos attachments do agente. Sem provisionamento de servidor; admin sem controle de impressoras reafirmado. G0 não PASS.
+
+
+## Adendo — originais de marca versionados (2026-11-05 23:00:49 CET)
+
+ZIP do proprietário validado: 5/5 hashes SHA-256 idênticos ao [REFERENCIAS-MANIFESTO.json](brand/REFERENCIAS-MANIFESTO.json). Arquivos em `FILUNA/brand/assets/original/` com nomes estáveis + hardlinks dos nomes de conversa. **G1 visual permanece não homologado** (tokens/QA). Não altera motor/UI.

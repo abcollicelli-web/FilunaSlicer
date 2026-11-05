@@ -2,7 +2,7 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 22:55:50 CET  
+**Atualizado** 2026-11-05 23:00:49 CET  
 **Estado do gate G0** EM ANDAMENTO (não PASS)  
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
@@ -64,7 +64,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | 00 Genealogia / **G0** | **PENDING / EM ANDAMENTO** | Lote prioritário: **13/13 lidos** (G0-INVENTARIO-LEITURA). Restam 128/141. Plano final tip `d1935aef` (52/149/SRV-00..11; audit 113/113 documental). Assets marca ausentes; SBOM F pendente |
 | 01 Fundação / G1–G3 fundação | PENDING | Checks estáticos existem; baseline G-code/Windows real não |
 | 02 Qualidade Orca nativa | PENDING | |
-| 03 Identidade/Home | BLOCKED até originais de marca no repo + G0/G2 | |
+| 03 Identidade/Home | BLOCKED até G0 PASS + tokens/QA visual (originais **já no repo**) | |
 | 04–14 e G2–G6 produto | PENDING / BLOCKED por predecessor | |
 | DeviceBridge / 10 marcas | PENDING — `FILUNA/modules/` **inexistente** no tip | |
 | Windows hardware G4 | **NOT RUN** | |
@@ -84,14 +84,14 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | G0-08 | Rodar `check_quality_gate.py` foundation | **PASS** estático | 0 falhas; perfis Elegoo Centauri Carbon 2 e Anycubic Kobra 3 V2 presentes como JSON |
 | G0-09 | Rodar `check_master_plan.py` | **PASS** estático | 113/113; aviso explícito G0/G1/Windows NÃO homologados |
 | G0-10 | `FILUNA/modules/` fabricante | **PASS** como “ainda inexistente” | API 404 — esperado na Onda 00 |
-| G0-11 | Binários de identidade/mascote no git | **FAIL/PENDING** | só `FILUNA/brand/REFERENCIAS-MANIFESTO.json`; originais NÃO commitados → bloqueia G1 visual |
+| G0-11 | Binários de identidade/mascote no git | **PASS** (bytes) | 5 originais em `FILUNA/brand/assets/original/` SHA=manifesto; G1 visual ainda PENDING (tokens/QA) |
 | G0-12 | Leitura integral das 141 fontes | **NOT RUN / PENDING** | manifesto indexa; auditoria semântica incompleta (já declarado no plano/diário) |
 | G0-13 | SBOM/hash integral do tree C++ do fork | **PENDING** | milhares de fontes; fora deste lote |
 | G0-14 | Teste Windows real / impressoras | **NOT RUN** | autorização atual: testes Windows ficam para depois |
 | G0-15 | Criar este registro + vínculo no plano | **PASS** ao push deste PR | URLs na seção 7 após publish |
 | G0-16 | Leitura integral lote prioritário S/W (13) | **PASS** (leitura) | hashes = manifesto; ver inventário G0 |
 | G0-17 | Confirmar tip plano final 52/149/SRV/113 | **PASS** (documental) | tip `d1935aef`; 113/113 ≠ G0 funcional |
-| G0-18 | Busca read-only 5 assets marca | **FAIL/AUSENTE** | nomes/SHA no manifesto; zero bytes no GitHub/attachments |
+| G0-18 | Incorporar 5 assets marca do ZIP dono | **PASS** | ZIP `02b3c842…915e`; 5/5 SHA match; nomes estáveis+alias conversa |
 | G0-19 | Mapear SRV prioridades dono sem provisionar | **PASS** (inventário) | SRV-00..11; admin sem controle impressoras |
 
 
@@ -101,7 +101,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 **Confirmadas (dono):** Orca motor único 2.5-dev pinado; AGPL público; pasta `Filuna`; rebrand em fork; Elegoo Centauri Carbon 2 + Anycubic Kobra 3 V2 como piloto; `orcaslicer://` a assumir; quality docs em PR draft; iniciar cronograma sobre base atual; documentar continuidade para qualquer IA; Windows físico depois; sem merge automático dos PRs.
 
-**Abertas / bloqueantes:** versionar 5 assets de marca; completar leitura normativa restante; tokens HEX finais; firmware exato das duas impressoras; quem assina instalador; política Bambu/Flashforge LAN-only vs plugin; escopo Hub/remoto (default OFF até gates); se importar perfis Orca do usuário no 1º run.
+**Abertas / bloqueantes:** completar leitura normativa restante (G0); tokens HEX finais e QA visual (G1); firmware exato das duas impressoras; quem assina instalador; política Bambu/Flashforge LAN-only vs plugin; escopo Hub/remoto (default OFF até gates); se importar perfis Orca do usuário no 1º run. **Assets de marca:** versionados (não reabrir pedido).
 
 ## 6. Última tarefa e próxima ação exata
 
@@ -109,8 +109,8 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 - **Próxima ação executável:**
   1. Reler este REGISTRO + tip `filuna/quality-master-20261105`.
   2. Ler próximo lote do manifesto (lista no inventário G0 §7).
-  3. **Só o dono:** fornecer bytes dos 5 originais (`105207.jpg`, `105206.jpg`, `105208.jpg`, `99422.jpg`, `99421.webp`) para `FILUNA/brand/assets/original/` com SHA-256 do manifesto — bloqueia G1.
-  4. Sem Home/DeviceBridge/provisionamento SRV; sem merge PR #1/#2/#3.
+  3. Continuar G0: ler fontes restantes do manifesto (lote em andamento).
+  4. Sem Home/DeviceBridge/provisionamento SRV; sem merge PR #1/#2/#3. G1 visual ainda precisa tokens HEX + QA (não só assets).
 
 
 ## 7. Commits / PRs deste lote (preencher no push)
@@ -147,3 +147,11 @@ Persistido neste arquivo no GitHub. Qualquer IA deve atualizar **este mesmo arqu
 - Evidência: [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md).
 - Admin Filuna sem controle de impressoras reafirmado; SRV inventariado, não provisionado.
 - G0 continua **EM ANDAMENTO**.
+
+
+## 11. Checkpoint assets de marca (2026-11-05 23:00:49 CET)
+
+ZIP dono `01M6PVH7P1FCG8M8SC5MB3JEB9.zip` (sha256 `02b3c8426ebdf481754f3658c42a147ce915906f52d36f2476032deeb4f2915e`), 711+ KB.
+Validação segura (zipfile, sem traversal/symlink): **5/5 SHA-256 = manifesto**. Nomes no ZIP estáveis; alias de conversa preservados via hardlink.
+Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP e `MANIFESTO-IMAGENS.json` extras **não** commitados).
+**G1 não PASS:** faltam tokens HEX homologados, derivados e QA Windows. G0 continua independente da marca.
