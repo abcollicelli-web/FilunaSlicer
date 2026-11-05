@@ -1,0 +1,495 @@
+{
+ "schema": "filuna-package-inventory/1",
+ "source_run": "42102469888",
+ "source_commit": "2dace0db86d305bec5b9627179f265012e4f5069",
+ "artifacts": {
+  "Filuna_Windows_x64_portable": {
+   "artifact_id": 13455471197,
+   "zip_sha256": "37f679960fbfa71533e3731a273959dd3062b4c1e1a0668033527372ed1622cd",
+   "files": 4062
+  },
+  "Filuna_Windows_x64_installer": {
+   "artifact_id": 13453343796,
+   "exe_sha256": "d8e4b44b9f7f947e983cecd939d1a56ffae44613b08d98e97c479c0f1f61c719",
+   "exe_size": 169067529
+  }
+ },
+ "ext_counts": {
+  ".svg": 1421,
+  ".png": 876,
+  ".py": 591,
+  ".stl": 291,
+  ".h": 215,
+  ".json": 157,
+  ".opc": 72,
+  ".js": 52,
+  ".dll": 50,
+  ".fs": 49,
+  ".vs": 45,
+  ".css": 42,
+  ".html": 28,
+  ".lib": 23,
+  ".mo": 23
+ },
+ "binaries_total": 75,
+ "binaries_unknown_provenance": 26,
+ "codec_or_network_plugin_matches": [
+  "avcodec-61.dll",
+  "avformat-61.dll"
+ ],
+ "installer_portable_relation": "NOT_RUN (extração NSIS segura pendente)",
+ "status": "PARTIAL - inventário de arquivos+SHA real; licenças de binários de terceiros majoritariamente UNKNOWN; não é parecer jurídico",
+ "binaries": [
+  {
+   "path": "OrcaSlicer.dll",
+   "size": 155563008,
+   "sha256": "f0914911be85fbd1809a739f5b1865e82dd4f6708f5b3f5645476f72b092aa9f",
+   "provenance": "Orca/Filuna build (AGPL-3.0) - fonte 2dace0db"
+  },
+  {
+   "path": "TKBO.dll",
+   "size": 3980800,
+   "sha256": "0d66e3a2559fa1f1fd1c5caad9e7a1070fe864d3f747e9b818ed928a0bd8a80f",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKBRep.dll",
+   "size": 3177984,
+   "sha256": "bdc362950be8ddff0d7228d3971fb85f43f560e0aad3bebd04ef22e60e662f8f",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKBool.dll",
+   "size": 7839232,
+   "sha256": "a1d5301ef9b359cc796160817c85a592c5d8f39e7317510ca9a151581bfa00e3",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKCAF.dll",
+   "size": 769536,
+   "sha256": "658f32b07d7bf16b98670e6a5f81d3c1d6c1b82e5c517d83eb03de85a949a056",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKCDF.dll",
+   "size": 397312,
+   "sha256": "0ea0e217f5bba6907980e0785bf39e43ded9dd9e17ed145747c36cb3e5a53846",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKDE.dll",
+   "size": 212992,
+   "sha256": "5df6529a9380350f4f7428e1be2549bb83f5ce471d572a1e756c1edb760d7472",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKDESTEP.dll",
+   "size": 8919552,
+   "sha256": "71d3031ec5eecba24ea077da10ba3bbae2c6c0d1de5511ba61a00ac4cc6e4135",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKFillet.dll",
+   "size": 4375552,
+   "sha256": "a4882b3a13724c01d62bb62f4f608ffd9c8daae4727db763d7a5364b8da30ef8",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKG2d.dll",
+   "size": 497152,
+   "sha256": "94e82b2f59ac36c2adcbbf531b17489f325f9c0a049f8807c1bc1640678abbe0",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKG3d.dll",
+   "size": 1713664,
+   "sha256": "1add2ff21b40152622f6189b1f6eb1bb7784b013796a19bcb82c9717e2e9c519",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKGeomAlgo.dll",
+   "size": 6918144,
+   "sha256": "511108ce607e5e8b864a593c82d1d1b49d8066bc64d283cffb1c7dd4ae826961",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKGeomBase.dll",
+   "size": 6197760,
+   "sha256": "6fc155a8f87636b945f25da723452a3ccad8f3ada9bc0cb9da150b3b11119455",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKHLR.dll",
+   "size": 1585152,
+   "sha256": "f6f6fc338f92500c2d1e194553a0d2dfbeb070d199cfe35a68048985a1d298c9",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKLCAF.dll",
+   "size": 993792,
+   "sha256": "19ab2080f55cb9c5f8d1016b1b031c4eecc799190414dabd8a61fa9fd90ae979",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKMath.dll",
+   "size": 1778688,
+   "sha256": "59857a9f0dc1e89c4d57a5ec65f088fda8c37af7f57b649561c3a4402cbec86d",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKOffset.dll",
+   "size": 5272064,
+   "sha256": "e949557fb40bcc9e05262fb07287a74e87b43da08e91f9f3f94f39a17a8f033c",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKMesh.dll",
+   "size": 957952,
+   "sha256": "10e987faac68d855195ed16e7738e59b713a9dccef6b97ee80db1f6eda9463b9",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKPrim.dll",
+   "size": 498688,
+   "sha256": "390b17e9ec42b6555d7257ffd7059d6fd3a7339be6f6a417958b76b7a9650065",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKService.dll",
+   "size": 1529856,
+   "sha256": "7711e548a053cc7bfb031b418c32a4e7e6924b04c23cb5d2fc5dae655c0dbef6",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKShHealing.dll",
+   "size": 5475840,
+   "sha256": "062876f797558376b76dc9937a296ec60549e3621f3f2efe81d9b0dccfff71f3",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKTopAlgo.dll",
+   "size": 4810240,
+   "sha256": "e59ef7ae0163b829e3fdbf892ba2a67e8fe8268cf3187dddb30591ed9912bad2",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKV3d.dll",
+   "size": 4156928,
+   "sha256": "3cbc82ffa57727360d8816a4f3e03bbd655de58138083e9129dd3ffb93bd3191",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKVCAF.dll",
+   "size": 315904,
+   "sha256": "a0783fae1f0cb403426cd8da633a242f45e4b8005ecfa7e25da4705477d646e5",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKXSBase.dll",
+   "size": 2331136,
+   "sha256": "3813bc00b5e68afe2cd6d71280aeaf55232c6d8ce6967506891fc06b2249b264",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKernel.dll",
+   "size": 1911808,
+   "sha256": "b5dbd79a06d7373adeb023890339464ead8d7ae99f7e201f3b499c3865d6c2da",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "TKXCAF.dll",
+   "size": 1313792,
+   "sha256": "91affd1ff42c0784941ed4e5e365bbbeb91ea0067766512f631e2a0fd35406aa",
+   "provenance": "PROVÁVEL OpenCASCADE (por nome) - NÃO verificado"
+  },
+  {
+   "path": "WebView2Loader.dll",
+   "size": 159296,
+   "sha256": "2d64a312551930dc56612cf358fcfd23133c0596a88c3ec1c467c392ff00b493",
+   "provenance": "Microsoft WebView2 SDK loader - licença MS não auditada"
+  },
+  {
+   "path": "avcodec-61.dll",
+   "size": 4820480,
+   "sha256": "9484a2ad09ec69039346cfa30dd2dc1e1de88ce0ec2b04923e5829264c69bf4f",
+   "provenance": "FFmpeg (LGPL/GPL conforme build; codecs/patentes) - BLOCKED até auditoria"
+  },
+  {
+   "path": "avformat-61.dll",
+   "size": 693248,
+   "sha256": "b6b9059976555fd12f14bcb169e0aead809e4f800e2cf0e9c6488a010b8b6214",
+   "provenance": "FFmpeg (LGPL/GPL conforme build; codecs/patentes) - BLOCKED até auditoria"
+  },
+  {
+   "path": "avutil-59.dll",
+   "size": 770560,
+   "sha256": "a88a36f5d60e4a7291a695dd3dce9bc0d17a329062759ed633cab75d779742e0",
+   "provenance": "FFmpeg (LGPL/GPL conforme build; codecs/patentes) - BLOCKED até auditoria"
+  },
+  {
+   "path": "concrt140.dll",
+   "size": 374200,
+   "sha256": "54716f0738af891f283d213b5c8d11b25896bb8ee3097d301eae718560cf974e",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "libgmp-10.dll",
+   "size": 543027,
+   "sha256": "fec43cb18ce0ec8a5dd6ad1db745747167310ccb92b5acff0d445a8b3013f009",
+   "provenance": "GMP/MPFR (LGPL) - provável deps"
+  },
+  {
+   "path": "libmpfr-4.dll",
+   "size": 436011,
+   "sha256": "09b3b868b96433991fc15c9c5ae6f9a44c62d2e21194110442607917391ed927",
+   "provenance": "GMP/MPFR (LGPL) - provável deps"
+  },
+  {
+   "path": "msvcp140_1.dll",
+   "size": 35768,
+   "sha256": "206c931bf90fdad8816de3b5e2ef80b2bcaa9406c89ecc05fe6fddffe251e982",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "msvcp140.dll",
+   "size": 643512,
+   "sha256": "7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "msvcp140_2.dll",
+   "size": 274872,
+   "sha256": "d50d7883f20d1dc6191768d3746f52dd9cac89c346ffaed5be1f110c2f34a838",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "msvcp140_atomic_wait.dll",
+   "size": 57792,
+   "sha256": "3d0cbfaa1bf3eecf5a3f4491d2960ee803cb994f30292c6adc4a07c498f60e2b",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "msvcp140_codecvt_ids.dll",
+   "size": 31160,
+   "sha256": "8a65c7596ef2e6938731f5a1058e7e40145b6d97967cc649231a076b9a608d78",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "orca-slicer.exe",
+   "size": 67584,
+   "sha256": "4b8227310b45dffee7061755db2d66367099d62dbecfccab85bc8b7b905c4b55",
+   "provenance": "Orca/Filuna build (AGPL-3.0) - fonte 2dace0db"
+  },
+  {
+   "path": "python/DLLs/_asyncio.pyd",
+   "size": 59904,
+   "sha256": "7885d1f1a99504dd13fe179911587bea9eed63afb3f304f90b2f429d0dd8ba7e",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_bz2.pyd",
+   "size": 78336,
+   "sha256": "5840897a9889a673bcc48c93d1b86d3a4c09861164b80870181857e2ffc2fe8e",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_ctypes.pyd",
+   "size": 120832,
+   "sha256": "adc57bbd760fdaffdd6bbb8677f45391a589b7d2ea370bb51226fa480b5a7bd1",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_decimal.pyd",
+   "size": 286208,
+   "sha256": "7042b07ac00946a62b8d8b81fbc7ebe9ad99334c959c7cbd7752e25fe00b4dcb",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_hashlib.pyd",
+   "size": 49152,
+   "sha256": "ee4ef7e342c73cbadfcd96a6a23c6fe4d4f080e2063498d7e38c8cc4ab872d27",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_elementtree.pyd",
+   "size": 132608,
+   "sha256": "18330e69fa89c46c63a6f699e6c67d641a43251b70cec0acd36be35d8f7bf369",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_lzma.pyd",
+   "size": 155648,
+   "sha256": "de3db3eb3edb6191c9e9cca814d8426c1d8e6323f3afe51008de18f46be74642",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_msi.pyd",
+   "size": 32768,
+   "sha256": "3aa0a2386b40d82096fe5bc787ac02f6c4cbccfe4a6422f9b0ca621d221cca27",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_multiprocessing.pyd",
+   "size": 23040,
+   "sha256": "d4890ab85816dd0bfed40cfef7b8bdb7e7992795890696df794ba27fb153b826",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_overlapped.pyd",
+   "size": 43008,
+   "sha256": "0e154d6d49fb98b141bec3fc4362c34140ace98d8e768bbc556f24402427d5b8",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_queue.pyd",
+   "size": 19968,
+   "sha256": "14fa191c69e2902fc884aa98fb366f9c18c649493f4c350660ffb8ec9b86e084",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_socket.pyd",
+   "size": 73216,
+   "sha256": "5acc3bae236d2875a1ec3a856a8c0c5a4fcf4b979fac4a78ed9bda3ed14bb560",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_sqlite3.pyd",
+   "size": 102912,
+   "sha256": "5ebf0dd34297d145589db436d8e14af02d9de1e3d4dc575a173a9a2f13e4e308",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_ssl.pyd",
+   "size": 170496,
+   "sha256": "904958ebfb4b3a8b89e3866a730c443c0e325bd2bd2d23ec7e60daec0ff7b047",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_uuid.pyd",
+   "size": 13312,
+   "sha256": "1846d42bb11974119b3aeb0785787782a30949cc8acb34687288c668fc98d40e",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_wmi.pyd",
+   "size": 25088,
+   "sha256": "2e489e6ed90d9a92497bd94546ea09af2bfe894e9cb175693c8ad48830a0c9a1",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/_zoneinfo.pyd",
+   "size": 35328,
+   "sha256": "4fdc2ba7bbbbfd8a2325ef8c2bf0014c72b213ec8fdc39acc53dde759c519ce7",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/libcrypto-3.dll",
+   "size": 5231472,
+   "sha256": "ccfffddcd3defb8d899026298af9af43bc186130f8483d77e97c93233d5f27d7",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/libffi-8.dll",
+   "size": 39696,
+   "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/libssl-3.dll",
+   "size": 794992,
+   "sha256": "007142039f04d04e0ed607bda53de095e5bc6a8a10d26ecedde94ea7d2d7eefe",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/pyexpat.pyd",
+   "size": 214016,
+   "sha256": "a73654a09c9abc6f2e0c69bccc57d33decb138b5c5aa5620d3db580254698c79",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/select.pyd",
+   "size": 18944,
+   "sha256": "497f7b2f9ac77428b4f687062a2bbcfd2ea6e5cbcc9a7f740045c09dfa5dc957",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/sqlite3.dll",
+   "size": 1650176,
+   "sha256": "ded61d1e2acc861c067030032b1acb17099b3ea656e772d5d9bce1780c0c75cf",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/unicodedata.pyd",
+   "size": 1127424,
+   "sha256": "7aec4f3033afb4fd72c78b3686b322202c4f0101b2bb6c2095af544a3f2fce56",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/DLLs/winsound.pyd",
+   "size": 18432,
+   "sha256": "c539b35be57869a7d2f5ce49a3a4954047049d5d9a8927b22318dc50dee52711",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/python.exe",
+   "size": 91136,
+   "sha256": "3d8571d72f094e7591faf21b8a1ed05d3a7ba9c050840d7c9e4c6c55dbdadbae",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/python312.dll",
+   "size": 7838720,
+   "sha256": "64c8ee3f7569cea7dcd04e73c0c6e7c87bc3e9ab729f66fa8f90dbb91a4a222d",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/pythonw.exe",
+   "size": 89600,
+   "sha256": "4829a8b6ff37fcc47c8c88a30111bb6eb51afb1fc6a5b82bab60c7a167f95f9a",
+   "provenance": "Python embutido (PSF) - versão não auditada"
+  },
+  {
+   "path": "python/vcruntime140.dll",
+   "size": 178616,
+   "sha256": "d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "python/vcruntime140_1.dll",
+   "size": 50112,
+   "sha256": "a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "resources/tools/uv/uv.exe",
+   "size": 68317696,
+   "sha256": "5a7ec85884c2ccb1be560cb8fac3eb890df1adf49bfcc070a270ba70401bdd68",
+   "provenance": "uv (Astral, MIT/Apache) - não auditado"
+  },
+  {
+   "path": "swresample-5.dll",
+   "size": 108544,
+   "sha256": "4fe29eec34852e5df64fa3768205763d5050a32dc26e9b1b9bef48be1e7b0b7a",
+   "provenance": "FFmpeg (LGPL/GPL conforme build; codecs/patentes) - BLOCKED até auditoria"
+  },
+  {
+   "path": "swscale-8.dll",
+   "size": 551936,
+   "sha256": "1fede4b1ed503992b8c5dbd399f5c6cd8508354eac520eac65a15b41f8a133ab",
+   "provenance": "FFmpeg (LGPL/GPL conforme build; codecs/patentes) - BLOCKED até auditoria"
+  },
+  {
+   "path": "vcruntime140.dll",
+   "size": 178616,
+   "sha256": "d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  },
+  {
+   "path": "vcruntime140_1.dll",
+   "size": 50112,
+   "sha256": "a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e",
+   "provenance": "Microsoft VC++ runtime (redistribuível MS) - licença não auditada aqui"
+  }
+ ],
+ "generated_at_utc": "2026-11-05T22:40:00Z"
+}

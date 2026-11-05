@@ -132,6 +132,10 @@ jobs:
           fi
           echo "baseline-note=$note"
 
+      - name: Disable CRLF conversion (fixture hashes are byte-exact)
+        shell: bash
+        run: git config --global core.autocrlf false
+
       - uses: actions/checkout@v4
 
       - name: Download Filuna portable (same-repo run EXACT)
@@ -217,13 +221,16 @@ jobs:
           WORK="$RUNNER_TEMP/baseline-work"
           mkdir -p "$WORK"
           export PYTHONUTF8=1
+          rc=0
           python FILUNA/qa/baseline/run_windows_binary_baseline.py \
             --orca-root "$RUNNER_TEMP/orca-art" \
             --filuna-root "$RUNNER_TEMP/filuna-art" \
             --work "$WORK" \
             --evidence-out "$WORK/evidence.json" \
-            --commit-sha "${{ github.sha }}"
+            --commit-sha "${{ github.sha }}" || rc=$?
           cp -r "$WORK" ./baseline-out
+          echo "baseline_rc=$rc"
+          exit $rc
 
       - uses: actions/upload-artifact@v4
         if: always()
