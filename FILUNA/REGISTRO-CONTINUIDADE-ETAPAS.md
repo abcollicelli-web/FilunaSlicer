@@ -282,3 +282,38 @@ Pendências reais: K3V2 via `--load-settings` falha validação nos DOIS binári
 
 Execuções canceladas externamente (não por mim): 42125236040, 42125277991 (`The operation was canceled`); refeitas uma vez com sucesso.
 ADR proposta (não vigente): `FILUNA/FUND-ADR-SUBJECT-VS-REPORTING-COMMIT-PROPOSTA.md`. Regra vigente commit==HEAD mantida → `gate_governance` continua BLOCKED.
+
+
+## 22. CHECKPOINT QA VPS/WINE GPT — 2026-11-06 (Europe/Rome)
+
+**Origem:** proprietário autorizou testes pelo Ubuntu/Wine e laboratório de impressoras virtuais, com atualização da continuidade e painel no site. Esta seção é a **continuidade do mesmo documento**, não um novo registro paralelo. **Nenhuma onda foi homologada por este checkpoint.**
+
+**Código de QA em PR DRAFT separada:** [PR #4](https://github.com/abcollicelli-web/FilunaSlicer/pull/4), branch \`filuna/qa-gates-hardening-20261105\` (base desta PR #3; **não mesclada**). **Interface site em PR DRAFT:** [Filuna/site PR #6](https://github.com/abcollicelli-web/Filuna/pull/6), rota privada \`/admin/qa-filuna-slicer\`; **não implantada**.
+
+### Evidências executadas, não apenas planejadas
+
+| Caso/ambiente | Resultado | Prova e restrição |
+|---|---|---|
+| Pacote virtual original, SHA256 \`474cfec12e40c0e47321c9c15ee19064c14371c5c8fa68fc21c0b896431d1197\` | **5/5 PASS** | \`FILUNA/qa/virtual-lab/\` em PR #4; somente mocks Python |
+| Ubuntu rede virtual | **4 namespaces/IPs operantes** \`10.77.0.11..14\` | bridge sem NAT, rota default preservada, nenhum endpoint de produção |
+| Protocolos emulados | **14 PASS, 0 FAIL, 6 NOT_RUN** | [CI 42130630164](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42130630164); [relatório JSON](https://github.com/abcollicelli-web/FilunaSlicer/blob/filuna/qa-gates-hardening-20261105/FILUNA/qa/virtual-lab/results-2026-11-05-vps.json) |
+| Segurança do protocolo mock | **PASS** MQTT CC2 senha errada → CONNACK4; API desconhecida → HTTP404 | Isso não comprova auth/rejeição no Filuna nem no firmware real |
+| Wine CLI | **PASS limitado** \`orca-slicer.exe\` → \`plate_1.gcode\` de **275.984 bytes**, 20 mm cubo com Bambu P1S | não é teste UI/DeviceBridge/Windows nativo, não confirma equivalência Orca |
+| QA dos gates de promoção | **CI foundation SUCCESS** | [run 42131598608](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42131598608); \`--mode enforce\` fail-closed, testes negativos em G4, contrato global ainda \`false\` |
+| Site admin QA | **Build TypeScript + Vite PASS** em staging isolado, 23/23 Git blob SHA idênticos | PR Filuna/site #6, sem deploy; visual Chromium/login real ainda NOT RUN |
+| Homologação física / Windows | **NOT RUN / BLOCKED** | nenhum firmware real, webcam, impressora ou instalação Windows validada |
+
+**Quatro impressoras simuladas:** Elegoo CC2 UDP52700/MQTT1883/HTTP e código 123456 **apenas de laboratório**; Bambu A1 SSDP 1990/2021 **apenas descoberta**; Elegoo original SDCP UDP3000 **apenas descoberta**; Moonraker HTTP7125 em IP conhecido, com comandos simulados. **Faltam** Bambu TLS8883/FTPS990, WS3030 da Elegoo original, WS7125 Moonraker, testes Filuna↔LAN no Wine e hardware físico. \`PASS MOCK\` não é \`PASS FILUNA\`.
+
+### Código alterado com rastreabilidade na PR #4
+
+- \`FILUNA/tests/evidence_schema.py\` + JSON schema: bloqueia firmware \`TBD\`, URL fictícia e objeto sem identificação/tempo/fingerprint exigidos pelo G4.
+- \`FILUNA/tests/gate_governance.py\`: separa \`report\`, \`assert-blocked\` e \`enforce\`; este exige origem/CI e **retorna exit !=0** se não houver aprovação. O mecanismo permanece propositalmente fail-closed enquanto o escopo global não estiver definido.
+- \`FILUNA/tests/check_master_plan.py\`: estado PASS só permitido com predecessores PASS e dossiê, sem proibir permanentemente qualquer progresso.
+- Workflow de QA e \`filuna-virtual-lan-regression.yml\`: executa em GitHub Actions, guarda resultado, limpa namespaces e não oferece release.
+
+### Próxima ação SEM pular a Onda 01
+
+**QA-03/DEV-BASE – P0:** revisar/mergear as correções da PR #4 somente após CI no SHA e análise de segurança; não alterar o motor Orca. **Depois**, ampliar o laboratório TLS/FTPS/WS e testar o próprio código DeviceBridge sob Wine contra os emuladores. CORE-04 ainda exige matriz STL/3MF/STEP/presets e comparação G-code; DATA-05 exige AppData Windows. O painel da PR site #6 precisa teste visual/login e deploy **apenas pelo procedimento canônico** antes de dizer “no ar”.
+
+**Estado dos portões:** G0 documental em andamento/cobertura parcial; G1 não homologado integralmente; G2/G3 **BLOCKED**, G4 **NOT RUN**, G5/G6 **BLOCKED**, impressão remota **OFF**. Nenhum merge, deploy, comando de impressora real ou alteração no banco foi executado neste checkpoint.
