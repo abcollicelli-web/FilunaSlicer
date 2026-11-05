@@ -134,7 +134,9 @@ jobs:
 
       - name: Disable CRLF conversion (fixture hashes are byte-exact)
         shell: bash
-        run: git config --global core.autocrlf false
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
 
       - uses: actions/checkout@v4
 
