@@ -5,6 +5,18 @@
 **Base técnica alvo** [OrcaSlicer SHA a620d804efbe74162c96ad29d755cdab2b823530](UPSTREAM_PIN.md); evolução Filuna isolada em PR/branch, nunca no \`upstream-mirror\`.  
 **Decisão do proprietário** D-FLN-ENGINE-05NOV: **UM motor de fatiamento principal e integral — OrcaSlicer — com recursos e código de comunicação legalmente reutilizáveis de fatiadores dos fabricantes**, para reconhecimento automático, status, câmera, filamentos e comandos. O plano antigo de embutir quatro motores deixa de ser o requisito de produto desta versão. Não integrar PrusaSlicer, CuraEngine nem Kiri:Moto como backends de fatiamento por herança de planos antigos. O código de rede desses projetos pode ser analisado quando adequado e legal.
 
+
+## ANTES DE QUALQUER IA OU COLABORADOR COMEÇAR A TRABALHAR
+
+**Leia obrigatoriamente, nesta ordem:**
+
+1. **[REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md)** — estado operacional, etapas já feitas, gates, builds, próxima ação exata (não depender de chat nem de disco local).
+2. **[REGRA-MESTRE-QUALIDADE.md](REGRA-MESTRE-QUALIDADE.md)** — portões G0–G6 e bloqueios.
+3. **Este plano mestre** e o restante do dossiê listado na seção 10.
+
+Sem essa leitura, não alterar código, UI, CI, módulos de fabricante, releases nem marcar gates PASS. Build verde ≠ teste Windows ≠ impressão física ≠ homologação.
+
+
 ## 0. Critério de sucesso e controle
 
 Objetivo: aplicativo de qualidade profissional, visual e funcionalmente Filuna, fiel aos contratos aprovados e com uso real e seguro das impressoras. "100% aprovado" significa **100% dos testes obrigatórios EXECUTADOS e PASS, associados ao SHA, binário, ambiente, modelo e firmware do escopo em teste**, não inexistência metafísica de falhas futuras.
@@ -39,7 +51,7 @@ Objetivo: aplicativo de qualidade profissional, visual e funcionalmente Filuna, 
 **B. Cliente Windows anterior:** \`abcollicelli-web/filuna-slicer\` \`main\`, C#/.NET 10/WinForms + WebView2, Orca separado e serviços Hub; há interfaces, adaptadores, contratos, protótipos, testes sintéticos e várias versões 0.2.x. Alguns relatórios indicam funções em produção beta **sem homologação física**. Não herdar certificados de teste para código novo.  
 **C. Produto atual:** \`abcollicelli-web/FilunaSlicer\`, fork C++17/wxWidgets Orca 2.5.0-dev; rebrand e packaging parciais; DeviceBridge Filuna e Hub visual inexistentes; \`FILUNA/TEST-ACCEPTANCE.md\` pendente.  
 **D. Instalação Windows relatada:** \`C:\Program Files\FilunaSlicer\`, ~581 MB, \`orca-slicer.exe\` launcher, \`OrcaSlicer.dll\` ~148 MB, \`%APPDATA%\Filuna\`, ainda visual Orca, pacote sem assinatura. Esses dados vêm do proprietário, não de inspeção direta deste Windows.  
-**E. Novo build observado:** GitHub run \`42102469888\` era in_progress na última consulta deste registro; não confundir com QA liberada. Preservar em \`filuna/rebrand-1\` enquanto o plano/PR de qualidade é examinado.
+**E. Build Windows da base rebrand:** GitHub run [`42102469888`](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42102469888) concluiu **success** em `filuna/rebrand-1` (`2dace0db`) e publicou `Filuna_Windows_x64_installer` + `Filuna_Windows_x64_portable`. Isso **não** é QA Windows nem homologação física. Estado operacional: [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md).
 
 ## 3. Regras documentais de precedência e conflito
 
@@ -161,6 +173,7 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 
 ## 10. Documentos que compõem o dossiê técnico único
 
+0. **[REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md)** — etapas realizadas, gates, builds e próxima ação (leitura obrigatória antes de trabalhar).
 1. Este plano: ordem de execução, escopo, cronograma e riscos.
 2. [ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md](ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md): protocolos, fontes OEM, limitações, modelo de capacidades e matriz de hardware.
 3. [MATRIZ-TESTES-ACEITE-100-POR-CENTO.md](MATRIZ-TESTES-ACEITE-100-POR-CENTO.md): casos, evidências, condições de bloqueio e ciclo de bugs.
@@ -169,6 +182,7 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 
 ## 11. Situação real deste registro
 
+- **Continuidade operacional:** ver [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md) (atualizado em lotes; G0 ainda EM ANDAMENTO).
 - **Planejamento iniciado e matriz de fontes consultada.** O inventário não afirma que TODOS os arquivos do legado foram lidos integralmente; o índice documenta a cobertura e a fila restante por área.
 - **Nenhuma dessas ondas foi executada por este commit.** Os checks estáticos da fundação anteriores passaram, mas testes e homologação de hardware do novo fork ainda não.
 - **Definição do produto corrigida** para motor Orca único; fabricantes nativos via adapters. Os 10 nomes são alvo, não certificado de compatibilidade.

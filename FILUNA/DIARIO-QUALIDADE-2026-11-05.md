@@ -58,3 +58,8 @@ Foi construído o [plano mestre](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md), [DAG 
 **Nova regra de infraestrutura:** o admin Filuna só recebe erros sanitizados e saúde da conexão conforme consentimento; **não tem comando ou câmera** das impressoras dos clientes. Controle remoto dos próprios clientes é futuro e default OFF; depende de serviço seguro, backup testado e homologação física LAN. Endereço IP, credenciais, DB e domínios de produção não são hardcoded nem declarados validados.
 
 **Evidência:** GitHub Actions [42115301358](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42115301358), SHA \`fdb84688a099a4ab9feaf822c69d9df907c6f97f\`: **113/113 PASS estáticos**, grafo sem ciclo, tentativa de liberação sem dossiê rejeitada conforme esperado. Estado **G0 EM ANDAMENTO**, G1–G6 ainda sem homologação, nenhuma integração Windows/servidor/hardware alterada. A branch continua isolada e não promoveu release.
+
+
+## Adendo — registro de continuidade operacional (2026-11-05 22:48:59 CET)
+
+Por ordem do proprietário (continuar o cronograma sobre a base e documentar etapas para qualquer IA), foi criado [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md), vinculado no plano mestre. Neste lote: verificação de pin/upstream-mirror, artefatos do run 42102469888 (installer+portable Filuna), contagem 141 do manifesto, ausência de `FILUNA/modules/`, reexecução local dos checks estáticos (foundation + 113/113). **G0 permanece EM ANDAMENTO** (leitura integral das 141 fontes e assets de marca ainda pendentes). Sem merge de PR #1/#2 e sem QA Windows/hardware.

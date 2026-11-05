@@ -1,3 +1,15 @@
+# Filuna Slicer — continuidade (fork)
+
+Este repositório é o **FilunaSlicer** (fork AGPL do OrcaSlicer). Antes de qualquer trabalho Filuna:
+
+1. Leia `FILUNA/REGISTRO-CONTINUIDADE-ETAPAS.md`
+2. Leia `FILUNA/REGRA-MESTRE-QUALIDADE.md` e `FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md`
+3. Respeite `upstream-mirror` intacto e a pasta `FILUNA/`
+
+As seções abaixo são as regras de engenharia herdadas do OrcaSlicer (também em `CLAUDE.md` → este arquivo). Elas continuam válidas para o core C++/wxWidgets.
+
+---
+
 # CLAUDE.md
 
 OrcaSlicer — open-source C++17 3D slicer. wxWidgets GUI, CMake build system.

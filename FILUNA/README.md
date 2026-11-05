@@ -2,6 +2,10 @@
 
 Filuna Slicer é um fork do **OrcaSlicer**: o motor de fatiamento, os perfis e os protocolos de impressão são os do Orca, sem alterações. Por cima disso fica uma camada visual e de produto Filuna. Ele também traz módulos de fabricante (Elegoo, Anycubic e outros) para envio e controle nativos.
 
+## Continuidade (obrigatório antes de trabalhar)
+
+**Antes de qualquer IA ou colaborador continuar o projeto:** ler [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md), depois [REGRA-MESTRE-QUALIDADE.md](REGRA-MESTRE-QUALIDADE.md) e o [plano mestre](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md). O registro no GitHub é a fonte do estado das etapas; não usar histórico de chat.
+
 ## Visão
 - Fatiar e imprimir **igual ao Orca** desde o primeiro minuto.
 - Um único programa para Orca, Bambu, Elegoo, Creality, Flashforge, Qidi, Snapmaker e Anycubic.
