@@ -88,7 +88,49 @@
       "type": [
         "object",
         "null"
-      ]
+      ],
+      "additionalProperties": false,
+      "required": [
+        "manufacturer",
+        "model",
+        "firmware",
+        "device_fingerprint",
+        "performed_at_utc"
+      ],
+      "properties": {
+        "manufacturer": {
+          "type": "string",
+          "minLength": 3
+        },
+        "model": {
+          "type": "string",
+          "minLength": 3
+        },
+        "firmware": {
+          "type": "string",
+          "minLength": 3,
+          "not": {
+            "enum": [
+              "TBD",
+              "UNKNOWN",
+              "TODO",
+              "placeholder"
+            ]
+          }
+        },
+        "device_fingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "performed_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operator": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
     }
   },
   "allOf": [
