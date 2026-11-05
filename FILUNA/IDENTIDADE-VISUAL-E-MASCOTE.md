@@ -1,7 +1,7 @@
 # Filuna — Identidade visual oficial, iconografia e mascote
 
 **Registro:** 2026-11-05 · **Origem:** referências visuais fornecidas diretamente pelo proprietário nesta conversa.  
-**Estado documental:** REFERÊNCIA APROVADA para orientar a identidade, sem equivaler a assets binários incorporados ou interface já homologada.  
+**Estado documental:** REFERÊNCIA APROVADA; **originais binários versionados** em `FILUNA/brand/assets/original/` (SHA-256 conferidos). Interface/G1 visual ainda **não** homologados.  
 **Escopo:** marca Filuna 3D, produto Filuna Slicer, Windows, futuras aplicações, portal e comunicação, respeitando o objetivo de cada canal.
 
 ## Identidade-mãe e hierarquia
@@ -30,15 +30,15 @@ A imagem da paleta tem cinco blocos com cantos arredondados: creme, vinho/berry 
 
 ## Fontes originais anexadas pelo proprietário
 
-Os arquivos abaixo foram fornecidos na conversa de 05/11/2026. O SHA-256 identifica cada original; **os binários ainda não estão versionados na branch GitHub**. Esta documentação preserva referência, nomes, formato, dimensões e integridade, mas não substitui o upload dos arquivos originais. A ausência dos binários impede G1 visual definitivo e G5 de recursos visuais.
+Os arquivos abaixo foram fornecidos na conversa de 05/11/2026 e reenviados em ZIP pelo proprietário (SHA-256 do ZIP `02b3c8426ebdf481754f3658c42a147ce915906f52d36f2476032deeb4f2915e`). Os **bytes originais estão versionados** com nomes estáveis sob `FILUNA/brand/assets/original/`; os nomes de conversa (`105207.jpg` etc.) permanecem como alias de rastreio. **G1 visual ainda exige** tokens HEX aprovados, derivados (ICO/PNG) e QA Windows — presença dos originais remove o bloqueio de “binários ausentes”, não homologa a UI.
 
-| ID | Arquivo fornecido | Resolução | SHA-256 | Finalidade |
-|---|---|---|---|---|
-| `FLN-BRAND-LOGO-01` | `105207.jpg` | 1536×1031, JPEG | `4533476b9725e50d3f0fe2d5cf0be94419d392c34d0cd563052038ac1fc80639` | Logo “Filuna 3D” principal |
-| `FLN-BRAND-PALETTE-01` | `105206.jpg` | 1536×1031, JPEG | `2f35535f444b560ff4f84ead6660e5eb247335c52729b8240be675fa2ba2c33e` | Paleta e tratamento de superfície |
-| `FLN-BRAND-ICON-01` | `105208.jpg` | 1536×1031, JPEG | `770810b28114c6099b4d10379a3fe038325259315a75c952f1b25ec759a8c245` | Ícone F no contexto de app |
-| `FLN-MASCOT-CIRCLE-01` | `99422.jpg` | 1536×1536, JPEG | `f5474437ef6efb4143a61b3892ad0eaaff2918aa633d7aa0dd175fed16cc0d11` | Mascote circular com fundo |
-| `FLN-MASCOT-CUTOUT-01` | `99421.webp` | 360×443, WebP RGBA | `6ed33f99aaa8444987985202c9cdce14db5d39856f7c5b9a3bcb1d4dd167f8a5` | Mascote recortada transparente |
+| ID | Nome conversa | Arquivo no repo | Resolução | SHA-256 | Finalidade |
+|---|---|---|---|---|---|
+| `FLN-BRAND-LOGO-01` | `105207.jpg` | `FILUNA/brand/assets/original/FILUNA-BRAND-LOGO-original.jpg` | 1536×1031, JPEG | `4533476b9725e50d3f0fe2d5cf0be94419d392c34d0cd563052038ac1fc80639` | Logo “Filuna 3D” principal |
+| `FLN-BRAND-PALETTE-01` | `105206.jpg` | `FILUNA/brand/assets/original/FILUNA-BRAND-PALETA-original.jpg` | 1536×1031, JPEG | `2f35535f444b560ff4f84ead6660e5eb247335c52729b8240be675fa2ba2c33e` | Paleta e tratamento de superfície |
+| `FLN-BRAND-ICON-01` | `105208.jpg` | `FILUNA/brand/assets/original/FILUNA-BRAND-ICONE-F-contexto-original.jpg` | 1536×1031, JPEG | `770810b28114c6099b4d10379a3fe038325259315a75c952f1b25ec759a8c245` | Ícone F no contexto de app |
+| `FLN-MASCOT-CIRCLE-01` | `99422.jpg` | `FILUNA/brand/assets/original/FILUNA-MASCOTE-CIRCULAR-original.jpg` | 1536×1536, JPEG | `f5474437ef6efb4143a61b3892ad0eaaff2918aa633d7aa0dd175fed16cc0d11` | Mascote circular com fundo |
+| `FLN-MASCOT-CUTOUT-01` | `99421.webp` | `FILUNA/brand/assets/original/FILUNA-MASCOTE-TRANSPARENTE-original.webp` | 360×443, WebP RGBA | `6ed33f99aaa8444987985202c9cdce14db5d39856f7c5b9a3bcb1d4dd167f8a5` | Mascote recortada transparente |
 
 **Rastreabilidade:** estes nomes são arquivos de conversa, não caminhos publicados no GitHub. Antes de integrar no produto, versionar os bytes originais de forma comprovada e conferir `SHA-256`; organizar arquivos em `FILUNA/brand/assets/original/` com nomenclatura estável, sem sobrescrever a origem. Os arquivos gerados (SVG vetorial verdadeiro, ICO, PNG, WebP otimizados) recebem hashes independentes e testam dimensões, transparência e legibilidade. O JPEG do logotipo NÃO é substituto automático de logo vetorial nem prova de fundo transparente.
 
@@ -63,4 +63,4 @@ Os arquivos abaixo foram fornecidos na conversa de 05/11/2026. O SHA-256 identif
 5. Comparar screenshots de Home, instalador, Sobre, atalhos e ajuda contra as referências e registrar aprovação do proprietário.
 6. Não promover imagem gerada, mockup ou tela apresentada como render 3D real / funcionalidade efetiva.
 7. Registrar cada mudança de identidade, fonte, motivo e aprovação no diário do projeto, respeitando o [portão obrigatório](REGRA-MESTRE-QUALIDADE.md).
-8. Até a integração de binários originais, status **REFERÊNCIA REGISTRADA — ARQUIVOS BINÁRIOS PENDENTES**. Nenhuma atualização de marca considera G1 aprovado apenas com este documento.
+8. Status em 2026-11-05 23:00:25 CET: **ORIGINÁRIOS VERSIONADOS — G1 VISUAL AINDA NÃO PASS** (faltam tokens HEX homologados, derivados ICO/PNG testados e aceite do proprietário sobre UI). Nenhuma atualização de marca considera G1 aprovado só pela presença dos arquivos.

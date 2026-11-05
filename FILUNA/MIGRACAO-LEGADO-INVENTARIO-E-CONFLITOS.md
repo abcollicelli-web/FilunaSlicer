@@ -122,3 +122,20 @@ Cada linha de MIG-01 a MIG-26 deve receber, na execução de G0/G1:
 
 **Transparência:** este inventário é uma **base versionada para auditoria completa**, não a alegação de que cada documento histórico foi aprovado ou que todos os módulos estão implementados.  
 **Bloqueio:** até cumprir G0, nenhuma promoção de UI/DeviceBridge como concluído. Pesquisa/documentação e correção da própria fundação podem continuar.
+
+
+## 8. Adendo G0 — leitura prioritária 05/11 (Europe/Rome)
+
+Inventário detalhado de 13 fontes lidas com hashes e REQ: [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md). Confirma CF da seção 4 (quatro motores SUPERADO; Home 03/11 a reimplementar; print-only; updates A/B/C/D). Não esgota as 141 fontes.
+
+
+### Conflitos adicionais após leitura 141 (05/11)
+
+Ver [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) CF-06..08 (updates multi-motor, pendências W não herdáveis, Filuna ID/cofre).
+
+## Adendo G0 — rastreabilidade conflitos + SBOM (2026-11-05 23:07:34 CET)
+
+Detalhe operacional: [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md).  
+SBOM inicial parcial: [sbom/README.md](sbom/README.md).  
+Correção: cobertura do manifesto 141 ≠ 141 leituras semânticas integrais.
+

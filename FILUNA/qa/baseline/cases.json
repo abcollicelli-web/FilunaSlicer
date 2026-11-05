@@ -1,0 +1,24 @@
+{
+  "matrix_id": "FLN-FUND-CORE04-MATRIX",
+  "matrix_version": "2026-11-05.1",
+  "note": "Só arquivos reais do pin a620d804. Nenhuma fixture sintética. Formato/preset inválido = BLOCKED com causa, nunca PASS.",
+  "fixtures": [
+    {"id": "FX-OBJ-CUBE", "format": "OBJ", "path": "tests/data/20mm_cube.obj", "sha256": "15943d9ad0548b654199c4e8eecdfc937964eaac80aad0237bf70fac75725b80", "license": "repositório OrcaSlicer (AGPL-3.0); atribuição individual não auditada"},
+    {"id": "FX-STL-20MMBOX", "format": "STL", "path": "tests/data/test_stl/ASCII/20mmbox-LF.stl", "sha256": "619c2e8ec69d5f01385570aa2d95288bf33a84ad9b299284e4a4514d66929bc9", "license": "repositório OrcaSlicer (AGPL-3.0); atribuição individual não auditada"},
+    {"id": "FX-STEP-SINGLE", "format": "STEP", "path": "tests/data/named_single_body.step", "sha256": "31b1402de07e77122c3ecd368ee685fe0c432798468fd18f50be06bd501100ef", "license": "repositório OrcaSlicer (AGPL-3.0); atribuição individual não auditada"},
+    {"id": "FX-3MF-ORCASLICED", "format": "3MF", "path": "resources/handy_models/OrcaSliced.3mf", "sha256": "b72e8c68d84d3996759ee9d9315e4eb017646614541e709a1744cb0aef90ad60", "license": "repositório OrcaSlicer (AGPL-3.0); atribuição do modelo não auditada"}
+  ],
+  "presets": [
+    {"id": "PR-BBL-P1S", "printer": "Bambu Lab P1S 0.4 (referência upstream tests/cli)",
+     "machine": "resources/profiles/BBL/machine/Bambu Lab P1S 0.4 nozzle.json",
+     "process": "resources/profiles/BBL/process/0.20mm Standard @BBL X1C.json", "filament": null},
+    {"id": "PR-ELEGOO-CC2", "printer": "Elegoo Centauri Carbon 2 0.4 (perfil ECC2 do pin; NÃO Carbon 1)",
+     "machine": "resources/profiles/Elegoo/machine/ECC2/Elegoo Centauri Carbon 2 0.4 nozzle.json",
+     "process": "resources/profiles/Elegoo/process/ECC2/0.20mm Standard @Elegoo CC2 0.4 nozzle.json",
+     "filament": "resources/profiles/Elegoo/filament/ECC2/Elegoo PLA @ECC2.json"},
+    {"id": "PR-ANYCUBIC-K3V2", "printer": "Anycubic Kobra 3 V2 0.4 (perfil V2 do pin; NÃO Kobra 3)",
+     "machine": "resources/profiles/Anycubic/machine/Anycubic Kobra 3 V2 0.4 nozzle.json",
+     "process": "resources/profiles/Anycubic/process/0.20mm Standard @Anycubic Kobra 3 V2 0.4 nozzle.json",
+     "filament": "resources/profiles/Anycubic/filament/Anycubic PLA @Anycubic Kobra 3 V2 0.4 nozzle.json"}
+  ]
+}

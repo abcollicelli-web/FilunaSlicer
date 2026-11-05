@@ -1,0 +1,52 @@
+{
+ "installer_files": 4073,
+ "portable_files": 4062,
+ "installer_files_matched_in_portable": 4063,
+ "installer_only": [
+  "$PLUGINSDIR/InstallOptions.dll",
+  "$PLUGINSDIR/NSIS.InstallOptions.ini",
+  "$PLUGINSDIR/StartMenu.dll",
+  "$PLUGINSDIR/System.dll",
+  "$PLUGINSDIR/UserInfo.dll",
+  "$PLUGINSDIR/ioSpecial.ini",
+  "$PLUGINSDIR/modern-wizard.bmp",
+  "Uninstall.exe",
+  "resources/tooltip/.md",
+  "resources/tooltip/zh_CN/.md"
+ ],
+ "installer_only_count": 10,
+ "portable_only": [],
+ "portable_only_count": 0,
+ "ffmpeg": {
+  "avutil-59": {
+   "license": "GPL version 3 or later",
+   "configuration": "--prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-doc --enable-small --disable-outdevs --disable-filters --enable-filter='*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test*' --enable-schannel --disable-protocols --enable-protocol='file,fd,pipe,http,https,rtp,tcp,udp' --disable-muxers --enable-muxer=rtp --disable-encoders --disable-decoders --enable-decoder='*aac*,h264*,mp3*,mjpeg,rv*' --disable-demuxers --enable-demuxer='h264,mp3,mov,mpjpeg,rtsp,sdp' --disable-zlib --disable-avdevice --enable-shared --disable-static --disable-w32threads --enable-pthreads --extra-cflags= --extra-cxxflags= --extra-libs= --extra-ldflags= --extra-ldexeflags= --cc=x86_64-w64-mingw32-gcc --cxx=x86_64-w64-mingw32-g++ --ar=x86_64-w64-mingw32-gcc-ar --ranlib=x86_64-w64-mingw32-gcc-ranlib --nm=x86_64-w64-mingw32-gcc-nm --extra-version=20260918",
+   "version": "59.8.100",
+   "sha256": "a88a36f5d60e4a7291a695dd3dce9bc0d17a329062759ed633cab75d779742e0"
+  },
+  "swresample-5": {
+   "license": "GPL version 3 or later",
+   "configuration": "--prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-doc --enable-small --disable-outdevs --disable-filters --enable-filter='*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test*' --enable-schannel --disable-protocols --enable-protocol='file,fd,pipe,http,https,rtp,tcp,udp' --disable-muxers --enable-muxer=rtp --disable-encoders --disable-decoders --enable-decoder='*aac*,h264*,mp3*,mjpeg,rv*' --disable-demuxers --enable-demuxer='h264,mp3,mov,mpjpeg,rtsp,sdp' --disable-zlib --disable-avdevice --enable-shared --disable-static --disable-w32threads --enable-pthreads --extra-cflags= --extra-cxxflags= --extra-libs= --extra-ldflags= --extra-ldexeflags= --cc=x86_64-w64-mingw32-gcc --cxx=x86_64-w64-mingw32-g++ --ar=x86_64-w64-mingw32-gcc-ar --ranlib=x86_64-w64-mingw32-gcc-ranlib --nm=x86_64-w64-mingw32-gcc-nm --extra-version=20260918",
+   "version": "5.1.100",
+   "sha256": "4fe29eec34852e5df64fa3768205763d5050a32dc26e9b1b9bef48be1e7b0b7a"
+  },
+  "swscale-8": {
+   "license": "GPL version 3 or later",
+   "configuration": "--prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-doc --enable-small --disable-outdevs --disable-filters --enable-filter='*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test*' --enable-schannel --disable-protocols --enable-protocol='file,fd,pipe,http,https,rtp,tcp,udp' --disable-muxers --enable-muxer=rtp --disable-encoders --disable-decoders --enable-decoder='*aac*,h264*,mp3*,mjpeg,rv*' --disable-demuxers --enable-demuxer='h264,mp3,mov,mpjpeg,rtsp,sdp' --disable-zlib --disable-avdevice --enable-shared --disable-static --disable-w32threads --enable-pthreads --extra-cflags= --extra-cxxflags= --extra-libs= --extra-ldflags= --extra-ldexeflags= --cc=x86_64-w64-mingw32-gcc --cxx=x86_64-w64-mingw32-g++ --ar=x86_64-w64-mingw32-gcc-ar --ranlib=x86_64-w64-mingw32-gcc-ranlib --nm=x86_64-w64-mingw32-gcc-nm --extra-version=20260918",
+   "version": "8.1.100",
+   "sha256": "1fede4b1ed503992b8c5dbd399f5c6cd8508354eac520eac65a15b41f8a133ab"
+  },
+  "avcodec-61": {
+   "license": "GPL version 3 or later",
+   "configuration": "--prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-doc --enable-small --disable-outdevs --disable-filters --enable-filter='*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test*' --enable-schannel --disable-protocols --enable-protocol='file,fd,pipe,http,https,rtp,tcp,udp' --disable-muxers --enable-muxer=rtp --disable-encoders --disable-decoders --enable-decoder='*aac*,h264*,mp3*,mjpeg,rv*' --disable-demuxers --enable-demuxer='h264,mp3,mov,mpjpeg,rtsp,sdp' --disable-zlib --disable-avdevice --enable-shared --disable-static --disable-w32threads --enable-pthreads --extra-cflags= --extra-cxxflags= --extra-libs= --extra-ldflags= --extra-ldexeflags= --cc=x86_64-w64-mingw32-gcc --cxx=x86_64-w64-mingw32-g++ --ar=x86_64-w64-mingw32-gcc-ar --ranlib=x86_64-w64-mingw32-gcc-ranlib --nm=x86_64-w64-mingw32-gcc-nm --extra-version=20260918",
+   "version": "61.3.100",
+   "sha256": "9484a2ad09ec69039346cfa30dd2dc1e1de88ce0ec2b04923e5829264c69bf4f"
+  },
+  "avformat-61": {
+   "license": "GPL version 3 or later",
+   "configuration": "--prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-doc --enable-small --disable-outdevs --disable-filters --enable-filter='*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test*' --enable-schannel --disable-protocols --enable-protocol='file,fd,pipe,http,https,rtp,tcp,udp' --disable-muxers --enable-muxer=rtp --disable-encoders --disable-decoders --enable-decoder='*aac*,h264*,mp3*,mjpeg,rv*' --disable-demuxers --enable-demuxer='h264,mp3,mov,mpjpeg,rtsp,sdp' --disable-zlib --disable-avdevice --enable-shared --disable-static --disable-w32threads --enable-pthreads --extra-cflags= --extra-cxxflags= --extra-libs= --extra-ldflags= --extra-ldexeflags= --cc=x86_64-w64-mingw32-gcc --cxx=x86_64-w64-mingw32-g++ --ar=x86_64-w64-mingw32-gcc-ar --ranlib=x86_64-w64-mingw32-gcc-ranlib --nm=x86_64-w64-mingw32-gcc-nm --extra-version=20260918",
+   "version": "61.1.103",
+   "sha256": "b6b9059976555fd12f14bcb169e0aead809e4f800e2cf0e9c6488a010b8b6214"
+  }
+ }
+}

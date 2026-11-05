@@ -1,0 +1,13 @@
+{
+  "contract_id": "FLN-FUND-TEST-2026-11-05",
+  "contract_version": "2026-11-05.3",
+  "spec_id": "FLN-FUND-SPEC-2026-11-05.1",
+  "required_cases": [
+    {"case_id": "FUND-T01-foundation-check", "req_id": "REQ-FUND-005", "gate": "G2", "kind_required": "integration"},
+    {"case_id": "FUND-T02-release-fail-closed", "req_id": "REQ-FUND-005", "gate": "G2", "kind_required": "integration"},
+    {"case_id": "FUND-T07-gcode-bin-windows", "req_id": "REQ-FUND-004", "gate": "G3", "kind_required": "integration"},
+    {"case_id": "FUND-LEGAL-PKG-INVENTORY", "req_id": "REQ-FUND-010", "gate": "G2", "kind_required": "integration"},
+    {"case_id": "FUND-DATA05-appdata-windows", "req_id": "REQ-FUND-003", "gate": "G3", "kind_required": "integration"},
+    {"case_id": "FUND-T09-url-coexistence", "req_id": "REQ-FUND-012", "gate": "G4", "kind_required": "hardware"}
+  ]
+}

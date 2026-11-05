@@ -1,0 +1,1363 @@
+{
+ "schema": "filuna-package-inventory/1",
+ "source_run": "42102469888",
+ "source_commit": "2dace0db86d305bec5b9627179f265012e4f5069",
+ "artifacts": {
+  "Filuna_Windows_x64_portable": {
+   "artifact_id": 13455471197,
+   "zip_sha256": "37f679960fbfa71533e3731a273959dd3062b4c1e1a0668033527372ed1622cd",
+   "files": 4062
+  },
+  "Filuna_Windows_x64_installer": {
+   "artifact_id": 13453343796,
+   "exe_sha256": "d8e4b44b9f7f947e983cecd939d1a56ffae44613b08d98e97c479c0f1f61c719",
+   "exe_size": 169067529
+  }
+ },
+ "ext_counts": {
+  ".svg": 1421,
+  ".png": 876,
+  ".py": 591,
+  ".stl": 291,
+  ".h": 215,
+  ".json": 157,
+  ".opc": 72,
+  ".js": 52,
+  ".dll": 50,
+  ".fs": 49,
+  ".vs": 45,
+  ".css": 42,
+  ".html": 28,
+  ".lib": 23,
+  ".mo": 23
+ },
+ "binaries_total": 75,
+ "binaries_unknown_provenance": 26,
+ "codec_or_network_plugin_matches": [
+  "avcodec-61.dll",
+  "avformat-61.dll"
+ ],
+ "installer_portable_relation": {
+  "run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42125762040",
+  "method": "7z x do NSIS no runner Windows, instalador NÃO executado; sha256 por arquivo",
+  "installer_files": 4073,
+  "portable_files": 4062,
+  "portable_only_count": 0,
+  "installer_only": [
+   "$PLUGINSDIR/InstallOptions.dll",
+   "$PLUGINSDIR/NSIS.InstallOptions.ini",
+   "$PLUGINSDIR/StartMenu.dll",
+   "$PLUGINSDIR/System.dll",
+   "$PLUGINSDIR/UserInfo.dll",
+   "$PLUGINSDIR/ioSpecial.ini",
+   "$PLUGINSDIR/modern-wizard.bmp",
+   "Uninstall.exe",
+   "resources/tooltip/.md",
+   "resources/tooltip/zh_CN/.md"
+  ],
+  "result": "todo arquivo do portable tem conteúdo idêntico (sha256) no instalador; instalador só acrescenta 10 arquivos (plugins NSIS, Uninstall.exe, 2 resources/tooltip/.md)",
+  "open": "origem/licença dos plugins NSIS e Uninstall.exe BLOCKED_PENDING_REVIEW; '.md' de nome vazio a investigar"
+ },
+ "status": "PARTIAL: origem PROVEN 9, CORROBORATED 60, SELF_BUILD 2, UNKNOWN 4; licenças de todos os terceiros BLOCKED_PENDING_REVIEW; não é parecer jurídico; relação instalador↔portable verificada por hash (run 42125762040)",
+ "binaries": [
+  {
+   "path": "OrcaSlicer.dll",
+   "sha256": "f0914911be85fbd1809a739f5b1865e82dd4f6708f5b3f5645476f72b092aa9f",
+   "pe_version": {},
+   "origin_status": "SELF_BUILD",
+   "origin_evidence": [],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKBO.dll",
+   "sha256": "0d66e3a2559fa1f1fd1c5caad9e7a1070fe864d3f747e9b818ed928a0bd8a80f",
+   "pe_version": {
+    "FileDescription": "TKBO Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKBRep.dll",
+   "sha256": "bdc362950be8ddff0d7228d3971fb85f43f560e0aad3bebd04ef22e60e662f8f",
+   "pe_version": {
+    "FileDescription": "TKBRep Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKBool.dll",
+   "sha256": "a1d5301ef9b359cc796160817c85a592c5d8f39e7317510ca9a151581bfa00e3",
+   "pe_version": {
+    "FileDescription": "TKBool Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKCAF.dll",
+   "sha256": "658f32b07d7bf16b98670e6a5f81d3c1d6c1b82e5c517d83eb03de85a949a056",
+   "pe_version": {
+    "FileDescription": "TKCAF Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKCDF.dll",
+   "sha256": "0ea0e217f5bba6907980e0785bf39e43ded9dd9e17ed145747c36cb3e5a53846",
+   "pe_version": {
+    "FileDescription": "TKCDF Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKDE.dll",
+   "sha256": "5df6529a9380350f4f7428e1be2549bb83f5ce471d572a1e756c1edb760d7472",
+   "pe_version": {
+    "FileDescription": "TKDE Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKDESTEP.dll",
+   "sha256": "71d3031ec5eecba24ea077da10ba3bbae2c6c0d1de5511ba61a00ac4cc6e4135",
+   "pe_version": {
+    "FileDescription": "TKDESTEP Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKFillet.dll",
+   "sha256": "a4882b3a13724c01d62bb62f4f608ffd9c8daae4727db763d7a5364b8da30ef8",
+   "pe_version": {
+    "FileDescription": "TKFillet Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKG2d.dll",
+   "sha256": "94e82b2f59ac36c2adcbbf531b17489f325f9c0a049f8807c1bc1640678abbe0",
+   "pe_version": {
+    "FileDescription": "TKG2d Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKG3d.dll",
+   "sha256": "1add2ff21b40152622f6189b1f6eb1bb7784b013796a19bcb82c9717e2e9c519",
+   "pe_version": {
+    "FileDescription": "TKG3d Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKGeomAlgo.dll",
+   "sha256": "511108ce607e5e8b864a593c82d1d1b49d8066bc64d283cffb1c7dd4ae826961",
+   "pe_version": {
+    "FileDescription": "TKGeomAlgo Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKGeomBase.dll",
+   "sha256": "6fc155a8f87636b945f25da723452a3ccad8f3ada9bc0cb9da150b3b11119455",
+   "pe_version": {
+    "FileDescription": "TKGeomBase Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKHLR.dll",
+   "sha256": "f6f6fc338f92500c2d1e194553a0d2dfbeb070d199cfe35a68048985a1d298c9",
+   "pe_version": {
+    "FileDescription": "TKHLR Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKLCAF.dll",
+   "sha256": "19ab2080f55cb9c5f8d1016b1b031c4eecc799190414dabd8a61fa9fd90ae979",
+   "pe_version": {
+    "FileDescription": "TKLCAF Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKMath.dll",
+   "sha256": "59857a9f0dc1e89c4d57a5ec65f088fda8c37af7f57b649561c3a4402cbec86d",
+   "pe_version": {
+    "FileDescription": "TKMath Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKOffset.dll",
+   "sha256": "e949557fb40bcc9e05262fb07287a74e87b43da08e91f9f3f94f39a17a8f033c",
+   "pe_version": {
+    "FileDescription": "TKOffset Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKMesh.dll",
+   "sha256": "10e987faac68d855195ed16e7738e59b713a9dccef6b97ee80db1f6eda9463b9",
+   "pe_version": {
+    "FileDescription": "TKMesh Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKPrim.dll",
+   "sha256": "390b17e9ec42b6555d7257ffd7059d6fd3a7339be6f6a417958b76b7a9650065",
+   "pe_version": {
+    "FileDescription": "TKPrim Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKService.dll",
+   "sha256": "7711e548a053cc7bfb031b418c32a4e7e6924b04c23cb5d2fc5dae655c0dbef6",
+   "pe_version": {
+    "FileDescription": "TKService Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKShHealing.dll",
+   "sha256": "062876f797558376b76dc9937a296ec60549e3621f3f2efe81d9b0dccfff71f3",
+   "pe_version": {
+    "FileDescription": "TKShHealing Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKTopAlgo.dll",
+   "sha256": "e59ef7ae0163b829e3fdbf892ba2a67e8fe8268cf3187dddb30591ed9912bad2",
+   "pe_version": {
+    "FileDescription": "TKTopAlgo Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKV3d.dll",
+   "sha256": "3cbc82ffa57727360d8816a4f3e03bbd655de58138083e9129dd3ffb93bd3191",
+   "pe_version": {
+    "FileDescription": "TKV3d Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKVCAF.dll",
+   "sha256": "a0783fae1f0cb403426cd8da633a242f45e4b8005ecfa7e25da4705477d646e5",
+   "pe_version": {
+    "FileDescription": "TKVCAF Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKXSBase.dll",
+   "sha256": "3813bc00b5e68afe2cd6d71280aeaf55232c6d8ce6967506891fc06b2249b264",
+   "pe_version": {
+    "FileDescription": "TKXSBase Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKernel.dll",
+   "sha256": "b5dbd79a06d7373adeb023890339464ead8d7ae99f7e201f3b499c3865d6c2da",
+   "pe_version": {
+    "FileDescription": "TKernel Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "TKXCAF.dll",
+   "sha256": "91affd1ff42c0784941ed4e5e365bbbeb91ea0067766512f631e2a0fd35406aa",
+   "pe_version": {
+    "FileDescription": "TKXCAF Toolkit",
+    "FileVersion": "8.0.1",
+    "LegalCopyright": "© OPEN CASCADE SAS",
+    "ProductName": "Open CASCADE Technology",
+    "ProductVersion": "8.0.1"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Company='' Product='Open CASCADE Technology' Ver='8.0.1'; receita deps/OCCT/OCCT.cmake@pin URL V8_0_1 SHA256 7c033d91…",
+    "compilado no CI a partir da fonte pinada; sem hash reproduzível -> não PROVEN"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "WebView2Loader.dll",
+   "sha256": "2d64a312551930dc56612cf358fcfd23133c0596a88c3ec1c467c392ff00b493",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft Edge Embedded Browser WebView Loader",
+    "FileVersion": "1.0.3351.48",
+    "LegalCopyright": "Copyright Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "WebView2Loader.dll",
+    "ProductName": "Microsoft Edge Embedded Browser WebView Loader",
+    "ProductVersion": "1.0.3351.48"
+   },
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 byte-idêntico ao blob vendorizado deps/WebView2/lib/win-x64/WebView2Loader.dll@a620d804"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "avcodec-61.dll",
+   "sha256": "9484a2ad09ec69039346cfa30dd2dc1e1de88ce0ec2b04923e5829264c69bf4f",
+   "pe_version": {},
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 == DLL do zip FFmpeg fixado na receita deps/FFMPEG/FFMPEG.cmake@pin (URL+SHA256 85da19da…)"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "avformat-61.dll",
+   "sha256": "b6b9059976555fd12f14bcb169e0aead809e4f800e2cf0e9c6488a010b8b6214",
+   "pe_version": {},
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 == DLL do zip FFmpeg fixado na receita deps/FFMPEG/FFMPEG.cmake@pin (URL+SHA256 85da19da…)"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "avutil-59.dll",
+   "sha256": "a88a36f5d60e4a7291a695dd3dce9bc0d17a329062759ed633cab75d779742e0",
+   "pe_version": {},
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 == DLL do zip FFmpeg fixado na receita deps/FFMPEG/FFMPEG.cmake@pin (URL+SHA256 85da19da…)"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "concrt140.dll",
+   "sha256": "54716f0738af891f283d213b5c8d11b25896bb8ee3097d301eae718560cf974e",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® Concurrency Runtime Library",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "concrt140.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "libgmp-10.dll",
+   "sha256": "fec43cb18ce0ec8a5dd6ad1db745747167310ccb92b5acff0d445a8b3013f009",
+   "pe_version": {
+    "CompanyName": "Free Software Foundation, Inc.",
+    "FileDescription": "GNU MP Library",
+    "FileVersion": "5.0.1.0",
+    "OriginalFilename": "libgmp-10.dll",
+    "ProductName": "GNU MP Library",
+    "ProductVersion": "5.0.1.0"
+   },
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 byte-idêntico ao blob vendorizado deps/GMP/gmp/lib/win-x64/libgmp-10.dll@a620d804"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "libmpfr-4.dll",
+   "sha256": "09b3b868b96433991fc15c9c5ae6f9a44c62d2e21194110442607917391ed927",
+   "pe_version": {
+    "CompanyName": "Free Software Foundation, Inc.",
+    "FileDescription": "GNU MPFR Library DLL.",
+    "FileVersion": "3.0.0.0",
+    "OriginalFilename": "libmpfr-4.dll",
+    "ProductName": "GNU MPFR Library",
+    "ProductVersion": "3.0.0.0"
+   },
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 byte-idêntico ao blob vendorizado deps/MPFR/mpfr/lib/win-x64/libmpfr-4.dll@a620d804"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "msvcp140_1.dll",
+   "sha256": "206c931bf90fdad8816de3b5e2ef80b2bcaa9406c89ecc05fe6fddffe251e982",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library _1",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "msvcp140_1.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "msvcp140.dll",
+   "sha256": "7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "msvcp140.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "msvcp140_2.dll",
+   "sha256": "d50d7883f20d1dc6191768d3746f52dd9cac89c346ffaed5be1f110c2f34a838",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library _2",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "msvcp140_2.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "msvcp140_atomic_wait.dll",
+   "sha256": "3d0cbfaa1bf3eecf5a3f4491d2960ee803cb994f30292c6adc4a07c498f60e2b",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library _atomic_wait",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "msvcp140_atomic_wait.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "msvcp140_codecvt_ids.dll",
+   "sha256": "8a65c7596ef2e6938731f5a1058e7e40145b6d97967cc649231a076b9a608d78",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library _codecvt_ids",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "msvcp140_codecvt_ids.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "orca-slicer.exe",
+   "sha256": "4b8227310b45dffee7061755db2d66367099d62dbecfccab85bc8b7b905c4b55",
+   "pe_version": {
+    "CompanyName": "SoftFever",
+    "FileDescription": "Filuna Slicer",
+    "FileVersion": "",
+    "ProductName": "Filuna Slicer",
+    "ProductVersion": "",
+    "LegalCopyright": "",
+    "OriginalFilename": "orca-slicer.exe"
+   },
+   "origin_status": "SELF_BUILD",
+   "origin_evidence": [],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_asyncio.pyd",
+   "sha256": "7885d1f1a99504dd13fe179911587bea9eed63afb3f304f90b2f429d0dd8ba7e",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_asyncio.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_bz2.pyd",
+   "sha256": "5840897a9889a673bcc48c93d1b86d3a4c09861164b80870181857e2ffc2fe8e",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_bz2.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_ctypes.pyd",
+   "sha256": "adc57bbd760fdaffdd6bbb8677f45391a589b7d2ea370bb51226fa480b5a7bd1",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_ctypes.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_decimal.pyd",
+   "sha256": "7042b07ac00946a62b8d8b81fbc7ebe9ad99334c959c7cbd7752e25fe00b4dcb",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_decimal.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_hashlib.pyd",
+   "sha256": "ee4ef7e342c73cbadfcd96a6a23c6fe4d4f080e2063498d7e38c8cc4ab872d27",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_hashlib.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_elementtree.pyd",
+   "sha256": "18330e69fa89c46c63a6f699e6c67d641a43251b70cec0acd36be35d8f7bf369",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_elementtree.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_lzma.pyd",
+   "sha256": "de3db3eb3edb6191c9e9cca814d8426c1d8e6323f3afe51008de18f46be74642",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_lzma.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_msi.pyd",
+   "sha256": "3aa0a2386b40d82096fe5bc787ac02f6c4cbccfe4a6422f9b0ca621d221cca27",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_msi.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_multiprocessing.pyd",
+   "sha256": "d4890ab85816dd0bfed40cfef7b8bdb7e7992795890696df794ba27fb153b826",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_multiprocessing.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_overlapped.pyd",
+   "sha256": "0e154d6d49fb98b141bec3fc4362c34140ace98d8e768bbc556f24402427d5b8",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_overlapped.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_queue.pyd",
+   "sha256": "14fa191c69e2902fc884aa98fb366f9c18c649493f4c350660ffb8ec9b86e084",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_queue.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_socket.pyd",
+   "sha256": "5acc3bae236d2875a1ec3a856a8c0c5a4fcf4b979fac4a78ed9bda3ed14bb560",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_socket.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_sqlite3.pyd",
+   "sha256": "5ebf0dd34297d145589db436d8e14af02d9de1e3d4dc575a173a9a2f13e4e308",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_sqlite3.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_ssl.pyd",
+   "sha256": "904958ebfb4b3a8b89e3866a730c443c0e325bd2bd2d23ec7e60daec0ff7b047",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_ssl.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_uuid.pyd",
+   "sha256": "1846d42bb11974119b3aeb0785787782a30949cc8acb34687288c668fc98d40e",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_uuid.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_wmi.pyd",
+   "sha256": "2e489e6ed90d9a92497bd94546ea09af2bfe894e9cb175693c8ad48830a0c9a1",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_wmi.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/_zoneinfo.pyd",
+   "sha256": "4fdc2ba7bbbbfd8a2325ef8c2bf0014c72b213ec8fdc39acc53dde759c519ce7",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "_zoneinfo.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/libcrypto-3.dll",
+   "sha256": "ccfffddcd3defb8d899026298af9af43bc186130f8483d77e97c93233d5f27d7",
+   "pe_version": {
+    "CompanyName": "The OpenSSL Project, https://www.openssl.org/",
+    "FileDescription": "OpenSSL library",
+    "FileVersion": "3.0.16",
+    "OriginalFilename": "libcrypto",
+    "ProductName": "The OpenSSL Toolkit",
+    "ProductVersion": "3.0.16",
+    "LegalCopyright": "Copyright 1998-2025 The OpenSSL Authors. All rights reserved."
+   },
+   "origin_status": "UNKNOWN",
+   "origin_evidence": [
+    "externals do build CPython Windows (get_externals), NÃO pinados no repo; deps/OpenSSL@pin é 1.1.1w ≠ 3.0.16 empacotado; PE só corrobora fornecedor"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/libffi-8.dll",
+   "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+   "pe_version": {},
+   "origin_status": "UNKNOWN",
+   "origin_evidence": [
+    "externals do build CPython Windows (get_externals), NÃO pinados no repo; deps/OpenSSL@pin é 1.1.1w ≠ 3.0.16 empacotado; PE só corrobora fornecedor"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/libssl-3.dll",
+   "sha256": "007142039f04d04e0ed607bda53de095e5bc6a8a10d26ecedde94ea7d2d7eefe",
+   "pe_version": {
+    "CompanyName": "The OpenSSL Project, https://www.openssl.org/",
+    "FileDescription": "OpenSSL library",
+    "FileVersion": "3.0.16",
+    "OriginalFilename": "libssl",
+    "ProductName": "The OpenSSL Toolkit",
+    "ProductVersion": "3.0.16",
+    "LegalCopyright": "Copyright 1998-2025 The OpenSSL Authors. All rights reserved."
+   },
+   "origin_status": "UNKNOWN",
+   "origin_evidence": [
+    "externals do build CPython Windows (get_externals), NÃO pinados no repo; deps/OpenSSL@pin é 1.1.1w ≠ 3.0.16 empacotado; PE só corrobora fornecedor"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/pyexpat.pyd",
+   "sha256": "a73654a09c9abc6f2e0c69bccc57d33decb138b5c5aa5620d3db580254698c79",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "pyexpat.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/select.pyd",
+   "sha256": "497f7b2f9ac77428b4f687062a2bbcfd2ea6e5cbcc9a7f740045c09dfa5dc957",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "select.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/sqlite3.dll",
+   "sha256": "ded61d1e2acc861c067030032b1acb17099b3ea656e772d5d9bce1780c0c75cf",
+   "pe_version": {
+    "CompanyName": "SQLite3",
+    "FileDescription": "SQLite3",
+    "FileVersion": "3.49.1.0",
+    "LegalCopyright": "Unspecified",
+    "OriginalFilename": "sqlite3.dll",
+    "ProductName": "SQLite3",
+    "ProductVersion": "3.49.1.0"
+   },
+   "origin_status": "UNKNOWN",
+   "origin_evidence": [
+    "externals do build CPython Windows (get_externals), NÃO pinados no repo; deps/OpenSSL@pin é 1.1.1w ≠ 3.0.16 empacotado; PE só corrobora fornecedor"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/unicodedata.pyd",
+   "sha256": "7aec4f3033afb4fd72c78b3686b322202c4f0101b2bb6c2095af544a3f2fce56",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "unicodedata.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/DLLs/winsound.pyd",
+   "sha256": "c539b35be57869a7d2f5ce49a3a4954047049d5d9a8927b22318dc50dee52711",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "winsound.pyd",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/python.exe",
+   "sha256": "3d8571d72f094e7591faf21b8a1ed05d3a7ba9c050840d7c9e4c6c55dbdadbae",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "python.exe",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/python312.dll",
+   "sha256": "64c8ee3f7569cea7dcd04e73c0c6e7c87bc3e9ab729f66fa8f90dbb91a4a222d",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python Core",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "python312.dll",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/pythonw.exe",
+   "sha256": "4829a8b6ff37fcc47c8c88a30111bb6eb51afb1fc6a5b82bab60c7a167f95f9a",
+   "pe_version": {
+    "CompanyName": "Python Software Foundation",
+    "FileDescription": "Python",
+    "FileVersion": "3.12.13",
+    "LegalCopyright": "Copyright © 2001-2023 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.",
+    "OriginalFilename": "pythonw.exe",
+    "ProductName": "Python",
+    "ProductVersion": "3.12.13"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo PSF 3.12.13 + receita deps/python3/python3.cmake@pin (Python-3.12.13.tar.xz sha c08bc65a…); compilado no CI, hash não reproduzível sem rebuild"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/vcruntime140.dll",
+   "sha256": "d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "vcruntime140.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "python/vcruntime140_1.dll",
+   "sha256": "a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "vcruntime140_1.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "resources/tools/uv/uv.exe",
+   "sha256": "5a7ec85884c2ccb1be560cb8fac3eb890df1adf49bfcc070a270ba70401bdd68",
+   "pe_version": {},
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 == uv.exe do zip oficial astral-sh/uv 0.11.21 x86_64-pc-windows-msvc; zip sha ace861f3… == ORCA_UV_SHA256 em CMakeLists.txt@pin"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "swresample-5.dll",
+   "sha256": "4fe29eec34852e5df64fa3768205763d5050a32dc26e9b1b9bef48be1e7b0b7a",
+   "pe_version": {},
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 == DLL do zip FFmpeg fixado na receita deps/FFMPEG/FFMPEG.cmake@pin (URL+SHA256 85da19da…)"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "swscale-8.dll",
+   "sha256": "1fede4b1ed503992b8c5dbd399f5c6cd8508354eac520eac65a15b41f8a133ab",
+   "pe_version": {},
+   "origin_status": "PROVEN_ORIGIN",
+   "origin_evidence": [
+    "sha256 == DLL do zip FFmpeg fixado na receita deps/FFMPEG/FFMPEG.cmake@pin (URL+SHA256 85da19da…)"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "vcruntime140.dll",
+   "sha256": "d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "vcruntime140.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  },
+  {
+   "path": "vcruntime140_1.dll",
+   "sha256": "a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e",
+   "pe_version": {
+    "CompanyName": "Microsoft Corporation",
+    "FileDescription": "Microsoft® C Runtime Library",
+    "FileVersion": "14.51.36247.0",
+    "LegalCopyright": "© Microsoft Corporation. All rights reserved.",
+    "OriginalFilename": "vcruntime140_1.dll",
+    "ProductName": "Microsoft® Visual Studio®",
+    "ProductVersion": "14.51.36247.0"
+   },
+   "origin_status": "CORROBORATED",
+   "origin_evidence": [
+    "PE VersionInfo Microsoft VS 14.51.36247.0; redistribuível do toolchain do runner, sem pin no repo; assinatura Authenticode NÃO verificada"
+   ],
+   "license_status": "BLOCKED_PENDING_REVIEW"
+  }
+ ],
+ "generated_at_utc": "2026-11-05T22:40:00Z",
+ "origin_counts": {
+  "SELF_BUILD": 2,
+  "CORROBORATED": 60,
+  "PROVEN_ORIGIN": 9,
+  "UNKNOWN": 4
+ },
+ "ffmpeg": {
+  "recipe": "deps/FFMPEG/FFMPEG.cmake@pin",
+  "url": "https://github.com/Noisyfox/FFmpeg-Builds-Orca/releases/download/autobuild-2026-09-18-16-50/ffmpeg-n7.0.3-33-g887d4b4919-win64-orca-shared-7.0.zip",
+  "zip_sha256_verified": "85da19daf198f5548259d8aabb349db84997a3f6e6886d8d7764114add9c6dae",
+  "dll_hash_match": "todas as DLLs FFmpeg empacotadas == zip",
+  "license_txt_in_zip": true,
+  "runtime_license_configuration": "pendente job Windows (avcodec_license/configuration via ctypes)",
+  "redistribution": "BLOCKED_PENDING_REVIEW (LGPL/GPL depende de flags; patentes codecs)",
+  "runtime_probe_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42125762040",
+  "runtime_license_reported": {
+   "avutil-59": "GPL version 3 or later",
+   "swresample-5": "GPL version 3 or later",
+   "swscale-8": "GPL version 3 or later",
+   "avcodec-61": "GPL version 3 or later",
+   "avformat-61": "GPL version 3 or later"
+  },
+  "versions": {
+   "avutil-59": "59.8.100",
+   "swresample-5": "5.1.100",
+   "swscale-8": "8.1.100",
+   "avcodec-61": "61.3.100",
+   "avformat-61": "61.1.103"
+  },
+  "configuration_avcodec": "--prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-doc --enable-small --disable-outdevs --disable-filters --enable-filter='*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test*' --enable-schannel --disable-protocols --enable-protocol='file,fd,pipe,http,https,rtp,tcp,udp' --disable-muxers --enable-muxer=rtp --disable-encoders --disable-decoders --enable-decoder='*aac*,h264*,mp3*,mjpeg,rv*' --disable-demuxers --enable-demuxer='h264,mp3,mov,mpjpeg,rtsp,sdp' --disable-zlib --disable-avdevice --enable-shared --disable-static --disable-w32threads --enable-pthreads --extra-cflags= --extra-cxxflags= --extra-libs= --extra-ldflags= --extra-ldexeflags= --cc=x86_64-w64-mingw32-gcc --cxx=x86_64-w64-mingw32-g++ --ar=x86_64-w64-mingw32-gcc-ar --ranlib=x86_64-w64-mingw32-gcc-ranlib --nm=x86_64-w64-mingw32-gcc-nm --extra-version=20260918",
+  "notable_enable_flags": [
+   "gpl",
+   "version3"
+  ],
+  "nonfree": false,
+  "finding": "DLLs FFmpeg auto-declaram 'GPL version 3 or later' (--enable-gpl --enable-version3). Obrigações de redistribuição (fonte correspondente do build Noisyfox/FFmpeg-Builds-Orca, compatibilidade com AGPL-3.0, codecs/patentes) = BLOCKED_PENDING_REVIEW; não é parecer jurídico."
+ },
+ "occt": {
+  "recipe": "deps/OCCT/OCCT.cmake@pin",
+  "url": "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/V8_0_1.zip",
+  "url_sha256": "7c033d91…",
+  "binary_link": "PE VersionInfo das TK*.dll = Open CASCADE 8.0.1 (compilado no CI; hash não reproduzível sem rebuild)",
+  "license": "BLOCKED_PENDING_REVIEW (LGPL-2.1 + exceção, por texto da fonte não auditado aqui)"
+ }
+}

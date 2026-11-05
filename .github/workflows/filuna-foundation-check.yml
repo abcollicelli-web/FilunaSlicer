@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - 'filuna/quality-*'
+      - 'filuna/continuidade-*'
     paths:
       - 'FILUNA/**'
       - '.github/workflows/filuna-foundation-check.yml'
+      - 'FILUNA/tests/**'
   pull_request:
     branches:
       - 'filuna/main'
@@ -25,6 +27,12 @@ jobs:
         run: python3 FILUNA/tests/check_quality_gate.py --mode foundation
       - name: Audit master engineering plan, legal matrix and dependency DAG
         run: python3 FILUNA/tests/check_master_plan.py
+      - name: Onda01 foundation unit tests (CMP/evidence/gcode/data)
+        run: python3 FILUNA/tests/run_fund_tests.py
+      - name: LEGAL-02 CMP checklist
+        run: python3 FILUNA/tests/cmp_legal.py
+      - name: DATA-05 isolation checks
+        run: python3 FILUNA/tests/data_isolation.py
       - name: Ensure unapproved release fails closed
         shell: bash
         run: |

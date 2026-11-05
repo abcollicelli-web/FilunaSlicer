@@ -1,0 +1,8 @@
+{
+  "id": "FUND-FIX-CUBE-20MM",
+  "path": "tests/data/20mm_cube.obj",
+  "sha256": "15943d9ad0548b654199c4e8eecdfc937964eaac80aad0237bf70fac75725b80",
+  "license": "AGPL-3.0-or-later (OrcaSlicer test tree)",
+  "origin": "OrcaSlicer tests/data",
+  "use": "CORE-04 baseline input reference; slicing execution may be NOT_RUN without binary"
+}
