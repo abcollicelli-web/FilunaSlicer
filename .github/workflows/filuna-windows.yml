@@ -6,11 +6,16 @@ name: Filuna Windows build
 # dependem deles são ignorados/condicionados a github.repository == OrcaSlicer/OrcaSlicer.
 # Artefatos do upstream: OrcaSlicer_Windows_<ver>_portable e OrcaSlicer_Windows_<ver> (instalador).
 # O job filuna_artifacts republica os mesmos arquivos como Filuna_Windows_* (sem editar build_orca.yml).
+#
+# baseline-gcode-only: ensaio técnico CORE-04 sob demanda — NÃO reconstrói Windows.
+# Compara Orca pin (run upstream EXACT) vs Filuna portable (run EXACT) via CLI local.
+# Sem GUI, sem impressora, sem print.
 
 on:
   # workflow_dispatch só funciona via API quando o arquivo existe na branch padrão (main,
   # que não tocamos). Por isso também dispara por push em filuna/main ao mudar este
   # arquivo ou FILUNA/BUILD_TRIGGER.
+  # Pode-se despachar --ref desta branch de continuidade: o runner usa o YAML do ref.
   push:
     branches: [ 'filuna/main', 'filuna/rebrand-*' ]
     paths:
@@ -19,17 +24,43 @@ on:
   workflow_dispatch:
     inputs:
       build-deps-only:
-        description: 'Somente dependências'
+        description: 'Somente dependências (build completo)'
         type: boolean
         default: false
+      baseline-gcode-only:
+        description: 'Só baseline G-code Orca-pin vs Filuna (sem rebuild caro)'
+        type: boolean
+        default: false
+      baseline-note:
+        description: 'Motivo/registro do ensaio baseline (obrigatório se baseline-gcode-only)'
+        type: string
+        required: false
+        default: ''
+      orca-pin-run-id:
+        description: 'Run ID upstream OrcaSlicer Build-all no pin'
+        type: string
+        default: '42037889437'
+      orca-pin-artifact-name:
+        description: 'Nome do artifact portable x64 no pin'
+        type: string
+        default: 'OrcaSlicer_Windows_V2.5.0-dev_x64_portable'
+      filuna-run-id:
+        description: 'Run ID Filuna Windows success no head 2dace0db'
+        type: string
+        default: '42102469888'
+      filuna-artifact-name:
+        description: 'Nome do artifact Filuna portable'
+        type: string
+        default: 'Filuna_Windows_x64_portable'
 
 concurrency:
-  group: filuna-windows-${{ github.ref }}
+  group: filuna-windows-${{ github.ref }}-${{ inputs.baseline-gcode-only || false }}
   cancel-in-progress: false
 
 jobs:
   build_windows_x64:
     name: Filuna Windows x64
+    if: ${{ github.event_name == 'push' || inputs.baseline-gcode-only != true }}
     uses: ./.github/workflows/build_check_cache.yml
     with:
       os: windows-latest
@@ -42,7 +73,7 @@ jobs:
   filuna_artifacts:
     name: Artefatos Filuna
     needs: build_windows_x64
-    if: ${{ !inputs.build-deps-only }}
+    if: ${{ (github.event_name == 'push' || inputs.baseline-gcode-only != true) && (inputs.build-deps-only != true) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -84,3 +115,118 @@ jobs:
         with:
           name: Filuna_Windows_x64_installer
           path: out/installer
+
+  baseline_gcode_windows:
+    name: Baseline G-code Orca-pin vs Filuna (Windows)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.baseline-gcode-only == true }}
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Require baseline note
+        shell: bash
+        run: |
+          note='${{ inputs.baseline-note }}'
+          if [ -z "$note" ]; then
+            echo "FAIL: baseline-note obrigatório para registro"
+            exit 1
+          fi
+          echo "baseline-note=$note"
+
+      - uses: actions/checkout@v4
+
+      - name: Download Filuna portable (same-repo run EXACT)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/filuna-art"
+          gh api "repos/${{ github.repository }}/actions/runs/${{ inputs.filuna-run-id }}" --jq '{head_sha,conclusion,name}'
+          HEAD=$(gh api "repos/${{ github.repository }}/actions/runs/${{ inputs.filuna-run-id }}" --jq .head_sha)
+          if [ "$HEAD" != "2dace0db86d305bec5b9627179f265012e4f5069" ]; then
+            echo "FAIL: filuna run head_sha=$HEAD != expected 2dace0db…"
+            exit 1
+          fi
+          AID=$(gh api "repos/${{ github.repository }}/actions/runs/${{ inputs.filuna-run-id }}/artifacts" \
+            --jq '.artifacts[] | select(.name=="${{ inputs.filuna-artifact-name }}" and .expired==false) | .id' | head -1)
+          if [ -z "$AID" ]; then
+            echo "FAIL: Filuna artifact not found or expired"
+            exit 1
+          fi
+          echo "filuna_artifact_id=$AID"
+          gh api "repos/${{ github.repository }}/actions/artifacts/$AID/zip" > "$RUNNER_TEMP/filuna.zip"
+          python -c "import zipfile; zipfile.ZipFile(r'$RUNNER_TEMP/filuna.zip').extractall(r'$RUNNER_TEMP/filuna-art')"
+          find "$RUNNER_TEMP/filuna-art" -iname 'orca-slicer.exe' | head
+
+      - name: Download Orca pin portable (upstream EXACT head)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/orca-art"
+          # Prefer same-repo mirror artifact if present (name includes pin sha);
+          # else try public upstream OrcaSlicer/OrcaSlicer (may 403 with GITHUB_TOKEN).
+          PIN=a620d804efbe74162c96ad29d755cdab2b823530
+          RUN="${{ inputs.orca-pin-run-id }}"
+          NAME="${{ inputs.orca-pin-artifact-name }}"
+          OK=0
+          if gh api "repos/OrcaSlicer/OrcaSlicer/actions/runs/$RUN" --jq .head_sha | grep -qx "$PIN"; then
+            echo "upstream run head matches pin"
+          else
+            HEAD=$(gh api "repos/OrcaSlicer/OrcaSlicer/actions/runs/$RUN" --jq .head_sha || true)
+            echo "FAIL: upstream run head_sha=$HEAD != pin $PIN"
+            exit 1
+          fi
+          AID=$(gh api "repos/OrcaSlicer/OrcaSlicer/actions/runs/$RUN/artifacts" \
+            --jq ".artifacts[] | select(.name==\"$NAME\" and .expired==false) | .id" | head -1 || true)
+          if [ -n "${AID:-}" ]; then
+            echo "orca_artifact_id=$AID (upstream)"
+            if gh api "repos/OrcaSlicer/OrcaSlicer/actions/artifacts/$AID/zip" > "$RUNNER_TEMP/orca.zip"; then
+              SZ=$(wc -c < "$RUNNER_TEMP/orca.zip" | tr -d ' ')
+              if [ "$SZ" -gt 1000000 ]; then
+                OK=1
+              else
+                echo "WARN: upstream zip too small ($SZ); will try same-repo mirror"
+              fi
+            else
+              echo "WARN: upstream artifact download failed (likely GITHUB_TOKEN cross-repo)"
+            fi
+          fi
+          if [ "$OK" != "1" ]; then
+            # Same-repo mirror produced by optional pin-build / seed job
+            AID2=$(gh api "repos/${{ github.repository }}/actions/artifacts?per_page=100" \
+              --jq '.artifacts[] | select(.name=="OrcaPin_Windows_x64_portable_a620d804" and .expired==false) | .id' | head -1 || true)
+            if [ -z "${AID2:-}" ]; then
+              echo "BLOCKED: cannot download Orca pin portable with GITHUB_TOKEN and no same-repo mirror artifact OrcaPin_Windows_x64_portable_a620d804"
+              echo "Next: seed mirror (see FILUNA/qa/baseline/SEED-ORCA-PIN.md) or rebuild pin on fork"
+              exit 2
+            fi
+            echo "orca_artifact_id=$AID2 (same-repo mirror)"
+            gh api "repos/${{ github.repository }}/actions/artifacts/$AID2/zip" > "$RUNNER_TEMP/orca.zip"
+          fi
+          python -c "import zipfile; zipfile.ZipFile(r'$RUNNER_TEMP/orca.zip').extractall(r'$RUNNER_TEMP/orca-art')"
+          find "$RUNNER_TEMP/orca-art" -iname 'orca-slicer.exe' | head
+
+      - name: Run binary baseline compare (CLI only)
+        shell: bash
+        env:
+          FILUNA_EVIDENCE_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/baseline-work"
+          mkdir -p "$WORK"
+          export PYTHONUTF8=1
+          python FILUNA/qa/baseline/run_windows_binary_baseline.py \
+            --orca-root "$RUNNER_TEMP/orca-art" \
+            --filuna-root "$RUNNER_TEMP/filuna-art" \
+            --work "$WORK" \
+            --evidence-out "$WORK/evidence.json" \
+            --commit-sha "${{ github.sha }}"
+          cp -r "$WORK" ./baseline-out
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Filuna_baseline_gcode_windows
+          path: baseline-out

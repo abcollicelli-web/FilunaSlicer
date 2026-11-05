@@ -76,7 +76,7 @@
 | Ambientes | (A) CI Windows x64 com artifact Filuna + Orca pin build; (B) unit `tests/fff_print` no mesmo runner; (C) G4 físico N/A para baseline de arquivo |
 | Falha | Divergência fora da tolerância = **FAIL** CORE; não rebaseline silencioso |
 
-**Estado agora:** normalizador/comparador + fixtures sintéticas **implementados e testados**; comparação com binário Windows/artifact real = **NOT_RUN** (workflow manual `filuna-gcode-baseline-manual.yml` só reexecuta unitários sintéticos até haver binaries).
+**Estado agora:** normalizador allowlist estrita + fixtures **sintéticas** (separadas do binário). Baseline binária via `filuna-windows.yml` input `baseline-gcode-only` (Windows runner). Até run+artifacts de comparação: **NOT_RUN/BLOCKED**.
 
 ## 6. Requisitos negativos (fundação)
 
@@ -102,7 +102,7 @@
 
 Para declarar Onda 01 pronta (futuro): LEGAL-02 checklist CMP PASS; QA-03 evidências+CI verdadeiros PASS; CORE-04 baseline com casos obrigatórios PASS no ambiente declarado; DATA-05 isolamento PASS nos casos aplicáveis; instalador privado candidato verificado (hash); logs conforme contrato; **sem** exigir G4 hardware nem G1 visual.
 
-**G1 contrato fundação:** escopo autorizado (sem mudança visual). **G2/G3:** só PASS nos casos com evidência unitária deste lote; comparação G-code binária pin↔Filuna e Windows físico = **NOT_RUN**.
+**G1 contrato fundação:** escopo aprovado pelo dono (sem mudança visual). **G2/G3 globais da Onda01:** **NOT_RUN/BLOCKED** até critérios de saída §8; casos individuais (ex. unitários Linux) podem PASS com plataforma/evidência próprias — **não** elevam G2/G3 globais. Baseline binária Windows e G4 = **NOT_RUN** até evidência.
 
 ## 9. Implementação mínima (autorizada) — estado neste head
 

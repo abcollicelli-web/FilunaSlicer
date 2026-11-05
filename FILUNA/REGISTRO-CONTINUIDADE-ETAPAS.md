@@ -2,7 +2,7 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:42:00 CET
+**Atualizado** 2026-11-05 23:45:00 CET
 **Estado do gate G0** **PASS DOCUMENTAL** (Onda 00 / REGRA G0). G1 NOT RUN · G2–G3 NOT RUN · G4 BLOCKED/NOT RUN (Windows/hardware) · G5–G6 NOT RUN. **Não** é release nem QA funcional.
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
@@ -85,8 +85,8 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | G0-09 | Rodar `check_master_plan.py` | **PASS** estático | 113/113; aviso explícito G0/G1/Windows NÃO homologados |
 | G0-10 | `FILUNA/modules/` fabricante | **PASS** como “ainda inexistente” | API 404 — esperado na Onda 00 |
 | G0-11 | Binários de identidade/mascote no git | **PASS** (bytes) | 5 originais em `FILUNA/brand/assets/original/` SHA=manifesto; G1 visual ainda PENDING (tokens/QA) |
-| G0-12 | Leitura das 141 fontes (profundidade honesta) | **PASS parcial** | Cobertura path+hash 141; semântica N1 = conjunto obrigatório (não 141); ver G0-FONTES-OBRIGATORIAS |
-| G0-13 | SBOM inicial Windows (receitas) | **PASS parcial** | `FILUNA/sbom/` PARTIAL; completo ainda PENDING |
+| G0-12 | Leitura das 141 fontes (profundidade honesta) | **NOT_RUN/BLOCKED** (casos unitários individuais ≠ gate global) | Cobertura path+hash 141; semântica N1 = conjunto obrigatório (não 141); ver G0-FONTES-OBRIGATORIAS |
+| G0-13 | SBOM inicial Windows (receitas) | **NOT_RUN/BLOCKED** (casos unitários individuais ≠ gate global) | `FILUNA/sbom/` PARTIAL; completo ainda PENDING |
 | G0-14 | Teste Windows real / impressoras | **NOT RUN** | autorização atual: testes Windows ficam para depois |
 | G0-15 | Criar este registro + vínculo no plano | **PASS** ao push deste PR | URLs na seção 7 após publish |
 | G0-16 | Leitura integral lote prioritário S/W (13) | **PASS** (leitura) | hashes = manifesto; ver inventário G0 |
@@ -107,8 +107,8 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 ## 6. Última tarefa e próxima ação exata
 
-- **Última tarefa (2026-11-05 23:35:00 CET):** aprovação dono FUND-SPEC registrada; implementação mínima LEGAL-02/QA-03/CORE-04/DATA-05 com testes fail-closed (19 unit + CMP 7/7 + DATA 8/8).
-- **Próxima ação:** (1) job/manual baseline com binaries quando disponível — até lá CORE binário **NOT_RUN**; (2) não Home/DeviceBridge; (3) sem merge PR #3 sem nova ordem; (4) G4 Windows quando dono testar.
+- **Última tarefa (2026-11-05 23:45:00 CET / 2026-11-05T22:45:00Z):** gates G2/G3 globais corrigidos para NOT_RUN/BLOCKED; normalizador/evidence adversarial; `filuna-windows.yml` + runner baseline binário; tentativa de execução Windows sob demanda.
+- **Próxima ação:** acompanhar run baseline/pin-build; publicar evidence.json + hashes; G4 permanece NOT_RUN; sem Home/SRV/DeviceBridge.
 
 
 ## 7. Commits / PRs deste lote (preencher no push)
@@ -223,3 +223,10 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - Draft PR #3: https://github.com/abcollicelli-web/FilunaSlicer/pull/3 (sem merge)
 - Próxima ação: baseline G-code **binário** pin↔Filuna Windows permanece **NOT_RUN** até artifacts/job dedicado; G4 físico intacto; sem Home/DeviceBridge/SRV.
 
+
+## 18. Baseline binário Windows — lote (2026-11-05 23:45:00 CET / UTC 2026-11-05T22:45:00Z)
+
+- G1 fundação = escopo aprovado (t18s14). **G2/G3 globais = NOT_RUN/BLOCKED** (19 unit Linux ≠ gate global).
+- Fontes: Orca run `42037889437` @ `a620d804…`; Filuna run `42102469888` @ `2dace0db…`.
+- Workflow: `filuna-windows.yml` input `baseline-gcode-only=true` despachável `--ref` desta branch.
+- Sintético ≠ binário; G4/instWindows NOT_RUN.

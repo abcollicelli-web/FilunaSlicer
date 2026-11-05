@@ -52,7 +52,7 @@ Aprovação: `FILUNA/approvals/FUND-SPEC-2026-11-05.1-owner-approval.json`.
 | FUND-T04 pin mirror | **PASS** | UPSTREAM_PIN + CMP-002 |
 | FUND-T05 SetAppName Filuna | **PASS** | data_isolation + CMP-006 |
 | FUND-T06 artifact 42102469888 | **PASS** (estado) | Actions success prévio |
-| FUND-T07 gcode pin↔Filuna binary | **NOT_RUN** | sem binário; só sintético PASS |
+| FUND-T07 gcode pin↔Filuna binary | **NOT_RUN→em execução** | job Windows baseline-gcode-only; sintético separado |
 | FUND-UNIT-19 | **PASS** | `python3 FILUNA/tests/run_fund_tests.py` → 19 OK |
 | FUND-CMP-7 | **PASS** | cmp_legal 7/7 |
 | FUND-DATA-8 | **PASS** | data_isolation 8/8 |
@@ -62,3 +62,15 @@ Aprovação: `FILUNA/approvals/FUND-SPEC-2026-11-05.1-owner-approval.json`.
 Plataforma dos PASS unitários: **Linux box**. Não equivale a instalação Windows.
 
 Commit implementação: `7ee410ec25e65d85727b96f021cadb38f11970e0`.
+
+
+## Gates globais (obrigatório)
+
+| Gate | Estado | Nota |
+|---|---|---|
+| G1 fundação | AUTHORIZED | escopo dono; sem visual |
+| G2 global Onda01 | **NOT_RUN/BLOCKED** | unitários individuais ≠ G2 global |
+| G3 global Onda01 | **NOT_RUN/BLOCKED** | baseline binária Windows pendente/em curso |
+| G4 | **NOT_RUN** | físico intacto |
+
+Atualizado UTC 2026-11-05T22:45:00Z.

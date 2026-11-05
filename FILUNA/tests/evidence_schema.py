@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Fail-closed validator for FILUNA/qa/evidence.schema.json records."""
+"""Fail-closed validator for FILUNA/qa/evidence.schema.json records.
+
+Applies the JSON Schema constraints in code (no silent skip if jsonschema
+package is absent): required fields, enums, sha patterns, UTC timestamp,
+additionalProperties false, provenance filters, G4 PASS rules.
+"""
 from __future__ import annotations
 
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,9 +18,18 @@ SCHEMA_PATH = ROOT / "FILUNA/qa/evidence.schema.json"
 
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SHA64 = re.compile(r"^[0-9a-f]{64}$")
+# Require explicit Z or +00:00 UTC offset (reject naive / local-only)
+UTC_TS = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+]00:00)$"
+)
 GATES = {"G0", "G1", "G2", "G3", "G4", "G5", "G6"}
 RESULTS = {"PASS", "FAIL", "BLOCKED", "NOT_RUN"}
 KINDS = {"static", "unit", "integration", "document", "hardware"}
+
+# Provenance / false-evidence filters
+FALSE_EVIDENCE_MARKERS = (
+    "invented", "placeholder", "TODO_PASS", "fake", "assumed pass",
+)
 
 
 class EvidenceValidationError(ValueError):
@@ -30,19 +45,42 @@ def load_schema() -> dict[str, Any]:
         raise EvidenceValidationError(f"schema unreadable: {exc}") from exc
 
 
+def _check_utc(ts: str) -> list[str]:
+    errs: list[str] = []
+    if not isinstance(ts, str) or not UTC_TS.match(ts):
+        errs.append("created_at_utc must be ISO-8601 with Z or +00:00")
+        return errs
+    try:
+        datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError:
+        errs.append("created_at_utc not parseable as datetime")
+    return errs
+
+
 def validate_evidence(doc: Any, *, require_schema_file: bool = True) -> list[str]:
-    """Return list of error strings; empty means OK. Fail-closed: any doubt = error."""
+    """Return list of error strings; empty means OK. Fail-closed."""
     errors: list[str] = []
+    schema: dict[str, Any] | None = None
     if require_schema_file:
         try:
-            load_schema()
+            schema = load_schema()
         except EvidenceValidationError as exc:
             return [str(exc)]
 
     if not isinstance(doc, dict):
         return ["evidence must be a JSON object"]
 
-    required = [
+    # additionalProperties: false from schema
+    allowed = set(schema.get("properties", {}).keys()) if schema else {
+        "schema_version", "case_id", "req_id", "gate", "commit_sha", "result",
+        "platform", "evidence_kind", "created_at_utc", "fixture_sha256",
+        "notes", "evidence_url", "hardware",
+    }
+    for key in doc:
+        if key not in allowed:
+            errors.append(f"unknown field: {key}")
+
+    required = list(schema.get("required", [])) if schema else [
         "schema_version", "case_id", "req_id", "gate", "commit_sha",
         "result", "platform", "evidence_kind", "created_at_utc",
     ]
@@ -53,10 +91,13 @@ def validate_evidence(doc: Any, *, require_schema_file: bool = True) -> list[str
     if doc.get("schema_version") != 1:
         errors.append("schema_version must be 1")
 
-    for key in ("case_id", "req_id", "platform", "created_at_utc"):
+    for key in ("case_id", "req_id", "platform"):
         val = doc.get(key)
         if key in doc and (not isinstance(val, str) or len(val) < 3):
             errors.append(f"{key} must be non-trivial string")
+
+    if "created_at_utc" in doc:
+        errors.extend(_check_utc(doc.get("created_at_utc", "")))
 
     if "gate" in doc and doc.get("gate") not in GATES:
         errors.append(f"invalid gate: {doc.get('gate')}")
@@ -74,32 +115,30 @@ def validate_evidence(doc: Any, *, require_schema_file: bool = True) -> list[str
         if not (isinstance(fx, str) and SHA64.fullmatch(fx)):
             errors.append("fixture_sha256 must be 64 hex or empty")
 
-    # Fail-closed: PASS cannot be claimed with pending/blocked language alone
+    # Provenance filters — notes/url must not claim fake PASS
+    blob = " ".join(
+        str(doc.get(k, "")) for k in ("notes", "evidence_url", "platform")
+    ).lower()
+    if doc.get("result") == "PASS":
+        for marker in FALSE_EVIDENCE_MARKERS:
+            if marker in blob:
+                errors.append(f"PASS blocked by false-evidence marker: {marker}")
+
     if doc.get("result") == "PASS":
         kind = doc.get("evidence_kind")
         url = doc.get("evidence_url")
-        if kind == "hardware" and not url:
-            errors.append("PASS+hardware requires evidence_url")
+        if kind in ("integration", "hardware") and not url:
+            errors.append(f"PASS+{kind} requires evidence_url")
         if doc.get("gate") == "G4":
             if not url:
                 errors.append("G4 PASS requires evidence_url")
             hw = doc.get("hardware")
             if not isinstance(hw, dict) or not hw:
                 errors.append("G4 PASS requires non-empty hardware object")
-
-    # Absent evidence_url is OK for static/unit/document PASS, but explicit null hash mismatch fields
-    if "extra_forbidden" in doc:
-        errors.append("additionalProperties not allowed: extra_forbidden")
-
-    # Unknown keys = fail closed (additionalProperties: false)
-    allowed = {
-        "schema_version", "case_id", "req_id", "gate", "commit_sha", "result",
-        "platform", "evidence_kind", "created_at_utc", "fixture_sha256",
-        "notes", "evidence_url", "hardware",
-    }
-    for key in doc:
-        if key not in allowed:
-            errors.append(f"unknown field: {key}")
+        # Binary baseline claims need commit + fixture hash
+        if kind == "integration" and "gcode" in str(doc.get("case_id", "")).lower():
+            if not fx:
+                errors.append("gcode integration PASS requires fixture_sha256")
 
     return errors
 
@@ -112,3 +151,17 @@ def validate_evidence_file(path: Path) -> list[str]:
     except (OSError, ValueError) as exc:
         return [f"evidence unreadable/invalid JSON: {exc}"]
     return validate_evidence(doc)
+
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) < 2:
+        print("usage: evidence_schema.py <file.json>", file=sys.stderr)
+        raise SystemExit(2)
+    errs = validate_evidence_file(Path(sys.argv[1]))
+    if errs:
+        print("FAIL:")
+        for e in errs:
+            print(" -", e)
+        raise SystemExit(1)
+    print("PASS")

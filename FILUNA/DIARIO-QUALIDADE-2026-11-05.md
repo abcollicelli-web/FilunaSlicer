@@ -106,3 +106,8 @@ Criados FUND-SPEC/REQ/ADR/TEST. Primeiro nó elegível LEGAL-02→QA-03. Corrigi
 ## Adendo — FUND implementação pós-aprovação (2026-11-05 23:35:00 CET)
 
 Dono aprovou FLN-FUND-SPEC-2026-11-05.1 (t18s14, 23:24 Europe/Rome). Registro JSON sem assinatura/token. Entregues CMP, evidence schema fail-closed, normalizador G-code sintético, DATA-05 temp isolation, CI hooks. 19 unit PASS. Baseline binária Windows **NOT_RUN**. Sem UI/Home/SRV/merge.
+
+
+## Adendo — baseline binário + correção gates (2026-11-05 23:45:00 CET / UTC 2026-11-05T22:45:00Z)
+
+Corrigido relatório: sem «G2/G3 PASS» por 19 unitários. Normalizador allowlist estrita; evidence UTC-only; runner Windows + extensão `filuna-windows.yml` `baseline-gcode-only`. Fontes pin/Filuna EXACT runs. G4 NOT_RUN.
