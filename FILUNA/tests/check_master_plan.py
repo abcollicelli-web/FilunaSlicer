@@ -170,6 +170,36 @@ def audit() -> None:
               ("LEGAL-02", "QA-03", "CORE-04", "BRAND-08", "SAFETY-13",
                "TRUST-11", "CAMERAS-26", "FILAMENTS-27", "ATELIE-33")),
           "release depende de conformidade, qualidade, core, marca e negócio")
+    remote = required_text("ARQUITETURA-SERVIDOR-DADOS-REMOTO.md")
+    check("admin Filuna" in remote or "administrador Filuna" in remote,
+          "servidor distingue administrador Filuna do dono da impressora")
+    check("NUNCA" in remote and "SEM" not in "",
+          "controle do suporte proibido por contrato")
+    check("PITR" in remote and "restaura" in remote.lower()
+          and "offline" in remote.lower(),
+          "proteção de dados, recuperação e offline no contrato servidor")
+    check("SRV-QA-020" in remote and "SRV-QA-001" in remote,
+          "vinte casos de testes servidor/remoto catalogados")
+    server_nodes = [k for k in ids if k.startswith("SRV-")]
+    check(len(server_nodes) == 12,
+          "doze fases de servidor e acesso remoto registradas")
+    check(all(index[k]["state"] != "PASS" for k in server_nodes),
+          "nenhuma fase remota marcada homologada sem teste")
+    check(all(k in index for k in ("SRV-07","SRV-08","SRV-10","SRV-11")),
+          "fases remoto OFF, piloto, release e operação presentes")
+    check("SRV-07" in index["SRV-08"]["depends_on"]
+          and "OEM-ELEGOO-16" in index["SRV-08"]["depends_on"]
+          and "OEM-ANYCUBIC-17" in index["SRV-08"]["depends_on"],
+          "piloto remoto condicionado a impressoras LAN físicas homologadas")
+    check("RELEASE-38" in index["SRV-10"]["depends_on"]
+          and "SRV-09" in index["SRV-10"]["depends_on"],
+          "release remoto só ocorre depois de release local e QA remoto")
+    check("SRV-10" in index["SRV-11"]["depends_on"],
+          "operações remotas só depois da homologação remota")
+    check("SRV-03" in index["SYNC-28"]["depends_on"],
+          "sincronização vinculada ao banco/backup do Hub")
+    check("SRV-04" in index["RELEASE-38"]["depends_on"],
+          "release local vinculado ao diagnóstico seguro do servidor")
     check("OPERATE-39" not in pre_release and "RELEASE-38" in index["OPERATE-39"]["depends_on"],
           "operação ocorre depois do release")
     print(f"GRAFO: {len(nodes)} entregas, "
