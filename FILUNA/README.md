@@ -54,7 +54,7 @@ Para qualquer nova função, primeiro verificar as dependências no [cronograma 
 
 ## Auditoria do plano mestre
 
-[Auditoria técnica de 05/11/2026](AUDITORIA-PLANO-MESTRE-2026-11-05.md): apresenta o que foi realmente conferido no GitHub/SentinelX e CI, **113 validações documentais PASS**, 141 fontes inventariadas por SHA, 52 entregas/149 dependências, riscos, conflitos e o estado **G0 EM ANDAMENTO / G1–G6 NÃO HOMOLOGADOS**. A implementação de servidor, controle remoto e impressoras segue pendente; a PR #2 permanece DRAFT.
+[Auditoria técnica de 05/11/2026](AUDITORIA-PLANO-MESTRE-2026-11-05.md): apresenta o que foi realmente conferido no GitHub/SentinelX e CI, **113 validações documentais PASS**, 141 fontes inventariadas por SHA, 52 entregas/149 dependências, riscos, conflitos e o estado **G0 PASS DOCUMENTAL** / **G1–G6 NÃO HOMOLOGADOS** (G4 Windows NOT RUN). A implementação de servidor, controle remoto e impressoras segue pendente; a PR #2 permanece DRAFT.
 
 
 ## G0 — fontes obrigatórias (N1)
@@ -62,3 +62,10 @@ Para qualquer nova função, primeiro verificar as dependências no [cronograma 
 - [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md) — conjunto normativo vs 141 históricos  
 - [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) — N1–N8 / CF  
 - [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) — profundidades A/B/C  
+
+
+## Fechamento G0 (documental)
+
+- [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) — PASS documental + critérios rastreados  
+- [G0-TESTES-CASOS-2026-11-05.md](G0-TESTES-CASOS-2026-11-05.md) — G0-T01..T10  
+- [G0-MAPA-141-STATUS-2026-11-05.md](G0-MAPA-141-STATUS-2026-11-05.md) · [G0-MIG-DAG-ALINHAMENTO-2026-11-05.md](G0-MIG-DAG-ALINHAMENTO-2026-11-05.md) · [G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md](G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md)

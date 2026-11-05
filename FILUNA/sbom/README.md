@@ -1,6 +1,6 @@
 # FILUNA — SBOM parcial Windows (verificável, NÃO completo)
 
-**ID** FLN-SBOM-F-WIN-2026-11-05.1 · **Atualizado** 2026-11-05 23:05:56 CET  
+**ID** FLN-SBOM-F-WIN-2026-11-05.1 · **Atualizado** 2026-11-05 23:24:00 CET  
 **Status** PARTIAL / NOT COMPLETE — adequado como *SBOM inicial* de evidência G0, **não** como declaração de fechamento de supply-chain.
 
 ## Escopo
@@ -93,4 +93,6 @@ Presentes no tree do pin; licenças apenas apontadas por arquivos LICENSE/COPYIN
 
 ## Relação com G0
 
-O plano exige **SBOM inicial** na Onda 00. Este documento cumpre evidência inicial parcial. **Não** basta sozinho para G0 PASS se outros critérios (fontes mestras reconciliadas, órfãos) falharem.
+O plano (Onda 00) exige **SBOM inicial**. Este pacote (`PARTIAL_NOT_COMPLETE`, receitas CMake + `deps_src` + CycloneDX parcial com lacunas explícitas) **satisfaz SBOM inicial**.  
+**Não** exige SBOM completo nem inventário DLL do artefact para fechar G0. Completo = fase QA/REL posterior.  
+G0 PASS documental também exige os demais critérios REGRA/PLANO (fontes, conflitos, baseline, riscos, mapa) — ver `G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md`.

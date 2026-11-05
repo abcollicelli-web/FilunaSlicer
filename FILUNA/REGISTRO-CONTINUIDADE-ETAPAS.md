@@ -2,8 +2,8 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:12:40 CET
-**Estado do gate G0** EM ANDAMENTO / PENDING (N1 PASS · N2 PASS processo · N4–N7 parciais · N8 estático≠Windows; **G0 não PASS**)
+**Atualizado** 2026-11-05 23:24:00 CET
+**Estado do gate G0** **PASS DOCUMENTAL** (Onda 00 / REGRA G0). G1 NOT RUN · G2–G3 NOT RUN · G4 BLOCKED/NOT RUN (Windows/hardware) · G5–G6 NOT RUN. **Não** é release nem QA funcional.
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
 > **Obrigatório para qualquer IA ou colaborador:** ler este arquivo **antes** de alterar código, docs, CI, UI ou releases. Em seguida ler os documentos normativos listados abaixo. Não depender de chat, memória local, `/workspace` ou histórico de sessão.
@@ -61,7 +61,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 | Onda / Gate | Status | Notas |
 |---|---|---|
-| 00 Genealogia / **G0** | **PENDING** | Mapa N1–N8: baseline+riscos+SBOM parcial OK; N1 profundidade e N2 órfãos ainda abertos; **não PASS** |
+| 00 Genealogia / **G0** | **PASS DOCUMENTAL** | Critérios REGRA G0 + Onda 00 fechados (rev conflitos .3); G4 Windows separado |
 | 01 Fundação / G1–G3 fundação | PENDING | Checks estáticos existem; baseline G-code/Windows real não |
 | 02 Qualidade Orca nativa | PENDING | |
 | 03 Identidade/Home | BLOCKED até G0 PASS + tokens/QA visual (originais **já no repo**) | |
@@ -107,8 +107,8 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 ## 6. Última tarefa e próxima ação exata
 
-- **Última tarefa (2026-11-05 23:12:40 CET):** leitura semântica do conjunto normativo N1 (MIGRACAO §2 + contratos-chave W + regras update/print-only/protocolos); CF-07 enumerado; N1/N2 marcados PASS no mapa; G0 global ainda PENDING.
-- **Próxima ação:** apertar N4–N7 (riscos/MIG/SBOM DLLs artifact 42102469888 read-only); **não** Home/DeviceBridge/SRV/G1; sem merge PRs; Windows QA quando o dono testar.
+- **Última tarefa (2026-11-05 23:24:00 CET):** fechamento documental G0 — corrigidos critérios derivados (Windows/SBOM completo removidos da checklist G0); mapa 141; MIG↔DAG; riscos OEM; casos G0-T01..T10; G0 **PASS DOCUMENTAL**.
+- **Próxima ação:** G1 SPEC/contrato visual + tokens HEX + aceite do dono para aparência; **sem** merge PR #3 sem ordem; Windows/hardware → G4 quando o dono testar; sem DeviceBridge/SRV impl nesta etapa.
 
 
 ## 7. Commits / PRs deste lote (preencher no push)
@@ -179,3 +179,12 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - Checks: `check_master_plan.py` 113/113; `check_quality_gate.py --mode foundation` 0 FAIL (estático ≠ G0 funcional).
 - **Pergunta única prioritária ao dono (opcional):** confirma CF-07 — nenhum BLOQUEANTE do legado W 0.2.x é critério G0 do FilunaSlicer atual, salvo REQ que você reabrir explicitamente? (exceção candidata já mapeada: Anycubic start → DeviceBridge Onda 06, não G0.)
 - G0 global **PENDING**. Sem merge PR #3.
+
+## 15. Checkpoint G0 PASS DOCUMENTAL (2026-11-05 23:24:00 CET)
+
+- Corrigida checklist derivada: **não** exige QA Windows (G4) nem SBOM completo (Onda 00 = SBOM inicial).
+- Estados só PASS/FAIL/BLOCKED/NOT RUN.
+- CF-07 **RESOLVIDO** por hierarquia REGRA (legado W ≠ homologação F); sem nova pergunta ao dono.
+- Evidências: `G0-MAPA-141-STATUS`, `G0-MIG-DAG-ALINHAMENTO`, `G0-RISCOS-OEM-PROVENIENCIA`, `G0-TESTES-CASOS`, conflitos rev .3.
+- Checks: `check_master_plan.py` 113/113; `check_quality_gate.py --mode foundation` 0 FAIL (Linux).
+- Escopo do PASS: inventário/genealogia apenas. Próximo gate produto: **G1** (não implementar UI neste lote).

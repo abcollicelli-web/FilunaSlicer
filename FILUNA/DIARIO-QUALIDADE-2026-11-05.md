@@ -91,3 +91,8 @@ Concluída cobertura dos 141 caminhos do manifesto legado (119 blobs novos verif
 ## Adendo — N1/N2 semântico (2026-11-05 23:12:40 CET)
 
 Lote autorizado: leitura semântica real do conjunto normativo (não reclassificação vazia). Novo [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md); conflitos rev .2 com N1/N2 PASS e inventário CF-07. Inventário leitura rev .5. Checks documentais 113/113 e foundation 0 FAIL reexecutados. **G0 continua EM ANDAMENTO** (N4–N7 parciais; Windows/hardware NOT RUN). Sem Home/DeviceBridge/SRV; sem merge.
+
+
+## Adendo — G0 PASS DOCUMENTAL (2026-11-05 23:24:00 CET)
+
+Revisão do proprietário: critérios derivados que pediam QA Windows e SBOM completo para G0 **contradiziam** REGRA (G4) e PLANO (SBOM inicial). Checklist reescrita com rastreio trecho-a-trecho; CF-07 resolvido por hierarquia; mapa 141 + MIG↔DAG + riscos OEM + casos G0-T*. **G0 PASS documental (Onda 00).** G1–G6 NOT RUN/BLOCKED. Sem merge; sem implementação G1 neste lote.

@@ -58,3 +58,9 @@ A lista acima contém critérios de **produto/release** e permanece sem aprovaç
 - [ ] Testes do executável real no Windows e homologação visual expressa do proprietário.
 
 **Controle de candidatas:** builds de CI, inclusive `Filuna Windows build`, são para QA privado; não significam atualização automaticamente instalável, distribuição pública ou gate de release aprovado. O script `FILUNA/tests/check_quality_gate.py` só audita a fundação estática; ele NÃO substitui testes de integração/hardware.
+
+
+## Atualização G0 (2026-11-05 23:24:00 CET)
+
+Gate **G0 Inventário** = **PASS DOCUMENTAL** no dossiê de continuidade (PR #3). Evidência: `FILUNA/G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md` rev .3 e `FILUNA/G0-TESTES-CASOS-2026-11-05.md`.  
+Aceite Windows/hardware permanece sob **G4** (NOT RUN até ensaio do proprietário). Aceite visual sob **G1**.

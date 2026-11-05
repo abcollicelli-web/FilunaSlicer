@@ -177,6 +177,7 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 0b. [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) — evidência parcial G0 (profundidades A/B/C; não 141 integrais).
 0c. [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) — CF/REQ e critérios N1–N8.
  0d. [G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md](G0-FONTES-OBRIGATORIAS-N1-2026-11-05.md) — definição do conjunto normativo N1 (≠ 141 históricos).
+ 0e. [G0-MAPA-141-STATUS-2026-11-05.md](G0-MAPA-141-STATUS-2026-11-05.md) · [G0-MIG-DAG-ALINHAMENTO-2026-11-05.md](G0-MIG-DAG-ALINHAMENTO-2026-11-05.md) · [G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md](G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md) · [G0-TESTES-CASOS-2026-11-05.md](G0-TESTES-CASOS-2026-11-05.md).
 0d. [sbom/README.md](sbom/README.md) — SBOM Windows parcial (CycloneDX incompleto).
 1. Este plano: ordem de execução, escopo, cronograma e riscos.
 2. [ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md](ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md): protocolos, fontes OEM, limitações, modelo de capacidades e matriz de hardware.
@@ -186,7 +187,7 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 
 ## 11. Situação real deste registro
 
-- **Continuidade operacional:** ver [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md) (atualizado em lotes; G0 ainda EM ANDAMENTO).
+- **Continuidade operacional:** ver [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md) — **G0 PASS DOCUMENTAL** (Onda 00); G1+ NOT RUN/BLOCKED.
 - **Tip plano final (quality-master) confirmada:** `d1935aefa91a1eda86f57b67b342a3857247294e` — 52 entregas / 149 deps / SRV-00..11; auditoria documental 113/113 ≠ G0 PASS.
 - **Planejamento iniciado e matriz de fontes consultada.** O inventário não afirma que TODOS os arquivos do legado foram lidos integralmente; o índice documenta a cobertura e a fila restante por área.
 - **Nenhuma dessas ondas foi executada por este commit.** Os checks estáticos da fundação anteriores passaram, mas testes e homologação de hardware do novo fork ainda não.

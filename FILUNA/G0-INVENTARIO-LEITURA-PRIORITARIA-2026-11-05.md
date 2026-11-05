@@ -1,8 +1,8 @@
 # FILUNA G0 — Inventário de leitura do manifesto (141 caminhos)
 
-**ID** FLN-G0-READ-2026-11-05.5  
-**Atualizado** 2026-11-05 23:12:40 CET (Europe/Rome)
-**Gate** G0 EM ANDAMENTO — **não** PASS.  
+**ID** FLN-G0-READ-2026-11-05.6  
+**Atualizado** 2026-11-05 23:24:00 CET (Europe/Rome)
+**Gate** G0 **PASS DOCUMENTAL** (Onda 00) — ver conflitos rev .3; G1–G6 NOT RUN/BLOCKED.  
 **Correção de honestidade (obrigatória):** afirmar “141 leituras integrais” seria indevido. Há três profundidades (ver tabela). Cobertura de *caminhos/hashes* = 141/141; cobertura *semântica cláusula-a-cláusula* ≠ 141.
 
 ## Cobertura
@@ -567,3 +567,12 @@ Promovidos a `READ_SEMANTIC_FULL` (amostra; hashes = manifesto):
 `15-LINHA-DO-TEMPO`, `23-QA-LUA…`, `13-HOME-LANCAMENTO-V3`, `REGRA-CATALOGO-PRINT-ONLY`, `25-REGRA-MESTRE-ATUALIZACOES`, `QA-0.1.9-IMPRESSORAS`, `QA-LUA-LITOFANIA`, `VALIDACAO-0.2.37`, `D5-D6`, `PRODUCAO`, `ARCHITECTURE`, `ESTADO-0.2.0`, `FUP-DESCOBERTA`, `GUIA-DONO…`, `ENGINE_CONTRACT`, `PROTOCOLOS-IMPRESSORAS`, `PENDENCIAS`, `AUDITORIA-SEGURANCA`, `GROK_CONTRACT`, proposals `mestre-dispositivos`/`mestre-preparar`, contracts `engine-job`/`sync-event`/`api`.  
 Reconfirmados FULL: `04-MOTORES`, `14-CONTINUIDADE`, `18-HOME`, `ESTRUTURA-HOME…`, `MESTRE-DISPOSITIVOS/PREPARAR/PARAMETRICOS`.  
 `UPSTREAM-MONITOR/MESTRE-MOTORES…` lido (COVER→semântico parcial): conteúdo multi-motor **SUPERADO** no F — não reabrir.
+
+
+## Checkpoint fechamento G0 documental (2026-11-05 23:24:00 CET)
+
+Mapa path+SHA+status: [G0-MAPA-141-STATUS-2026-11-05.md](G0-MAPA-141-STATUS-2026-11-05.md) (141/141, 0 UNKNOWN).  
+MIG↔DAG: [G0-MIG-DAG-ALINHAMENTO-2026-11-05.md](G0-MIG-DAG-ALINHAMENTO-2026-11-05.md).  
+Riscos OEM: [G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md](G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md).  
+Testes: [G0-TESTES-CASOS-2026-11-05.md](G0-TESTES-CASOS-2026-11-05.md).  
+Critérios Windows/SBOM-completo removidos da checklist G0 (eram derivados indevidos).

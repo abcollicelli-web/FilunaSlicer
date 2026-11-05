@@ -224,3 +224,8 @@ Matriz específica [ARQUITETURA-SERVIDOR-DADOS-REMOTO.md](ARQUITETURA-SERVIDOR-D
 É obrigatório diferenciar o proprietário do software (**admin Filuna: apenas incidentes e observações permitidas**) do proprietário da **impressora** (**cliente: permissões exclusivas, com compartilhamento explícito e revogável**). O servidor pode administrar a fila de mensagens autenticadas para a instalação do cliente, mas **jamais pode assumir sessão de comando do administrador Filuna**.
 
 O status de todas as fases remotas permanece NOT RUN/BLOCKED até haver teste físico autorizado; a simples criação de schemas/rotas não constitui conexão nem QA.
+
+
+### Registro G0 documental (2026-11-05 23:24:00 CET)
+
+Casos executados: ver [G0-TESTES-CASOS-2026-11-05.md](G0-TESTES-CASOS-2026-11-05.md). Resultado gate G0 = **PASS DOCUMENTAL**. Casos Windows/hardware = gate G4 (**NOT RUN**).
