@@ -2,7 +2,7 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:35:00 CET
+**Atualizado** 2026-11-05 23:40:00 CET
 **Estado do gate G0** **PASS DOCUMENTAL** (Onda 00 / REGRA G0). G1 NOT RUN · G2–G3 NOT RUN · G4 BLOCKED/NOT RUN (Windows/hardware) · G5–G6 NOT RUN. **Não** é release nem QA funcional.
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
@@ -206,3 +206,10 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - **NOT_RUN / BLOCKED:** comparação G-code Orca pin↔Filuna com artifact Windows; AppData/registro real; impressoras; release.
 - **Adversarial:** confirmar que sample_c (X21) falha compare (exit 1); meta-only passa; schema rejeita G4 PASS sem hardware; `libslic3r` não diffado neste lote.
 - Base pré-lote: `5349c06ff94953268a6690472d2b3af399296ad6`.
+
+### Push/commit lote (2026-11-05 23:40:00 CET)
+
+- Commit: `7ee410ec25e65d85727b96f021cadb38f11970e0` (`7ee410ec`)
+- Branch: `filuna/continuidade-g0-20261105` · draft PR #3
+- Base anterior: `5349c06f`
+- Sem merge/force-push/rebase.

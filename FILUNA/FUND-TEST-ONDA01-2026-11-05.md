@@ -60,3 +60,5 @@ Aprovação: `FILUNA/approvals/FUND-SPEC-2026-11-05.1-owner-approval.json`.
 | FUND-T08 start sem confirmação (impl runtime) | **NOT_RUN** | contrato; sem DeviceBridge |
 
 Plataforma dos PASS unitários: **Linux box**. Não equivale a instalação Windows.
+
+Commit implementação: `7ee410ec25e65d85727b96f021cadb38f11970e0`.

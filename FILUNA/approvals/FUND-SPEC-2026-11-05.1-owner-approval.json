@@ -28,5 +28,7 @@
   "not_cryptographic_signature": true,
   "not_owner_token": true,
   "base_commit_at_approval_request": "5349c06ff94953268a6690472d2b3af399296ad6",
-  "recorded_in_repo": true
+  "recorded_in_repo": true,
+  "implementation_commit": "7ee410ec25e65d85727b96f021cadb38f11970e0",
+  "recorded_at_europe_rome": "2026-11-05T23:40:00+01:00"
 }
