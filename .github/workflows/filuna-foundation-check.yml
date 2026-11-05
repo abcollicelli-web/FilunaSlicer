@@ -23,3 +23,12 @@ jobs:
         uses: actions/checkout@v4
       - name: Validate foundation contract (not hardware/release)
         run: python3 FILUNA/tests/check_quality_gate.py --mode foundation
+      - name: Ensure unapproved release fails closed
+        shell: bash
+        run: |
+          if python3 FILUNA/tests/check_quality_gate.py --mode release > release-gate.log 2>&1; then
+            echo "ERRO: gate de release aprovou sem as evidências obrigatórias"
+            exit 1
+          fi
+          cat release-gate.log
+          grep -q 'release bloqueado: FILUNA/QA/release-evidence.json não existe' release-gate.log
