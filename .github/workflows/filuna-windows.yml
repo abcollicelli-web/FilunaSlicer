@@ -75,7 +75,7 @@ jobs:
                 ;;
             esac
           done
-          ls -R out | head -50
+          find out -maxdepth 3 -print
       - uses: actions/upload-artifact@v4
         with:
           name: Filuna_Windows_x64_portable
