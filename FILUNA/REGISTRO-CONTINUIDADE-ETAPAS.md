@@ -115,7 +115,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 |---|---|
 | Branch | `filuna/continuidade-g0-20261105` |
 | Base no momento da criação | `d1935aef` (`filuna/quality-master-20261105`) |
-| Commit tip (checkpoint) | `74f5d003ae01b08ed97e9b915bf76ba8c0df9b4b` (série c209f19d…74f5d003) |
+| Commit tip (checkpoint) | HEAD de  (ver commits do PR #3; tip pós-push) |
 | PR draft | [#3](https://github.com/abcollicelli-web/FilunaSlicer/pull/3) |
 | Arquivos tocados | `FILUNA/REGISTRO-CONTINUIDADE-ETAPAS.md` (novo); `FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md`; `FILUNA/README.md`; `FILUNA/DIARIO-QUALIDADE-2026-11-05.md`; `AGENTS.md` |
 
