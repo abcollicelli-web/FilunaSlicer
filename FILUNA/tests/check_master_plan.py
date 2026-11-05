@@ -173,7 +173,8 @@ def audit() -> None:
     remote = required_text("ARQUITETURA-SERVIDOR-DADOS-REMOTO.md")
     check("admin Filuna" in remote or "administrador Filuna" in remote,
           "servidor distingue administrador Filuna do dono da impressora")
-    check("NUNCA" in remote and "SEM" not in "",
+    check("Administradores não recebem escopo" in remote
+          and "NUNCA" in remote,
           "controle do suporte proibido por contrato")
     check("PITR" in remote and "restaura" in remote.lower()
           and "offline" in remote.lower(),
