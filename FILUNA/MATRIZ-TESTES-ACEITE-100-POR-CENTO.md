@@ -50,7 +50,7 @@ T2–T4 não dispensam T5/T6. Testes físicos são executados **com os modelos e
 
 ## 4. Gates G0–G6
 
-**G0 Inventário:** todos os documentos e inventários críticos lidos ou explicitamente pendentes; SHA de referência; licença de cada fonte OEM; baseline de upstream e G-code; referências visuais oficiais versionadas; hardware disponível; cronograma lógico e critérios de sucesso aprovados. Se leitura integral de fonte relevante não acabou, G0 continua **EM ANDAMENTO**, não PASS.
+**G0 Inventário:** mapa path+hash+status sem órfãos obrigatórios; fontes mestras/obrigatórias esgotadas (definição em G0-FONTES-OBRIGATORIAS; 141 COVER histórico ≠ obrigatório). Baseline G-code de **produto** e hardware são Onda 01/G4, não reabrem G0 documental. **Histórico:** a frase “se leitura integral de cada arquivo do manifesto 141 não acabou, G0 EM ANDAMENTO” foi **superada** pelo PASS documental `ee025544…`.
 
 **G1 Contrato:** tela e estados (erro, vazio, offline, carregando, vencido, confirmação); dados reais, assets e tokens homologados; interfaces DeviceBridge, capacidades, autorização e rejeição; especificações de cada módulo e ameaças; casos de teste escritos antes de código; dono homologa design/procedimentos.
 
@@ -229,3 +229,8 @@ O status de todas as fases remotas permanece NOT RUN/BLOCKED até haver teste f�
 ### Registro G0 documental (2026-11-05 23:24:00 CET)
 
 Casos executados: ver [G0-TESTES-CASOS-2026-11-05.md](G0-TESTES-CASOS-2026-11-05.md). Resultado gate G0 = **PASS DOCUMENTAL**. Casos Windows/hardware = gate G4 (**NOT RUN**).
+
+
+### Onda 01 Fundação (2026-11-05 23:30:00 CET)
+
+Casos: [FUND-TEST-ONDA01-2026-11-05.md](FUND-TEST-ONDA01-2026-11-05.md). Estado SPEC **PROPOSTO**; FUND-T07 baseline G-code **NOT RUN**.

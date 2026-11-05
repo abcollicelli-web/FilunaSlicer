@@ -2,7 +2,7 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 23:24:00 CET
+**Atualizado** 2026-11-05 23:30:00 CET
 **Estado do gate G0** **PASS DOCUMENTAL** (Onda 00 / REGRA G0). G1 NOT RUN · G2–G3 NOT RUN · G4 BLOCKED/NOT RUN (Windows/hardware) · G5–G6 NOT RUN. **Não** é release nem QA funcional.
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
@@ -32,7 +32,7 @@
 - **Pasta de dados:** `%APPDATA%\Filuna` (própria; não misturar com Orca).
 - **Testes físicos Windows/impressoras:** ainda **NÃO feitos** neste projeto F; build verde ≠ homologação.
 - **Camada visual:** provisória / identidade referenciada; **não** produto final perfeito.
-- **Escopo deste lote autorizado:** documentação de continuidade + execução parcial de **G0/Onda 00**; sem saltar para implementação grande de UI/DeviceBridge/remoto; sem merge de PR #1/#2; sem mudar branch padrão.
+- **Escopo vigente:** G0 PASS documental; Onda 01 FUND contrato PROPOSTO; sem UI/DeviceBridge/remoto/impl prematura; sem merge PR #3 sem ordem; branch padrão inalterada.
 
 ## 2. Software-base, pin e branches (fonte de verdade)
 
@@ -62,7 +62,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | Onda / Gate | Status | Notas |
 |---|---|---|
 | 00 Genealogia / **G0** | **PASS DOCUMENTAL** | Critérios REGRA G0 + Onda 00 fechados (rev conflitos .3); G4 Windows separado |
-| 01 Fundação / G1–G3 fundação | PENDING | Checks estáticos existem; baseline G-code/Windows real não |
+| 01 Fundação / gates fundação | **PROPOSTO** (SPEC) | [FUND-SPEC-ONDA01](FUND-SPEC-ONDA01-2026-11-05.md); 1º nó LEGAL-02→QA-03; baseline G-code NOT RUN; G4 separado |
 | 02 Qualidade Orca nativa | PENDING | |
 | 03 Identidade/Home | BLOCKED até G0 PASS + tokens/QA visual (originais **já no repo**) | |
 | 04–14 e G2–G6 produto | PENDING / BLOCKED por predecessor | |
@@ -97,18 +97,18 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | G0-21 | Critérios exatos G0 N1–N8 vs REGRA/PLANO | **PASS** (mapa) | N1/N2 PASS neste lote; G0 global ainda PENDING (N4–N7 parcial, Windows NOT RUN) |
 
 
-**Conclusão G0 deste lote:** progresso real de inventário/verificação, **G0 NÃO PASS**. Promoção para Onda 01/G1 **bloqueada**.
+**Conclusão G0 (histórico do checklist inicial deste arquivo):** na primeira redação G0 ainda não PASS. **Fato corrente (§15):** G0 **PASS DOCUMENTAL**; Onda 01 contrato PROPOSTO (§16).
 
 ## 5. Decisões confirmadas vs dúvidas
 
 **Confirmadas (dono):** Orca motor único 2.5-dev pinado; AGPL público; pasta `Filuna`; rebrand em fork; Elegoo Centauri Carbon 2 + Anycubic Kobra 3 V2 como piloto; `orcaslicer://` a assumir; quality docs em PR draft; iniciar cronograma sobre base atual; documentar continuidade para qualquer IA; Windows físico depois; sem merge automático dos PRs.
 
-**Abertas / bloqueantes:** completar leitura normativa restante (G0); tokens HEX finais e QA visual (G1); firmware exato das duas impressoras; quem assina instalador; política Bambu/Flashforge LAN-only vs plugin; escopo Hub/remoto (default OFF até gates); se importar perfis Orca do usuário no 1º run. **Assets de marca:** versionados (não reabrir pedido).
+**Abertas (não bloqueiam G0):** aceite de escopo Onda 01 (FUND-SPEC); depois implementação fundação. **Fora da Onda 01:** tokens HEX/QA visual (Onda 03); firmware CC2/Kobra e Windows (G4); assinatura instalador (G5); Hub/remoto (SRV). **Assets de marca:** versionados.
 
 ## 6. Última tarefa e próxima ação exata
 
-- **Última tarefa (2026-11-05 23:24:00 CET):** fechamento documental G0 — corrigidos critérios derivados (Windows/SBOM completo removidos da checklist G0); mapa 141; MIG↔DAG; riscos OEM; casos G0-T01..T10; G0 **PASS DOCUMENTAL**.
-- **Próxima ação:** G1 SPEC/contrato visual + tokens HEX + aceite do dono para aparência; **sem** merge PR #3 sem ordem; Windows/hardware → G4 quando o dono testar; sem DeviceBridge/SRV impl nesta etapa.
+- **Última tarefa (2026-11-05 23:30:00 CET):** contrato Onda 01 Fundação (SPEC/REQ/ADR/TEST) + correção de docs desatualizados (marca no git; G0 EM ANDAMENTO histórico; índice 0d duplicado; próximo passo ≠ visual).
+- **Próxima ação:** obter **aceite de escopo** do FUND-SPEC pelo dono; **não** implementar UI/Home/tokens; **não** merge PR #3 sem ordem; após aceite → LEGAL-02/QA-03 mínimos sem tocar `libslic3r`.
 
 
 ## 7. Commits / PRs deste lote (preencher no push)
@@ -144,7 +144,7 @@ Persistido neste arquivo no GitHub. Qualquer IA deve atualizar **este mesmo arqu
 - Anúncio dono t18u alinhado ao DAG/auditoria do tip (52/149/12 SRV; 113/113 documental ≠ G0 PASS).
 - Evidência: [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md).
 - Admin Filuna sem controle de impressoras reafirmado; SRV inventariado, não provisionado.
-- G0 continua **EM ANDAMENTO**.
+- G0 continua **EM ANDAMENTO**. *(histórico do checkpoint 10; superado pelo §15 PASS DOCUMENTAL)*
 
 
 ## 11. Checkpoint assets de marca (2026-11-05 23:00:49 CET)
@@ -166,8 +166,7 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - Corrigida honestidade: **não** 141 leituras integrais; classes A/B/C no inventário .4.
 - Conflitos: [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md).
 - SBOM inicial parcial: [sbom/README.md](sbom/README.md) + CDX parcial.
-- Critérios G0 restantes para PASS global: N4–N7 sem lacunas bloqueantes + N8 funcional quando aplicável. **N1/N2 fechados no §14**.
-- G0 **não PASS**. Sem salto para G1/Home/SRV.
+- *(histórico §13)* N1/N2 depois fechados; G0 PASS DOCUMENTAL no §15. Sem salto para Home/SRV.
 
 
 ## 14. Checkpoint N1/N2 semântico (2026-11-05 23:12:40 CET)
@@ -187,4 +186,13 @@ Incorporados **somente** os 5 originais em `FILUNA/brand/assets/original/` (ZIP 
 - CF-07 **RESOLVIDO** por hierarquia REGRA (legado W ≠ homologação F); sem nova pergunta ao dono.
 - Evidências: `G0-MAPA-141-STATUS`, `G0-MIG-DAG-ALINHAMENTO`, `G0-RISCOS-OEM-PROVENIENCIA`, `G0-TESTES-CASOS`, conflitos rev .3.
 - Checks: `check_master_plan.py` 113/113; `check_quality_gate.py --mode foundation` 0 FAIL (Linux).
-- Escopo do PASS: inventário/genealogia apenas. Próximo gate produto: **G1** (não implementar UI neste lote).
+- Escopo do PASS: inventário/genealogia apenas. **Próximo:** Onda **01 Fundação** (FUND-SPEC), não Onda 03 visual.
+
+## 16. Checkpoint Onda 01 FUND contrato (2026-11-05 23:30:00 CET)
+
+- Docs: [FUND-SPEC-ONDA01-2026-11-05.md](FUND-SPEC-ONDA01-2026-11-05.md), [FUND-REQ-ONDA01-2026-11-05.md](FUND-REQ-ONDA01-2026-11-05.md), [FUND-ADR-BASELINE-DADOS-2026-11-05.md](FUND-ADR-BASELINE-DADOS-2026-11-05.md), [FUND-TEST-ONDA01-2026-11-05.md](FUND-TEST-ONDA01-2026-11-05.md).
+- 1º nó elegível: **LEGAL-02** (deps GOV-00/SRC-01); em seguida **QA-03** → CORE-04 → DATA-05.
+- G1 visual/tokens/Home **não** são o próximo passo (Onda 03).
+- **G1/G2/G3 fundação:** não marcados PASS; SPEC estado PROPOSTO.
+- **Pergunta única ao dono:** homologa o escopo FLN-FUND-SPEC-2026-11-05.1 para autorizar implementação mínima §9 do SPEC?
+- Correções: plano §3.2 marca no git; §12 cobertura sem “G0 EM ANDAMENTO” corrente; índice 0d/0e/0f/0g.

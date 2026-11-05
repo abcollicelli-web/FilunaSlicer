@@ -115,7 +115,8 @@ Lista resumida (referência, não checklist G0): várias peças/pintura cor; par
 
 ## Próximo passo (sem saltar implementação de produto)
 
-1. **G1:** SPEC/contrato visual + tokens HEX + aceite explícito do proprietário para aparência (REGRA G1).  
-2. Não mergear PR #3 sem ordem do dono.  
-3. Windows/impressoras quando o dono testar → evidências no gate **G4**.  
-4. SBOM completo / DLLs de artifact = trabalho de QA/REL (não reabre G0 inicial).
+1. **Onda 01 Fundação:** [FUND-SPEC-ONDA01-2026-11-05.md](FUND-SPEC-ONDA01-2026-11-05.md) — aceite de escopo; nós LEGAL-02→QA-03→CORE-04→DATA-05.  
+2. **Não** iniciar Onda 03 (tokens HEX/Home) agora.  
+3. Não mergear PR #3 sem ordem do dono.  
+4. Windows/impressoras → **G4** quando o dono testar.  
+5. SBOM completo = QA/REL (não reabre G0 inicial).

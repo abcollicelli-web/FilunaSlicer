@@ -96,3 +96,8 @@ Lote autorizado: leitura semântica real do conjunto normativo (não reclassific
 ## Adendo — G0 PASS DOCUMENTAL (2026-11-05 23:24:00 CET)
 
 Revisão do proprietário: critérios derivados que pediam QA Windows e SBOM completo para G0 **contradiziam** REGRA (G4) e PLANO (SBOM inicial). Checklist reescrita com rastreio trecho-a-trecho; CF-07 resolvido por hierarquia; mapa 141 + MIG↔DAG + riscos OEM + casos G0-T*. **G0 PASS documental (Onda 00).** G1–G6 NOT RUN/BLOCKED. Sem merge; sem implementação G1 neste lote.
+
+
+## Adendo — Onda 01 FUND contrato (2026-11-05 23:30:00 CET)
+
+Criados FUND-SPEC/REQ/ADR/TEST. Primeiro nó elegível LEGAL-02→QA-03. Corrigidas desatualizações: originais de marca no git; cobertura §12 sem G0 EM ANDAMENTO corrente; índice 0d duplicado; REGISTRO/AGENTS apontam Onda 01 não visual. Checks docs reexecutados. Sem implementação UI/CI Windows novo. G1/G2/G3 não marcados PASS.

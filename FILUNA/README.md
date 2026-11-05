@@ -69,3 +69,15 @@ Para qualquer nova função, primeiro verificar as dependências no [cronograma 
 - [G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md](G0-CONFLITOS-RASTREABILIDADE-2026-11-05.md) — PASS documental + critérios rastreados  
 - [G0-TESTES-CASOS-2026-11-05.md](G0-TESTES-CASOS-2026-11-05.md) — G0-T01..T10  
 - [G0-MAPA-141-STATUS-2026-11-05.md](G0-MAPA-141-STATUS-2026-11-05.md) · [G0-MIG-DAG-ALINHAMENTO-2026-11-05.md](G0-MIG-DAG-ALINHAMENTO-2026-11-05.md) · [G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md](G0-RISCOS-OEM-PROVENIENCIA-2026-11-05.md)
+
+
+## Onda 01 — Fundação (atual)
+
+Contrato **PROPOSTO** (sem implementação automática):
+
+- [FUND-SPEC-ONDA01-2026-11-05.md](FUND-SPEC-ONDA01-2026-11-05.md)
+- [FUND-REQ-ONDA01-2026-11-05.md](FUND-REQ-ONDA01-2026-11-05.md)
+- [FUND-TEST-ONDA01-2026-11-05.md](FUND-TEST-ONDA01-2026-11-05.md)
+- [FUND-ADR-BASELINE-DADOS-2026-11-05.md](FUND-ADR-BASELINE-DADOS-2026-11-05.md)
+
+Próximo passo operacional: aceite de escopo pelo proprietário → LEGAL-02/QA-03. **Não** iniciar Onda 03 (Home/tokens) agora.
