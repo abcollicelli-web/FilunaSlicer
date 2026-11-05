@@ -35,3 +35,10 @@ Os módulos de fabricante derivam de ElegooSlicer, AnycubicSlicerNext e outros f
 ## Identidade visual e mascote — referência de 05/11/2026
 
 O proprietário forneceu as referências do logotipo **Filuna 3D**, paleta creme/vinho/rosa/laranja/cinza-claro, ícone de aplicativo **F** e mascote oficial em duas versões (circular e com fundo transparente). Consultar obrigatoriamente [IDENTIDADE-VISUAL-E-MASCOTE.md](IDENTIDADE-VISUAL-E-MASCOTE.md) e [manifesto de referências](brand/REFERENCIAS-MANIFESTO.json) antes de editar logotipo, ícones, temas, onboarding, Home, instalador ou Sobre. As cinco imagens originais foram identificadas por SHA-256, mas seus arquivos binários ainda não estão integrados a esta branch; não declarar assets finais ou homologação visual concluída até versioná-los, validar versões derivadas e receber aceite.
+
+
+## Plano central de engenharia e infraestrutura (05/11/2026)
+
+Para qualquer nova função, primeiro verificar as dependências no [cronograma DAG de 52 entregas](CRONOGRAMA-DEPENDENCIAS.json), o [plano mestre de construção](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md), a [matriz 100%](MATRIZ-TESTES-ACEITE-100-POR-CENTO.md), a [auditoria de migração](MIGRACAO-LEGADO-INVENTARIO-E-CONFLITOS.md) e a [matriz legal](CONFORMIDADE-LEGAL-NORMAS-E-CERTIFICACOES.md).
+
+**Servidor e acesso remoto:** [ARQUITETURA-SERVIDOR-DADOS-REMOTO.md](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md) rege Hub, domínio/IP, banco privado, backups/restore, sync, erros e status opt-in, sem controle de impressoras pelo admin Filuna. O controle remoto **exclusivo do próprio cliente**, via web/mobile e autenticação/consentimento, é uma etapa FUTURA: requer antes homologação integral de impressão local em hardware, DeviceBridge, isolamento e gates SRV-00..11, com feature flag OFF até liberação específica. Motor Orca e projetos locais não dependem da nuvem.
