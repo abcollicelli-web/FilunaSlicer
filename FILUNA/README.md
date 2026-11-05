@@ -47,6 +47,8 @@ Para qualquer nova função, primeiro verificar as dependências no [cronograma 
 
 **Servidor e acesso remoto:** [ARQUITETURA-SERVIDOR-DADOS-REMOTO.md](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md) rege Hub, domínio/IP, banco privado, backups/restore, sync, erros e status opt-in, sem controle de impressoras pelo admin Filuna. O controle remoto **exclusivo do próprio cliente**, via web/mobile e autenticação/consentimento, é uma etapa FUTURA: requer antes homologação integral de impressão local em hardware, DeviceBridge, isolamento e gates SRV-00..11, com feature flag OFF até liberação específica. Motor Orca e projetos locais não dependem da nuvem.
 
+**Inventário G0 (leitura prioritária):** [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md).
+
 **Manifesto de fontes históricas:** [MANIFESTO-FONTES-LEGADO-2026-11-05.md](MANIFESTO-FONTES-LEGADO-2026-11-05.md) lista os **141 arquivos de documentação/contrato** dos dois projetos anteriores com blob SHA e tamanho. O inventário não é leitura integral nem aprovação G0.
 
 

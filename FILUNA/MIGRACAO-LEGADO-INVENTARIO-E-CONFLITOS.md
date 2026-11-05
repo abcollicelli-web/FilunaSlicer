@@ -122,3 +122,8 @@ Cada linha de MIG-01 a MIG-26 deve receber, na execução de G0/G1:
 
 **Transparência:** este inventário é uma **base versionada para auditoria completa**, não a alegação de que cada documento histórico foi aprovado ou que todos os módulos estão implementados.  
 **Bloqueio:** até cumprir G0, nenhuma promoção de UI/DeviceBridge como concluído. Pesquisa/documentação e correção da própria fundação podem continuar.
+
+
+## 8. Adendo G0 — leitura prioritária 05/11 (Europe/Rome)
+
+Inventário detalhado de 13 fontes lidas com hashes e REQ: [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md). Confirma CF da seção 4 (quatro motores SUPERADO; Home 03/11 a reimplementar; print-only; updates A/B/C/D). Não esgota as 141 fontes.

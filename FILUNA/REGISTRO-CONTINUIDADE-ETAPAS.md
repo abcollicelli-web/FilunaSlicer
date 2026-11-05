@@ -2,7 +2,7 @@
 
 **ID** FLN-CONT-2026-11-05.1  
 **Fuso** Europe/Rome (CET/CEST)  
-**Atualizado** 2026-11-05 22:48:30 CET  
+**Atualizado** 2026-11-05 22:55:50 CET  
 **Estado do gate G0** EM ANDAMENTO (não PASS)  
 **Autor deste checkpoint** agente autorizado pelo proprietário (t17u), lote continuidade+G0  
 
@@ -61,7 +61,7 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 | Onda / Gate | Status | Notas |
 |---|---|---|
-| 00 Genealogia / **G0** | **PENDING / EM ANDAMENTO** | Manifesto 141 fontes + conflitos principais registrados; leitura integral de todas as fontes **não** esgotada; assets binários de marca ausentes; SBOM completo do tree C++ **não** consolidado |
+| 00 Genealogia / **G0** | **PENDING / EM ANDAMENTO** | Lote prioritário: **13/13 lidos** (G0-INVENTARIO-LEITURA). Restam 128/141. Plano final tip `d1935aef` (52/149/SRV-00..11; audit 113/113 documental). Assets marca ausentes; SBOM F pendente |
 | 01 Fundação / G1–G3 fundação | PENDING | Checks estáticos existem; baseline G-code/Windows real não |
 | 02 Qualidade Orca nativa | PENDING | |
 | 03 Identidade/Home | BLOCKED até originais de marca no repo + G0/G2 | |
@@ -89,6 +89,11 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 | G0-13 | SBOM/hash integral do tree C++ do fork | **PENDING** | milhares de fontes; fora deste lote |
 | G0-14 | Teste Windows real / impressoras | **NOT RUN** | autorização atual: testes Windows ficam para depois |
 | G0-15 | Criar este registro + vínculo no plano | **PASS** ao push deste PR | URLs na seção 7 após publish |
+| G0-16 | Leitura integral lote prioritário S/W (13) | **PASS** (leitura) | hashes = manifesto; ver inventário G0 |
+| G0-17 | Confirmar tip plano final 52/149/SRV/113 | **PASS** (documental) | tip `d1935aef`; 113/113 ≠ G0 funcional |
+| G0-18 | Busca read-only 5 assets marca | **FAIL/AUSENTE** | nomes/SHA no manifesto; zero bytes no GitHub/attachments |
+| G0-19 | Mapear SRV prioridades dono sem provisionar | **PASS** (inventário) | SRV-00..11; admin sem controle impressoras |
+
 
 **Conclusão G0 deste lote:** progresso real de inventário/verificação, **G0 NÃO PASS**. Promoção para Onda 01/G1 **bloqueada**.
 
@@ -100,14 +105,13 @@ CI fundação (estático, quality branch): runs documentados no diário; local n
 
 ## 6. Última tarefa e próxima ação exata
 
-- **Última tarefa:** criar registro de continuidade, vincular no plano mestre/AGENTS/README, executar checklist G0 acima, abrir PR draft para `filuna/quality-master-20261105`.
-- **Próxima ação executável (lote seguinte, sem releitura de chat):**  
-  1. Reler remoto deste REGISTRO + plano (podem ter avançado).  
-  2. Continuar G0: ler na íntegra o lote prioritário S (`14-CONTINUIDADE-INTEGRAL`, `18-HOME-GROK`, `25-REGRA-MESTRE-ATUALIZACOES`, MESTRE-PREPARAR/DISPOSITIVOS/PARAMETRICOS, `04-MOTORES` para registro de superação) e W (`CONTINUAR-PROJETO`, `GROK_CONTRACT`, `ENGINE_CONTRACT`, `PROTOCOLOS-IMPRESSORAS`, `AUDITORIA-SEGURANCA-2026-11-05`) e registrar REQ/conflitos por arquivo no inventário.  
-  3. Pedir ao dono o commit dos 5 originais de marca (ou caminho autorizado) — sem isso G1 permanece BLOCKED.  
-  4. **Não** implementar DeviceBridge/UI Home nem mergear PR #1/#2 neste passo.
+- **Última tarefa (2026-11-05 22:55:50 CET):** leitura integral do lote prioritário S/W (13 fontes, hashes = manifesto); REQ/conflitos em [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md); tip plano final `d1935aef` confirmada (52/149/SRV-00..11; 113/113 só documental); 5 assets de marca ausentes no GitHub/attachments.
+- **Próxima ação executável:**
+  1. Reler este REGISTRO + tip `filuna/quality-master-20261105`.
+  2. Ler próximo lote do manifesto (lista no inventário G0 §7).
+  3. **Só o dono:** fornecer bytes dos 5 originais (`105207.jpg`, `105206.jpg`, `105208.jpg`, `99422.jpg`, `99421.webp`) para `FILUNA/brand/assets/original/` com SHA-256 do manifesto — bloqueia G1.
+  4. Sem Home/DeviceBridge/provisionamento SRV; sem merge PR #1/#2/#3.
 
-**Critérios para marcar G0 PASS (ainda não atingidos):** fontes obrigatórias esgotadas com precedência resolvida; mapa de conflitos sem item CONFLITANTE órfão no escopo G0; baseline pin/SBOM inicial aceito; dono ciente do que ficou fora; evidências no REGISTRO com PASS/URL.
 
 ## 7. Commits / PRs deste lote (preencher no push)
 
@@ -134,3 +138,12 @@ python3 FILUNA/tests/check_master_plan.py → 113/113 PASS estático
 ## 9. Checkpoint
 
 Persistido neste arquivo no GitHub. Qualquer IA deve atualizar **este mesmo arquivo** (append de seção datada) a cada lote — não criar segundo “registro mestre” paralelo. Diário de qualidade permanece para narrativa QA; o plano mestre permanece normativo; este registro é o **estado operacional executável**.
+
+
+## 10. Checkpoint lote leitura prioritária (2026-11-05 22:55:50 CET)
+
+- Plano final remoto: `d1935aefa91a1eda86f57b67b342a3857247294e` — sem tip mais nova; PR #3 só acrescenta continuidade/G0.
+- Anúncio dono t18u alinhado ao DAG/auditoria do tip (52/149/12 SRV; 113/113 documental ≠ G0 PASS).
+- Evidência: [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md).
+- Admin Filuna sem controle de impressoras reafirmado; SRV inventariado, não provisionado.
+- G0 continua **EM ANDAMENTO**.

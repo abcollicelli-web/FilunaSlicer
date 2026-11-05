@@ -174,6 +174,7 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 ## 10. Documentos que compõem o dossiê técnico único
 
 0. **[REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md)** — etapas realizadas, gates, builds e próxima ação (leitura obrigatória antes de trabalhar).
+0b. [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md) — evidência parcial G0 (fontes lidas/não lidas).
 1. Este plano: ordem de execução, escopo, cronograma e riscos.
 2. [ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md](ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md): protocolos, fontes OEM, limitações, modelo de capacidades e matriz de hardware.
 3. [MATRIZ-TESTES-ACEITE-100-POR-CENTO.md](MATRIZ-TESTES-ACEITE-100-POR-CENTO.md): casos, evidências, condições de bloqueio e ciclo de bugs.
@@ -183,6 +184,7 @@ Um mesmo colaborador pode cobrir funções, mas nunca pode promover a própria m
 ## 11. Situação real deste registro
 
 - **Continuidade operacional:** ver [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md) (atualizado em lotes; G0 ainda EM ANDAMENTO).
+- **Tip plano final (quality-master) confirmada:**  — 52 entregas / 149 deps / SRV-00..11; auditoria documental 113/113 ≠ G0 PASS.
 - **Planejamento iniciado e matriz de fontes consultada.** O inventário não afirma que TODOS os arquivos do legado foram lidos integralmente; o índice documenta a cobertura e a fila restante por área.
 - **Nenhuma dessas ondas foi executada por este commit.** Os checks estáticos da fundação anteriores passaram, mas testes e homologação de hardware do novo fork ainda não.
 - **Definição do produto corrigida** para motor Orca único; fabricantes nativos via adapters. Os 10 nomes são alvo, não certificado de compatibilidade.

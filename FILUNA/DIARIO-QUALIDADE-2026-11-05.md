@@ -63,3 +63,8 @@ Foi construído o [plano mestre](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md), [DAG 
 ## Adendo — registro de continuidade operacional (2026-11-05 22:48:59 CET)
 
 Por ordem do proprietário (continuar o cronograma sobre a base e documentar etapas para qualquer IA), foi criado [REGISTRO-CONTINUIDADE-ETAPAS.md](REGISTRO-CONTINUIDADE-ETAPAS.md), vinculado no plano mestre. Neste lote: verificação de pin/upstream-mirror, artefatos do run 42102469888 (installer+portable Filuna), contagem 141 do manifesto, ausência de `FILUNA/modules/`, reexecução local dos checks estáticos (foundation + 113/113). **G0 permanece EM ANDAMENTO** (leitura integral das 141 fontes e assets de marca ainda pendentes). Sem merge de PR #1/#2 e sem QA Windows/hardware.
+
+
+## Adendo — G0 leitura prioritária (2026-11-05 22:55:30 CET)
+
+Confirmado tip plano final  (sem avanço posterior no remoto): DAG 52/149, SRV-00..11, auditoria documental 113/113. Lidas integralmente 13 fontes prioritárias S/W com blob SHA = manifesto; REQ/conflitos e superação dos quatro motores registrados em [G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md](G0-INVENTARIO-LEITURA-PRIORITARIA-2026-11-05.md). Cinco originais de marca continuam ausentes no GitHub e nos attachments do agente. Sem provisionamento de servidor; admin sem controle de impressoras reafirmado. G0 não PASS.
