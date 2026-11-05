@@ -3480,7 +3480,7 @@ bool GUI_App::on_init_inner()
             associate_files(L"step");
             associate_files(L"stp");
         }
-        associate_url(L"filunaslicer"); // Filuna: não sobrescrever o orcaslicer:// de um Orca instalado
+        associate_url(L"orcaslicer"); // Filuna: assume orcaslicer:// (decisão do dono; último a registrar vence)
 
         if (app_config->get("associate_gcode") == "true")
             associate_files(L"gcode");
@@ -9210,7 +9210,7 @@ void GUI_App::open_preferences(PreferencesTab tab, const std::string& highlight_
                     associate_files(L"step");
                     associate_files(L"stp");
                 }
-                associate_url(L"filunaslicer"); // Filuna: não sobrescrever o orcaslicer:// de um Orca instalado
+                associate_url(L"orcaslicer"); // Filuna: assume orcaslicer:// (decisão do dono; último a registrar vence)
             }
             else {
                 if (app_config->get("associate_gcode") == "true")

@@ -25,13 +25,19 @@
 | Arquivo upstream | Motivo | Desde |
 |---|---|---|
 | `src/libslic3r/libslic3r.h` | `SLIC3R_APP_FULL_NAME` = "Filuna Slicer" (só exibição) e nova `FILUNA_DATA_DIR_NAME` = "Filuna" | rebrand-1 |
-| `src/slic3r/GUI/GUI_App.cpp` | `SetAppName(FILUNA_DATA_DIR_NAME)` → pasta `%APPDATA%\Filuna`; ProgID `Filuna.Slicer.1`; URI `filunaslicer://` (não sobrescreve o `orcaslicer://` do Orca) | rebrand-1 |
+| `src/slic3r/GUI/GUI_App.cpp` | `SetAppName(FILUNA_DATA_DIR_NAME)` → pasta `%APPDATA%\Filuna`; ProgID `Filuna.Slicer.1`; URI `orcaslicer://` assumido pelo Filuna (ver "Links orcaslicer://") | rebrand-1 |
 | `src/libslic3r/utils.cpp` | Linux: pasta XDG `Filuna` (consistência) | rebrand-1 |
 | `src/slic3r/GUI/Plater.cpp` | Título da janela "<projeto> - Filuna Slicer" (2 linhas) | rebrand-1 |
 | `src/slic3r/GUI/AboutDialog.cpp` | Parágrafo de fork/AGPL no Sobre; créditos Slic3r → PrusaSlicer → Bambu Studio → OrcaSlicer mantidos | rebrand-1 |
 | `src/dev-utils/platform/msw/OrcaSlicer.rc.in` | FileDescription/ProductName/InternalName do .exe = "Filuna Slicer" | rebrand-1 |
 | `CMakeLists.txt` (bloco CPack) | Instalador: nome/pasta `FilunaSlicer`, chave de registro própria, novo GUID, atalho "Filuna Slicer" | rebrand-1 |
 | `resources/images/OrcaSlicer*.png/.ico`, `OrcaSlicer.svg`, `OrcaSlicer_about*.svg` | Ícones provisórios Filuna nos mesmos nomes de arquivo (sem tocar código) | rebrand-1 |
+
+### Links orcaslicer:// (decisão do dono, rebrand-1)
+- O Filuna registra `orcaslicer://` (HKCU\Software\Classes\orcaslicer) para que os botões "Abrir no OrcaSlicer" do MakerWorld/Printables abram o Filuna. O tratamento do link (`is_orca_open`, `orcaslicer://open...`) é o do upstream, sem alteração.
+- Associações de arquivo (.3mf/.stl/.step/.gcode) continuam com ProgID próprio `Filuna.Slicer.1`.
+- **Risco:** com um Orca instalado no mesmo PC, o último programa que registrar o esquema vence (Filuna e Orca re-registram ao abrir e ao salvar Preferências). Os links passam a abrir quem foi aberto por último.
+- `filunaslicer://` não foi adicionado: exigiria mudar o parser de links do upstream e nenhum site o emite hoje.
 
 ### O que foi mantido de propósito como "OrcaSlicer"
 - `SLIC3R_APP_NAME` / `SLIC3R_APP_KEY` (version.inc): usados no cabeçalho do G-code, na detecção do produtor, metadados 3MF, User-Agent HTTP e no catálogo de traduções (`OrcaSlicer.mo`). Mudar quebraria traduções e poderia afetar impressoras/firmwares que leem o cabeçalho.
