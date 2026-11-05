@@ -29,10 +29,34 @@ def full_g3():
 
 class T(unittest.TestCase):
     def ev(self, recs, sign=SIGN, gate="G3"):
-        return evaluate(recs, contract=C, gate=gate, commit_sha=SHA, signoff=sign)
+        return evaluate(recs, contract=C, gate=gate, commit_sha=SHA, signoff=sign, verify_external=lambda record: [])
 
     def test_positive_complete(self):
         self.assertEqual(self.ev(full_g3())[0], "PASS")
+
+    def test_external_corroboration_required(self):
+        self.assertEqual(evaluate(full_g3(), contract=C, gate="G3",
+                                  commit_sha=SHA, signoff=SIGN)[0], "BLOCKED")
+
+    def test_external_artifact_mismatch_blocks(self):
+        self.assertEqual(evaluate(full_g3(), contract=C, gate="G3",
+                                  commit_sha=SHA, signoff=SIGN,
+                                  verify_external=lambda _: ["run/artifact mismatch"])[0], "BLOCKED")
+
+    def test_enforce_fail_closed_on_real_repo(self):
+        import subprocess
+        import sys
+        cmd = [sys.executable, str(ROOT / "FILUNA/tests/gate_governance.py")]
+        denied = subprocess.run(cmd + ["--mode", "enforce", "--gate", "G3"],
+                                capture_output=True, text=True, cwd=ROOT)
+        self.assertNotEqual(denied.returncode, 0, denied.stdout + denied.stderr)
+        status = subprocess.run(cmd + ["--mode", "report", "--gate", "G3"],
+                                capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(status.returncode, 0)
+        self.assertIn("REPORT ONLY", status.stdout)
+        check = subprocess.run(cmd + ["--mode", "assert-blocked", "--gate", "G3"],
+                               capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
 
     def test_empty_blocks(self):
         self.assertEqual(self.ev([])[0], "BLOCKED")
