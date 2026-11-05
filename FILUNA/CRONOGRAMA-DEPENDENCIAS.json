@@ -1,0 +1,888 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-05",
+  "revision": "FLN-DAG-2026-11-05.2-server",
+  "intent": "nenhuma funcionalidade ativa sem dependências e testes aceitos; calendário relativo não é promessa",
+  "root": "GOV-00",
+  "release_node": "RELEASE-38",
+  "status": "PLAN_NOT_APPROVED_FOR_RELEASE;REMOTE_CONTROL_DISABLED",
+  "nodes": [
+    {
+      "id": "GOV-00",
+      "title": "Governança e gates de qualidade",
+      "depends_on": [],
+      "priority": "P0",
+      "exit_gate": "G0",
+      "relative_window": "semana 0–2",
+      "tests": "GOV-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "IN_PROGRESS",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRC-01",
+      "title": "Inventário integral do legado e decisões",
+      "depends_on": [
+        "GOV-00"
+      ],
+      "priority": "P0",
+      "exit_gate": "G0",
+      "relative_window": "semana 0–3",
+      "tests": "SRC-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "IN_PROGRESS",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "LEGAL-02",
+      "title": "AGPL, GDPR, CRA, licenças OEM e normas",
+      "depends_on": [
+        "GOV-00",
+        "SRC-01"
+      ],
+      "priority": "P0",
+      "exit_gate": "G0",
+      "relative_window": "semana 0–4",
+      "tests": "CMP-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "QA-03",
+      "title": "Pipeline de testes, evidências, SBOM e assinatura",
+      "depends_on": [
+        "GOV-00",
+        "LEGAL-02"
+      ],
+      "priority": "P0",
+      "exit_gate": "G2",
+      "relative_window": "semana 1–5",
+      "tests": "REL-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "CORE-04",
+      "title": "Baseline do motor Orca e regressão STL/3MF/STEP",
+      "depends_on": [
+        "SRC-01",
+        "QA-03"
+      ],
+      "priority": "P0",
+      "exit_gate": "G3",
+      "relative_window": "semana 3–7",
+      "tests": "CORE-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "DATA-05",
+      "title": "Estado, storage, backup, configuração e migração Windows",
+      "depends_on": [
+        "CORE-04",
+        "LEGAL-02"
+      ],
+      "priority": "P0",
+      "exit_gate": "G3",
+      "relative_window": "semana 4–8",
+      "tests": "DATA-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "PROFILES-06",
+      "title": "Editor/perfis e herança de preset nativos",
+      "depends_on": [
+        "CORE-04",
+        "DATA-05"
+      ],
+      "priority": "P0",
+      "exit_gate": "G3",
+      "relative_window": "semana 5–9",
+      "tests": "CORE-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "PLATES-07",
+      "title": "Multi-placa, cores e purga sem colisões",
+      "depends_on": [
+        "CORE-04",
+        "PROFILES-06"
+      ],
+      "priority": "P0",
+      "exit_gate": "G3",
+      "relative_window": "semana 6–10",
+      "tests": "CORE-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "BRAND-08",
+      "title": "Assets originais, design tokens e homologação identidade",
+      "depends_on": [
+        "SRC-01",
+        "LEGAL-02"
+      ],
+      "priority": "P0",
+      "exit_gate": "G1",
+      "relative_window": "semana 3–7",
+      "tests": "UI-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SHELL-09",
+      "title": "Shell Filuna, navegação e Home funcional",
+      "depends_on": [
+        "BRAND-08",
+        "DATA-05",
+        "CORE-04"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 7–11",
+      "tests": "UI-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "PREP-10",
+      "title": "Preparação, Preview, Calibração ligados ao Orca real",
+      "depends_on": [
+        "SHELL-09",
+        "PROFILES-06",
+        "PLATES-07"
+      ],
+      "priority": "P0",
+      "exit_gate": "G4",
+      "relative_window": "semana 9–14",
+      "tests": "UI-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "TRUST-11",
+      "title": "Agente de update/assinatura/canal rollback C/D",
+      "depends_on": [
+        "QA-03",
+        "DATA-05",
+        "LEGAL-02"
+      ],
+      "priority": "P0",
+      "exit_gate": "G5",
+      "relative_window": "semana 5–10",
+      "tests": "UPD-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "AUTH-12",
+      "title": "Identidade, sessão, entitlements e modo offline",
+      "depends_on": [
+        "DATA-05",
+        "LEGAL-02"
+      ],
+      "priority": "P1",
+      "exit_gate": "G3",
+      "relative_window": "semana 8–13",
+      "tests": "DATA-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SAFETY-13",
+      "title": "Segurança de comandos físicos e modelo de capacidades",
+      "depends_on": [
+        "LEGAL-02",
+        "PROFILES-06",
+        "QA-03"
+      ],
+      "priority": "P0",
+      "exit_gate": "G2",
+      "relative_window": "semana 7–11",
+      "tests": "SEC-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "BRIDGE-14",
+      "title": "DeviceBridge C++ e descoberta LAN autenticada",
+      "depends_on": [
+        "SAFETY-13",
+        "PREP-10",
+        "DATA-05"
+      ],
+      "priority": "P0",
+      "exit_gate": "G4",
+      "relative_window": "semana 12–17",
+      "tests": "DEV-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "DEVICE-UI-15",
+      "title": "Painel Dispositivos, estados e fila de impressão",
+      "depends_on": [
+        "BRIDGE-14",
+        "SHELL-09"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 14–19",
+      "tests": "DEV-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-ELEGOO-16",
+      "title": "Elegoo CC2 adaptador e QA hardware",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15",
+        "PLATES-07"
+      ],
+      "priority": "P0",
+      "exit_gate": "G4",
+      "relative_window": "semana 16–22",
+      "tests": "VND-ELEGOO-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-ANYCUBIC-17",
+      "title": "Anycubic Kobra 3 V2 adaptador e QA hardware",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15",
+        "PLATES-07"
+      ],
+      "priority": "P0",
+      "exit_gate": "G4",
+      "relative_window": "semana 16–24",
+      "tests": "VND-ANYCUBIC-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-BAMBU-18",
+      "title": "Bambu LAN/SDK autorizado e QA A1",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15",
+        "LEGAL-02"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 22–28",
+      "tests": "VND-BAMBU-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-CREALITY-19",
+      "title": "Creality API LAN autorizada/QA",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 22–28",
+      "tests": "VND-CREALITY-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-FLASHFORGE-20",
+      "title": "Flashforge LAN e QA",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15",
+        "LEGAL-02"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 22–28",
+      "tests": "VND-FLASHFORGE-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-QIDI-21",
+      "title": "QIDI Moonraker/protocolos e QA",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 27–32",
+      "tests": "VND-QIDI-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-SNAPMAKER-22",
+      "title": "Snapmaker U1 e QA",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 27–32",
+      "tests": "VND-SNAPMAKER-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-PRUSA-23",
+      "title": "PrusaLink/PrusaConnect autorizado e QA",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 27–32",
+      "tests": "VND-PRUSA-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-ULTIMAKER-24",
+      "title": "UltiMaker LAN/SDK e QA",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15",
+        "LEGAL-02"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 31–36",
+      "tests": "VND-ULTIMAKER-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OEM-RAISE3D-25",
+      "title": "Raise3D protocolo autorizado ou suporte parcial declarado",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15",
+        "LEGAL-02"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 31–36",
+      "tests": "VND-RAISE3D-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "CAMERAS-26",
+      "title": "Câmeras e vídeo real com privacidade",
+      "depends_on": [
+        "BRIDGE-14",
+        "DEVICE-UI-15",
+        "LEGAL-02"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 17–23",
+      "tests": "CAM-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "FILAMENTS-27",
+      "title": "MMS/ACE/AMS/CFS/QIDI Box e filamento real",
+      "depends_on": [
+        "BRIDGE-14",
+        "PROFILES-06",
+        "DEVICE-UI-15"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semana 19–26",
+      "tests": "FIL-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SYNC-28",
+      "title": "Hub Filuna ID/API segura/sync e backup",
+      "depends_on": [
+        "AUTH-12",
+        "TRUST-11",
+        "LEGAL-02",
+        "SRV-03"
+      ],
+      "priority": "P1",
+      "exit_gate": "G3",
+      "relative_window": "semana 16–23",
+      "tests": "DATA-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "PARAM-29",
+      "title": "Geradores paramétricos e ferramentas locais",
+      "depends_on": [
+        "PREP-10",
+        "PLATES-07",
+        "TRUST-11",
+        "SHELL-09"
+      ],
+      "priority": "P2",
+      "exit_gate": "G4",
+      "relative_window": "semana 25–38",
+      "tests": "PARAM-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "CATALOG-30",
+      "title": "Catálogo 3D print-only e sessão de impressão autorizada",
+      "depends_on": [
+        "AUTH-12",
+        "PREP-10",
+        "SYNC-28",
+        "BRIDGE-14"
+      ],
+      "priority": "P2",
+      "exit_gate": "G4",
+      "relative_window": "semana 27–39",
+      "tests": "MODEL-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "STOCK-31",
+      "title": "Estoque de bobinas/QR/NFC/consumo",
+      "depends_on": [
+        "SYNC-28",
+        "FILAMENTS-27",
+        "PLATES-07"
+      ],
+      "priority": "P2",
+      "exit_gate": "G4",
+      "relative_window": "semana 26–37",
+      "tests": "AT-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "PROD-32",
+      "title": "Produção, fila, histórico e monitoramento",
+      "depends_on": [
+        "STOCK-31",
+        "DEVICE-UI-15",
+        "PREP-10"
+      ],
+      "priority": "P2",
+      "exit_gate": "G4",
+      "relative_window": "semana 35–43",
+      "tests": "AT-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "ATELIE-33",
+      "title": "Ateliê: pedidos, clientes, orçamento e financeiro",
+      "depends_on": [
+        "STOCK-31",
+        "PROD-32",
+        "AUTH-12"
+      ],
+      "priority": "P3",
+      "exit_gate": "G4",
+      "relative_window": "semana 41–49",
+      "tests": "AT-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "ECOM-34",
+      "title": "E-commerce, Mercado Livre e etiquetas",
+      "depends_on": [
+        "ATELIE-33",
+        "SYNC-28",
+        "LEGAL-02"
+      ],
+      "priority": "P3",
+      "exit_gate": "G4",
+      "relative_window": "semana 44–51",
+      "tests": "AT-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "AI-35",
+      "title": "Assistente, IA segura, gateways GPT/Claude/Gemini/Grok",
+      "depends_on": [
+        "SYNC-28",
+        "PARAM-29",
+        "LEGAL-02"
+      ],
+      "priority": "P3",
+      "exit_gate": "G4",
+      "relative_window": "semana 39–51",
+      "tests": "IA-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "PORTAL-36",
+      "title": "Site/mobile integrações e gestão",
+      "depends_on": [
+        "SYNC-28",
+        "STOCK-31",
+        "PROD-32",
+        "CATALOG-30"
+      ],
+      "priority": "P3",
+      "exit_gate": "G4",
+      "relative_window": "semana 45–54",
+      "tests": "DATA-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "UPSTREAM-37",
+      "title": "Monitor de versões Orca/OEM sem auto-merge",
+      "depends_on": [
+        "CORE-04",
+        "QA-03",
+        "LEGAL-02"
+      ],
+      "priority": "P1",
+      "exit_gate": "G3",
+      "relative_window": "semana 8–13",
+      "tests": "CORE-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "RELEASE-38",
+      "title": "Certificação quando aplicável, beta/estável, assinatura e liberação",
+      "depends_on": [
+        "OEM-ELEGOO-16",
+        "OEM-ANYCUBIC-17",
+        "OEM-BAMBU-18",
+        "OEM-CREALITY-19",
+        "OEM-FLASHFORGE-20",
+        "OEM-QIDI-21",
+        "OEM-SNAPMAKER-22",
+        "OEM-PRUSA-23",
+        "OEM-ULTIMAKER-24",
+        "OEM-RAISE3D-25",
+        "CAMERAS-26",
+        "FILAMENTS-27",
+        "ATELIE-33",
+        "ECOM-34",
+        "AI-35",
+        "PORTAL-36",
+        "TRUST-11",
+        "UPSTREAM-37",
+        "SRV-04"
+      ],
+      "priority": "P0",
+      "exit_gate": "G6",
+      "relative_window": "após aprovação de todos os gates",
+      "tests": "REL-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "OPERATE-39",
+      "title": "Operação, incidentes, suporte e melhoria",
+      "depends_on": [
+        "RELEASE-38"
+      ],
+      "priority": "P0",
+      "exit_gate": "G6",
+      "relative_window": "contínuo após release",
+      "tests": "SEC-*",
+      "source_contract": "FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md",
+      "state": "NOT_STARTED",
+      "owner_role": "responsável de engenharia/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-00",
+      "title": "Inventário privado de servidor, domínio, IP e riscos",
+      "depends_on": [
+        "GOV-00",
+        "SRC-01",
+        "LEGAL-02"
+      ],
+      "priority": "P0",
+      "exit_gate": "G0",
+      "relative_window": "semanas 1–4",
+      "tests": "SRV-QA-*",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-01",
+      "title": "Hub API HTTPS, gateway/DB privado e schemas",
+      "depends_on": [
+        "SRV-00",
+        "QA-03"
+      ],
+      "priority": "P0",
+      "exit_gate": "G3",
+      "relative_window": "semanas 4–9",
+      "tests": "SRV-QA-001",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-02",
+      "title": "Filuna ID servidor, sessões, consentimentos e RBAC",
+      "depends_on": [
+        "SRV-01",
+        "AUTH-12"
+      ],
+      "priority": "P1",
+      "exit_gate": "G3",
+      "relative_window": "semanas 10–15",
+      "tests": "SRV-QA-002",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-03",
+      "title": "Sincronização segura, ledger, backup e restauração",
+      "depends_on": [
+        "SRV-02",
+        "DATA-05"
+      ],
+      "priority": "P0",
+      "exit_gate": "G4",
+      "relative_window": "semanas 12–20",
+      "tests": "SRV-QA-004,SRV-QA-005,SRV-QA-006",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-04",
+      "title": "Diagnóstico sanitizado de aplicativo e painel read-only",
+      "depends_on": [
+        "SRV-02",
+        "QA-03",
+        "LEGAL-02"
+      ],
+      "priority": "P0",
+      "exit_gate": "G4",
+      "relative_window": "semanas 13–19",
+      "tests": "SRV-QA-007,SRV-QA-008",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-05",
+      "title": "Telemetria opt-in do estado de impressoras sem controle",
+      "depends_on": [
+        "SRV-04",
+        "BRIDGE-14",
+        "DEVICE-UI-15"
+      ],
+      "priority": "P1",
+      "exit_gate": "G4",
+      "relative_window": "semanas 18–24",
+      "tests": "SRV-QA-009",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-06",
+      "title": "Portal e mobile leitura própria de impressoras",
+      "depends_on": [
+        "SRV-03",
+        "SRV-05"
+      ],
+      "priority": "P2",
+      "exit_gate": "G4",
+      "relative_window": "semanas 24–33",
+      "tests": "SRV-QA-010",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-07",
+      "title": "Base remota desligada, fila assinada, policy engine e flags OFF",
+      "depends_on": [
+        "SRV-06",
+        "SAFETY-13"
+      ],
+      "priority": "P2",
+      "exit_gate": "G3",
+      "relative_window": "após leitura remota homologada",
+      "tests": "SRV-QA-011,SRV-QA-012",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-08",
+      "title": "Piloto de impressão remota do próprio cliente APÓS local homologado",
+      "depends_on": [
+        "SRV-07",
+        "OEM-ELEGOO-16",
+        "OEM-ANYCUBIC-17"
+      ],
+      "priority": "P2",
+      "exit_gate": "G4",
+      "relative_window": "após testes físicos LAN e autorização",
+      "tests": "SRV-QA-012,SRV-QA-013,SRV-QA-014,SRV-QA-015,SRV-QA-016",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-09",
+      "title": "Comandos remotos web/mobile do cliente e câmera por escopo",
+      "depends_on": [
+        "SRV-08",
+        "PORTAL-36"
+      ],
+      "priority": "P3",
+      "exit_gate": "G5",
+      "relative_window": "após piloto remoto 100% PASS",
+      "tests": "SRV-QA-017,SRV-QA-018",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-10",
+      "title": "Release canário e homologação remota separada",
+      "depends_on": [
+        "SRV-09",
+        "RELEASE-38",
+        "TRUST-11"
+      ],
+      "priority": "P3",
+      "exit_gate": "G6",
+      "relative_window": "após release local e remote 100% PASS",
+      "tests": "SRV-QA-019,SRV-QA-020",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    },
+    {
+      "id": "SRV-11",
+      "title": "Operação, revogação e teste desastre/remoto contínuo",
+      "depends_on": [
+        "SRV-10",
+        "OPERATE-39"
+      ],
+      "priority": "P3",
+      "exit_gate": "G6",
+      "relative_window": "contínuo após homologação remota",
+      "tests": "SRV-QA-017,SRV-QA-020",
+      "source_contract": "FILUNA/ARQUITETURA-SERVIDOR-DADOS-REMOTO.md",
+      "state": "NOT_STARTED",
+      "owner_role": "Responsável de infraestrutura/segurança/QA a definir",
+      "acceptance_required": true
+    }
+  ],
+  "remote_release_node": "SRV-10"
+}

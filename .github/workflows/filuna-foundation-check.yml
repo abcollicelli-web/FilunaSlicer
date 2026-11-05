@@ -1,0 +1,41 @@
+name: Filuna foundation quality checks
+
+on:
+  push:
+    branches:
+      - 'filuna/quality-*'
+    paths:
+      - 'FILUNA/**'
+      - '.github/workflows/filuna-foundation-check.yml'
+  pull_request:
+    branches:
+      - 'filuna/main'
+      - 'filuna/rebrand-1'
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code and contracts
+        uses: actions/checkout@v4
+      - name: Validate foundation contract (not hardware/release)
+        run: python3 FILUNA/tests/check_quality_gate.py --mode foundation
+      - name: Audit master engineering plan, legal matrix and dependency DAG
+        run: python3 FILUNA/tests/check_master_plan.py
+      - name: Ensure unapproved release fails closed
+        shell: bash
+        run: |
+          if [ -e FILUNA/QA/release-evidence.json ]; then
+            echo "Dossiê presente: validar consistência de release (revisão humana obrigatória)"
+            python3 FILUNA/tests/check_quality_gate.py --mode release
+          else
+            if python3 FILUNA/tests/check_quality_gate.py --mode release > release-gate.log 2>&1; then
+              echo "ERRO: gate de release aprovou sem as evidências obrigatórias"
+              exit 1
+            fi
+            cat release-gate.log
+            grep -q 'release bloqueado: FILUNA/QA/release-evidence.json não existe' release-gate.log
+          fi

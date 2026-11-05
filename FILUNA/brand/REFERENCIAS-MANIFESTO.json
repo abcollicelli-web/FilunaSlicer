@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-05",
+  "approved_as": "visual_reference",
+  "status": "reference_documented_original_binary_not_yet_in_repo",
+  "implementation_status": "not_implemented",
+  "source": "owner_supplied_in_conversation",
+  "originals": [
+    {
+      "id": "FLN-BRAND-LOGO-01",
+      "name": "105207.jpg",
+      "media_type": "image/jpeg",
+      "width": 1536,
+      "height": 1031,
+      "sha256": "4533476b9725e50d3f0fe2d5cf0be94419d392c34d0cd563052038ac1fc80639",
+      "repo_asset_present": false
+    },
+    {
+      "id": "FLN-BRAND-PALETTE-01",
+      "name": "105206.jpg",
+      "media_type": "image/jpeg",
+      "width": 1536,
+      "height": 1031,
+      "sha256": "2f35535f444b560ff4f84ead6660e5eb247335c52729b8240be675fa2ba2c33e",
+      "repo_asset_present": false
+    },
+    {
+      "id": "FLN-BRAND-ICON-01",
+      "name": "105208.jpg",
+      "media_type": "image/jpeg",
+      "width": 1536,
+      "height": 1031,
+      "sha256": "770810b28114c6099b4d10379a3fe038325259315a75c952f1b25ec759a8c245",
+      "repo_asset_present": false
+    },
+    {
+      "id": "FLN-MASCOT-CIRCLE-01",
+      "name": "99422.jpg",
+      "media_type": "image/jpeg",
+      "width": 1536,
+      "height": 1536,
+      "sha256": "f5474437ef6efb4143a61b3892ad0eaaff2918aa633d7aa0dd175fed16cc0d11",
+      "repo_asset_present": false
+    },
+    {
+      "id": "FLN-MASCOT-CUTOUT-01",
+      "name": "99421.webp",
+      "media_type": "image/webp",
+      "alpha": true,
+      "width": 360,
+      "height": 443,
+      "sha256": "6ed33f99aaa8444987985202c9cdce14db5d39856f7c5b9a3bcb1d4dd167f8a5",
+      "repo_asset_present": false
+    }
+  ],
+  "current_reference": {
+    "primary_brand": "Filuna 3D",
+    "desktop_product": "Filuna Slicer",
+    "app_icon": "F",
+    "mascot": "female illustrated 3D character with pink headband, orange-purple printing tool ornament, purple hoodie and white cube icon",
+    "palette_source": "105206.jpg"
+  },
+  "release_gate": "blocked_until_assets_versioned_and_tests_proven"
+}
