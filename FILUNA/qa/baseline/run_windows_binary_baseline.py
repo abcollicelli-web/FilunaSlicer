@@ -17,7 +17,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(ROOT / "FILUNA/tests"))
 from compare_gcode import compare  # noqa: E402
@@ -140,6 +140,18 @@ def main() -> int:
     filuna_exe = find_exe(args.filuna_root)
     print(f"orca_exe={orca_exe}")
     print(f"filuna_exe={filuna_exe}")
+    provenance["orca_exe_sha256"] = sha256_file(orca_exe)
+    provenance["filuna_exe_sha256"] = sha256_file(filuna_exe)
+    for dll in ("OrcaSlicer.dll",):
+        for lbl, r in (("orca", orca_exe.parent), ("filuna", filuna_exe.parent)):
+            d = r / dll
+            if d.is_file():
+                provenance[f"{lbl}_{dll}_sha256"] = sha256_file(d)
+    if provenance["orca_exe_sha256"] == provenance["filuna_exe_sha256"] and \
+            provenance.get("orca_OrcaSlicer.dll_sha256") == provenance.get("filuna_OrcaSlicer.dll_sha256"):
+        print("FAIL: Orca and Filuna binaries identical - provenance invalid", file=sys.stderr)
+        return 2
+    (args.work / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
 
     g_orca = run_slice(orca_exe, args.work, model, "orca-pin")
     g_filuna = run_slice(filuna_exe, args.work, model, "filuna")
@@ -189,7 +201,7 @@ def main() -> int:
         "fixture_sha256": fx,
         "notes": (
             f"orca_pin={ORCA_PIN} run={ORCA_RUN}; filuna={FILUNA_HEAD} run={FILUNA_RUN}; "
-            f"compare_rc={rc}; neg_detected={neg_ok}; synthetic_unit_tests_are_separate"
+            f"orca_dll={provenance.get('orca_OrcaSlicer.dll_sha256','?')[:16]} filuna_dll={provenance.get('filuna_OrcaSlicer.dll_sha256','?')[:16]}; compare_rc={rc}; neg_detected={neg_ok}"
         ),
         "evidence_url": "",  # filled by workflow with run URL
     }
