@@ -36,6 +36,10 @@ on:
         type: string
         required: false
         default: ''
+      package-audit-only:
+        description: 'Só auditoria do pacote (7z no instalador, sem executar; FFmpeg ctypes)'
+        type: boolean
+        default: false
       orca-pin-run-id:
         description: 'Run ID upstream OrcaSlicer Build-all no pin'
         type: string
@@ -54,13 +58,13 @@ on:
         default: 'Filuna_Windows_x64_portable'
 
 concurrency:
-  group: filuna-windows-${{ github.ref }}-${{ inputs.baseline-gcode-only || false }}
+  group: filuna-windows-${{ github.ref }}-${{ inputs.baseline-gcode-only || false }}-${{ inputs.package-audit-only || false }}
   cancel-in-progress: false
 
 jobs:
   build_windows_x64:
     name: Filuna Windows x64
-    if: ${{ github.event_name == 'push' || inputs.baseline-gcode-only != true }}
+    if: ${{ github.event_name == 'push' || (inputs.baseline-gcode-only != true && inputs.package-audit-only != true) }}
     uses: ./.github/workflows/build_check_cache.yml
     with:
       os: windows-latest
@@ -73,7 +77,7 @@ jobs:
   filuna_artifacts:
     name: Artefatos Filuna
     needs: build_windows_x64
-    if: ${{ (github.event_name == 'push' || inputs.baseline-gcode-only != true) && (inputs.build-deps-only != true) }}
+    if: ${{ (github.event_name == 'push' || (inputs.baseline-gcode-only != true && inputs.package-audit-only != true)) && (inputs.build-deps-only != true) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -239,3 +243,47 @@ jobs:
         with:
           name: Filuna_baseline_gcode_windows
           path: baseline-out
+
+  package_audit_windows:
+    name: Auditoria pacote Filuna (instalador<->portable, FFmpeg)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package-audit-only == true }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Filuna installer + portable (run EXACT)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          R="${{ inputs.filuna-run-id }}"
+          HEAD=$(gh api "repos/${{ github.repository }}/actions/runs/$R" --jq .head_sha)
+          [ "$HEAD" = "2dace0db86d305bec5b9627179f265012e4f5069" ] || { echo "FAIL head $HEAD"; exit 1; }
+          for N in Filuna_Windows_x64_installer Filuna_Windows_x64_portable; do
+            AID=$(gh api "repos/${{ github.repository }}/actions/runs/$R/artifacts" --jq ".artifacts[] | select(.name==\"$N\" and .expired==false) | .id" | head -1)
+            [ -n "$AID" ] || { echo "FAIL artifact $N"; exit 1; }
+            gh api "repos/${{ github.repository }}/actions/artifacts/$AID/zip" > "$RUNNER_TEMP/$N.zip"
+            echo "$N id=$AID sha256=$(sha256sum "$RUNNER_TEMP/$N.zip" | cut -c1-64)"
+          done
+          python -c "import zipfile,sys; [zipfile.ZipFile(rf'{sys.argv[1]}/{n}.zip').extractall(rf'{sys.argv[1]}/{n}') for n in ('Filuna_Windows_x64_installer','Filuna_Windows_x64_portable')]" "$RUNNER_TEMP"
+      - name: Extract NSIS installer with 7z (NOT executed)
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXE=$(ls "$RUNNER_TEMP"/Filuna_Windows_x64_installer/*.exe | head -1)
+          sha256sum "$EXE"
+          7z x -y -o"$RUNNER_TEMP/inst" "$EXE" > "$RUNNER_TEMP/7z.log"
+          tail -5 "$RUNNER_TEMP/7z.log"
+      - name: Relate installer<->portable + FFmpeg license/configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit-out
+          python FILUNA/legal/package_audit_windows.py "$RUNNER_TEMP/inst" "$RUNNER_TEMP/Filuna_Windows_x64_portable" audit-out/package-audit.json
+          cp "$RUNNER_TEMP/7z.log" audit-out/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Filuna_package_audit_windows
+          path: audit-out

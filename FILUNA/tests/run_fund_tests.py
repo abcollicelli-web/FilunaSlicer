@@ -14,7 +14,7 @@ def main() -> int:
     # unittest module path: run file directly for simplicity
     cmd = [sys.executable, str(ROOT / "FILUNA/tests/test_fundation_onda01.py"), "-v"]
     rc = 0
-    for f in ("test_fundation_onda01.py", "test_gate_governance.py"):
+    for f in ("test_fundation_onda01.py", "test_gate_governance.py", "test_core04_matrix.py"):
         c = [sys.executable, str(ROOT / "FILUNA/tests" / f), "-v"]
         print("+", " ".join(c), flush=True)
         rc |= subprocess.run(c, cwd=str(ROOT)).returncode
