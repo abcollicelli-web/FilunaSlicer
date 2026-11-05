@@ -57,6 +57,11 @@ def audit() -> None:
     master = docs["PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md"]
     legal = docs["CONFORMIDADE-LEGAL-NORMAS-E-CERTIFICACOES.md"]
     migration = docs["MIGRACAO-LEGADO-INVENTARIO-E-CONFLITOS.md"]
+    manifest = required_text("MANIFESTO-FONTES-LEGADO-2026-11-05.md")
+    check("141" in manifest or ("| 61 |" in manifest and "| 80 |" in manifest),
+          "141 documentos/contratos históricos inventariados por hash")
+    check("blob SHA" in manifest and "G0" in manifest,
+          "inventário com origem/hash não confunde catálogo e homologação")
     qa = docs["MATRIZ-TESTES-ACEITE-100-POR-CENTO.md"]
     devices = docs["ARQUITETURA-DEVICEBRIDGE-10-FABRICANTES.md"]
     for key in ("G0", "G1", "G2", "G3", "G4", "G5", "G6"):
