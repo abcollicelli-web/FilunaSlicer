@@ -250,3 +250,28 @@ Fonte única dos casos obrigatórios: `FILUNA/qa/required-cases.json` (contract_
 - **Caso FUND-T07 (1 fixture × 1 preset) = PASS com evidência.** CORE-04 permanece **BLOCKED**: STL/3MF/STEP, outros presets e signoff do dono NOT_RUN.
 - Tentativas anteriores (falhas reais, corrigidas): 42122763283 (import path), 42123026960 e 42123239839 (fixture CRLF → hash mismatch bloqueou corretamente), 42124068177 (`--export-gcode` inválido nesta versão). Rebuild do pin 42122933198 **cancelado** (desnecessário: download do upstream funcionou com GITHUB_TOKEN). Branch `filuna/pin-win-a620d804` ficou criada, sem uso.
 - Limitação conhecida: `gate_governance` exige commit da evidência == HEAD; cada commit novo invalida a evidência até nova execução (fail-closed, intencional).
+
+## 21. CORE-04 matriz real + auditoria de pacote — 2026-11-05 ~23:10 UTC (00:10 Europe/Rome, 06/11)
+
+Veredito t19u preservado: **CORE-04, DATA-05, Onda 01 = BLOCKED.** 1 caso/preset PASS ≠ CORE-04 total PASS.
+
+**Matriz** `FILUNA/qa/baseline/cases.json` v2026-11-05.1 (só arquivos reais do pin; nenhuma fixture sintética) — run https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42125523328 · subject commit `affbea51` (código/inputs idênticos a `b3e19fe8`; objetos git gravados em `provenance.inputs_git_objects`) · resultado `FILUNA/qa/runs/CORE04-matrix-run42125523328.json`.
+
+| Fixture \ Preset | BBL P1S 0.4 (ref.) | Elegoo Centauri Carbon 2 0.4 | Anycubic Kobra 3 V2 0.4 |
+|---|---|---|---|
+| OBJ 20mm_cube | PASS | PASS (G-code bruto idêntico) | BLOCKED: exit -18 em ambos, `retraction_distances_when_cut: 0 not in range [10, 18]` |
+| STL 20mmbox-LF | PASS | PASS | BLOCKED: idem -18 |
+| STEP named_single_body | BLOCKED: exit -6 em ambos, CLI aceita só .stl/.obj/.amf | BLOCKED -6 | BLOCKED -6 |
+| 3MF OrcaSliced (handy_models) | BLOCKED: exit -101 `CLI_GCODE_PATH_CONFLICTS` em ambos | BLOCKED -101 | BLOCKED -18 |
+
+Totais: **4 PASS, 0 FAIL, 8 BLOCKED**. Cada PASS: exit 0/0, compare normalizado rc 0, negativo funcional (E+0.5) detectado. Binários: Orca pin exe b51efb83…/dll 372aeb32…, Filuna exe 4b822731…/dll f0914911….
+Pendências reais: K3V2 via `--load-settings` falha validação nos DOIS binários (não é regressão Filuna; causa a investigar: preset isolado sem herança completa); STEP não suportado pela CLI desta versão (GUI/G4 seria outro teste); 3MF requer fixture sem conflito de caminho ou ajuste documentado; nenhum preset/fixture foi alterado para "passar".
+
+**Auditoria do pacote** (`FILUNA/legal/PACKAGE-INVENTORY-run42102469888.json`, status PARTIAL):
+- Instalador NSIS extraído com 7z no runner, **sem executar** (run https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42125762040): 4073 arquivos; todos os 4062 do portable têm sha256 idêntico no instalador; instalador acrescenta 10 (plugins NSIS, Uninstall.exe, 2 `resources/tooltip/.md`).
+- Origem dos 75 binários: **PROVEN 9** (FFmpeg ×5 == zip pinado em `deps/FFMPEG/FFMPEG.cmake` sha 85da19da…; GMP/MPFR/WebView2Loader == blobs vendorizados no pin; uv.exe == zip oficial 0.11.21 cujo sha == `ORCA_UV_SHA256` no pin), **CORROBORATED 60** (OCCT TK* por PE VersionInfo 8.0.1 + receita V8_0_1; Python 3.12.13 por PE + receita; VC++ runtime por PE, assinatura não verificada), **SELF_BUILD 2**, **UNKNOWN 4** (libcrypto-3/libssl-3 3.0.16, libffi-8, sqlite3 do build CPython — não pinados; deps/OpenSSL do pin é 1.1.1w).
+- **FFmpeg** (ctypes no runner, sem mídia/rede): todas as libs declaram **"GPL version 3 or later"** (`--enable-gpl --enable-version3`, sem nonfree). Obrigações de redistribuição/compatibilidade = **BLOCKED_PENDING_REVIEW**. Não é parecer jurídico.
+- LEGAL-02: checks documentais 7/7 PASS · auditoria de pacote PARTIAL · licenças de terceiros BLOCKED.
+
+Execuções canceladas externamente (não por mim): 42125236040, 42125277991 (`The operation was canceled`); refeitas uma vez com sucesso.
+ADR proposta (não vigente): `FILUNA/FUND-ADR-SUBJECT-VS-REPORTING-COMMIT-PROPOSTA.md`. Regra vigente commit==HEAD mantida → `gate_governance` continua BLOCKED.

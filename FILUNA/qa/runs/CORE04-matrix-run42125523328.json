@@ -1,0 +1,201 @@
+{
+  "summary": {
+    "PASS": 4,
+    "FAIL": 0,
+    "BLOCKED": 8
+  },
+  "cases": [
+    {
+      "case": "FX-OBJ-CUBE__PR-BBL-P1S",
+      "fixture": "FX-OBJ-CUBE",
+      "format": "OBJ",
+      "preset": "PR-BBL-P1S",
+      "fixture_sha256": "15943d9ad0548b654199c4e8eecdfc937964eaac80aad0237bf70fac75725b80",
+      "orca_exit": 0,
+      "filuna_exit": 0,
+      "raw_sha256": {
+        "orca": "22cdec9d7ff037f0d2bf823db60846b430eeae9eadfbcebbe62870f987804f19",
+        "filuna": "2b3aef5b7e6bdceda7141e334deea6ad08583c0cad0a6e75f141a4f96de7f929"
+      },
+      "compare_rc": 0,
+      "negative_detected": true,
+      "result": "PASS"
+    },
+    {
+      "case": "FX-OBJ-CUBE__PR-ELEGOO-CC2",
+      "fixture": "FX-OBJ-CUBE",
+      "format": "OBJ",
+      "preset": "PR-ELEGOO-CC2",
+      "fixture_sha256": "15943d9ad0548b654199c4e8eecdfc937964eaac80aad0237bf70fac75725b80",
+      "orca_exit": 0,
+      "filuna_exit": 0,
+      "raw_sha256": {
+        "orca": "044d99a1ff2275c6e8fff4fe08b73e2625e1bc69a42f1eb11bf3c315cb424af2",
+        "filuna": "044d99a1ff2275c6e8fff4fe08b73e2625e1bc69a42f1eb11bf3c315cb424af2"
+      },
+      "compare_rc": 0,
+      "negative_detected": true,
+      "result": "PASS"
+    },
+    {
+      "case": "FX-OBJ-CUBE__PR-ANYCUBIC-K3V2",
+      "fixture": "FX-OBJ-CUBE",
+      "format": "OBJ",
+      "preset": "PR-ANYCUBIC-K3V2",
+      "fixture_sha256": "15943d9ad0548b654199c4e8eecdfc937964eaac80aad0237bf70fac75725b80",
+      "orca_exit": -18,
+      "filuna_exit": -18,
+      "result": "BLOCKED",
+      "cause": "ambos sem G-code (exit orca=-18 filuna=-18); ver logs",
+      "divergent_exit": false
+    },
+    {
+      "case": "FX-STL-20MMBOX__PR-BBL-P1S",
+      "fixture": "FX-STL-20MMBOX",
+      "format": "STL",
+      "preset": "PR-BBL-P1S",
+      "fixture_sha256": "619c2e8ec69d5f01385570aa2d95288bf33a84ad9b299284e4a4514d66929bc9",
+      "orca_exit": 0,
+      "filuna_exit": 0,
+      "raw_sha256": {
+        "orca": "6f770720c6613c1dfb81022e876ad17434afc29bdd6c091bdc45c597e04ee495",
+        "filuna": "77efbcf12e16e7714f298dad2e530cba36a435333f54b6685d384ba0403457ca"
+      },
+      "compare_rc": 0,
+      "negative_detected": true,
+      "result": "PASS"
+    },
+    {
+      "case": "FX-STL-20MMBOX__PR-ELEGOO-CC2",
+      "fixture": "FX-STL-20MMBOX",
+      "format": "STL",
+      "preset": "PR-ELEGOO-CC2",
+      "fixture_sha256": "619c2e8ec69d5f01385570aa2d95288bf33a84ad9b299284e4a4514d66929bc9",
+      "orca_exit": 0,
+      "filuna_exit": 0,
+      "raw_sha256": {
+        "orca": "0edef14cc2b3f9d56036184a8e3c23e70c1e1f6c678bbedbd79f059f6c424e7a",
+        "filuna": "5554a380ada98202c022d9f3cc4a8f9785fff280bf8730eadd3352dd7826f4d7"
+      },
+      "compare_rc": 0,
+      "negative_detected": true,
+      "result": "PASS"
+    },
+    {
+      "case": "FX-STL-20MMBOX__PR-ANYCUBIC-K3V2",
+      "fixture": "FX-STL-20MMBOX",
+      "format": "STL",
+      "preset": "PR-ANYCUBIC-K3V2",
+      "fixture_sha256": "619c2e8ec69d5f01385570aa2d95288bf33a84ad9b299284e4a4514d66929bc9",
+      "orca_exit": -18,
+      "filuna_exit": -18,
+      "result": "BLOCKED",
+      "cause": "ambos sem G-code (exit orca=-18 filuna=-18); ver logs",
+      "divergent_exit": false
+    },
+    {
+      "case": "FX-STEP-SINGLE__PR-BBL-P1S",
+      "fixture": "FX-STEP-SINGLE",
+      "format": "STEP",
+      "preset": "PR-BBL-P1S",
+      "fixture_sha256": "31b1402de07e77122c3ecd368ee685fe0c432798468fd18f50be06bd501100ef",
+      "orca_exit": -6,
+      "filuna_exit": -6,
+      "result": "BLOCKED",
+      "cause": "ambos sem G-code (exit orca=-6 filuna=-6); ver logs",
+      "divergent_exit": false
+    },
+    {
+      "case": "FX-STEP-SINGLE__PR-ELEGOO-CC2",
+      "fixture": "FX-STEP-SINGLE",
+      "format": "STEP",
+      "preset": "PR-ELEGOO-CC2",
+      "fixture_sha256": "31b1402de07e77122c3ecd368ee685fe0c432798468fd18f50be06bd501100ef",
+      "orca_exit": -6,
+      "filuna_exit": -6,
+      "result": "BLOCKED",
+      "cause": "ambos sem G-code (exit orca=-6 filuna=-6); ver logs",
+      "divergent_exit": false
+    },
+    {
+      "case": "FX-STEP-SINGLE__PR-ANYCUBIC-K3V2",
+      "fixture": "FX-STEP-SINGLE",
+      "format": "STEP",
+      "preset": "PR-ANYCUBIC-K3V2",
+      "fixture_sha256": "31b1402de07e77122c3ecd368ee685fe0c432798468fd18f50be06bd501100ef",
+      "orca_exit": -6,
+      "filuna_exit": -6,
+      "result": "BLOCKED",
+      "cause": "ambos sem G-code (exit orca=-6 filuna=-6); ver logs",
+      "divergent_exit": false
+    },
+    {
+      "case": "FX-3MF-ORCASLICED__PR-BBL-P1S",
+      "fixture": "FX-3MF-ORCASLICED",
+      "format": "3MF",
+      "preset": "PR-BBL-P1S",
+      "fixture_sha256": "b72e8c68d84d3996759ee9d9315e4eb017646614541e709a1744cb0aef90ad60",
+      "orca_exit": -101,
+      "filuna_exit": -101,
+      "result": "BLOCKED",
+      "cause": "ambos sem G-code (exit orca=-101 filuna=-101); ver logs",
+      "divergent_exit": false
+    },
+    {
+      "case": "FX-3MF-ORCASLICED__PR-ELEGOO-CC2",
+      "fixture": "FX-3MF-ORCASLICED",
+      "format": "3MF",
+      "preset": "PR-ELEGOO-CC2",
+      "fixture_sha256": "b72e8c68d84d3996759ee9d9315e4eb017646614541e709a1744cb0aef90ad60",
+      "orca_exit": -101,
+      "filuna_exit": -101,
+      "result": "BLOCKED",
+      "cause": "ambos sem G-code (exit orca=-101 filuna=-101); ver logs",
+      "divergent_exit": false
+    },
+    {
+      "case": "FX-3MF-ORCASLICED__PR-ANYCUBIC-K3V2",
+      "fixture": "FX-3MF-ORCASLICED",
+      "format": "3MF",
+      "preset": "PR-ANYCUBIC-K3V2",
+      "fixture_sha256": "b72e8c68d84d3996759ee9d9315e4eb017646614541e709a1744cb0aef90ad60",
+      "orca_exit": -18,
+      "filuna_exit": -18,
+      "result": "BLOCKED",
+      "cause": "ambos sem G-code (exit orca=-18 filuna=-18); ver logs",
+      "divergent_exit": false
+    }
+  ],
+  "provenance": {
+    "orca_pin_sha": "a620d804efbe74162c96ad29d755cdab2b823530",
+    "orca_upstream_run": "42037889437",
+    "filuna_build_sha": "2dace0db86d305bec5b9627179f265012e4f5069",
+    "filuna_run": "42102469888",
+    "orca_exe_sha256": "b51efb830ef09b9c86fade260d4ae16d69f0cd1e129c721f0328995c1ba28532",
+    "filuna_exe_sha256": "4b8227310b45dffee7061755db2d66367099d62dbecfccab85bc8b7b905c4b55",
+    "matrix_version": "2026-11-05.1",
+    "tolerance": "identity_after_metadata_allowlist_normalize",
+    "orca_OrcaSlicer.dll_sha256": "372aeb32f3cffd55efdadaf6059e9ab4950e288b6328285369a7fe1caf705720",
+    "filuna_OrcaSlicer.dll_sha256": "f0914911be85fbd1809a739f5b1865e82dd4f6708f5b3f5645476f72b092aa9f",
+    "subject_commit": "affbea51ac84e380a78d69024112e7bbe17064d5",
+    "inputs_git_objects": {
+      "FILUNA/qa/baseline": "dbbd76377a5f5f4f1c93a0312790ef90e9876be5",
+      "FILUNA/tests/evidence_schema.py": "810d4cd0b7a11ab0a6c2cac2c9035ef26515e062",
+      "tests/data/20mm_cube.obj": "432d6faa3283bbd33955f90ef4b10599ef4e0111",
+      "tests/data/test_stl/ASCII/20mmbox-LF.stl": "1cb892b74db0cf6dcc50b7b8e5ee2d5057dff724",
+      "tests/data/named_single_body.step": "f1a0ff78bbced6fbaf67602a3fc6a5b8313ddbd5",
+      "resources/handy_models/OrcaSliced.3mf": "d60a6d31e32bf4904cd75d56e7a8c0b307e73dc5",
+      "resources/profiles/BBL/machine/Bambu Lab P1S 0.4 nozzle.json": "0d5b9f21d406e03eeb2b2ecae5b4b4372b3fe6ab",
+      "resources/profiles/BBL/process/0.20mm Standard @BBL X1C.json": "76557dd18d6b759a586c225acfadb5f990f5661c",
+      "resources/profiles/Elegoo/machine/ECC2/Elegoo Centauri Carbon 2 0.4 nozzle.json": "943dccb7dc25063d381a5273423635fd7987d74a",
+      "resources/profiles/Elegoo/process/ECC2/0.20mm Standard @Elegoo CC2 0.4 nozzle.json": "ffa756916777d9d718484a448766f88865e441b7",
+      "resources/profiles/Elegoo/filament/ECC2/Elegoo PLA @ECC2.json": "8574ef68bca0cb7965aad2d42e0369601b033792",
+      "resources/profiles/Anycubic/machine/Anycubic Kobra 3 V2 0.4 nozzle.json": "bacaca616862c436c558ca4a1ad11ff813c147f0",
+      "resources/profiles/Anycubic/process/0.20mm Standard @Anycubic Kobra 3 V2 0.4 nozzle.json": "c3c4c2185526a15f8cdbfd9e6c79bab089d5619d",
+      "resources/profiles/Anycubic/filament/Anycubic PLA @Anycubic Kobra 3 V2 0.4 nozzle.json": "7410bbfebada758e91da104cd5663047b77ad52d"
+    }
+  },
+  "created_at_utc": "2026-11-05T22:57:03Z",
+  "evidence_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42125523328",
+  "scope_note": "Cada caso PASS vale s\u00f3 para seu fixture x preset; CORE-04 total exige matriz completa + signoff."
+}

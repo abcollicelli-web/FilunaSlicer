@@ -37,8 +37,28 @@
   "avcodec-61.dll",
   "avformat-61.dll"
  ],
- "installer_portable_relation": "NOT_RUN (extração NSIS segura pendente)",
- "status": "PARTIAL: origem PROVEN 9, CORROBORATED 60, SELF_BUILD 2, UNKNOWN 4; licenças de todos os terceiros BLOCKED_PENDING_REVIEW; não é parecer jurídico",
+ "installer_portable_relation": {
+  "run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42125762040",
+  "method": "7z x do NSIS no runner Windows, instalador NÃO executado; sha256 por arquivo",
+  "installer_files": 4073,
+  "portable_files": 4062,
+  "portable_only_count": 0,
+  "installer_only": [
+   "$PLUGINSDIR/InstallOptions.dll",
+   "$PLUGINSDIR/NSIS.InstallOptions.ini",
+   "$PLUGINSDIR/StartMenu.dll",
+   "$PLUGINSDIR/System.dll",
+   "$PLUGINSDIR/UserInfo.dll",
+   "$PLUGINSDIR/ioSpecial.ini",
+   "$PLUGINSDIR/modern-wizard.bmp",
+   "Uninstall.exe",
+   "resources/tooltip/.md",
+   "resources/tooltip/zh_CN/.md"
+  ],
+  "result": "todo arquivo do portable tem conteúdo idêntico (sha256) no instalador; instalador só acrescenta 10 arquivos (plugins NSIS, Uninstall.exe, 2 resources/tooltip/.md)",
+  "open": "origem/licença dos plugins NSIS e Uninstall.exe BLOCKED_PENDING_REVIEW; '.md' de nome vazio a investigar"
+ },
+ "status": "PARTIAL: origem PROVEN 9, CORROBORATED 60, SELF_BUILD 2, UNKNOWN 4; licenças de todos os terceiros BLOCKED_PENDING_REVIEW; não é parecer jurídico; relação instalador↔portable verificada por hash (run 42125762040)",
  "binaries": [
   {
    "path": "OrcaSlicer.dll",
@@ -1309,7 +1329,29 @@
   "dll_hash_match": "todas as DLLs FFmpeg empacotadas == zip",
   "license_txt_in_zip": true,
   "runtime_license_configuration": "pendente job Windows (avcodec_license/configuration via ctypes)",
-  "redistribution": "BLOCKED_PENDING_REVIEW (LGPL/GPL depende de flags; patentes codecs)"
+  "redistribution": "BLOCKED_PENDING_REVIEW (LGPL/GPL depende de flags; patentes codecs)",
+  "runtime_probe_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42125762040",
+  "runtime_license_reported": {
+   "avutil-59": "GPL version 3 or later",
+   "swresample-5": "GPL version 3 or later",
+   "swscale-8": "GPL version 3 or later",
+   "avcodec-61": "GPL version 3 or later",
+   "avformat-61": "GPL version 3 or later"
+  },
+  "versions": {
+   "avutil-59": "59.8.100",
+   "swresample-5": "5.1.100",
+   "swscale-8": "8.1.100",
+   "avcodec-61": "61.3.100",
+   "avformat-61": "61.1.103"
+  },
+  "configuration_avcodec": "--prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-doc --enable-small --disable-outdevs --disable-filters --enable-filter='*null*,afade,*fifo,*format,*resample,aeval,allrgb,allyuv,atempo,pan,*bars,color,*key,crop,draw*,eq*,framerate,*_qsv,*_vaapi,*v4l2*,hw*,scale,volume,test*' --enable-schannel --disable-protocols --enable-protocol='file,fd,pipe,http,https,rtp,tcp,udp' --disable-muxers --enable-muxer=rtp --disable-encoders --disable-decoders --enable-decoder='*aac*,h264*,mp3*,mjpeg,rv*' --disable-demuxers --enable-demuxer='h264,mp3,mov,mpjpeg,rtsp,sdp' --disable-zlib --disable-avdevice --enable-shared --disable-static --disable-w32threads --enable-pthreads --extra-cflags= --extra-cxxflags= --extra-libs= --extra-ldflags= --extra-ldexeflags= --cc=x86_64-w64-mingw32-gcc --cxx=x86_64-w64-mingw32-g++ --ar=x86_64-w64-mingw32-gcc-ar --ranlib=x86_64-w64-mingw32-gcc-ranlib --nm=x86_64-w64-mingw32-gcc-nm --extra-version=20260918",
+  "notable_enable_flags": [
+   "gpl",
+   "version3"
+  ],
+  "nonfree": false,
+  "finding": "DLLs FFmpeg auto-declaram 'GPL version 3 or later' (--enable-gpl --enable-version3). Obrigações de redistribuição (fonte correspondente do build Noisyfox/FFmpeg-Builds-Orca, compatibilidade com AGPL-3.0, codecs/patentes) = BLOCKED_PENDING_REVIEW; não é parecer jurídico."
  },
  "occt": {
   "recipe": "deps/OCCT/OCCT.cmake@pin",
