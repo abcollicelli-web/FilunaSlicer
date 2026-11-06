@@ -44,3 +44,13 @@
 5. Seguir gates G0–G6; esta especificação **não muda automaticamente gates de NOT RUN para PASS**. Sem merge ou deploy até evidências e aprovação.
 
 **Objetivo final:** uma única aplicação Filuna com Orca nativo, módulos OEM reutilizáveis por dispositivo e lista de impressão restrita às impressoras do cliente. Não declarar que elimina toda insegurança ou todo defeito sem homologação física.
+
+## Regra operacional de rede — prioridade de protocolos e fallback LAN Code (06/11/2026)
+
+**Ordem expressa do proprietário:** explorar primeiro os recursos de comunicação disponíveis e permitidos do modelo, incluindo protocolos e portas abertas/documentadas (por exemplo MQTT/TLS, serviços de descoberta e transferência local). **Somente se esses recursos forem insuficientes para as capacidades necessárias** tentar o modo LAN com código de acesso disponibilizado pela própria impressora, se oficialmente suportado pelo firmware. Não impor LAN Code como primeiro caminho para todos os modelos.
+
+**Distinção técnica obrigatória:** porta de rede acessível não significa serviço sem autenticação. Se o protocolo inicial exigir credencial, certificado ou pareamento (inclusive MQTT), cumprir a exigência desde essa etapa; não publicar comandos sem autorização. Um código LAN pode ser a própria credencial para usar MQTT/FTPS, e não necessariamente um transporte alternativo. A escolha é por capacidades reais e autenticação documentada, não por suposição de que toda porta aberta permite controle.
+
+**Bambu A1, ordem de teste:** (1) descobrir e identificar por anúncio de LAN/modelo/firmware, sem marcar pareada; (2) inspecionar serviços disponíveis e métodos de acesso permitidos; (3) exercitar MQTT/TLS e transferência local apenas com autenticação exigida, verificando status e permissões; (4) se as funções necessárias não forem acessíveis e o firmware disponibilizar modo LAN com Access Code, orientar a ativação voluntária e empregar o código localmente; (5) confirmar ACK real de comandos e disponibilidade de upload, sem acionar impressão sem confirmação; (6) marcar capacidades individualmente como PASS/FAIL/NOT RUN. Não contornar bloqueios de firmware, usar nuvem/segredos privados ou copiar plugins OEM fechados.
+
+**Status atual:** regra documentada. Os testes em simuladores de portas ainda não demonstram conexão do DeviceBridge Filuna, carregamento do módulo oficial em Preparar ou impressão física Bambu A1.
