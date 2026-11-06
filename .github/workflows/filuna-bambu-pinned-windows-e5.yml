@@ -3,20 +3,13 @@ name: FILUNA OEM Bambu pinned Windows E5 build (no release)
 # Does NOT imply embedding in Filuna or G-code equivalence.
 on:
   workflow_dispatch:
-    inputs:
-      fixture_url:
-        description: 'One-use temporary POST URL for the exact A1-mini 3MF'
-        type: string
-        required: true
-      wine_reference_url:
-        description: 'One-use temporary POST URL for the exact Wine G-code'
-        type: string
-        required: true
   push:
     branches:
       - 'filuna/oem-gcode-routing-qa-20261106'
     paths:
       - '.github/workflows/filuna-bambu-pinned-windows-e5.yml'
+      - 'FILUNA/qa/windows_bambu_public_a1mini_cube_b_test.ps1'
+      - 'FILUNA/qa/gcode/compare_oem_exact_sha.py'
 permissions:
   contents: read
 jobs:
@@ -25,17 +18,9 @@ jobs:
     timeout-minutes: 360
     steps:
       - name: Checkout Filuna comparator and B-test script
-        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
           path: filuna
-      - name: Stage exact original 3MF and Wine control before build
-        if: github.event_name == 'workflow_dispatch'
-        shell: pwsh
-        env:
-          FILUNA_FIXTURE_URL: ${{ inputs.fixture_url }}
-          FILUNA_WINE_URL: ${{ inputs.wine_reference_url }}
-        run: ./filuna/FILUNA/qa/windows_bambu_same_runner_b_test.ps1 -StageOnly
       - name: Checkout Bambu Studio 02.09.01.70 pinned source
         uses: actions/checkout@v4
         with:
@@ -98,24 +83,19 @@ jobs:
           $files=Get-ChildItem -Path official/install-dir -Recurse -File | Where-Object { $_.Extension -eq '.exe' }
           $files | ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 | Format-List }
           if (!$files) { throw "No compiled Bambu Studio exe in install-dir" }
-      - name: Test B — official Windows release CLI versus pinned Windows build
-        if: github.event_name == 'workflow_dispatch'
+      - name: Test B — PUBLIC A1-mini cube, same Windows runner, official vs compiled
         shell: pwsh
-        run: ./filuna/FILUNA/qa/windows_bambu_same_runner_b_test.ps1 -CompareOnly
-      - name: Upload B-test results including first differing line
-        if: always() && github.event_name == 'workflow_dispatch'
+        run: ./filuna/FILUNA/qa/windows_bambu_public_a1mini_cube_b_test.ps1
+      - name: Upload only SHA comparison report (never model/G-code/binaries)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bambu-A1-mini-E5-E8-B-Windows-SHA-results
-          path: |
-            qa-fixtures/b-test-compiled-vs-official.json
-            qa-fixtures/wine-vs-windows.json
+          name: bambu-A1mini-B-public-cube-SHA-report
+          path: qa-public/b-public-cube-report.json
           retention-days: 14
           if-no-files-found: warn
-      - name: Upload pinned build for exact G-code QA
-        uses: actions/upload-artifact@v4
-        with:
-          name: bambu-studio-v02-09-01-70-windows-pinned-qa
-          path: official/install-dir
-          retention-days: 7
-          if-no-files-found: error
+      - name: Securely clean local fixture and output data
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path qa-public) { Remove-Item qa-public -Recurse -Force }
