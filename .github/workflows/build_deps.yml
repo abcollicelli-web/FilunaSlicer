@@ -34,6 +34,8 @@ jobs:
     runs-on: ${{ inputs.os }}
     env:
       date:
+      # Only CC2 pilot builds pull the official Elegoo network SDK.
+      ORCA_DEPS_CMAKE_ARGS: ${{ github.ref == 'refs/heads/filuna/cc2-native-integration-20261106' && '-DFILUNA_CC2_SDK=ON' || '' }}
     steps:
 
       # Setup the environment
