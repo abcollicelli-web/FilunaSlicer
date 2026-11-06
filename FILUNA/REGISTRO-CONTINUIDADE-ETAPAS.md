@@ -257,3 +257,16 @@ check 113/113, CMP 7/7 e testes unitários **não** são autorização para prog
 - **Caso FUND-T07 (1 fixture × 1 preset) = PASS com evidência.** CORE-04 permanece **BLOCKED**: STL/3MF/STEP, outros presets e signoff do dono NOT_RUN.
 - Tentativas anteriores (falhas reais, corrigidas): 42122763283 (import path), 42123026960 e 42123239839 (fixture CRLF → hash mismatch bloqueou corretamente), 42124068177 (`--export-gcode` inválido nesta versão). Rebuild do pin 42122933198 **cancelado** (desnecessário: download do upstream funcionou com GITHUB_TOKEN). Branch `filuna/pin-win-a620d804` ficou criada, sem uso.
 - Limitação conhecida: `gate_governance` exige commit da evidência == HEAD; cada commit novo invalida a evidência até nova execução (fail-closed, intencional).
+
+
+## 23. Onda 01 — regressão adversarial da LAN virtual (06/11/2026)
+
+**Ambiente:** Ubuntu VPS, bridge isolada 10.77.0.0/24; Wine/CLI e testes do motor são trilhas separadas. **Escopo exclusivo: emuladores.**
+
+- Primeira execução adversarial: **6 PASS, 1 FAIL**. A Elegoo CC2 virtual aceitava comando MQTT desconhecido `987654` com `error_code=0`; falha registrada, não ocultada.
+- Correção: `FILUNA/qa/virtual-lab/lab.py` passa a devolver `error_code=404` para método não suportado, sem alterar o motor Orca nem dispositivos físicos. Commit `a40553801ce1de5ab65ae56643ebe919b28cc500`.
+- Reexecução VPS: **7 PASS, 0 FAIL** (senha incorreta, DISCONNECT, pacote MQTT inválido, dois uploads acima do limite, endpoint desconectado, comando desconhecido). A suíte original continuou **14 PASS, 0 FAIL, 6 NOT_RUN**.
+- CI obrigatória: [run 42134823573](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42134823573), workflow `filuna-virtual-lan-regression.yml`, job `protocol-lab` SUCCESS, inclusive etapa adversarial e limpeza da LAN. Evidência [JSON](https://github.com/abcollicelli-web/FilunaSlicer/blob/filuna/qa-gates-hardening-20261105/FILUNA/qa/virtual-lab/adversarial-results-2026-11-06-vps.json).
+- **Limite:** PASS aqui significa resposta correta do emulador. Não demonstra que o código Filuna conectou, que o firmware real responde assim, nem que TLS/FTPS/WS foi implementado. Nenhum portão G3/G4 liberado.
+- **Próxima etapa obrigatória:** ampliar Bambu MQTT/TLS e FTPS, Elegoo original SDCP/WS e Moonraker WS; criar testes de injeção de falha de transferência e, só depois, executar o cliente Filuna/DeviceBridge sob Wine. Manter a distinção `PASS MOCK` / `PASS FILUNA` / `PASS HARDWARE`.
+
