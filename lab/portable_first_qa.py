@@ -11,6 +11,7 @@ A verified archive never implies successful slicing or a homologated Filuna OEM 
 """
 from __future__ import annotations
 import argparse
+import base64
 import csv
 import hashlib
 import json
@@ -151,6 +152,18 @@ def test_brand(brand,cache,out,run_slicing,timeout,rows):
  # Profiled OEM .3mf is REQUIRED. STL/default fallbacks would prove the wrong
  # selected device/profile and must never be called homologation.
  fixture=ROOT/"fixtures"/"oem"/brand/"cube-profiled.3mf"
+ encoded=fixture.with_suffix(fixture.suffix+".b64")
+ if not fixture.is_file() and encoded.is_file():
+  # The historical official 3MF test fixture is checked in as portable
+  # base64 text because GitHub's text-only API cannot store binary blobs.
+  try:
+   fixture=bdir/"cube-profiled.3mf"
+   fixture.write_bytes(base64.b64decode(encoded.read_text(encoding="ascii").strip(),validate=True))
+   if not zipfile.is_zipfile(fixture):raise ValueError("NOT_A_3MF_ZIP")
+   record(rows,brand,version,"PROFILED_FIXTURE","PASS",f"sha256={digest(fixture)}",str(encoded.relative_to(ROOT)))
+  except Exception as err:
+   record(rows,brand,version,"PROFILED_FIXTURE","FAIL",repr(err),str(encoded))
+   return
  if not fixture.is_file():
   record(rows,brand,version,"OFFICIAL_A_B","PENDING","PROFILED_3MF_NOT_PRESENT "+str(fixture))
   record(rows,brand,version,"FILUNA_PARITY","PENDING","FILUNA_PORTABLE_OUTPUT_NOT_PROVIDED")
