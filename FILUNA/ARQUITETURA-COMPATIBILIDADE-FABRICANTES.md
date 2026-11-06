@@ -60,3 +60,20 @@ Diferenças relevantes que **persistiram ao trocar perfis**:
 ## Governança
 
 Documentar no **mesmo** `FILUNA/REGISTRO-CONTINUIDADE-ETAPAS.md`; testes e adaptadores em branches/PRs; sem sobrepor a branch ativa do Grok; sem merge/deploy sem passagem pelos portões. A tela do site deve mostrar estados separados por dispositivo, não um PASS geral.
+
+
+## ADENDO VINCULANTE — POLÍTICA UNIVERSAL DE DISPOSITIVOS E MÓDULOS OEM (06/11/2026)
+
+**Decisão expressa do proprietário: aplica-se a TODAS as impressoras, marcas, famílias e futuros adaptadores Filuna.** Preservar a aplicação Windows Filuna Slicer já compilada, a GUI e o motor-base Orca nativo. Não iniciar outro aplicativo de fatiamento instalado nem popular a lista de impressão com todos os presets disponíveis.
+
+**Ordem de execução obrigatória por identidade/firmware:**
+1. Dispositivos descobre a impressora por protocolos e portas locais suportados/documentados (mDNS/SSDP/UDP, HTTP, MQTT/MQTT-TLS, WebSocket etc. conforme modelo). Porta aberta não implica acesso não autenticado. Detectar capacidades de maneira permitida; sem scan amplo indiscriminado e sem autenticação presumida.
+2. Verificar fabricante/modelo/revisão/firmware e autorização/pareamento exigidos; persistir registro privado do cliente, credenciais no cofre apropriado e relação módulo+ABI+versão. Sem dispositivo físico não alegar descoberta real, conexão, firmware ou ACK.
+3. **Primeiro aproveitar os protocolos e recursos de rede disponíveis** para descoberta/telemetria/transferência/comandos suportados, com a autenticação que cada serviço exigir. **Somente quando esses recursos forem insuficientes**, tentar o modo LAN com código fornecido pela impressora, quando o firmware permitir. LAN Code pode ser credencial do próprio MQTT/FTPS, não necessariamente um segundo transporte; não contornar autenticação, certificado, firmware ou controles privados.
+4. Preparar mantém GUI Orca; ao selecionar um equipamento registrado, deve ativar implementação OEM compatível **efetivamente conectada ao pipeline**, com capacidades, macros, perfis e código livre reutilizável conforme licença por arquivo. Seleção de um ID ou preset JSON, isoladamente, não cumpre a regra. Se recurso incompatível/fechado, declarar indisponibilidade ou fallback identificado, sem equivalência presumida.
+5. Imprimir oferece somente máquinas registradas; offline permanece rotulada offline. Enviar apenas com impressão autorizada, integridade de arquivo e ACK real. Nenhum comando de impressão automática na descoberta.
+6. Atualizar módulos/firmware-matrix/perfis independentemente quando tecnicamente possível, via manifesto assinado, SHA, versão, ABI, rollback e reinício seguro quando necessário; motor-base Orca permanece acessível offline sem assinatura.
+
+**Primeiro piloto:** Bambu Lab A1. **Próximos:** Flashforge AD5X, Anycubic Kobra 3 V2 (não confundir com nome informal Kobra V3 sem confirmação de identidade) e Elegoo Centauri Carbon 2. A política também vale às demais marcas e novos dispositivos.
+
+**Estado de prova:** apenas seleção candidato por modelo/ABI em C++ e emuladores parciais; nenhum módulo OEM completo comprovado no pipeline Preparar. Wine CLI não valida GUI/firmware/hardware. Não declarar gates G2-G6 PASS nem release; preservar evidências e testes negativos.
