@@ -4,6 +4,7 @@
 // No manufacturer cloud secrets or proprietary network plugin used.
 // Discovery is not authentication, pairing, online heartbeat, or print authorization.
 #pragma once
+#include "BambuModelRegistry.hpp"
 #include <algorithm>
 #include <cctype>
 #include <map>
@@ -17,6 +18,7 @@ struct LanIdentity {
     std::string display_name;
     std::string host;
     bool valid_a1 = false;
+    bool valid_manufacturer_model = false;
 };
 inline std::string trim(std::string s) {
     const auto start=s.find_first_not_of(" \t\r\n");
@@ -46,10 +48,14 @@ inline LanIdentity parse_ssdp(std::string_view packet) {
     id.model_code=fields["devmodel.bambu.com"];
     id.display_name=fields["devname.bambu.com"];
     id.host=fields["location"];
-    if(id.model_code=="N2S") id.model_name="Bambu Lab A1";
+    const auto* manufacturer_model = lookup_bambu_model(id.model_code);
+    if (manufacturer_model) id.model_name = std::string(manufacturer_model->display_name);
     // Do not infer hardware identity solely from the human-readable name.
     // The official N2S capability file specifies SN prefix 039 for A1.
-    id.valid_a1=(id.model_code=="N2S" && id.device_id.rfind("039",0)==0 && !id.host.empty());
+    id.valid_manufacturer_model = manufacturer_model != nullptr && !id.host.empty() &&
+        is_valid_bambu_discovery_identity(id.model_code,id.device_id);
+    id.valid_a1=(id.model_code=="N2S" &&
+        is_valid_bambu_discovery_identity(id.model_code,id.device_id) && !id.host.empty());
     return id;
 }
 } // namespace Slic3r::Filuna::Bambu
