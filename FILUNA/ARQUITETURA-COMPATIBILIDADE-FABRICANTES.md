@@ -23,9 +23,15 @@ Cada adaptador terá contrato explícito:
 
 Nunca confundir família de impressora com compatibilidade universal. Ex.: Elegoo Carbon original usa SDCP WS enquanto CC2 apresenta MQTT; não intercambiar adaptadores.
 
-## Fontes upstream e licenciamento
+## Ordem expressa do proprietário: incorporação dos códigos livres dos fabricantes
 
-Pesquisar e fixar versão/commit do software oficial, dados de perfis, protocolos documentados e licenças. **Código só entra no Filuna depois de auditoria de direitos, dependências, compatibilidade GPL/AGPL e disponibilidade de fonte quando exigida.** Evitar distribuição de SDKs, certificados, chaves e binários proprietários sem permissão. Quando não houver licença compatível, implementar um adaptador independente e interoperável com base em APIs e comportamentos documentados, com testes, sem copiar código proibido.
+**Regra operacional mandatória:** clonar os repositórios públicos de código aberto dos fatiadores derivados de Orca, Prusa ou outros projetos livres, identificar e incorporar ao Filuna os módulos reutilizáveis de integração com hardware por fabricante/modelo. Isso inclui, conforme código e capacidades efetivamente existentes: descoberta, reconhecimento, transporte, estado, comandos, arquivos, câmera, materiais, multimaterial, calibração e perfis. **Não limitar a implementação aos perfis JSON nem tratar a arquitetura como sugestão opcional do assistente.**
+
+**Separação mandatória:** não incorporar logins, contas, nuvem e serviços privados de fabricante, tokens, certificados/chaves privadas, plataformas de telemetria proprietárias ou diretórios exclusivos de serviços que não pertençam ao núcleo livre. A presença em um repositório não substitui a identificação da licença aplicável a arquivos e dependências.
+
+**Execução:** clonar upstream para workspace isolado; registrar versão, commit, arquivos, origem e licença; comparar com Orca/Filuna; portar módulos ao namespace Filuna com proveniência e avisos de direitos autorais, preservando GPL/AGPL e obrigações de disponibilização do código; adaptar o código sem copiar serviços exclusivos; adicionar testes de regressão e validação Wine; fazer commit e PR em branch separada. A decisão de aproveitar código aberto **já foi tomada pelo proprietário**; a auditoria de licença é parte da execução, não uma nova solicitação de autorização.
+
+**Constatação concreta:** o repositório oficial `elegooofficial/ElegooSlicer`, tag `v1.5.3.5`, contém `LICENSE.txt` com **GNU AGPL-3.0**. Essa licença admite modificar e redistribuir o código coberto, desde que se cumpram seus requisitos. Bibliotecas e outros componentes podem ter licenças diferentes; verificar individualmente e documentar atribuição, licença e disponibilização do código correspondente. Se algum componente específico não for redistribuível, isolá-lo e integrar por API permitida sem copiá-lo.
 
 Famílias priorizadas: Bambu Lab, Elegoo, Creality, Flashforge, QIDI, Klipper/Moonraker e OctoPrint. Adaptador por família/modelo; extensões plugáveis, identificação por capacidades, sem rotular fornecedor inteiro como homologado.
 
