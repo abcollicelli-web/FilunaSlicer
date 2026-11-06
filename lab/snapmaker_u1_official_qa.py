@@ -95,6 +95,51 @@ def diagnose_process_profile(exe:Path,out:Path,cube:Path,profiles:dict,timeout:i
      "crashed_access_violation":code in (3221225477,-1073741819),
      "profile_process_original_sha256":digest(process),
      "profile_process_without_bom_sha256":digest(bom_removed)})
+ # Extra read-only fault isolation: reduce only the diagnostic COPY of the
+ # process JSON; never replace or mutate the exact upstream profile.
+ original=json.loads(process.read_text(encoding="utf-8-sig"))
+ mandatory=("type","name","from","inherits","setting_id","instantiation","compatible_printers")
+ optional=[k for k in original if k not in mandatory]
+ record={"source_process_sha256":digest(process),"mandatory":list(mandatory),
+         "tested_variants":[],"identified_single_key":None}
+ def probe(name,keys):
+  candidate={k:original[k] for k in original if k in mandatory or k in keys}
+  path=diagnostics/("process-"+name+".json")
+  path.write_text(json.dumps(candidate,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+  log=diagnostics/("process-"+name+".log")
+  parameters=["--debug","3","--load-settings",str(machine)+";"+str(path),
+              "--export-3mf",str(diagnostics/("candidate-"+name+".3mf")),str(cube)]
+  code=command(exe,parameters,exe.parent,log,min(timeout,65))
+  tail=log.read_text(encoding="utf-8",errors="replace")[-1200:]
+  result={"case":name,"keys":sorted(keys),"exit_code":code,
+          "crashed_access_violation":code in (3221225477,-1073741819),
+          "loaded_process":("loaded process config" in tail),
+          "log":str(log.relative_to(out))}
+  record["tested_variants"].append(result)
+  return result
+ minimal=probe("minimal",[])
+ if not minimal["crashed_access_violation"]:
+  # Find one offending optional field, when the crash is attributable to a
+  # single field. A multi-key interaction stays unknown, never guessed.
+  subset=list(optional)
+  for trial in range(7):
+   if len(subset)<=1:break
+   pivot=(len(subset)+1)//2
+   first=probe("half-"+str(trial)+"-A",subset[:pivot])
+   if first["crashed_access_violation"]:
+    subset=subset[:pivot];continue
+   second=probe("half-"+str(trial)+"-B",subset[pivot:])
+   if second["crashed_access_violation"]:
+    subset=subset[pivot:];continue
+   break
+  if len(subset)==1:
+   candidate=probe("isolated-single-key",subset)
+   if candidate["crashed_access_violation"]:
+    record["identified_single_key"]=subset[0]
+ else:
+  record["status"]="MINIMAL_PROCESS_PROFILE_STILL_CRASHES"
+ (diagnostics/"process-field-isolation.json").write_text(
+   json.dumps(record,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
  (diagnostics/"matrix.json").write_text(json.dumps(details,indent=2)+"\n",encoding="utf-8")
  return details
 
