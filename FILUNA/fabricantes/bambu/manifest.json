@@ -10,9 +10,12 @@
   "models": [
     {
       "id": "BBL-A1",
+      "official_model_id": "N2S",
+      "official_sn_prefix": "039",
       "display": "Bambu Lab A1",
       "firmware_verified": false,
-      "model_module": "modelos/a1"
+      "model_module": "modelos/a1",
+      "official_capabilities": "modelos/a1/N2S.json"
     }
   ],
   "source": {
@@ -66,6 +69,23 @@
       "kind": "preset_delta",
       "path": "modelos/a1/preset-delta.json",
       "state": "MISMATCH_33_EFFECTIVE_VALUES"
+    },
+    {
+      "kind": "official_capabilities",
+      "path": "FILUNA/fabricantes/bambu/modelos/a1/N2S.json",
+      "source_path": "resources/printers/N2S.json",
+      "source_blob_sha": "3a5929b98244d7800ee06a7fe41662f0141306ce",
+      "state": "SOURCE_SNAPSHOTTED_NEEDS_NATIVE_BUNDLE_QA"
+    },
+    {
+      "kind": "native_lan_discovery",
+      "path": "FILUNA/fabricantes/bambu/transport/BambuLanDiscovery.hpp",
+      "state": "MOCK_NETWORK_DISCOVERY_PASS"
+    },
+    {
+      "kind": "native_bambu_module",
+      "path": "FILUNA/fabricantes/bambu/engine/BambuA1Module.hpp",
+      "state": "IN_PROCESS_ENTRYPOINT_UNIT_PASS_NOT_SLICING_EQUIVALENT"
     }
   ],
   "network_priority": [
@@ -79,7 +99,10 @@
     "presets_parity": "FAIL",
     "gcode_equivalence": "FAIL",
     "mqtt_tls": "NOT_RUN",
-    "physical_print": "NOT_RUN"
+    "physical_print": "NOT_RUN",
+    "discovery_native_emulator": "PASS",
+    "native_entrypoint_compiled": "PASS",
+    "prepare_source_hook": "IMPLEMENTED_NOT_WINDOWS_COMPILED"
   },
   "requires_validation_before_use": true,
   "automatic_hardware_activation": false
