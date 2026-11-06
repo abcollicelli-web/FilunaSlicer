@@ -57,11 +57,16 @@ try {
     wine_matches_official_windows=($officialSha -eq $expectedWine)
     raw_sha256_identical=($officialSha -eq $compiledSha)
     normalized_sha256_identical=$result.byte_equal_after_allowed_normalization
+    official_win_sha256_normalized=$result.official_win_sha256_normalized
+    compiled_win_sha256_normalized=$result.compiled_win_sha256_normalized
+    removed_generator_timestamp_lines_official=$result.official_timestamp_lines_removed
+    removed_generator_timestamp_lines_compiled=$result.compiled_timestamp_lines_removed
+    wine_comparison='RAW_SHA_ONLY; if mismatched, Wine reference is not accepted (Wine G-code not on runner)'
     gate_b_status=$result.e8_acceptance
     first_difference=$result.first_difference
   }
   $summary | ConvertTo-Json -Depth 6 | Set-Content -Path $report -Encoding utf8
-  if ($exitCode -ne 0 -or $officialSha -ne $compiledSha) { throw 'Private B FAIL: raw or normalized SHA-256 differs; first line recorded in SHA-only report' }
+  if ($exitCode -ne 0) { throw 'Private B FAIL: normalized SHA-256 differs beyond generator timestamp; first line in report' }
 }
 finally {
   if (Test-Path $passFile) { Remove-Item $passFile -Force }
