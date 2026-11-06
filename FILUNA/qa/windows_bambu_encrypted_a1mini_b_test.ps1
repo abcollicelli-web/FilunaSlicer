@@ -61,7 +61,7 @@ try {
     first_difference=$result.first_difference
   }
   $summary | ConvertTo-Json -Depth 6 | Set-Content -Path $report -Encoding utf8
-  if ($exitCode -ne 0) { throw 'Private B G-code SHA differs; first difference recorded in SHA-only report' }
+  if ($exitCode -ne 0 -or $officialSha -ne $compiledSha) { throw 'Private B FAIL: raw or normalized SHA-256 differs; first line recorded in SHA-only report' }
 }
 finally {
   if (Test-Path $passFile) { Remove-Item $passFile -Force }
