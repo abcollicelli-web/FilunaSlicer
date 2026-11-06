@@ -56,17 +56,23 @@ function FindGcode([string]$folder) {
 $a=FindGcode (Join-Path $dir 'slice-official')
 $b=FindGcode (Join-Path $dir 'slice-compiled')
 if (!$a -or !$b) { throw 'Missing a Windows G-code; impossible to compare' }
-Write-Host "OFFICIAL_WIN_GCODE_SHA256 $(Hash $a.FullName)"
-Write-Host "COMPILED_WIN_GCODE_SHA256 $(Hash $b.FullName)"
-$rawEqual = ((Hash $a.FullName) -eq (Hash $b.FullName))
 if ($a.Name -like '*.3mf' -or $b.Name -like '*.3mf') {
-  Write-Host 'PACKAGE CONTAINER SHA not used for gate B; see Metadata/plate_1.gcode SHA in JSON'
+  Write-Host 'ZIP envelope hashes excluded. See per-file and G-code hashes in the JSON report.'
 }
-Write-Host "EXACT_RAW_SHA256_MATCH $rawEqual"
 Write-Host "WINE_DIORAMA_SHA256 321a29de1290a42edf785674e789b9d69d41c5ba979a69144faf081aa69372df (not comparable with own cube)"
 $report=Join-Path $dir 'b-public-cube-report.json'
 python filuna/FILUNA/qa/gcode/compare_oem_exact_sha.py --gate B --official $a.FullName --filuna $b.FullName --out $report
 $comparisonExit=$LASTEXITCODE
+if (Test-Path $report) {
+  $comparison=Get-Content -Raw $report | ConvertFrom-Json
+  Write-Host "OFFICIAL_WIN_GCODE_SHA256 $($comparison.official_win_sha256_raw)"
+  Write-Host "COMPILED_WIN_GCODE_SHA256 $($comparison.compiled_win_sha256_raw)"
+  Write-Host "OFFICIAL_WIN_NORMALIZED_SHA256 $($comparison.official_win_sha256_normalized)"
+  Write-Host "COMPILED_WIN_NORMALIZED_SHA256 $($comparison.compiled_win_sha256_normalized)"
+  $rawEqual=$comparison.raw_identical
+  Write-Host "RAW_SHA256_MATCH $rawEqual"
+  Write-Host "TIMESTAMP_ONLY_NORMALIZED_MATCH $($comparison.normalized_identical)"
+}
 Write-Host "B_PUBLIC_TEST_RESULT_EXIT $comparisonExit"
 # Only the small report may be uploaded, never either G-code, 3MF or packaged executable.
 if (!(Test-Path $report)) { throw 'Missing B test report' }
