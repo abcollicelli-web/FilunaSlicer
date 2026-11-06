@@ -32,6 +32,15 @@ jobs:
         run: |
           cd FILUNA/qa/virtual-lab
           python3 smoke_test.py
+      - name: OctoPrint HTTP mock negative and state tests (localhost)
+        run: |
+          python3 FILUNA/qa/virtual-lab/test_octoprint_mock.py /tmp/filuna-octoprint-mock.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/filuna-octoprint-mock.json'))
+          assert j['pass']==11 and j['fail']==0
+          assert j['is_release_evidence'] is False
+          PY
       - name: Set up isolated four-printer LAN
         run: sudo bash FILUNA/qa/virtual-lab/setup_bridge.sh
       - name: Start emulators inside network namespaces
@@ -96,6 +105,7 @@ jobs:
             /tmp/filuna-lan-regression.json
             /tmp/filuna-lan-adversarial.json
             /tmp/filuna-hardware-final-checklist.json
+            /tmp/filuna-octoprint-mock.json
             /tmp/filuna-lab.log
           if-no-files-found: warn
           retention-days: 30
