@@ -44,16 +44,20 @@ try {
   $a=FindGcode (Join-Path $privateRoot 'slice-official')
   $b=FindGcode (Join-Path $privateRoot 'slice-compiled')
   if (!$a -or !$b) { throw 'Private A1-mini G-code missing; cannot compare' }
-  $officialSha=Sha $a.FullName
-  $compiledSha=Sha $b.FullName
-  Write-Host "PRIVATE_OFFICIAL_WIN_SHA256=$officialSha"
-  Write-Host "PRIVATE_COMPILED_WIN_SHA256=$compiledSha"
-  Write-Host "WINE_REFERENCE_SHA256=$expectedWine"
-  Write-Host "WINE_REFERENCE_IDENTICAL=$($officialSha -eq $expectedWine)"
   $semantic=Join-Path $privateRoot 'private-semantic.json'
   python filuna/FILUNA/qa/gcode/compare_oem_exact_sha.py --gate B --official $a.FullName --filuna $b.FullName --out $semantic
   $exitCode=$LASTEXITCODE
+  if (!(Test-Path $semantic)) { throw 'No SHA comparison report generated' }
   $result=Get-Content $semantic -Raw | ConvertFrom-Json
+  # These refer to the G-code BYTES, not to the .gcode.3mf ZIP envelope.
+  $officialSha=$result.official_win_sha256_raw
+  $compiledSha=$result.compiled_win_sha256_raw
+  Write-Host "PRIVATE_OFFICIAL_WIN_GCODE_SHA256=$officialSha"
+  Write-Host "PRIVATE_COMPILED_WIN_GCODE_SHA256=$compiledSha"
+  Write-Host "PRIVATE_OFFICIAL_WIN_NORMALIZED_SHA256=$($result.official_win_sha256_normalized)"
+  Write-Host "PRIVATE_COMPILED_WIN_NORMALIZED_SHA256=$($result.compiled_win_sha256_normalized)"
+  Write-Host "WINE_REFERENCE_SHA256=$expectedWine"
+  Write-Host "WINE_REFERENCE_RAW_IDENTICAL=$($officialSha -eq $expectedWine)"
   $summary=[ordered]@{
     source='encrypted-private-3mf'
     fixture_sha256=$expected3MF
