@@ -1,6 +1,17 @@
 cmake_minimum_required(VERSION 3.13)
 project(libslic3r_gui)
 
+# Native Elegoo SDK is built only in explicitly enabled CC2 builds.
+# This avoids changing dependency resolution for existing Orca builds.
+option(FILUNA_CC2_SDK "Build official Elegoo Link CC2 LAN SDK integration" OFF)
+if(FILUNA_CC2_SDK)
+    include("${CMAKE_SOURCE_DIR}/cmake/FilunaElegooCC2.cmake")
+    add_executable(filuna-cc2-sdk Utils/FilunaCC2SdkCli.cpp)
+    target_compile_features(filuna-cc2-sdk PRIVATE cxx_std_17)
+    target_link_libraries(filuna-cc2-sdk PRIVATE elegoolink)
+    install(TARGETS filuna-cc2-sdk RUNTIME DESTINATION bin)
+endif()
+
 include(PrecompiledHeader)
 
 set(SLIC3R_GUI_SOURCES
