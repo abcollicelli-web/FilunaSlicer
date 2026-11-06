@@ -598,6 +598,10 @@ namespace Slic3r {
                     msg = format_error(body, error_message.empty() ? _u8L("CC2 device not detected") : error_message, status);
                     return;
                 }
+                // The resolved-IP path is used by Windows LAN uploads.
+                // Keep the serial available to the embedded device panel,
+                // just as in the regular CC2 connection test.
+                persist_sn(Http::get_host_header_value(m_host), token, serial_number);
                 res = true;
             })
             .ssl_revoke_best_effort(m_ssl_revoke_best_effort)
