@@ -9,6 +9,8 @@ on:
     paths:
       - '.github/workflows/filuna-bambu-pinned-windows-e5.yml'
       - 'FILUNA/qa/windows_bambu_public_a1mini_cube_b_test.ps1'
+      - 'FILUNA/qa/windows_bambu_encrypted_a1mini_b_test.ps1'
+      - 'FILUNA/qa/fixtures/a1mini-makerworld-original.3mf.gpg'
       - 'FILUNA/qa/gcode/compare_oem_exact_sha.py'
 permissions:
   contents: read
@@ -92,6 +94,28 @@ jobs:
         with:
           name: bambu-A1mini-B-public-cube-SHA-report
           path: qa-public/b-public-cube-report.json
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Install GPG for private 3MF verification
+        if: success()
+        shell: pwsh
+        run: |
+          if (!(Get-Command gpg.exe -ErrorAction SilentlyContinue)) {
+            choco install gnupg --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'GPG installation failed' }
+          }
+      - name: Private B confirmation — GPG encrypted MakerWorld A1-mini
+        if: success()
+        shell: pwsh
+        env:
+          FILUNA_A1MINI_PASSPHRASE: ${{ secrets.FILUNA_A1MINI_3MF_GPG_PASSPHRASE }}
+        run: ./filuna/FILUNA/qa/windows_bambu_encrypted_a1mini_b_test.ps1
+      - name: Upload only private SHA report (no original 3MF or G-code)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bambu-A1mini-B-private-SHA-only
+          path: qa-private/private-a1mini-b-report.json
           retention-days: 14
           if-no-files-found: warn
       - name: Securely clean local fixture and output data
