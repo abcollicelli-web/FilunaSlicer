@@ -46,7 +46,7 @@ OFFICIAL={
   "version":"2.4.1","repo":"Snapmaker/OrcaSlicer",
   "asset":"Snapmaker_Orca_Windows_V2.4.1_portable.zip","tag":"v2.4.1",
   "sha256":"1f002e2168c576f800bcfd0509b5e164b5ad65a0963abc2bef8317d929d48c9d",
-  "exe":"Snapmaker Orca.exe"},
+  "exe":"snapmaker-orca.exe"},
  "prusa":{
   "version":"2.9.7","repo":"prusa3d/PrusaSlicer",
   "asset":"PrusaSlicer-2.9.7.zip","tag":"version_2.9.7",
