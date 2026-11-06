@@ -46,12 +46,22 @@ foreach ($case in $cases) {
   & $case.Exe --datadir $datadir --outputdir $output --slice 0 $project
   if ($LASTEXITCODE -ne 0) { throw "Bambu CLI failure in $($case.Name): $LASTEXITCODE" }
 }
-$a=Get-ChildItem (Join-Path $dir 'slice-official') -Filter '*.gcode' -File | Select-Object -First 1
-$b=Get-ChildItem (Join-Path $dir 'slice-compiled') -Filter '*.gcode' -File | Select-Object -First 1
+# Choose actual G-code; if only Bambu .gcode.3mf exists, the comparator
+# extracts Metadata/plate_1.gcode and separately audits all package members.
+function FindGcode([string]$folder) {
+  $plain=Get-ChildItem $folder -Filter '*.gcode' -File | Select-Object -First 1
+  if ($plain) { return $plain }
+  return Get-ChildItem $folder -Filter '*.gcode.3mf' -File | Select-Object -First 1
+}
+$a=FindGcode (Join-Path $dir 'slice-official')
+$b=FindGcode (Join-Path $dir 'slice-compiled')
 if (!$a -or !$b) { throw 'Missing a Windows G-code; impossible to compare' }
 Write-Host "OFFICIAL_WIN_GCODE_SHA256 $(Hash $a.FullName)"
 Write-Host "COMPILED_WIN_GCODE_SHA256 $(Hash $b.FullName)"
 $rawEqual = ((Hash $a.FullName) -eq (Hash $b.FullName))
+if ($a.Name -like '*.3mf' -or $b.Name -like '*.3mf') {
+  Write-Host 'PACKAGE CONTAINER SHA not used for gate B; see Metadata/plate_1.gcode SHA in JSON'
+}
 Write-Host "EXACT_RAW_SHA256_MATCH $rawEqual"
 Write-Host "WINE_DIORAMA_SHA256 321a29de1290a42edf785674e789b9d69d41c5ba979a69144faf081aa69372df (not comparable with own cube)"
 $report=Join-Path $dir 'b-public-cube-report.json'
