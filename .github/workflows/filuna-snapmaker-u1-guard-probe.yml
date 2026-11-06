@@ -1,0 +1,52 @@
+name: Filuna Snapmaker U1 vector-guard root-cause diagnostic
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_guard_probe.py"
+      - "lab/snapmaker_u1_inherit.py"
+      - ".github/workflows/filuna-snapmaker-u1-guard-probe.yml"
+      - "fixtures/oem/snapmaker/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-vector-guard-probe
+  cancel-in-progress: true
+jobs:
+  diagnostic:
+    name: Official unchanged control and one-field diagnostic COPY A/B
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore official SHA-pinned ZIP cache
+        id: portable-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Syntax check only; never compile manufacturer slicer
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_guard_probe.py
+      - name: Capture source-preserving U1 process guard diagnosis
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_guard_probe.py --cache .oem-portable-cache --out qa-snapmaker-u1-guard-probe
+          $code = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-u1-guard-probe/RESUMO.md) {
+            Get-Content qa-snapmaker-u1-guard-probe/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Preserve diagnostic cases and logs (never installer)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-vector-guard-one-field-diagnostic
+          path: qa-snapmaker-u1-guard-probe/
+          retention-days: 30
+          if-no-files-found: warn
