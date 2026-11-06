@@ -141,3 +141,7 @@ O proprietário destacou corretamente: o hook atual `BambuA1Module::activate_for
 
 ## REGRA PRIORITÁRIA MAIS RECENTE — 06/11/2026
 O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do módulo OEM de FATIAMENTO em Preparar**, com o Orca apenas como núcleo comum único; são **dois módulos distintos, completos e selecionados automaticamente pelo dispositivo/firmware**, nunca fatiadores duplicados. A regra normativa integral está em `FILUNA/REGRA-PRIORITARIA-100-PORCENTO-MODULOS-OEM-REDE-FATIAR-2026-11-06.md`. **Prevalece sobre descrições anteriores de seleção ou módulos parciais.** A Bambu A1 atual NÃO está 100% integrada em nenhuma das etapas; não declarar conclusão por PASS isolado.
+
+
+## RECEBIMENTO DO TXT E COMPARAÇÃO MODAL — 06/11/2026
+O usuário enviou `Filuna_Inventario_Modulos_Bambu_2026-11-06(1).txt`, o inventário anterior (282 linhas), **não novos fontes OEM**. A conferência e execução do parser modal ficaram documentadas em `FILUNA/qa/BAMBU-RECEBIMENTO-INVENTARIO-E-ANALISE-MODAL-2026-11-06.md`. Código novo `FILUNA/qa/gcode/compare_bambu_modal_features.py`, rodado em SentinelX Ubuntu, exit 0. Resultado crítico no topo: Bambu vs Orca **70/70 extrusões, 72/140 deslocamentos, 3/138 M204**; preenchimento sólido interno 665/677 extrusões, 30/86 deslocamentos. Não confundir aumento de G1 com mais extrusão. Rótulos Bridge/Internal Bridge diferem e devem ser normalizados. Nenhum módulo de planner OEM completo ou rede autenticada foi ativado; seguir testes/implementação reais.
