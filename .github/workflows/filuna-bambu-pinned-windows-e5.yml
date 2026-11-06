@@ -59,7 +59,7 @@ jobs:
           choco install nsis --yes --no-progress
       - name: Restore pinned Bambu dependencies cache
         id: vendor-deps-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: official/deps/build
           key: bambu-v02090170-win-x64-vs18-release-deps-${{ hashFiles('official/deps/**') }}
@@ -75,6 +75,12 @@ jobs:
           msbuild /m ALL_BUILD.vcxproj
           if ($LASTEXITCODE -ne 0) { throw "Bambu official dependency build failed" }
           Pop-Location
+      - name: Save official dependency cache immediately after a successful dependency build
+        if: steps.vendor-deps-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: official/deps/build
+          key: ${{ steps.vendor-deps-cache.outputs.cache-primary-key }}
       - name: Log Bambu dependencies cache outcome
         shell: pwsh
         run: |
