@@ -6,6 +6,8 @@ on:
       - 'FILUNA/qa/**'
       - 'FILUNA/fabricantes/**'
       - 'src/slic3r/GUI/DeviceCore/Filuna*'
+      - 'src/libslic3r/PrintConfig.cpp'
+      - 'src/slic3r/GUI/Plater.cpp'
       - '.github/workflows/filuna-oem-gcode-regression.yml'
   push:
     branches:
@@ -51,3 +53,14 @@ jobs:
           echo "No Bambu OEM module or Filuna Prepare pipeline was loaded."
           echo "No physical firmware or LAN credentials were used."
           echo "This workflow is NOT evidence of hardware homologation."
+
+  windows-native-bambu-engine:
+    name: Windows full Filuna engine compile (OEM changes)
+    uses: ./.github/workflows/build_check_cache.yml
+    with:
+      os: windows-latest
+      arch: x64
+      compiler: msvc
+      build-deps-only: false
+      force-build: true
+    secrets: inherit
