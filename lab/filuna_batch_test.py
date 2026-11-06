@@ -118,11 +118,11 @@ def t1(brand,cfg,store,cache,os_name,rows):
   p=PRESERVED["bambu"]
   emit(rows,brand,"T1","PASS","HISTORICAL_PROVEN_NOT_REEXECUTED cube="+p["cube_sha"]+" four_color="+p["multicolor_sha"],p["evidence"],"Conservar evidências")
   return
- if cfg.get("flags",{}).get("owner_multicolor_pending"):
-  emit(rows,brand,"T1","PENDENTE","OWNER_OFFICIAL_MULTICOLOR_3MF_NOT_RECEIVED","", "Receber 3MF multicor exportado da interface oficial; não criar por CLI")
-  return
+ owner_multicolor=cfg.get("flags",{}).get("owner_multicolor_pending",False)
  if not cfg.get("cli",{}).get("verified"):
-  emit(rows,brand,"T1","PENDENTE","OEM_CLI_ARGUMENTS_NOT_VERIFIED",str(REPO/"fabricantes"/brand/"vendor.yaml"),"Verificar CLI no código OEM")
+  msg="OEM_CLI_ARGUMENTS_NOT_VERIFIED"
+  if owner_multicolor:msg+="; OWNER_OFFICIAL_MULTICOLOR_3MF_NOT_RECEIVED"
+  emit(rows,brand,"T1","PENDENTE",msg,str(REPO/"fabricantes"/brand/"vendor.yaml"),"Verificar CLI do cubo e receber o 3MF multicor oficial")
   return
  fixture=REPO/cfg.get("fixtures",{}).get("cube","fixtures/cube20.stl")
  if not fixture.is_file():
@@ -162,7 +162,7 @@ def t1(brand,cfg,store,cache,os_name,rows):
  if not filuna.get("slice") or not filuna.get("exe_relative_path"):
   emit(rows,brand,"T1","PENDENTE","FILUNA_NATIVE_CLI_NOT_CONNECTED "+detail,"", "Vincular executável nativo do aplicativo e repetir comparação")
   return
- emit(rows,brand,"T1","PENDENTE","FILUNA_NATIVE_CLI_COMPARISON_NOT_IMPLEMENTED","","Completar comparação oficial×Filuna com os mesmos perfis e SHA normalizado")
+ emit(rows,brand,"T1","PENDENTE","FILUNA_NATIVE_CLI_COMPARISON_NOT_IMPLEMENTED"+("; OWNER_MULTICOLOR_PENDING" if owner_multicolor else ""),"","Completar comparação oficial×Filuna com os mesmos perfis e SHA normalizado")
 def contract(brand,cfg,store,native_binary,rows):
  if brand=="bambu":
   for step in STEPS[1:]:
