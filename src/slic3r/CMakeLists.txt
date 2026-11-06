@@ -987,7 +987,7 @@ endif()
 target_link_libraries(libslic3r_gui libslic3r cereal::cereal imgui imguizmo minilzo libvgcode md4c-html glad ${_opengl_link_lib} hidapi mdns ${wxWidgets_LIBRARIES} glfw libcurl OpenSSL::SSL OpenSSL::Crypto LibDataChannel::LibDataChannel noise::noise pybind11::embed)
 if(FILUNA_CC2_SDK)
     target_compile_definitions(libslic3r_gui PRIVATE FILUNA_CC2_SDK=1)
-    target_link_libraries(libslic3r_gui PRIVATE ${FILUNA_CC2_SDK_TARGET})
+    target_link_libraries(libslic3r_gui ${FILUNA_CC2_SDK_TARGET})
 endif()
 
 
