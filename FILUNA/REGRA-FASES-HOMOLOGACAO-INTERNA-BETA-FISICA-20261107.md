@@ -1,0 +1,41 @@
+# FILUNA — REGRA DE HOMOLOGAÇÃO EM FASES: TESTE INTERNO → BUILD FINAL → BETA VIGIADO → VALIDAÇÃO FÍSICA
+
+**Decisão expressa do proprietário:** 07/11/2026. Válida para todos os fabricantes, módulos OEM e modelos do Filuna Slicer. Esta decisão complementa, sem substituir, as regras de segurança, código-fonte, contrato OEM, evidências e aprovação do proprietário.
+
+## 1. Fases obrigatórias e ordem
+
+**Fase A — desenvolvimento e homologação técnica interna (AGORA).**
+
+- Validar versões **portáteis oficiais** do fatiador de cada fabricante, com versão e SHA-256 fixados; **não compilar versões OEM para testes iniciais**.
+- Investigar e corrigir CLI, presets/heranças, algoritmo, comparação real de G-code, cores/multimaterial, UI Preparar/Fatiar/Dispositivos, contrato de rede, atualizações e persistência.
+- Rodar Windows real no GitHub Actions e, quando aplicável, Linux/Wine, simuladores e testes de contrato. Salvar logs, hashes, casos positivos/negativos, capturas e artefatos.
+- Homologação **interna** por modelo/capacidade exige prova efetiva do binário Filuna, comparada ao oficial e ao simulador, não apenas testes do programa OEM nem compilação que passou.
+- Marcar explicitamente `PASS_INTERNO`, `FALHA` e `PENDENTE_TECNICO`. Não declarar capacidades de conexão, câmera ou impressão como confirmadas sem evidência correspondente.
+- A falta de impressora física **não impede a conclusão de gates internos que já possam ser comprovados sem hardware**; não apresentar simulação como teste físico.
+
+**Fase B — compilação final do Filuna (DEPOIS de todos os gates internos exigidos).**
+
+- Somente após concluir e comprovar os testes internos, produzir a compilação final do Filuna e seu pacote/atualização, com versão, origem, integridade, rollback e testes de instalação.
+- Os testes iniciais continuam usando executáveis OEM portáteis; não publicar builds intermediários como versões para teste do proprietário.
+- Reexecutar no binário final os testes internos e de segurança que dependem do produto empacotado. Regressões bloqueiam a promoção para beta.
+
+**Fase C — lançamento do beta vigiado (DEPOIS da validação interna e da compilação final).**
+
+- Lançar **somente a versão beta identificada como beta**, com telemetria de falhas consentida, observabilidade, rollback e limites operacionais; não representar beta como homologação física concluída.
+- A **validação física das impressoras ocorrerá aqui**, com hardware real, modelo/firmware corretos e logs de comunicação, envio e ACK, estado real, cancelamento e segurança.
+- Testes físicos podem requerer acesso do proprietário/participantes autorizados; nenhum teste automatizado deve disparar impressão física sem comando explícito autorizado.
+- Eventuais erros encontrados no beta são corrigidos, revalidados internamente e submetidos a nova versão beta. Homologação física por modelo/capacidade só é registrada após prova em hardware.
+
+**Fase D — promoção posterior para a versão estável.**
+
+- Somente após o beta vigiado, suas provas físicas e aprovação expressa do proprietário; não promover automaticamente a versão beta.
+
+## 2. Única exceção intencional de agenda
+
+A validação autenticada da **linha Bambu com Bambuddy** é a **única atividade propositalmente adiada**, conforme ordem anterior. Permanece `BAMBUDDY_AUTH=PENDENTE` até ordem posterior. Os demais testes Bambu independentes do Bambuddy e as outras marcas prosseguem agora. Impedimentos técnicos reais são tratados e registrados, não classificados como adiamentos voluntários.
+
+## 3. Critério de comunicação
+
+Separar sempre: `BINARIO_OEM_PORTATIL_VERIFICADO`, `A_B_OFICIAL_PASS`, `PARIDADE_FILUNA_PASS`, `REDE_SIMULADA_PASS`, `HOMOLOGACAO_INTERNA_PASS`, `BUILD_FINAL_PASS`, `BETA_VIGIADO`, `HOMOLOGACAO_FISICA_PASS` e `ESTAVEL_APROVADA`. Esses estados não são equivalentes e não podem ser inferidos um do outro.
+
+**Decisor final de liberação:** proprietário. Nenhum merge, deploy, publicação, ativação de impressão real ou estabilidade assumida por conclusão do runner isolado.
