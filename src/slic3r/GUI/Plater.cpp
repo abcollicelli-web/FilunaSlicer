@@ -1,4 +1,7 @@
 #include "Plater.hpp"
+#include "DeviceCore/FilunaOEMOverlay.hpp"
+#include "DeviceCore/FilunaVendorRegistry.hpp"
+#include "../../../FILUNA/fabricantes/bambu/engine/BambuA1Module.hpp"
 #include "../Utils/NetworkAgent.hpp"
 #include "IPrinterAgent.hpp"
 #include "CalibUtils.hpp"
@@ -21204,6 +21207,27 @@ bool Plater::is_multi_extruder_ams_empty()
 //BBS: add multiple plate reslice logic
 void Plater::reslice()
 {
+
+    // Filuna: activate the same manufacturer overlay used by Dispositivos.
+    // The Bambu A1 candidate currently validates identity and the module
+    // entry point; no OEM slicing planner is claimed until integration gates.
+    if (auto* filuna_devices = wxGetApp().getDeviceManager()) {
+        if (auto* filuna_printer = filuna_devices->get_selected_machine()) {
+            if (const auto* filuna_known = Filuna::model_for_name(filuna_printer->printer_type)) {
+                if (const auto* filuna_overlay = Filuna::resolve_oem_for_stage(
+                    Filuna::OEMStage::Prepare, filuna_known->model_id, 1)) {
+                    if (filuna_overlay->manufacturer == "bambu") {
+                        const auto state = Filuna::Bambu::A1Module::activate_for_prepare(
+                            filuna_printer->printer_type);
+                        BOOST_LOG_TRIVIAL(info) << "FILUNA OEM Preparar: "
+                            << filuna_overlay->module_id
+                            << " state=" << static_cast<int>(state)
+                            << " (engine delta not yet validated)";
+                    }
+                }
+            }
+        }
+    }
     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(", Line %1%: enter, process_completed_with_error=%2%")%__LINE__ %p->process_completed_with_error;
     // There is "invalid data" button instead "slice now"
     if (p->process_completed_with_error == p->partplate_list.get_curr_plate_index())
