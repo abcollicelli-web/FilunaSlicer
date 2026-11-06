@@ -1,0 +1,139 @@
+{
+  "kind": "emulator-protocol-wire-regression-not-hardware",
+  "timestamp_utc": "2026-11-05T23:31:14.035814+00:00",
+  "network": "10.77.0.0/24 isolated bridge, no NAT",
+  "limitations": [
+    "no Filuna adapter operated",
+    "no real printer or firmware",
+    "no Bambu TLS/FTPS; no SDCP/Moonraker WebSocket"
+  ],
+  "results": [
+    {
+      "device": "elegoo-cc2",
+      "stage": "discovered+identified",
+      "status": "PASS",
+      "detail": "UDP 52700 returned CC2TEST00001; identity from emulator"
+    },
+    {
+      "device": "elegoo-cc2",
+      "stage": "connected-authorized",
+      "status": "PASS",
+      "detail": "MQTT 1883 CONNECT accepted lab key only"
+    },
+    {
+      "device": "elegoo-cc2",
+      "stage": "auth-invalid-rejected",
+      "status": "PASS",
+      "detail": "MQTT 1883 rejected incorrect key (CONNACK=4)"
+    },
+    {
+      "device": "elegoo-cc2",
+      "stage": "monitored",
+      "status": "PASS",
+      "detail": "MQTT status response includes machine/extruder/progress"
+    },
+    {
+      "device": "elegoo-cc2",
+      "stage": "commands-simulated",
+      "status": "PASS",
+      "detail": "Lab MQTT start/pause/resume/cancel methods acknowledged (NOT Filuna)"
+    },
+    {
+      "device": "elegoo-cc2",
+      "stage": "file-transfer-simulated",
+      "status": "PASS",
+      "detail": "Lab PUT /upload accepted 16 test bytes"
+    },
+    {
+      "device": "elegoo-cc2",
+      "stage": "unknown-endpoint-rejected",
+      "status": "PASS",
+      "detail": "Unknown endpoint correctly rejected HTTP 404"
+    },
+    {
+      "device": "moonraker",
+      "stage": "identified",
+      "status": "PASS",
+      "detail": "Moonraker mocked API identified"
+    },
+    {
+      "device": "moonraker",
+      "stage": "monitored",
+      "status": "PASS",
+      "detail": "Moonraker telemetry simulated"
+    },
+    {
+      "device": "moonraker",
+      "stage": "commands-simulated",
+      "status": "PASS",
+      "detail": "Moonraker start/pause/resume/cancel mocked"
+    },
+    {
+      "device": "moonraker",
+      "stage": "file-transfer-simulated",
+      "status": "PASS",
+      "detail": "Moonraker mocked upload accepted test payload"
+    },
+    {
+      "device": "moonraker",
+      "stage": "unknown-endpoint-rejected",
+      "status": "PASS",
+      "detail": "Unknown Moonraker endpoint rejected"
+    },
+    {
+      "device": "elegoo-carbon-original",
+      "stage": "discovered+identified",
+      "status": "PASS",
+      "detail": "Original Carbon answered SDCP M99999 UDP 3000"
+    },
+    {
+      "device": "bambu-a1",
+      "stage": "discovered+identified",
+      "status": "PASS",
+      "detail": "Bambu A1 mock replied to SSDP 2021"
+    },
+    {
+      "device": "bambu-a1",
+      "stage": "mqtt-tls-8883",
+      "status": "NOT_RUN",
+      "detail": "not implemented in supplied lab"
+    },
+    {
+      "device": "bambu-a1",
+      "stage": "ftps-990",
+      "status": "NOT_RUN",
+      "detail": "not implemented in supplied lab"
+    },
+    {
+      "device": "elegoo-carbon-original",
+      "stage": "sdcp-ws-3030",
+      "status": "NOT_RUN",
+      "detail": "not implemented in supplied lab"
+    },
+    {
+      "device": "moonraker",
+      "stage": "websocket-7125",
+      "status": "NOT_RUN",
+      "detail": "not implemented in supplied lab"
+    },
+    {
+      "device": "all",
+      "stage": "filuna-wine-lan-adapter",
+      "status": "NOT_RUN",
+      "detail": "no UI/DeviceBridge integration tested yet"
+    },
+    {
+      "device": "all",
+      "stage": "real-printer-firmware",
+      "status": "NOT_RUN",
+      "detail": "no physical printer connected"
+    }
+  ],
+  "pass": 14,
+  "fail": 0,
+  "not_run": 6,
+  "is_release_evidence": false,
+  "ci_run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42130113571",
+  "git_commit_tested": "98a3cd2e4d3fa1fc42b0b5bbd37301caebfe8361",
+  "warning": "Simulated protocol server response only: no real printer, no Filuna adapter, no Wine device UI."
+}

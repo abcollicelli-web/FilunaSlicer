@@ -5,6 +5,7 @@ on:
     branches:
       - 'filuna/quality-*'
       - 'filuna/continuidade-*'
+      - 'filuna/qa-*'
     paths:
       - 'FILUNA/**'
       - '.github/workflows/filuna-foundation-check.yml'
@@ -29,6 +30,8 @@ jobs:
         run: python3 FILUNA/tests/check_master_plan.py
       - name: Onda01 foundation unit tests (CMP/evidence/gcode/data)
         run: python3 FILUNA/tests/run_fund_tests.py
+      - name: Verify blocked gates cannot be promoted as green CI
+        run: python3 FILUNA/tests/gate_governance.py --mode assert-blocked
       - name: LEGAL-02 CMP checklist
         run: python3 FILUNA/tests/cmp_legal.py
       - name: DATA-05 isolation checks

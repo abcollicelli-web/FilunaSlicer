@@ -1,0 +1,91 @@
+name: Filuna virtual LAN protocol regression
+
+# Tests ONLY EMULATORS, not printer firmware or Filuna integration.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'filuna/qa-*'
+      - 'filuna/continuidade-*'
+    paths:
+      - 'FILUNA/qa/virtual-lab/**'
+      - '.github/workflows/filuna-virtual-lan-regression.yml'
+  pull_request:
+    paths:
+      - 'FILUNA/qa/virtual-lab/**'
+      - '.github/workflows/filuna-virtual-lan-regression.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check no pre-existing lab subnet or bridge
+        run: |
+          ! ip route show 10.77.0.0/24 | grep -q .
+          ! ip link show br-filuna-lab >/dev/null 2>&1
+      - name: Basic emulator smoke tests (no privileges)
+        run: |
+          cd FILUNA/qa/virtual-lab
+          python3 smoke_test.py
+      - name: Set up isolated four-printer LAN
+        run: sudo bash FILUNA/qa/virtual-lab/setup_bridge.sh
+      - name: Start emulators inside network namespaces
+        run: |
+          sudo bash FILUNA/qa/virtual-lab/run_lab.sh > /tmp/filuna-lab.log 2>&1 &
+          echo $! > /tmp/filuna-lab.pid
+          for i in $(seq 1 20); do
+            if curl -fsS --max-time 1 http://10.77.0.13:7125/printer/info >/dev/null 2>&1; then
+              echo 'Emulator LAN ready'
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'Virtual printer LAN not ready'
+          cat /tmp/filuna-lab.log
+          exit 1
+      - name: Run positive and negative wire-protocol regression
+        run: |
+          python3 FILUNA/qa/virtual-lab/network_regression.py /tmp/filuna-lan-regression.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/filuna-lan-regression.json'))
+          assert j['fail']==0
+          assert j['pass']>=14
+          assert j['not_run']>=6
+          assert j['is_release_evidence'] is False
+          print('SIMULATED PROTOCOLS ONLY:',j['pass'],'PASS',j['fail'],'FAIL',j['not_run'],'NOT_RUN')
+          PY
+      - name: Adversarial protocol checks (negative auth, disconnect, upload)
+        run: |
+          python3 FILUNA/qa/virtual-lab/adversarial_regression.py /tmp/filuna-lan-adversarial.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/filuna-lan-adversarial.json'))
+          assert j['fail']==0
+          assert j['pass']==7
+          assert j['is_release_evidence'] is False
+          print('EMULATOR NEGATIVE TESTS:',j['pass'],'PASS',j['fail'],'FAIL')
+          PY
+      - name: Upload non-release protocol evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-virtual-lan-regression-${{ github.sha }}
+          path: |
+            /tmp/filuna-lan-regression.json
+            /tmp/filuna-lan-adversarial.json
+            /tmp/filuna-lab.log
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Tear down virtual LAN
+        if: always()
+        run: |
+          if [ -f /tmp/filuna-lab.pid ]; then
+            sudo kill "$(cat /tmp/filuna-lab.pid)" 2>/dev/null || true
+          fi
+          sudo bash FILUNA/qa/virtual-lab/cleanup_bridge.sh || true

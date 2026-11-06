@@ -1,0 +1,55 @@
+{
+  "scope": "virtual-lab-adversarial-not-filuna-not-hardware",
+  "results": [
+    {
+      "case": "cc2-wrong-password-rejected",
+      "status": "PASS",
+      "detail": "CONNACK=4 then connection closed by mock"
+    },
+    {
+      "case": "cc2-clean-mqtt-disconnect",
+      "status": "PASS",
+      "detail": "MQTT DISCONNECT caused EOF"
+    },
+    {
+      "case": "cc2-malformed-mqtt-framing-rejected",
+      "status": "PASS",
+      "detail": "Malformed MQTT length rejected by emulator"
+    },
+    {
+      "case": "cc2-upload-size-limit",
+      "status": "PASS",
+      "detail": "CC2 upload limit returned HTTP 413"
+    },
+    {
+      "case": "moonraker-upload-size-limit",
+      "status": "PASS",
+      "detail": "Moonraker upload limit returned HTTP 413"
+    },
+    {
+      "case": "disconnected-local-endpoint",
+      "status": "PASS",
+      "detail": "disconnected local endpoint refused (ConnectionRefusedError)"
+    },
+    {
+      "case": "cc2-unknown-command-rejected",
+      "status": "PASS",
+      "detail": "unknown MQTT method error_code=404"
+    }
+  ],
+  "pass": 7,
+  "fail": 0,
+  "is_release_evidence": false,
+  "environment": "Ubuntu VPS / isolated 10.77.0.0/24 virtual LAN",
+  "initial_test": {
+    "pass": 6,
+    "fail": 1,
+    "reason": "Unknown CC2 MQTT command was erroneously acknowledged with error_code=0"
+  },
+  "fix_commit": "a40553801ce1de5ab65ae56643ebe919b28cc500",
+  "scope_limitations": [
+    "tests validate mock protocol server, not Filuna DeviceBridge",
+    "no real firmware, no Windows native testing",
+    "negative test for unreachable endpoint is local socket only"
+  ]
+}

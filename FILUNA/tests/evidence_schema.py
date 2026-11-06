@@ -25,6 +25,8 @@ UTC_TS = re.compile(
 GATES = {"G0", "G1", "G2", "G3", "G4", "G5", "G6"}
 RESULTS = {"PASS", "FAIL", "BLOCKED", "NOT_RUN"}
 KINDS = {"static", "unit", "integration", "document", "hardware"}
+RUN_URL = re.compile(r"^https://github[.]com/abcollicelli-web/FilunaSlicer/actions/runs/[1-9][0-9]*$")
+PLACEHOLDERS = {"tbd", "todo", "unknown", "placeholder", "none", "n/a", "test", "example"}
 
 # Provenance / false-evidence filters
 FALSE_EVIDENCE_MARKERS = (
@@ -127,14 +129,29 @@ def validate_evidence(doc: Any, *, require_schema_file: bool = True) -> list[str
     if doc.get("result") == "PASS":
         kind = doc.get("evidence_kind")
         url = doc.get("evidence_url")
-        if kind in ("integration", "hardware") and not url:
-            errors.append(f"PASS+{kind} requires evidence_url")
+        if kind in ("integration", "hardware"):
+            if not isinstance(url, str) or not RUN_URL.fullmatch(url):
+                errors.append(f"PASS+{kind} requires canonical Filuna GitHub Actions run URL")
         if doc.get("gate") == "G4":
-            if not url:
-                errors.append("G4 PASS requires evidence_url")
+            if kind != "hardware":
+                errors.append("G4 PASS requires hardware evidence_kind")
             hw = doc.get("hardware")
-            if not isinstance(hw, dict) or not hw:
-                errors.append("G4 PASS requires non-empty hardware object")
+            if not isinstance(hw, dict):
+                errors.append("G4 PASS requires structured hardware object")
+            else:
+                needed = ("manufacturer", "model", "firmware", "device_fingerprint",
+                          "performed_at_utc")
+                for key in needed:
+                    val = hw.get(key)
+                    if not isinstance(val, str) or len(val.strip()) < 3 or val.strip().lower() in PLACEHOLDERS:
+                        errors.append(f"G4 hardware {key} missing or placeholder")
+                fingerprint = hw.get("device_fingerprint", "")
+                if not (isinstance(fingerprint, str) and
+                        fingerprint.startswith("sha256:") and SHA64.fullmatch(fingerprint[7:])):
+                    errors.append("G4 hardware device_fingerprint must be pseudonymous SHA-256")
+                errors.extend("hardware " + err for err in _check_utc(hw.get("performed_at_utc", "")))
+                if "operator" in hw and str(hw["operator"]).strip().lower() in PLACEHOLDERS:
+                    errors.append("G4 hardware operator is placeholder")
         # Binary baseline claims need commit + fixture hash
         if kind == "integration" and "gcode" in str(doc.get("case_id", "")).lower():
             if not fx:
