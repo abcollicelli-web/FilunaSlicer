@@ -3,9 +3,17 @@
 #include <openssl/err.h>
 #include <openssl/sha.h>
 #include <curl/curl.h>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#endif
 #include <cerrno>
 #include <cstring>
 #include <fstream>
@@ -20,6 +28,20 @@
 
 namespace filuna::oem {
 namespace {
+#ifdef _WIN32
+using socket_handle_t=SOCKET;
+constexpr socket_handle_t invalid_socket=INVALID_SOCKET;
+using socket_len_t=int;
+inline void close_socket(socket_handle_t fd){closesocket(fd);}
+struct SocketInit {SocketInit(){WSADATA d;WSAStartup(MAKEWORD(2,2),&d);}~SocketInit(){WSACleanup();}};
+inline void ensure_socket_init(){static SocketInit w;}
+#else
+using socket_handle_t=int;
+constexpr socket_handle_t invalid_socket=-1;
+using socket_len_t=socklen_t;
+inline void close_socket(socket_handle_t fd){close(fd);}
+inline void ensure_socket_init(){}
+#endif
 std::string header(const std::string &wire,const std::string &key) {
   std::istringstream in(wire); std::string line;
   while(std::getline(in,line)) {
@@ -49,9 +71,10 @@ std::string sha_file(const std::string &path) {
   unsigned char d[SHA256_DIGEST_LENGTH];SHA256_Final(d,&ctx);return hex(d,sizeof(d));
 }
 struct SslSession {
-  SSL_CTX *ctx=nullptr;SSL *ssl=nullptr;int fd=-1;std::string problem;
-  ~SslSession(){if(ssl){SSL_shutdown(ssl);SSL_free(ssl);}if(ctx)SSL_CTX_free(ctx);if(fd>=0)close(fd);}
+  SSL_CTX *ctx=nullptr;SSL *ssl=nullptr;socket_handle_t fd=invalid_socket;std::string problem;
+  ~SslSession(){if(ssl){SSL_shutdown(ssl);SSL_free(ssl);}if(ctx)SSL_CTX_free(ctx);if(fd!=invalid_socket)close_socket(fd);}
   bool connect_to(const std::string &ip,const std::string &ca) {
+    ensure_socket_init();
     if(!lab_ip(ip)){problem="only private Filuna LAB subnet is permitted";return false;}
     ctx=SSL_CTX_new(TLS_client_method());
     if(!ctx){problem="SSL_CTX_new failed";return false;}
@@ -61,9 +84,13 @@ struct SslSession {
     fd=socket(AF_INET,SOCK_STREAM,0);
     sockaddr_in target{};target.sin_family=AF_INET;target.sin_port=htons(8883);
     if(inet_pton(AF_INET,ip.c_str(),&target.sin_addr)!=1){problem="invalid IP";return false;}
+    #ifdef _WIN32
+    DWORD tv=4000;setsockopt(fd,SOL_SOCKET,SO_RCVTIMEO,reinterpret_cast<const char*>(&tv),sizeof(tv));setsockopt(fd,SOL_SOCKET,SO_SNDTIMEO,reinterpret_cast<const char*>(&tv),sizeof(tv));
+#else
     timeval tv{4,0};setsockopt(fd,SOL_SOCKET,SO_RCVTIMEO,&tv,sizeof(tv));setsockopt(fd,SOL_SOCKET,SO_SNDTIMEO,&tv,sizeof(tv));
+#endif
     if(::connect(fd,(sockaddr*)&target,sizeof(target))!=0){problem=std::strerror(errno);return false;}
-    ssl=SSL_new(ctx);SSL_set_fd(ssl,fd);
+    ssl=SSL_new(ctx);SSL_set_fd(ssl,static_cast<int>(fd));
     X509_VERIFY_PARAM *param=SSL_get0_param(ssl);
     X509_VERIFY_PARAM_set1_ip_asc(param,ip.c_str());
     if(SSL_connect(ssl)!=1){problem="SSL_connect or certificate validation failed";return false;}
@@ -122,25 +149,30 @@ public:
   explicit BambuAdapter(std::string ca):ca_(std::move(ca)){}
   std::vector<Device> discover() override {
     std::vector<Device> found;
-    int fd=socket(AF_INET,SOCK_DGRAM,0);
-    if(fd<0)return found;
-    int yes=1;setsockopt(fd,SOL_SOCKET,SO_BROADCAST,&yes,sizeof(yes));
+    ensure_socket_init();
+    socket_handle_t fd=socket(AF_INET,SOCK_DGRAM,0);
+    if(fd==invalid_socket)return found;
+    int yes=1;setsockopt(fd,SOL_SOCKET,SO_BROADCAST,reinterpret_cast<const char*>(&yes),sizeof(yes));
     sockaddr_in bind_addr{};bind_addr.sin_family=AF_INET;bind_addr.sin_port=0;inet_pton(AF_INET,"10.77.0.1",&bind_addr.sin_addr);
-    if(bind(fd,(sockaddr*)&bind_addr,sizeof(bind_addr))!=0){close(fd);return found;}
+    if(bind(fd,(sockaddr*)&bind_addr,sizeof(bind_addr))!=0){close_socket(fd);return found;}
+    #ifdef _WIN32
+    DWORD tv=1000;setsockopt(fd,SOL_SOCKET,SO_RCVTIMEO,reinterpret_cast<const char*>(&tv),sizeof(tv));
+#else
     timeval tv{1,0};setsockopt(fd,SOL_SOCKET,SO_RCVTIMEO,&tv,sizeof(tv));
+#endif
     sockaddr_in broadcast{};broadcast.sin_family=AF_INET;broadcast.sin_port=htons(2021);inet_pton(AF_INET,"10.77.0.255",&broadcast.sin_addr);
     const std::string msg="M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:2021\r\nMAN: \"ssdp:discover\"\r\nMX: 1\r\nST: urn:bambulab-com:device:3dprinter:1\r\n\r\n";
     sendto(fd,msg.data(),msg.size(),0,(sockaddr*)&broadcast,sizeof(broadcast));
     std::set<std::string> unique;
-    char buffer[4096];sockaddr_in source{};socklen_t sl=sizeof(source);
+    char buffer[4096];sockaddr_in source{};socket_len_t sl=sizeof(source);
     while(true){
-      ssize_t n=recvfrom(fd,buffer,sizeof(buffer),0,(sockaddr*)&source,&sl);
+      int n=recvfrom(fd,buffer,sizeof(buffer),0,(sockaddr*)&source,&sl);
       if(n<=0)break;
       const std::string wire(buffer,n);
       std::string ip=header(wire,"Location"),serial=header(wire,"USN"),model=header(wire,"DevModel.bambu.com"),name=header(wire,"DevName.bambu.com");
       if(lab_ip(ip)&&!serial.empty()&&unique.insert(serial).second)found.push_back({ip,serial,model,name});
     }
-    close(fd);return found;
+    close_socket(fd);return found;
   }
   Outcome pair(const Device &device,const std::string &access_code) override {
     if(access_code.empty())return result(false,false,"access code not supplied to app adapter");
