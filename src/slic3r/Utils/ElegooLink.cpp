@@ -1,4 +1,7 @@
 #include "ElegooLink.hpp"
+#ifdef FILUNA_CC2_SDK
+#include <elegoo_link.h>
+#endif
 
 #include <algorithm>
 #include "libslic3r/Utils.hpp"
@@ -412,7 +415,11 @@ namespace Slic3r {
     PrintHostPostUploadActions ElegooLink::get_post_upload_actions() const
     {
         if (classify_printer_model(m_printerModel) == ElegooPrinterType::CC2) {
+#ifdef FILUNA_CC2_SDK
+            return PrintHostPostUploadAction::StartPrint;
+#else
             return PrintHostPostUploadAction::None;
+#endif
         } else {
             return PrintHostPostUploadAction::StartPrint;
         }
@@ -982,6 +989,131 @@ namespace Slic3r {
                                    ErrorFn               error_fn,
                                    InfoFn                info_fn) const
     {
+#ifdef FILUNA_CC2_SDK
+        // In SDK-enabled Filuna builds, the GUI's real PrintHost upload path
+        // uses Elegoo's LAN networking stack, not the legacy HTTP shim.
+        // Discovery supplies the SDK printer ID required for upload and start.
+        (void)url;
+        (void)host_header;
+        auto& sdk = elink::ElegooLink::getInstance();
+        if (!sdk.isInitialized()) {
+            elink::ElegooLink::Config config;
+            config.log.logLevel = 2;
+            config.log.logEnableConsole = false;
+            config.log.logEnableFile = false;
+            if (!sdk.initialize(config)) {
+                error_fn(_L("Elegoo CC2 SDK initialization failed."));
+                return false;
+            }
+        }
+
+        elink::PrinterDiscoveryParams discovery;
+        discovery.timeoutMs = 8000;
+        discovery.broadcastInterval = 2000;
+        discovery.enableAutoRetry = true;
+        const auto printers = sdk.startPrinterDiscovery(discovery);
+        if (!printers.isSuccess() || !printers.hasValue()) {
+            error_fn(GUI::from_u8("CC2 discovery failed: " + printers.message));
+            return false;
+        }
+        const std::string target_host = Http::get_host_from_url(m_host);
+        std::string printer_id;
+        std::string serial;
+        for (const auto& printer : printers.value().printers) {
+            if (printer.printerType == elink::PrinterType::ELEGOO_FDM_CC2 &&
+                printer.host == target_host) {
+                printer_id = printer.printerId;
+                serial = printer.serialNumber;
+                break;
+            }
+        }
+        if (printer_id.empty()) {
+            error_fn(GUI::from_u8("Elegoo CC2 not discovered at " + target_host));
+            return false;
+        }
+        if (!serial.empty())
+            persist_sn(Http::get_host_header_value(m_host), cc2_token(), serial);
+
+        elink::ConnectPrinterParams connection;
+        connection.printerId = printer_id;
+        connection.printerType = elink::PrinterType::ELEGOO_FDM_CC2;
+        connection.brand = "Elegoo";
+        connection.name = "Elegoo Centauri Carbon 2";
+        connection.model = "Elegoo Centauri Carbon 2";
+        connection.host = target_host;
+        connection.serialNumber = serial;
+        connection.authMode = "accessCode";
+        connection.accessCode = cc2_token();
+        connection.networkMode = elink::NetworkMode::LAN;
+        connection.checkConnection = true;
+        connection.autoReconnect = true;
+        const auto connected = sdk.connectPrinter(connection);
+        if (!connected.isSuccess() || !connected.hasValue() || !connected.value().isConnected) {
+            error_fn(GUI::from_u8("CC2 connection failed: " + connected.message));
+            return false;
+        }
+        const std::string connected_id = connected.value().printerInfo.printerId;
+        elink::FileUploadParams params;
+        params.printerId = connected_id;
+        params.storageLocation = "local";
+        params.localFilePath = path_to_utf8(upload_data.source_path);
+        params.fileName = filename_to_utf8(upload_data.upload_path);
+        params.overwriteExisting = true;
+        const std::string progress_buffer;
+        const auto uploaded = sdk.uploadFile(params, [&](const elink::FileUploadProgressData& state) {
+            bool cancel = false;
+            Http::Progress progress(0, 0, static_cast<size_t>(state.totalBytes),
+                                    static_cast<size_t>(state.uploadedBytes), progress_buffer);
+            progress_fn(progress, cancel);
+            return !cancel;
+        });
+        if (!uploaded.isSuccess()) {
+            error_fn(GUI::from_u8("CC2 sendPrintFile failed: " + uploaded.message));
+            return false;
+        }
+        info_fn(L"complete", GUI::from_u8(params.fileName));
+        if (upload_data.post_action != PrintHostPostUploadAction::StartPrint)
+            return true;
+
+        elink::StartPrintParams task;
+        task.printerId = connected_id;
+        task.storageLocation = "local";
+        task.fileName = params.fileName;
+        task.autoBedLeveling = upload_data.extended("heatedBedLeveling") == "1";
+        task.enableTimeLapse = upload_data.extended("timeLapse") == "1";
+        try {
+            task.heatedBedType = std::stoi(upload_data.extended("bedType", "0"));
+            // Optional CANVAS mapping, serialized by the Filuna send dialog:
+            // t:canvasId:trayId,t:canvasId:trayId. Never guess slot IDs.
+            const std::string maps = upload_data.extended("filuna_canvas_slot_map");
+            size_t begin = 0;
+            while (begin < maps.size()) {
+                const auto end = maps.find(',', begin);
+                const std::string entry = maps.substr(begin, end == std::string::npos ? end : end - begin);
+                const auto sep1 = entry.find(':');
+                const auto sep2 = entry.find(':', sep1 == std::string::npos ? sep1 : sep1 + 1);
+                if (sep1 == std::string::npos || sep2 == std::string::npos)
+                    throw std::invalid_argument("CANVAS mapping format");
+                elink::SlotMapItem slot{};
+                slot.t = std::stoi(entry.substr(0, sep1));
+                slot.canvasId = std::stoi(entry.substr(sep1 + 1, sep2 - sep1 - 1));
+                slot.trayId = std::stoi(entry.substr(sep2 + 1));
+                task.slotMap.push_back(slot);
+                if (end == std::string::npos) break;
+                begin = end + 1;
+            }
+        } catch (const std::exception& e) {
+            error_fn(GUI::from_u8(std::string("CC2 CANVAS mapping invalid: ") + e.what()));
+            return false;
+        }
+        const auto started = sdk.startPrint(task);
+        if (!started.isSuccess()) {
+            error_fn(GUI::from_u8("CC2 sendPrintTask failed: " + started.message));
+            return false;
+        }
+        info_fn(L"print", GUI::from_u8(task.fileName));
+        return true;
+#else
         BOOST_LOG_TRIVIAL(info) << get_name() << ": Uploading file to Elegoo CC2";
         const auto  upload_filename = filename_to_utf8(upload_data.upload_path);
         std::string source_path     = path_to_utf8(upload_data.source_path);
@@ -1038,6 +1170,7 @@ namespace Slic3r {
 
         (void) info_fn;
         return res;
+#endif // FILUNA_CC2_SDK
     }
 
     bool ElegooLink::upload(PrintHostUpload upload_data, ProgressFn prorgess_fn, ErrorFn error_fn, InfoFn info_fn) const
