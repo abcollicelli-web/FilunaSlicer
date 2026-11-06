@@ -38,13 +38,17 @@ $compiled=Get-ChildItem -Path 'official/install-dir' -Recurse -File | Where-Obje
 if (!$official -or !$compiled) { throw 'Official or compiled Bambu Studio Windows CLI executable missing' }
 Write-Host "OFFICIAL_EXE $($official.FullName) SHA256 $(Sha $official.FullName)"
 Write-Host "COMPILED_EXE $($compiled.FullName) SHA256 $(Sha $compiled.FullName)"
-foreach ($entry in @(@($official.FullName,'qa-out-official'),@($compiled.FullName,'qa-out-compiled'))) {
-  $out=Join-Path (Get-Location) $entry[1]
+$runs = @(
+  [pscustomobject]@{Exe=$official.FullName;Name='qa-out-official'},
+  [pscustomobject]@{Exe=$compiled.FullName;Name='qa-out-compiled'}
+)
+foreach ($entry in $runs) {
+  $out=Join-Path (Get-Location) $entry.Name
   $datadir=Join-Path $out 'datadir'
   New-Item -ItemType Directory -Path $datadir -Force | Out-Null
-  # Same executable arguments, plate 0, 3MF, fresh datadirs, independent outputs.
-  & $entry[0] --datadir $datadir --outputdir $out --slice 0 $fixture
-  if ($LASTEXITCODE -ne 0) { throw "CLI returned $LASTEXITCODE for $($entry[0])" }
+  # Same CLI flags and plate, with only the necessary output/data isolation.
+  & $entry.Exe --datadir $datadir --outputdir $out --slice 0 $fixture
+  if ($LASTEXITCODE -ne 0) { throw "CLI returned $LASTEXITCODE for $($entry.Exe)" }
 }
 $g1=Get-ChildItem 'qa-out-official' -Filter '*.gcode' -File | Select-Object -First 1
 $g2=Get-ChildItem 'qa-out-compiled' -Filter '*.gcode' -File | Select-Object -First 1
