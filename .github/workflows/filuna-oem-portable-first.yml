@@ -24,10 +24,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: Restore OEM official portable ZIP cache
-        uses: actions/cache@v4
+        id: portable-cache
+        uses: actions/cache/restore@v4
         with:
           path: .oem-portable-cache
           key: filuna-portable-upstream-windows-20261106-v1
+      - name: Verify portable QA script syntax (without compiling any slicer)
+        shell: pwsh
+        run: python -m py_compile lab/portable_first_qa.py
       - name: Verify official release ZIP SHA-256 and execute profiled project when present
         shell: pwsh
         run: |
@@ -37,6 +41,12 @@ jobs:
             Get-Content qa-portable/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
           }
           exit $result
+      - name: Cache SHA-pinned portable ZIPs even if tests fail
+        if: always() && steps.portable-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
       - name: Store verifiable evidence, including failures
         if: always()
         uses: actions/upload-artifact@v4
