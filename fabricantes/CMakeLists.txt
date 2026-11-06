@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  project(FilunaOEMBatch LANGUAGES CXX)
+endif()
 # One static target for each OEM. Used by libslic3r_gui AND filuna_batch_test.
 option(FILUNA_OEM_BUILD_BATCH_TEST "Build Filuna OEM C++ contract lab" OFF)
 option(FILUNA_OEM_LINK_APPLICATION "Link native OEM static targets to Filuna GUI" ON)

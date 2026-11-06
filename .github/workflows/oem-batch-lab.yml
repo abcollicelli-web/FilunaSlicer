@@ -1,0 +1,170 @@
+name: Filuna OEM batch laboratory (Ubuntu + Windows, no release)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - filuna/oem-batch-lab
+    paths:
+      - ".github/workflows/oem-batch-lab.yml"
+      - "fabricantes/**"
+      - "lab/filuna_batch_test.py"
+      - "lab/filuna_batch_test.cpp"
+      - "fixtures/**"
+permissions:
+  contents: read
+concurrency:
+  group: oem-batch-lab-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  ubuntu:
+    name: Ubuntu Wine/Xvfb + native C++ and eight-brand suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Cache pinned OEM archives
+        uses: actions/cache@v4
+        with:
+          path: .oem-cache
+          key: oem-archives-ubuntu-${{ hashFiles('fabricantes/*/vendor.yaml') }}
+          restore-keys: |
+            oem-archives-ubuntu-
+      - name: Prepare laboratory tools
+        shell: bash
+        continue-on-error: true
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev wine64 xvfb mesa-utils libgl1-mesa-dri python3
+          echo 'CLI_GLX_TEST:'; xvfb-run -a -s '-screen 0 1920x1080x24 +extension GLX +render -noreset' env LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa glxinfo -B | grep 'OpenGL renderer' || true
+      - name: Compile shared native OEM library targets and contract-link binary
+        shell: bash
+        continue-on-error: true
+        run: |
+          mkdir -p qa-ubuntu
+          set +e
+          cmake -S fabricantes -B build-oem -DCMAKE_BUILD_TYPE=Release -DFILUNA_OEM_BUILD_BATCH_TEST=ON >qa-ubuntu/cmake-configure.log 2>&1
+          CONFIG_EXIT=$?
+          if [ "$CONFIG_EXIT" -eq 0 ]; then
+            cmake --build build-oem --parallel 2 >qa-ubuntu/cmake-build.log 2>&1
+            BUILD_EXIT=$?
+          else
+            BUILD_EXIT=127
+          fi
+          echo "CMAKE_CONFIG_EXIT=$CONFIG_EXIT CMAKE_BUILD_EXIT=$BUILD_EXIT" | tee qa-ubuntu/native-build.status
+          if [ -x build-oem/filuna_batch_test ]; then
+            build-oem/filuna_batch_test --list >qa-ubuntu/native-library-link.log 2>&1
+          fi
+          exit 0
+      - name: Configure main Filuna CMake (same OEM targets, no deployment)
+        shell: bash
+        continue-on-error: true
+        run: |
+          mkdir -p qa-ubuntu
+          set +e
+          cmake -S . -B build-filuna-ubuntu -DFILUNA_OEM_BUILD_BATCH_TEST=OFF -DCMAKE_BUILD_TYPE=Release >qa-ubuntu/app-configure.log 2>&1
+          echo "FILUNA_APP_CONFIG_EXIT=$?" >qa-ubuntu/app-build.status
+          exit 0
+      - name: Simulators gate
+        shell: bash
+        run: |
+          mkdir -p qa-ubuntu
+          if [ -f lab/simulators/compose.yml ]; then
+            docker compose -f lab/simulators/compose.yml config >qa-ubuntu/simulators-config.log 2>&1 && docker compose -f lab/simulators/compose.yml up -d >>qa-ubuntu/simulators-config.log 2>&1 || true
+          else
+            printf 'PENDENTE: pinned images of Moonraker/simulavr, FlashForgeEmulator, SDCP and Elegoo CC2 are not configured in a compose manifest.\n' >qa-ubuntu/simulators-config.log
+          fi
+      - name: Run all eight brands regardless of missing OEMs
+        shell: bash
+        env:
+          FILUNA_OEM_CACHE: ${{ github.workspace }}/.oem-cache
+        run: |
+          NATIVE=''
+          if [ -x build-oem/filuna_batch_test ]; then NATIVE="--native-binary=build-oem/filuna_batch_test"; fi
+          python lab/filuna_batch_test.py --all --platform ubuntu --output qa-ubuntu/batch-ubuntu $NATIVE
+          cat qa-ubuntu/batch-ubuntu/RESUMO.md >> "${GITHUB_STEP_SUMMARY}"
+      - name: Preserve only QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-oem-batch-ubuntu
+          path: qa-ubuntu/
+          retention-days: 21
+          if-no-files-found: warn
+  windows:
+    name: Windows MSVC + eight-brand suite (no release)
+    runs-on: windows-2022
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: microsoft/setup-msbuild@v2
+      - name: Cache pinned OEM archives
+        uses: actions/cache@v4
+        with:
+          path: .oem-cache
+          key: oem-archives-windows-${{ hashFiles('fabricantes/*/vendor.yaml') }}
+          restore-keys: |
+            oem-archives-windows-
+      - name: Install native C++ dependencies for lab
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          New-Item -ItemType Directory -Force qa-windows | Out-Null
+          if (Get-Command vcpkg -ErrorAction SilentlyContinue) {
+            vcpkg install openssl:x64-windows curl:x64-windows *> qa-windows/deps.log
+          } else {
+            'PENDENTE: vcpkg is not on PATH' | Out-File qa-windows/deps.log
+          }
+      - name: Compile shared OEM native targets and contract-link executable
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          New-Item -ItemType Directory -Force qa-windows | Out-Null
+          $vcpkg = Join-Path $env:VCPKG_INSTALLATION_ROOT 'scripts/buildsystems/vcpkg.cmake'
+          $opts = @('-S','fabricantes','-B','build-oem','-A','x64','-DFILUNA_OEM_BUILD_BATCH_TEST=ON')
+          if (Test-Path $vcpkg) { $opts += "-DCMAKE_TOOLCHAIN_FILE=$vcpkg" }
+          & cmake @opts *> qa-windows/cmake-configure.log
+          $cc = $LASTEXITCODE
+          if ($cc -eq 0) {
+            cmake --build build-oem --config Release --parallel 2 *> qa-windows/cmake-build.log
+            $bc = $LASTEXITCODE
+          } else { $bc = 127 }
+          "CMAKE_CONFIG_EXIT=$cc CMAKE_BUILD_EXIT=$bc" | Out-File qa-windows/native-build.status
+          if (Test-Path build-oem/Release/filuna_batch_test.exe) {
+            & build-oem/Release/filuna_batch_test.exe --list *> qa-windows/native-library-link.log
+          }
+          exit 0
+      - name: Configure main Filuna app with same OEM targets
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $vcpkg = Join-Path $env:VCPKG_INSTALLATION_ROOT 'scripts/buildsystems/vcpkg.cmake'
+          $opts = @('-S','.','-B','build-filuna-win','-A','x64','-DFILUNA_OEM_BUILD_BATCH_TEST=OFF')
+          if (Test-Path $vcpkg) { $opts += "-DCMAKE_TOOLCHAIN_FILE=$vcpkg" }
+          cmake @opts *> qa-windows/app-configure.log
+          "FILUNA_APP_CONFIG_EXIT=$LASTEXITCODE" | Out-File qa-windows/app-build.status
+          exit 0
+      - name: Run all eight brands on native Windows runner
+        shell: pwsh
+        env:
+          FILUNA_OEM_CACHE: ${{ github.workspace }}\.oem-cache
+        run: |
+          $argv = @('lab/filuna_batch_test.py','--all','--platform','windows','--output','qa-windows/batch-windows')
+          if (Test-Path build-oem/Release/filuna_batch_test.exe) {
+            $argv += '--native-binary=build-oem/Release/filuna_batch_test.exe'
+          }
+          python @argv
+          Get-Content qa-windows/batch-windows/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+      - name: Preserve only QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-oem-batch-windows
+          path: qa-windows/
+          retention-days: 21
+          if-no-files-found: warn
