@@ -71,6 +71,22 @@ jobs:
           assert j['is_release_evidence'] is False
           print('EMULATOR NEGATIVE TESTS:',j['pass'],'PASS',j['fail'],'FAIL')
           PY
+      - name: Generate fail-closed final physical homologation checklist
+        run: |
+          python3 FILUNA/qa/virtual-lab/physical_homologation.py \
+            --protocol /tmp/filuna-lan-regression.json \
+            --adversarial /tmp/filuna-lan-adversarial.json \
+            --output /tmp/filuna-hardware-final-checklist.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/filuna-hardware-final-checklist.json'))
+          assert j['physical_checks_total']==30
+          assert j['physical_checks_pass']==0
+          assert j['release_g3']=='BLOCKED'
+          assert j['release_g4']=='BLOCKED'
+          assert j['filuna_devicebridge_tested'] is False
+          assert j['devices']['octoprint']['emulator_status']=='NOT_RUN'
+          PY
       - name: Upload non-release protocol evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -79,6 +95,7 @@ jobs:
           path: |
             /tmp/filuna-lan-regression.json
             /tmp/filuna-lan-adversarial.json
+            /tmp/filuna-hardware-final-checklist.json
             /tmp/filuna-lab.log
           if-no-files-found: warn
           retention-days: 30
