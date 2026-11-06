@@ -79,7 +79,8 @@ def category(name,p):
   return "Perfis" if any(rest==label+".json" or rest.startswith(label+"/") for label in ROOTS[name]) else None
  if p.startswith("resources/printers/"):
   return "Perfis" if p.lower().endswith(".json") else None
- if any(x in low for x in DROP) or "/locales/" in low or "/tools/" in low or "/public/img/" in low:\n  return None
+ if any(x in low for x in DROP) or "/locales/" in low or "/tools/" in low or "/public/img/" in low:
+  return None
  if p.startswith("src/libslic3r/") or p.startswith(("deps/","cmake/")):return "Motor"
  if any(p.startswith(x) for x in ENGINE_THIRDPARTY):return "Motor"
  if name in CLI and (p=="src/"+CLI[name]+".cpp" or p=="src/"+CLI[name]+"_app_msvc.cpp"):return "Motor"
