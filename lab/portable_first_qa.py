@@ -119,11 +119,20 @@ def extract_executable(archive:Path,exe_name:str,extract_dir:Path)->Path:
    shutil.rmtree(extract_dir)
    return extract_executable(archive,exe_name,extract_dir)
  candidates=sorted(x for x in extract_dir.rglob("*") if x.is_file() and x.name.lower()==exe_name.lower())
+ if len(candidates)==0 and "snapmaker" in exe_name.lower():
+  # Snapmaker upstream ZIP filename may differ from its previously extracted Windows package.
+  candidates=sorted(x for x in extract_dir.rglob("*.exe") if x.is_file() and "snapmaker" in x.stem.lower() and all(w not in x.stem.lower() for w in ("uninstall","setup","update","crash")))
  if len(candidates)!=1:raise ValueError("PORTABLE_EXE_NOT_UNIQUE count="+str(len(candidates))+" file="+exe_name)
  return candidates[0]
 
 def run_cli(exe:Path,project:Path,out:Path,logfile:Path,timeout:int)->tuple[int,list[Path]]:
+ out=out.resolve()
+ project=project.resolve()
+ exe=exe.resolve()
  out.mkdir(parents=True,exist_ok=True)
+ if not project.is_file():
+  with logfile.open("w",encoding="utf-8") as f:f.write("ERROR: PROFILED_PROJECT_NOT_FOUND "+str(project)+"\\n")
+  return 127,[]
  cmd=[str(exe),"--debug","3","--slice","0","--outputdir",str(out),str(project)]
  with logfile.open("w",encoding="utf-8",errors="replace") as log:
   log.write("ARGV="+json.dumps(cmd,ensure_ascii=False)+"\n")
