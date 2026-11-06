@@ -5,6 +5,7 @@ on:
       - filuna/oem-portable-first-qa-20261106
     paths:
       - "lab/portable_first_qa.py"
+      - "lab/test_portable_first_qa.py"
       - "fixtures/oem/**"
       - ".github/workflows/filuna-oem-portable-first.yml"
   workflow_dispatch:
@@ -32,6 +33,9 @@ jobs:
       - name: Verify portable QA script syntax (without compiling any slicer)
         shell: pwsh
         run: python -m py_compile lab/portable_first_qa.py
+      - name: Enforce fail-closed G-code normalization regression tests
+        shell: pwsh
+        run: python -m unittest discover -s lab -p test_portable_first_qa.py -v
       - name: Verify official release ZIP SHA-256 and execute profiled project when present
         shell: pwsh
         run: |
