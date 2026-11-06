@@ -8,12 +8,36 @@
     "repository": "bambulab/BambuStudio",
     "reference": "GitHub default branch observed 2026-11-06; verify commit SHA before porting",
     "official_binary": "Bambu Studio v0.29.0.170 Windows portable in offline Wine QA",
-    "license_note": "Check per-file license and third-party components. Never copy the closed networking plugin."
+    "license_note": "Check per-file license and third-party components. Never copy the closed networking plugin.",
+    "tracked_code_candidates": [
+      {
+        "path": "src/libslic3r/GCode.cpp",
+        "blob_sha": "31cfddddeef4a0f972e8c60b42bf0d24d35017e6",
+        "status": "SOURCE_REVIEW_REQUIRED",
+        "reason": "Bambu speed smoothing source differs from Orca fork; math primitives port tested, pipeline not integrated"
+      },
+      {
+        "path": "src/slic3r/Utils/NetworkAgent.cpp",
+        "blob_sha": "94fc3c3a20df31fb27878fa380a408a5208504ea",
+        "status": "LICENSE_AND_CLOSED_DEPENDENCY_REVIEW_REQUIRED",
+        "reason": "Calls separate proprietary networking plugin; do not copy vendor binary"
+      }
+    ]
   },
   "filuna": {
     "repository": "abcollicelli-web/FilunaSlicer",
     "upstream_orca_pin": "a620d804efbe74162c96ad29d755cdab2b823530",
-    "base_branch": "filuna/qa-gates-hardening-20261105"
+    "base_branch": "filuna/qa-gates-hardening-20261105",
+    "ported_candidates": [
+      {
+        "path": "FILUNA/modules/bambu-a1/BambuSpeedMapping.hpp",
+        "upstream_path": "src/libslic3r/GCode.cpp",
+        "upstream_blob_sha": "31cfddddeef4a0f972e8c60b42bf0d24d35017e6",
+        "state": "PORT_CANDIDATE_MATH_PASS",
+        "pipeline_integration": "NOT_RUN",
+        "validation": "FILUNA/qa/gcode/test_bambu_speed_mapping.cpp compiled and executed on Ubuntu, exit=0"
+      }
+    ]
   },
   "components": [
     {
