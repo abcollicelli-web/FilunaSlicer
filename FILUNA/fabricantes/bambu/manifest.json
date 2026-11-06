@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "manufacturer": "Bambu Lab",
+  "manufacturer_id": "bambu",
+  "module_id": "filuna-oem-bambu",
+  "version": "0.1.0-candidate",
+  "abi": 1,
+  "state": "IMPLEMENTED_NOT_TESTED",
+  "engine": "ORCA_SINGLE_ENGINE",
+  "models": [
+    {
+      "id": "BBL-A1",
+      "display": "Bambu Lab A1",
+      "firmware_verified": false,
+      "model_module": "modelos/a1"
+    }
+  ],
+  "source": {
+    "repo": "https://github.com/bambulab/BambuStudio",
+    "commit": "VERIFY_BEFORE_RELEASE",
+    "license_review": "REQUIRED_PER_FILE",
+    "base_orca_pin": "a620d804efbe74162c96ad29d755cdab2b823530"
+  },
+  "scope": {
+    "shared_engine": "src/libslic3r",
+    "interface": "src/slic3r/GUI",
+    "delta_only": true
+  },
+  "components": [
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template machine_start_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template machine_end_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template change_filament_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template layer_change_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template time_lapse_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "port_candidate",
+      "path": "FILUNA/modules/bambu-a1/BambuSpeedMapping.hpp",
+      "state": "ISOLATED_MATH_PASS_NOT_ENGINE_LOADED",
+      "requires": [
+        "PrintConfig registration and validation",
+        "GCode planner integration",
+        "OEM GCode semantics and cross-version compatibility"
+      ]
+    },
+    {
+      "kind": "preset_delta",
+      "path": "modelos/a1/preset-delta.json",
+      "state": "MISMATCH_33_EFFECTIVE_VALUES"
+    }
+  ],
+  "network_priority": [
+    "DISCOVERY_ALLOWED",
+    "PROTOCOLS_FIRST_WITH_REQUIRED_AUTH",
+    "LAN_CODE_ONLY_IF_INSUFFICIENT_AND_SUPPORTED"
+  ],
+  "checks": {
+    "model_selection": "UNIT_PASS_ONLY",
+    "module_loaded_in_prepare": "NOT_RUN",
+    "presets_parity": "FAIL",
+    "gcode_equivalence": "FAIL",
+    "mqtt_tls": "NOT_RUN",
+    "physical_print": "NOT_RUN"
+  },
+  "requires_validation_before_use": true,
+  "automatic_hardware_activation": false
+}
