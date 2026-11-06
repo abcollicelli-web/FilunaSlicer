@@ -284,3 +284,13 @@ check 113/113, CMP 7/7 e testes unitários **não** são autorização para prog
 - **Próximos passos:** implementar emulador OctoPrint; ampliar MQTT/TLS, FTPS e WebSocket com certificados de teste; conectar DeviceBridge do Filuna no Wine; registrar PASS/FAIL/PARTIAL de cada protocolo; deixar ensaios reais de firmware, autenticação, monitoramento, comandos e transferência na fila de homologação final.
 
 **Regra de continuidade:** avançar em implementação e testes sintéticos é permitido; aprovar gate de integração/hardware ou release com evidência sintética é proibido.
+
+
+## 25. Onda 01 — OctoPrint simulado e automação (06/11/2026)
+
+- Implementado `FILUNA/qa/virtual-lab/octoprint_mock.py`, **somente loopback 127.0.0.1**, sem acesso a impressoras reais, chave sintética `FILUNA_LAB_ONLY_KEY`.
+- Implementado `test_octoprint_mock.py` com 11 verificações: ausência/chave incorreta rejeitadas, identificação, leitura de estado, consulta de trabalho, comando desconhecido rejeitado, iniciar/pausar/cancelar simulados, mudança de estado e endpoint inexistente.
+- Execução na VPS: **11 PASS / 0 FAIL**, exclusivamente do emulador HTTP. Nenhuma transferência de arquivo OctoPrint foi implementada; não alegar esse PASS.
+- O workflow `filuna-virtual-lan-regression.yml` passou a executar os 11 testes OctoPrint e anexar JSON de evidência. Verificar o status da nova execução antes de marcar CI PASS.
+- **Classificação:** `PARTIAL_SIMULATED` para o subconjunto HTTP OctoPrint; DeviceBridge/Filuna Wine e firmware real continuam `NOT_RUN`. A matriz física gerada permanece com 30 ensaios reais `NOT_RUN`; G3/G4 `BLOCKED`.
+- **Próximo:** completar os protocolos WS/TLS/FTPS e transferência OctoPrint no laboratório; depois testar o cliente Filuna real no Wine. Em paralelo podem avançar tarefas sem dependência de hardware.
