@@ -53,6 +53,11 @@ OFFICIAL={
   "sha256":"5d4f395aeb6c344b300e0e1be37a0e1931622b642c3c3085eb19cdae211bc008",
   "exe":"prusa-slicer-console.exe"},
 }
+FIXTURE_SHA256={
+ "bambu":"212202ece5982aaceccdbe57359c070ecec3c4ddb00d4baf211c80556f50baa4",
+ "elegoo":"c5a6bb377548c129cb1c14d2b72ea1cc49197ecccc339da99c3c37b75ea68450",
+ "qidi":"2e5a8d293bac8846d547e16a0d4d04ee07e67b63ed1eea6f3b1844b38266ac04",
+}
 BLOCKED={
  "flashforge":"NO_PINNED_OFFICIAL_PORTABLE_ARCHIVE_1.7.15 (installer is not portable)",
  "creality":"NO_PINNED_OFFICIAL_PORTABLE_ARCHIVE_7.3.1 (existing EXE is installer)",
@@ -160,7 +165,11 @@ def test_brand(brand,cache,out,run_slicing,timeout,rows):
    fixture=bdir/"cube-profiled.3mf"
    fixture.write_bytes(base64.b64decode(encoded.read_text(encoding="ascii").strip(),validate=True))
    if not zipfile.is_zipfile(fixture):raise ValueError("NOT_A_3MF_ZIP")
-   record(rows,brand,version,"PROFILED_FIXTURE","PASS",f"sha256={digest(fixture)}",str(encoded.relative_to(ROOT)))
+   actual_fixture_sha=digest(fixture)
+   expected_fixture_sha=FIXTURE_SHA256.get(brand)
+   if expected_fixture_sha is not None and actual_fixture_sha!=expected_fixture_sha:
+    raise ValueError("HISTORICAL_FIXTURE_HASH_MISMATCH expected="+expected_fixture_sha+" actual="+actual_fixture_sha)
+   record(rows,brand,version,"PROFILED_FIXTURE","PASS",f"sha256={actual_fixture_sha}",str(encoded.relative_to(ROOT)))
   except Exception as err:
    record(rows,brand,version,"PROFILED_FIXTURE","FAIL",repr(err),str(encoded))
    return
