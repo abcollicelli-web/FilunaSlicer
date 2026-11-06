@@ -1,0 +1,76 @@
+name: FILUNA OEM Bambu pinned Windows E5 build (no release)
+# Build official engine from exact BambuStudio tag + official deps/workflow flags.
+# Does NOT imply embedding in Filuna or G-code equivalence.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'filuna/oem-gcode-routing-qa-20261106'
+    paths:
+      - '.github/workflows/filuna-bambu-pinned-windows-e5.yml'
+permissions:
+  contents: read
+jobs:
+  bambu-official-windows-x64:
+    runs-on: windows-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout Bambu Studio 02.09.01.70 pinned source
+        uses: actions/checkout@v4
+        with:
+          repository: bambulab/BambuStudio
+          ref: 56a57d00a591360cf41bf21383915ee5bf357be5
+          path: official
+          submodules: recursive
+      - name: Ensure exact tag revision
+        shell: pwsh
+        run: |
+          $rev=(git -C official rev-parse HEAD).Trim()
+          if ($rev -ne '56a57d00a591360cf41bf21383915ee5bf357be5') { throw "Source changed: $rev" }
+          Get-Content official/.github/workflows/build_bambu.yml | Select-String 'Visual Studio 18 2026'
+          cmake --version
+          where.exe cl
+          where.exe msbuild
+      - name: Configure official Windows MSVC toolchain
+        uses: microsoft/setup-msbuild@v2
+      - name: Install dependencies required by official workflow
+        shell: pwsh
+        run: |
+          choco install strawberryperl --yes --no-progress
+          choco install pkgconfiglite --yes --no-progress
+          choco install nsis --yes --no-progress
+      - name: Build vendor dependencies unchanged from tag
+        working-directory: official
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path deps/build/BambuStudio_dep | Out-Null
+          Push-Location deps/build
+          cmake ../ -G "Visual Studio 18 2026" -A x64 -DDESTDIR="./BambuStudio_dep" -DCMAKE_BUILD_TYPE=Release -DDEP_DEBUG=OFF
+          if ($LASTEXITCODE -ne 0) { throw "Bambu official dep configure failed" }
+          msbuild /m ALL_BUILD.vcxproj
+          if ($LASTEXITCODE -ne 0) { throw "Bambu official dependency build failed" }
+          Pop-Location
+      - name: Build pinned official slicer (same Windows release flags)
+        working-directory: official
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          Push-Location build
+          cmake .. -G "Visual Studio 18 2026" -A X64 -DBBL_RELEASE_TO_PUBLIC=1 -DBBL_INTERNAL_TESTING=0 -DCMAKE_PREFIX_PATH="${{ github.workspace }}\\official\\deps\\build\\BambuStudio_dep\\usr\\local" -DCMAKE_INSTALL_PREFIX="../install-dir" -DCMAKE_BUILD_TYPE=Release -DWIN10SDK_PATH="C:/Program Files (x86)/Windows Kits/10/Include/10.0.22000.0"
+          if ($LASTEXITCODE -ne 0) { throw "Bambu official slicer configure failed" }
+          cmake --build . --target install --config Release -- -m
+          if ($LASTEXITCODE -ne 0) { throw "Bambu official slicer build failed" }
+          Pop-Location
+      - name: Collect actual binary metadata
+        shell: pwsh
+        run: |
+          $files=Get-ChildItem -Path official/install-dir -Recurse -File | Where-Object { $_.Extension -eq '.exe' }
+          $files | ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 | Format-List }
+          if (!$files) { throw "No compiled Bambu Studio exe in install-dir" }
+      - name: Upload pinned build for exact G-code QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: bambu-studio-v02-09-01-70-windows-pinned-qa
+          path: official/install-dir
+          retention-days: 7
+          if-no-files-found: error
