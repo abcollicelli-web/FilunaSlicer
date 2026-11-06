@@ -459,6 +459,14 @@ include(OpenCV/OpenCV.cmake)
 include(python3/python3.cmake)
 include(wxInspector/wxInspector.cmake)
 
+# Only the CC2 pilot opts into Elegoo's LAN SDK dependencies.
+option(FILUNA_CC2_SDK "Build official Elegoo CC2 network SDK" OFF)
+if(FILUNA_CC2_SDK)
+    include(PahoMqttCpp/PahoMqttCpp.cmake)
+    include(ixwebsocket/ixwebsocket.cmake)
+    include(elegoolink/elegoolink.cmake)
+endif()
+
 set(_dep_list
     dep_Boost
     dep_TBB
@@ -485,6 +493,10 @@ set(_dep_list
     dep_Assimp
     ${DATACHANNEL_PKG}
     )
+
+if(FILUNA_CC2_SDK)
+    list(APPEND _dep_list dep_PahoMqttCpp dep_ixwebsocket dep_elegoolink)
+endif()
 
 if (MSVC)
     # Experimental
