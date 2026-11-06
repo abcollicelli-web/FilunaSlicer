@@ -270,3 +270,17 @@ check 113/113, CMP 7/7 e testes unitários **não** são autorização para prog
 - **Limite:** PASS aqui significa resposta correta do emulador. Não demonstra que o código Filuna conectou, que o firmware real responde assim, nem que TLS/FTPS/WS foi implementado. Nenhum portão G3/G4 liberado.
 - **Próxima etapa obrigatória:** ampliar Bambu MQTT/TLS e FTPS, Elegoo original SDCP/WS e Moonraker WS; criar testes de injeção de falha de transferência e, só depois, executar o cliente Filuna/DeviceBridge sob Wine. Manter a distinção `PASS MOCK` / `PASS FILUNA` / `PASS HARDWARE`.
 
+
+
+## 24. Diretriz do proprietário — simulação parcial e homologação física final (06/11/2026)
+
+**Decisão:** onde houver dependência de impressora física, simular em laboratório e classificar exclusivamente como `PARTIAL_SIMULATED`; reservar a prova real para homologação final. Avançar tarefas independentes da integração física, sem declarar G3/G4 aprovados, sem alterar regras de segurança, sem liberar comandos remotos nem publicação.
+
+**Execução:**
+- Novo `FILUNA/qa/virtual-lab/physical_homologation.py`: lê os resultados efetivamente executados (14 PASS mock + 7 PASS adversariais), verifica consistência e gera JSON com 30 casos físicos `NOT_RUN`, separados por cinco famílias.
+- Executado na VPS: Bambu A1, Elegoo Carbon original, Elegoo Carbon 2 e Moonraker = `PARTIAL_SIMULATED` (escopo parcial de protocolos); OctoPrint = `NOT_RUN` (nenhum emulador ainda).
+- `filuna_devicebridge_tested=false`; `release_g3=BLOCKED`, `release_g4=BLOCKED`; `physical_checks_pass=0`.
+- CI `filuna-virtual-lan-regression.yml` agora gera o checklist automaticamente e verifica que a homologação física não pode ser marcada PASS por dados simulados.
+- **Próximos passos:** implementar emulador OctoPrint; ampliar MQTT/TLS, FTPS e WebSocket com certificados de teste; conectar DeviceBridge do Filuna no Wine; registrar PASS/FAIL/PARTIAL de cada protocolo; deixar ensaios reais de firmware, autenticação, monitoramento, comandos e transferência na fila de homologação final.
+
+**Regra de continuidade:** avançar em implementação e testes sintéticos é permitido; aprovar gate de integração/hardware ou release com evidência sintética é proibido.
