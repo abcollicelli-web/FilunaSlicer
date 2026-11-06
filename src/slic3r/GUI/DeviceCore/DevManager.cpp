@@ -122,8 +122,10 @@ namespace Slic3r
             obj->dev_connection_type = "lan";
             obj->bind_state          = "free";
             obj->bind_sec_link       = "secure";
-            obj->m_is_online         = true;
-            obj->last_alive          = Slic3r::Utils::get_current_time_utc();
+            // A saved LAN entry is not evidence of a fresh reachable device.
+            // Discovery/status callbacks may mark it online after real contact.
+            obj->m_is_online         = false;
+            obj->last_alive          = 0;
             obj->set_access_code(get_access_code_with_legacy_fallback(config, m.dev_id, obj->printer_agent_id), false);
             if (obj->has_access_right()) {
                 localMachineList.insert(std::make_pair(m.dev_id, obj));
