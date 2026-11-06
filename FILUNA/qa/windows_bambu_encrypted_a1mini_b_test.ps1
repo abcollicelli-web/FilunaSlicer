@@ -34,8 +34,15 @@ try {
     & $job.Exe --datadir $datadir --outputdir $out --slice 0 $decrypted
     if ($LASTEXITCODE -ne 0) { throw "Private slicing failed: $($job.Key), exit $LASTEXITCODE" }
   }
-  $a=Get-ChildItem (Join-Path $privateRoot 'slice-official') -File -Filter '*.gcode' | Select-Object -First 1
-  $b=Get-ChildItem (Join-Path $privateRoot 'slice-compiled') -File -Filter '*.gcode' | Select-Object -First 1
+  # Read generated G-code directly, or Metadata/plate_1.gcode if the
+  # CLI emits a .gcode.3mf ZIP. Ignore ZIP envelope timestamps.
+  function FindGcode([string]$folder) {
+    $plain=Get-ChildItem $folder -Filter '*.gcode' -File | Select-Object -First 1
+    if ($plain) { return $plain }
+    return Get-ChildItem $folder -Filter '*.gcode.3mf' -File | Select-Object -First 1
+  }
+  $a=FindGcode (Join-Path $privateRoot 'slice-official')
+  $b=FindGcode (Join-Path $privateRoot 'slice-compiled')
   if (!$a -or !$b) { throw 'Private A1-mini G-code missing; cannot compare' }
   $officialSha=Sha $a.FullName
   $compiledSha=Sha $b.FullName
@@ -63,6 +70,9 @@ try {
     removed_generator_timestamp_lines_compiled=$result.compiled_timestamp_lines_removed
     wine_comparison='RAW_SHA_ONLY; if mismatched, Wine reference is not accepted (Wine G-code not on runner)'
     gate_b_status=$result.e8_acceptance
+    removed_generator_timestamp_lines_official=$result.official_timestamp_lines_removed
+    removed_generator_timestamp_lines_compiled=$result.compiled_timestamp_lines_removed
+    package_member_comparison=$result.package_member_comparison
     first_difference=$result.first_difference
   }
   $summary | ConvertTo-Json -Depth 6 | Set-Content -Path $report -Encoding utf8
