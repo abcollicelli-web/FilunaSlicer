@@ -21,6 +21,7 @@
 #include <wx/timer.h>
 #include "CloudProvider.hpp"
 #include "DevUtil.h"
+#include "FilunaVendorRegistry.hpp"
 
 // TODO: remove this include
 #include "slic3r/GUI/DeviceManager.hpp"
@@ -103,6 +104,13 @@ namespace Slic3r
                 continue;
             MachineObject* obj       = new MachineObject(this, m_agent, m.dev_name, m.dev_id, m.dev_ip);
             obj->printer_type        = m.printer_type;
+            // Diagnostic-only vendor classification: never auto-confirm a LAN
+            // connection or grant commands based on model name or mock data.
+            if (const auto* filuna_model = Filuna::model_for_name(m.printer_type)) {
+                BOOST_LOG_TRIVIAL(info) << "Filuna vendor model recognized: "
+                    << filuna_model->model_id << ", capability evidence="
+                    << Filuna::evidence_label(Filuna::integration_evidence(*filuna_model));
+            }
             obj->printer_agent_id    = m.printer_agent_id;
             obj->dev_connection_type = "lan";
             obj->bind_state          = "free";
