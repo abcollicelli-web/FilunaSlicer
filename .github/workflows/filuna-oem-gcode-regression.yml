@@ -1,0 +1,31 @@
+name: Filuna OEM G-code regression (non-release)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'FILUNA/qa/gcode/**'
+      - '.github/workflows/filuna-oem-gcode-regression.yml'
+  push:
+    branches:
+      - 'filuna/oem-*'
+    paths:
+      - 'FILUNA/qa/gcode/**'
+      - '.github/workflows/filuna-oem-gcode-regression.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-negative-and-positive-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run OEM parity unit tests
+        run: python3 FILUNA/qa/gcode/test_oem_parity.py -v
+      - name: State evidence scope
+        run: |
+          echo "Only parity checker behavior was tested with synthetic fixtures."
+          echo "No Bambu OEM module or Filuna Prepare pipeline was loaded."
+          echo "No physical firmware or LAN credentials were used."
+          echo "This workflow is NOT evidence of hardware homologation."
