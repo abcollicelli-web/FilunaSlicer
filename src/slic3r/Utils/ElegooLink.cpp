@@ -935,6 +935,13 @@ namespace Slic3r {
             .set_post_body(chunk)
             .on_complete([&](std::string body, unsigned status) {
                 BOOST_LOG_TRIVIAL(debug) << boost::format("%1%: CC2 chunk uploaded: HTTP %2%: %3%") % name % status % body;
+                // An HTTP response is not an acknowledgement of a stored chunk.
+                // In particular, do not report success when a proxy or firmware
+                // returns an error status with a misleading JSON body.
+                if (status < 200 || status >= 300) {
+                    error_fn(format_error(body, _u8L("CC2 upload failed"), status));
+                    return;
+                }
                 std::string error_message;
                 if (!parse_cc2_response(body, error_message)) {
                     error_fn(format_error(body, error_message.empty() ? _u8L("CC2 upload failed") : error_message, status));
