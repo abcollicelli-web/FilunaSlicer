@@ -3,7 +3,9 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'FILUNA/qa/gcode/**'
+      - 'FILUNA/qa/**'
+      - 'FILUNA/fabricantes/**'
+      - 'src/slic3r/GUI/DeviceCore/Filuna*'
       - '.github/workflows/filuna-oem-gcode-regression.yml'
   push:
     branches:
@@ -37,6 +39,12 @@ jobs:
             FILUNA/qa/test_oem_overlay_selection.cpp \
             -o /tmp/filuna-oem-overlay-test
           /tmp/filuna-oem-overlay-test
+      - name: Compile and test OEM device/prepare module entrypoint
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror \
+            FILUNA/qa/test_bambu_a1_module.cpp \
+            -o /tmp/filuna-bambu-module-test
+          /tmp/filuna-bambu-module-test
       - name: State evidence scope
         run: |
           echo "Only parity checker behavior was tested with synthetic fixtures."
