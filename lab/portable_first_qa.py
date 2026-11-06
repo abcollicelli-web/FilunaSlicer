@@ -228,6 +228,11 @@ def main():
  for brand in args.brands:
   try:test_brand(brand,args.cache,args.output,args.run_slicing,args.timeout,rows)
   except Exception as e:record(rows,brand,OFFICIAL.get(brand,{}).get("version","unknown"),"RUNNER","FAIL",repr(e))
+  if brand=="bambu":
+   # Owner decision: only Bambuddy integration is deliberately deferred.
+   # Official Bambu portable tests remain active and must keep their evidence.
+   record(rows,brand,OFFICIAL["bambu"]["version"],"BAMBUDDY_NETWORK","PENDING",
+          "OWNER_DEFERRED_BAMBUDDY; DO_NOT_EXECUTE_UNTIL_OWNER_REQUEST")
  with (args.output/"results.csv").open("w",newline="",encoding="utf-8") as f:
   w=csv.DictWriter(f,fieldnames=FIELDS);w.writeheader();w.writerows(rows)
  (args.output/"results.json").write_text(json.dumps(rows,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
@@ -242,7 +247,8 @@ def main():
    a=[r["status"] for r in b_rows if r["stage"]==stage]
    return a[-1] if a else "PENDING"
   summary.append("| "+b+" | "+state("PACKAGE_SHA256")+" | "+state("PORTABLE_EXE")+" | "+state("OFFICIAL_A_B")+" | "+state("FILUNA_PARITY")+" | "+state("NETWORK")+" |")
- summary+=["","PASS de pacote não significa PASS de fatiamento, rede ou homologação.",
+ summary+=["","**ADIADO POR DECISÃO DO PROPRIETÁRIO:** Bambu + Bambuddy = PENDING. Somente esse teste foi adiado; os demais gates e fabricantes continuam em validação.",
+           "PASS de pacote não significa PASS de fatiamento, rede ou homologação.",
            "Não há instalação, compilação de fatiador, acionamento de impressora, deploy ou publicação.",
            "Sem 3MF perfilado original para cada marca, a comparação A/B NÃO é executada."]
  (args.output/"RESUMO.md").write_text("\n".join(summary)+"\n",encoding="utf-8")
