@@ -2685,6 +2685,13 @@ void PrintConfigDef::init_fff_params()
     def->enum_keys_map = &ConfigOptionEnum<InfillPattern>::get_enum_values();
     def->enum_values   = def_top_fill_pattern->enum_values;
     def->enum_labels   = def_top_fill_pattern->enum_labels;
+    // Filuna OEM Bambu: Bambu Studio uses "zig-zag" for its internal solid
+    // infill. Orca's InfillPattern has ipZigZag already, but this option
+    // previously rejected that enum value because it inherited the allowed
+    // *top surface* choices. Permit the engine-native zigzag only here.
+    // The Bambu config overlay maps the OEM spelling to enum ipZigZag.
+    def->enum_values.push_back("zigzag");
+    def->enum_labels.push_back(L("Zig zag (Bambu OEM)"));
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipMonotonic));
     
     def = this->add("outer_wall_line_width", coFloatOrPercent);

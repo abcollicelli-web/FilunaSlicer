@@ -1,0 +1,66 @@
+name: Filuna OEM G-code regression (non-release)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'FILUNA/qa/**'
+      - 'FILUNA/fabricantes/**'
+      - 'src/slic3r/GUI/DeviceCore/Filuna*'
+      - 'src/libslic3r/PrintConfig.cpp'
+      - 'src/slic3r/GUI/Plater.cpp'
+      - '.github/workflows/filuna-oem-gcode-regression.yml'
+  push:
+    branches:
+      - 'filuna/oem-*'
+    paths:
+      - 'FILUNA/qa/gcode/**'
+      - '.github/workflows/filuna-oem-gcode-regression.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-negative-and-positive-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run OEM parity unit tests
+        run: python3 FILUNA/qa/gcode/test_oem_parity.py -v
+      - name: Verify upstream diff logic (offline fixtures)
+        run: python3 FILUNA/qa/gcode/test_bambu_orca_upstream.py -v
+      - name: Compile and test Bambu Studio derived speed mapping (isolated)
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror \
+            FILUNA/qa/gcode/test_bambu_speed_mapping.cpp \
+            -o /tmp/filuna-bambu-speed-mapping-test
+          /tmp/filuna-bambu-speed-mapping-test
+      - name: Compile single Orca OEM overlay mapping (standalone contract)
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror \
+            FILUNA/qa/test_oem_overlay_selection.cpp \
+            -o /tmp/filuna-oem-overlay-test
+          /tmp/filuna-oem-overlay-test
+      - name: Compile and test OEM device/prepare module entrypoint
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror \
+            FILUNA/qa/test_bambu_a1_module.cpp \
+            -o /tmp/filuna-bambu-module-test
+          /tmp/filuna-bambu-module-test
+      - name: State evidence scope
+        run: |
+          echo "Only parity checker behavior was tested with synthetic fixtures."
+          echo "No Bambu OEM module or Filuna Prepare pipeline was loaded."
+          echo "No physical firmware or LAN credentials were used."
+          echo "This workflow is NOT evidence of hardware homologation."
+
+  windows-native-bambu-engine:
+    name: Windows full Filuna engine compile (OEM changes)
+    uses: ./.github/workflows/build_check_cache.yml
+    with:
+      os: windows-latest
+      arch: x64
+      compiler: msvc
+      build-deps-only: false
+      force-build: true
+    secrets: inherit

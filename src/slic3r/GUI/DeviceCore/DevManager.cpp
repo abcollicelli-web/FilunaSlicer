@@ -23,6 +23,8 @@
 #include "DevUtil.h"
 #include "FilunaVendorRegistry.hpp"
 #include "FilunaModuleSelection.hpp"
+#include "FilunaOEMOverlay.hpp"
+#include "../../../../FILUNA/fabricantes/bambu/engine/BambuA1Module.hpp"
 
 // TODO: remove this include
 #include "slic3r/GUI/DeviceManager.hpp"
@@ -294,6 +296,19 @@ namespace Slic3r
             std::string dev_id          = j["dev_id"].get<std::string>();
             std::string dev_ip          = j["dev_ip"].get<std::string>();
             std::string printer_type_str= j["dev_type"].get<std::string>();
+            // Filuna OEM Bambu: consume manufacturer model/serial registry
+            // at the real NetworkAgent -> DeviceManager discovery boundary.
+            // An SSDP announcement is identification only, NOT paired/authenticated.
+            if (const auto* bambu_model = Filuna::Bambu::lookup_bambu_model(printer_type_str)) {
+                const bool serial_matches = Filuna::Bambu::is_valid_bambu_discovery_identity(
+                    printer_type_str, dev_id);
+                BOOST_LOG_TRIVIAL(info) << "FILUNA OEM Bambu network discovery model="
+                                        << bambu_model->model_id << " identity=" << serial_matches;
+                if (!serial_matches) {
+                    BOOST_LOG_TRIVIAL(warning) << "FILUNA OEM Bambu: rejected discovery with invalid serial/model prefix";
+                    return;
+                }
+            }
             std::string printer_signal  = j["dev_signal"].get<std::string>();
             std::string connect_type    = j["connect_type"].get<std::string>();
             std::string bind_state      = j["bind_state"].get<std::string>();
@@ -669,6 +684,22 @@ namespace Slic3r
             << " cur_selected=" << selected_machine;
         auto my_machine_list = get_my_machine_list(get_current_printer_agent_id());
         auto it = my_machine_list.find(dev_id);
+        // Filuna OEM: resolve the built-in Bambu module on device selection.
+        // This classification does not authenticate or enable LAN printing.
+        if (it != my_machine_list.end() && it->second) {
+            const auto* known = Filuna::model_for_name(it->second->printer_type);
+            if (known) {
+                const auto* overlay = Filuna::resolve_oem_for_stage(
+                    Filuna::OEMStage::Device, known->model_id, 1);
+                if (overlay && overlay->manufacturer == "bambu") {
+                    const bool recognized = Filuna::Bambu::A1Module::accepts(it->second->printer_type);
+                    BOOST_LOG_TRIVIAL(info) << "FILUNA OEM Dispositivos: "
+                        << overlay->module_id << " recognized=" << recognized
+                        << " (firmware/network/print not yet validated)";
+                }
+            }
+        }
+
         BOOST_LOG_TRIVIAL(trace) << "Orca diagnostic: set_selected_machine lookup dev_id=" << dev_id
                                 << " found=" << (it != my_machine_list.end())
                                 << " my_machine_count=" << my_machine_list.size()

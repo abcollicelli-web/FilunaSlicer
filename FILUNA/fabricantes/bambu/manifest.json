@@ -1,0 +1,154 @@
+{
+  "schema": 1,
+  "manufacturer": "Bambu Lab",
+  "manufacturer_id": "bambu",
+  "module_id": "filuna-oem-bambu",
+  "version": "0.1.0-candidate",
+  "abi": 1,
+  "state": "IMPLEMENTED_NOT_TESTED",
+  "engine": "ORCA_SINGLE_ENGINE",
+  "models": [
+    {
+      "id": "BBL-A1",
+      "official_model_id": "N2S",
+      "official_sn_prefix": "039",
+      "display": "Bambu Lab A1",
+      "firmware_verified": false,
+      "model_module": "modelos/a1",
+      "official_capabilities": "modelos/a1/N2S.json"
+    }
+  ],
+  "source": {
+    "repo": "https://github.com/bambulab/BambuStudio",
+    "commit": "VERIFY_BEFORE_RELEASE",
+    "license_review": "REQUIRED_PER_FILE",
+    "base_orca_pin": "a620d804efbe74162c96ad29d755cdab2b823530"
+  },
+  "scope": {
+    "shared_engine": "src/libslic3r",
+    "interface": "src/slic3r/GUI",
+    "delta_only": true
+  },
+  "components": [
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template machine_start_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template machine_end_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template change_filament_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template layer_change_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "reused_reference",
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template time_lapse_gcode.json",
+      "state": "SAME_REFERENCE_ONLY"
+    },
+    {
+      "kind": "port_candidate",
+      "path": "FILUNA/modules/bambu-a1/BambuSpeedMapping.hpp",
+      "state": "ISOLATED_MATH_PASS_NOT_ENGINE_LOADED",
+      "requires": [
+        "PrintConfig registration and validation",
+        "GCode planner integration",
+        "OEM GCode semantics and cross-version compatibility"
+      ]
+    },
+    {
+      "kind": "preset_delta",
+      "path": "modelos/a1/preset-delta.json",
+      "state": "MISMATCH_33_EFFECTIVE_VALUES"
+    },
+    {
+      "kind": "official_capabilities",
+      "path": "FILUNA/fabricantes/bambu/modelos/a1/N2S.json",
+      "source_path": "resources/printers/N2S.json",
+      "source_blob_sha": "3a5929b98244d7800ee06a7fe41662f0141306ce",
+      "state": "SOURCE_SNAPSHOTTED_NEEDS_NATIVE_BUNDLE_QA"
+    },
+    {
+      "kind": "native_lan_discovery",
+      "path": "FILUNA/fabricantes/bambu/transport/BambuLanDiscovery.hpp",
+      "state": "MOCK_NETWORK_DISCOVERY_PASS"
+    },
+    {
+      "kind": "native_bambu_module",
+      "path": "FILUNA/fabricantes/bambu/engine/BambuA1Module.hpp",
+      "state": "IN_PROCESS_ENTRYPOINT_UNIT_PASS_NOT_SLICING_EQUIVALENT"
+    },
+    {
+      "kind": "active_source_hook",
+      "path": "src/slic3r/GUI/DeviceCore/DevManager.cpp",
+      "status": "MODEL_SERIAL_CHECK_IN_ON_MACHINE_ALIVE_SOURCE_WINDOWS_BUILD_NOT_YET_VERIFIED"
+    },
+    {
+      "kind": "active_source_hook",
+      "path": "src/slic3r/GUI/Plater.cpp",
+      "status": "A1_REGISTERED_PRESET_AUTOMATCH_AND_PRINT_APPLY_TRANSLATION_SOURCE_WINDOWS_BUILD_NOT_YET_VERIFIED"
+    },
+    {
+      "kind": "engine_config_delta",
+      "path": "FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp",
+      "status": "A1_DEFAULT_TRANSLATION_SOURCE_WINDOWS_BUILD_NOT_YET_VERIFIED",
+      "options": [
+        "precise_outer_wall",
+        "accel_to_decel_enable",
+        "internal_solid_infill_pattern",
+        "travel_jerk"
+      ]
+    },
+    {
+      "kind": "engine_parser_option",
+      "path": "src/libslic3r/PrintConfig.cpp",
+      "status": "IP_ZIGZAG_INTERNAL_SOLID_ENABLED_IN_SOURCE_WINDOWS_BUILD_NOT_YET_VERIFIED"
+    }
+  ],
+  "network_priority": [
+    "DISCOVERY_ALLOWED",
+    "PROTOCOLS_FIRST_WITH_REQUIRED_AUTH",
+    "LAN_CODE_ONLY_IF_INSUFFICIENT_AND_SUPPORTED"
+  ],
+  "checks": {
+    "model_selection": "UNIT_PASS_ONLY",
+    "module_loaded_in_prepare": "NOT_RUN",
+    "presets_parity": "FAIL",
+    "gcode_equivalence": "FAIL",
+    "mqtt_tls": "NOT_RUN",
+    "physical_print": "NOT_RUN",
+    "discovery_native_emulator": "PASS",
+    "native_entrypoint_compiled": "PASS",
+    "prepare_source_hook": "IMPLEMENTED_NOT_WINDOWS_COMPILED",
+    "current_source_diff_validation": "PASS",
+    "new_windows_full_build": "IN_PROGRESS_NOT_APPROVED",
+    "current_planner_oem_parity": "NOT_PASS",
+    "current_network_transport_oem_complete": "NOT_RUN",
+    "new_module_gcode": "NOT_RUN",
+    "old_orca_official_flat_profile": "MISMATCH"
+  },
+  "requires_validation_before_use": true,
+  "automatic_hardware_activation": false,
+  "manufacturer_model_registry": {
+    "path": "FILUNA/fabricantes/bambu/transport/BambuModelRegistry.hpp",
+    "model_codes": 17,
+    "validated_by": "FILUNA/qa/test_bambu_manufacturer_models.cpp",
+    "status": "CANDIDATE_NETWORK_IDENTITY_ONLY"
+  },
+  "reference_experiment": {
+    "source": "Bambu Studio 02.09.01.70",
+    "oem_official_gcode_bytes": 343563,
+    "old_orca_flat_bambu_json_bytes": 373539,
+    "old_orca_approx_translated_bytes": 372034,
+    "warning": "OLD ORCA BINARY with rectilinear substitution, not the newly compiled zigzag engine"
+  }
+}

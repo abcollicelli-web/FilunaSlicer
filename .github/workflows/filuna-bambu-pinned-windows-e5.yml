@@ -1,0 +1,145 @@
+name: FILUNA OEM Bambu pinned Windows E5 build (no release)
+# Build official engine from exact BambuStudio tag + official deps/workflow flags.
+# Does NOT imply embedding in Filuna or G-code equivalence.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'filuna/oem-gcode-routing-qa-20261106'
+    paths:
+      - '.github/workflows/filuna-bambu-pinned-windows-e5.yml'
+      - 'FILUNA/qa/windows_bambu_public_a1mini_cube_b_test.ps1'
+      - 'FILUNA/qa/windows_bambu_encrypted_a1mini_b_test.ps1'
+      - 'FILUNA/qa/fixtures/a1mini-makerworld-original.3mf.gpg'
+      - 'FILUNA/qa/gcode/compare_oem_exact_sha.py'
+permissions:
+  contents: read
+jobs:
+  bambu-official-windows-x64:
+    runs-on: windows-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout Filuna comparator and B-test script
+        uses: actions/checkout@v4
+        with:
+          path: filuna
+      - name: Checkout Bambu Studio 02.09.01.70 pinned source
+        uses: actions/checkout@v4
+        with:
+          repository: bambulab/BambuStudio
+          ref: 56a57d00a591360cf41bf21383915ee5bf357be5
+          path: official
+          submodules: recursive
+      - name: Ensure exact tag revision
+        shell: pwsh
+        run: |
+          $rev=(git -C official rev-parse HEAD).Trim()
+          if ($rev -ne '56a57d00a591360cf41bf21383915ee5bf357be5') { throw "Source changed: $rev" }
+          Get-Content official/.github/workflows/build_bambu.yml | Select-String 'Visual Studio 18 2026'
+          cmake --version
+      - name: Configure official Windows MSVC toolchain
+        uses: microsoft/setup-msbuild@v2
+      - name: Log exact Windows runner, MSVC cl.exe and SDK
+        shell: pwsh
+        run: |
+          Write-Host "ImageOS=$env:ImageOS ImageVersion=$env:ImageVersion"
+          Write-Host "RUNNER_OS=$env:RUNNER_OS RUNNER_ARCH=$env:RUNNER_ARCH"
+          $vswhere=Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $vs=(& $vswhere -latest -property installationPath).Trim()
+          Write-Host "VS_INSTALL=$vs"
+          $vcvars=Join-Path $vs 'VC/Auxiliary/Build/vcvars64.bat'
+          cmd.exe /c ('"' + $vcvars + '" >nul && cl.exe')
+          if ($LASTEXITCODE -ne 0) { throw "MSVC cl.exe unavailable" }
+          cmake --version
+      - name: Install dependencies required by official workflow
+        shell: pwsh
+        run: |
+          choco install strawberryperl --yes --no-progress
+          choco install pkgconfiglite --yes --no-progress
+          choco install nsis --yes --no-progress
+      - name: Restore pinned Bambu dependencies cache
+        id: vendor-deps-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: official/deps/build
+          key: bambu-v02090170-win-x64-vs18-release-deps-${{ hashFiles('official/deps/**') }}
+      - name: Build vendor dependencies unchanged from tag
+        if: steps.vendor-deps-cache.outputs.cache-hit != 'true'
+        working-directory: official
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path deps/build/BambuStudio_dep | Out-Null
+          Push-Location deps/build
+          cmake ../ -G "Visual Studio 18 2026" -A x64 -DDESTDIR="./BambuStudio_dep" -DCMAKE_BUILD_TYPE=Release -DDEP_DEBUG=OFF
+          if ($LASTEXITCODE -ne 0) { throw "Bambu official dep configure failed" }
+          msbuild /m ALL_BUILD.vcxproj
+          if ($LASTEXITCODE -ne 0) { throw "Bambu official dependency build failed" }
+          Pop-Location
+      - name: Save official dependency cache immediately after a successful dependency build
+        if: steps.vendor-deps-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: official/deps/build
+          key: ${{ steps.vendor-deps-cache.outputs.cache-primary-key }}
+      - name: Log Bambu dependencies cache outcome
+        shell: pwsh
+        run: |
+          Write-Host "BAMBU_DEPS_CACHE_HIT=${{ steps.vendor-deps-cache.outputs.cache-hit }}"
+          if (!(Test-Path official/deps/build/BambuStudio_dep/usr/local)) {
+            throw 'Dependencies install tree missing after cache or build'
+          }
+      - name: Build pinned official slicer (same Windows release flags)
+        working-directory: official
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          Push-Location build
+          cmake .. -G "Visual Studio 18 2026" -A X64 -DBBL_RELEASE_TO_PUBLIC=1 -DBBL_INTERNAL_TESTING=0 -DCMAKE_PREFIX_PATH="${{ github.workspace }}\\official\\deps\\build\\BambuStudio_dep\\usr\\local" -DCMAKE_INSTALL_PREFIX="../install-dir" -DCMAKE_BUILD_TYPE=Release -DWIN10SDK_PATH="C:/Program Files (x86)/Windows Kits/10/Include/10.0.22000.0"
+          if ($LASTEXITCODE -ne 0) { throw "Bambu official slicer configure failed" }
+          cmake --build . --target install --config Release -- -m
+          if ($LASTEXITCODE -ne 0) { throw "Bambu official slicer build failed" }
+          Pop-Location
+      - name: Collect actual binary metadata
+        shell: pwsh
+        run: |
+          $files=Get-ChildItem -Path official/install-dir -Recurse -File | Where-Object { $_.Extension -eq '.exe' }
+          $files | ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 | Format-List }
+          if (!$files) { throw "No compiled Bambu Studio exe in install-dir" }
+      - name: Test B — PUBLIC A1-mini cube, same Windows runner, official vs compiled
+        shell: pwsh
+        run: ./filuna/FILUNA/qa/windows_bambu_public_a1mini_cube_b_test.ps1
+      - name: Upload only SHA comparison report (never model/G-code/binaries)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bambu-A1mini-B-public-cube-SHA-report
+          path: qa-public/b-public-cube-report.json
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Install GPG for private 3MF verification
+        if: success()
+        shell: pwsh
+        run: |
+          if (!(Get-Command gpg.exe -ErrorAction SilentlyContinue)) {
+            choco install gnupg --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'GPG installation failed' }
+          }
+      - name: Private B confirmation — GPG encrypted MakerWorld A1-mini
+        if: success()
+        shell: pwsh
+        env:
+          FILUNA_A1MINI_PASSPHRASE: ${{ secrets.FILUNA_A1MINI_3MF_GPG_PASSPHRASE }}
+        run: ./filuna/FILUNA/qa/windows_bambu_encrypted_a1mini_b_test.ps1
+      - name: Upload only private SHA report (no original 3MF or G-code)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bambu-A1mini-B-private-SHA-only
+          path: qa-private/private-a1mini-b-report.json
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Securely clean local fixture and output data
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path qa-public) { Remove-Item qa-public -Recurse -Force }

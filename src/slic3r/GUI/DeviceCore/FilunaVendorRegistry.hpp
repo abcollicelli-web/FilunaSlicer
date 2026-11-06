@@ -27,6 +27,9 @@ inline constexpr std::array<VendorModel, 4> kTargetModels = {{
 }};
 inline const VendorModel* model_for_name(std::string_view model)
 {
+    // Official Bambu Studio: Bambu Lab A1 reports device model "N2S".
+    // Alias must not confuse device model code with user-visible display text.
+    if (model == "N2S") return &kTargetModels[0];
     for (const auto& candidate : kTargetModels) {
         if (candidate.display == model || candidate.model_id == model)
             return &candidate;

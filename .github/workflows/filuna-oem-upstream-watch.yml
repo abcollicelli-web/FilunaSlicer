@@ -1,0 +1,29 @@
+name: Filuna OEM/Orca upstream watch (read-only)
+# Monitoring is not updating, compiling or releasing Filuna.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  upstream-diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect OEM/Orca source revisions (requires review if changed)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 FILUNA/qa/gcode/check_bambu_orca_upstream.py --out /tmp/filuna-oem-upstream-review.json
+      - name: Upload evidence (never automatic merge or release)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-upstream-oem-review
+          path: /tmp/filuna-oem-upstream-review.json
+          if-no-files-found: warn
+          retention-days: 30

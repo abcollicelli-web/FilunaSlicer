@@ -1,0 +1,28 @@
+name: Filuna OEM native Windows QA (no release)
+# PR #5 A1: force a real compilation gate after integrating DeviceManager and Plater.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'filuna/oem-*'
+    paths:
+      - 'FILUNA/fabricantes/**'
+      - 'src/slic3r/GUI/DeviceCore/DevManager.cpp'
+      - 'src/slic3r/GUI/DeviceCore/Filuna*'
+      - 'src/slic3r/GUI/Plater.cpp'
+      - '.github/workflows/filuna-oem-windows-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  filuna-native-build:
+    name: Filuna OEM Windows x64 build only
+    uses: ./.github/workflows/build_check_cache.yml
+    with:
+      os: windows-latest
+      arch: x64
+      compiler: clang
+      build-deps-only: false
+      force-build: true
+    secrets: inherit

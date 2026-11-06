@@ -1,0 +1,136 @@
+{
+  "status": "QUARANTINED_SOURCE_SNAPSHOT_NOT_RUNTIME_LOADED",
+  "source": "bambulab/BambuStudio Windows 02.09.01.70 (official unpacked resource snapshot)",
+  "source_archive_path": "profiles/bambu-official-delta-v02090170.tar.xz",
+  "source_archive_sha256": "e6f9fd7c96305e0a65e55a4154f896978d85e60b9822cf7818821ddeb2ea3d31",
+  "archive_bytes": 145576,
+  "archive_contents": "1396 new/semantically changed JSON profile files vs Orca base + 18 Bambu printer JSON matrices, compressed as reproducible tar.xz",
+  "uncompressed_candidate_bytes": 3914361,
+  "models": [
+    {
+      "model_id": "BL-P001",
+      "display_name": "Bambu Lab X1 Carbon",
+      "serial_prefix": "00M",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/BL-P001.json"
+    },
+    {
+      "model_id": "BL-P002",
+      "display_name": "Bambu Lab X1",
+      "serial_prefix": "00W",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/BL-P002.json"
+    },
+    {
+      "model_id": "C11",
+      "display_name": "Bambu Lab P1P",
+      "serial_prefix": "01S",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/C11.json"
+    },
+    {
+      "model_id": "C12",
+      "display_name": "Bambu Lab P1S",
+      "serial_prefix": "01P",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/C12.json"
+    },
+    {
+      "model_id": "C13",
+      "display_name": "Bambu Lab X1E",
+      "serial_prefix": "03W",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/C13.json"
+    },
+    {
+      "model_id": "N1",
+      "display_name": "Bambu Lab A1 mini",
+      "serial_prefix": "030",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/N1.json"
+    },
+    {
+      "model_id": "N10",
+      "display_name": "Bambu Lab H3C",
+      "serial_prefix": "32X",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/N10.json"
+    },
+    {
+      "model_id": "N2S",
+      "display_name": "Bambu Lab A1",
+      "serial_prefix": "039",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/N2S.json"
+    },
+    {
+      "model_id": "N6",
+      "display_name": "Bambu Lab X2D",
+      "serial_prefix": "20P",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/N6.json"
+    },
+    {
+      "model_id": "N7",
+      "display_name": "Bambu Lab P2S",
+      "serial_prefix": "22E",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/N7.json"
+    },
+    {
+      "model_id": "N8",
+      "display_name": "Bambu Lab N8",
+      "serial_prefix": "35F",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/N8.json"
+    },
+    {
+      "model_id": "N9",
+      "display_name": "Bambu Lab A2L",
+      "serial_prefix": "26A",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/N9.json"
+    },
+    {
+      "model_id": "O1C",
+      "display_name": "Bambu Lab H2C",
+      "serial_prefix": "31B",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/O1C.json"
+    },
+    {
+      "model_id": "O1C2",
+      "display_name": "Bambu Lab H2C",
+      "serial_prefix": "31B",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/O1C2.json"
+    },
+    {
+      "model_id": "O1D",
+      "display_name": "Bambu Lab H2D",
+      "serial_prefix": "094",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/O1D.json"
+    },
+    {
+      "model_id": "O1E",
+      "display_name": "Bambu Lab H2D Pro",
+      "serial_prefix": "239",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/O1E.json"
+    },
+    {
+      "model_id": "O1S",
+      "display_name": "Bambu Lab H2S",
+      "serial_prefix": "093",
+      "firmware_default_version": "00.00.00.00",
+      "source_path": "resources/printers/O1S.json"
+    }
+  ],
+  "replace_orca_engine": false,
+  "slicing_module_complete": false,
+  "network_module_complete": false,
+  "automatic_activation": false,
+  "reason": "Bambu source has incompatible preset schema and unported planner/transport components; archive is diff fixture, not a deployable bundle.",
+  "reference_uncompressed_data_bytes": 3914361
+}

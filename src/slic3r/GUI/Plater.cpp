@@ -1,4 +1,8 @@
 #include "Plater.hpp"
+#include "DeviceCore/FilunaOEMOverlay.hpp"
+#include "../../../FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp"
+#include "DeviceCore/FilunaVendorRegistry.hpp"
+#include "../../../FILUNA/fabricantes/bambu/engine/BambuA1Module.hpp"
 #include "../Utils/NetworkAgent.hpp"
 #include "IPrinterAgent.hpp"
 #include "CalibUtils.hpp"
@@ -11701,6 +11705,27 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
 
     Print::ApplyStatus invalidated;
     const auto& preset_bundle = wxGetApp().preset_bundle;
+    // Filuna / Orca + OEM Bambu A1: translate OEM-default mismatches at the
+    // ACTUAL background-process config handoff, not just in reslice logging.
+    // This is intentionally scoped to a selected registered A1 AND an A1
+    // print preset. Leave non-Bambu jobs and customized nondefault values alone.
+    auto filuna_config_for_selected_device = [&](DynamicPrintConfig cfg) {
+        if (auto* device_manager = wxGetApp().getDeviceManager()) {
+            if (auto* device = device_manager->get_selected_machine()) {
+                const auto* model = preset_bundle->printers.get_selected_preset().config
+                    .option<ConfigOptionString>("printer_model");
+                const bool is_a1_preset = model && model->value == "Bambu Lab A1";
+                const bool is_a1_device = Filuna::Bambu::A1Module::accepts(device->printer_type);
+                if (is_a1_preset && is_a1_device) {
+                    const unsigned translated = Filuna::Bambu::apply_a1_slicing_defaults(cfg);
+                    BOOST_LOG_TRIVIAL(info) << "FILUNA OEM: Bambu A1 config applied at Print::apply"
+                                            << " translated=" << translated
+                                            << " (Bambu GCode planner parity still under QA)";
+                }
+            }
+        }
+        return cfg;
+    };
     if (preset_bundle->get_printer_extruder_count() > 1) {
         PartPlate* cur_plate = background_process.get_current_plate();
         std::vector<int> f_maps = cur_plate->get_real_filament_maps(preset_bundle->project_config);
@@ -11711,10 +11736,10 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
         // Set the device filament info before Print::apply: it compares the payload and invalidates the
         // grouping steps when the AMS material inventory changed, so apply must see it in the same pass.
         background_process.fff_print()->set_extruder_filament_info(get_extruder_filament_info());
-        invalidated = background_process.apply(this->model, preset_bundle->full_config(false, f_maps, f_volume_maps));
+        invalidated = background_process.apply(this->model, filuna_config_for_selected_device(preset_bundle->full_config(false, f_maps, f_volume_maps)));
     }
     else
-        invalidated = background_process.apply(this->model, preset_bundle->full_config(false));
+        invalidated = background_process.apply(this->model, filuna_config_for_selected_device(preset_bundle->full_config(false)));
 
     if ((invalidated == Print::APPLY_STATUS_CHANGED) || (invalidated == Print::APPLY_STATUS_INVALIDATED))
         // BBS: add only gcode mode
@@ -21204,6 +21229,27 @@ bool Plater::is_multi_extruder_ams_empty()
 //BBS: add multiple plate reslice logic
 void Plater::reslice()
 {
+
+    // Filuna: activate the same manufacturer overlay used by Dispositivos.
+    // The Bambu A1 candidate currently validates identity and the module
+    // entry point; no OEM slicing planner is claimed until integration gates.
+    if (auto* filuna_devices = wxGetApp().getDeviceManager()) {
+        if (auto* filuna_printer = filuna_devices->get_selected_machine()) {
+            if (const auto* filuna_known = Filuna::model_for_name(filuna_printer->printer_type)) {
+                if (const auto* filuna_overlay = Filuna::resolve_oem_for_stage(
+                    Filuna::OEMStage::Prepare, filuna_known->model_id, 1)) {
+                    if (filuna_overlay->manufacturer == "bambu") {
+                        const auto state = Filuna::Bambu::A1Module::activate_for_prepare(
+                            filuna_printer->printer_type);
+                        BOOST_LOG_TRIVIAL(info) << "FILUNA OEM Preparar: "
+                            << filuna_overlay->module_id
+                            << " state=" << static_cast<int>(state)
+                            << " (engine delta not yet validated)";
+                    }
+                }
+            }
+        }
+    }
     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(", Line %1%: enter, process_completed_with_error=%2%")%__LINE__ %p->process_completed_with_error;
     // There is "invalid data" button instead "slice now"
     if (p->process_completed_with_error == p->partplate_list.get_curr_plate_index())
@@ -21220,6 +21266,34 @@ void Plater::reslice()
     if (sidebar().has_broken_mixed_filament()) {
         BOOST_LOG_TRIVIAL(warning) << __FUNCTION__ << ": broken mixed filament detected, refuse to slice";
         return;
+    }
+
+    // Filuna OEM A1: the printer chosen in Dispositivos must also be the
+    // printer preset used by Preparar; never slice an A1 device with a
+    // different machine definition. Preserve the existing UI-safe plate
+    // migration routine, which handles bed geometry on preset changes.
+    if (auto* manager = wxGetApp().getDeviceManager()) {
+        if (auto* device = manager->get_selected_machine()) {
+            if (Filuna::Bambu::A1Module::accepts(device->printer_type)) {
+                Preset* matching = get_printer_preset(device);
+                if (!matching) {
+                    BOOST_LOG_TRIVIAL(error) << "FILUNA OEM A1: missing matching nozzle/machine preset; slicing blocked";
+                    return;
+                }
+                const std::string target_name = matching->name;
+                if (wxGetApp().preset_bundle->printers.get_selected_preset().name != target_name) {
+                    BOOST_LOG_TRIVIAL(info) << "FILUNA OEM A1: selecting registered device's machine preset: " << target_name;
+                    this->update_objects_position_when_select_preset([target_name]() {
+                        if (auto* tab = GUI::wxGetApp().get_tab(Preset::TYPE_PRINTER))
+                            tab->select_preset(target_name);
+                    });
+                    if (wxGetApp().preset_bundle->printers.get_selected_preset().name != target_name) {
+                        BOOST_LOG_TRIVIAL(error) << "FILUNA OEM A1: auto-preset selection refused; slicing blocked";
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     // In case SLA gizmo is in editing mode, refuse to continue
