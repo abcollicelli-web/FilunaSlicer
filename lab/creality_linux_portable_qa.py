@@ -114,6 +114,12 @@ def main()->int:
    if rc!=0:raise RuntimeError("OFFICIAL_APPIMAGE_EXTRACT_EXIT "+str(rc))
   if not runner.is_file():raise RuntimeError("APPIMAGE_APPRUN_NOT_FOUND")
   runner.chmod(runner.stat().st_mode|0o111)
+  binary=extracted/"bin"/"CrealityPrint"
+  if binary.is_file():
+   diagnosis=subprocess.run(["ldd",str(binary)],capture_output=True,text=True,timeout=30,check=False)
+   (out/"ldd-CrealityPrint.log").write_text(diagnosis.stdout+diagnosis.stderr,encoding="utf-8",errors="replace")
+   missing=[line.strip() for line in (diagnosis.stdout+diagnosis.stderr).splitlines() if "not found" in line]
+   if missing:raise RuntimeError("OFFICIAL_RUNTIME_LIBRARIES_MISSING "+repr(missing[:15]))
   add("PORTABLE_RUNTIME","PASS","official AppImage extracted without compiling/installing")
   fixture=ROOT/"fixtures"/"oem"/"creality"
   machine=fixture/"resolved-profiles"/"machine.json"
