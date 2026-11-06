@@ -29,8 +29,6 @@ jobs:
           if ($rev -ne '56a57d00a591360cf41bf21383915ee5bf357be5') { throw "Source changed: $rev" }
           Get-Content official/.github/workflows/build_bambu.yml | Select-String 'Visual Studio 18 2026'
           cmake --version
-          where.exe cl
-          where.exe msbuild
       - name: Configure official Windows MSVC toolchain
         uses: microsoft/setup-msbuild@v2
       - name: Install dependencies required by official workflow
