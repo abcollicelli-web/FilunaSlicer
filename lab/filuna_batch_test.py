@@ -204,6 +204,25 @@ def main():
      emit(rows,brand,step,"PENDENTE","SETUP_EXCEPTION","","Corrigir erro registrado em SETUP")
   bybrand=[x for x in rows if x["marca"]==brand]
   (folder/"result.log").write_text("\n".join(f"{x['teste']} {x['status']}: {x['mensagem']}" for x in bybrand)+"\n",encoding="utf-8")
+ # Infrastructure failures must appear in RESUMO instead of hiding in artifact logs.
+ for filename,key in (("native-build.status","CMAKE_BUILD_EXIT"),("app-build.status","FILUNA_APP_CONFIG_EXIT")):
+  fp=output.parent/filename
+  if not fp.exists():
+   emit(rows,"infra","BUILD","PENDENTE",f"BUILD_STATUS_MISSING {filename}",str(fp),"Analisar runner e CMake")
+   continue
+  text=fp.read_text(encoding="utf-8",errors="replace")
+  matches=re.findall(r"(?:^|\\s)"+key+r"=(\\d+)",text)
+  code=int(matches[-1]) if matches else -1
+  if code!=0:
+   logfile=output.parent/("cmake-build.log" if filename=="native-build.status" else "app-configure.log")
+   tail=""
+   if logfile.is_file():
+    candidates=[z.strip() for z in logfile.read_text(encoding="utf-8",errors="replace").splitlines() if "CMake Error" in z or "Could NOT find" in z or "error:" in z]
+    tail="; ".join(candidates[-3:])[:700]
+   emit(rows,"infra","BUILD","FALHA",f"{key}={code}; {tail}",str(logfile),"Instalar deps oficiais do Filuna, configurar toolchain e reexecutar")
+ simulator=output.parent/"simulators-config.log"
+ if a.platform=="ubuntu" and simulator.is_file() and "PENDENTE" in simulator.read_text(errors="replace"):
+  emit(rows,"infra","SIMULADORES","PENDENTE","SIMULATORS_NOT_PINNED",str(simulator),"Fixar imagens oficiais por digest e configuração de rede isolada")
  with (output/"results.csv").open("w",encoding="utf-8",newline="") as f:
   w=csv.DictWriter(f,fieldnames=FIELDS);w.writeheader();w.writerows(rows)
  with (output/"RESUMO.md").open("w",encoding="utf-8") as f:
@@ -214,9 +233,14 @@ def main():
    items=[x for x in rows if x["marca"]==b]
    f.write("| "+b+" | "+" | ".join(str(sum(x["status"]==s for x in items)) for s in ("PASS","FALHA","PENDENTE"))+" |\n")
   f.write("\n## Erros e testes pendentes\n\n| Marca | Teste | Mensagem exata | Comando/arquivo | Correção proposta |\n|---|---|---|---|---|\n")
+  grouped={}
   for x in rows:
    if x["status"]!="PASS":
-    f.write("| "+" | ".join(x[k].replace("|","/").replace("\n"," ") for k in ("marca","teste","mensagem","comando","correcao"))+" |\n")
+    key=(x["marca"],x["mensagem"],x["comando"],x["correcao"])
+    grouped.setdefault(key,[]).append(x["teste"])
+  for (brand,message,command,fix),steps in grouped.items():
+   values=(brand,",".join(steps),message,command,fix)
+   f.write("| "+" | ".join(v.replace("|","/").replace("\n"," ") for v in values)+" |\n")
   f.write("\n## Pendências do proprietário\n\n")
   for line in sorted(set(owners)):f.write("- "+line+"\n")
   f.write("- Bambu A1 MQTT/FTPS autenticação/contrato: adiado por decisão do proprietário.\n")
