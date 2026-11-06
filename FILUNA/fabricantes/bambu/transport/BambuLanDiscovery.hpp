@@ -48,7 +48,8 @@ inline LanIdentity parse_ssdp(std::string_view packet) {
     id.host=fields["location"];
     if(id.model_code=="N2S") id.model_name="Bambu Lab A1";
     // Do not infer hardware identity solely from the human-readable name.
-    id.valid_a1=(id.model_code=="N2S" && !id.device_id.empty() && !id.host.empty());
+    // The official N2S capability file specifies SN prefix 039 for A1.
+    id.valid_a1=(id.model_code=="N2S" && id.device_id.rfind("039",0)==0 && !id.host.empty());
     return id;
 }
 } // namespace Slic3r::Filuna::Bambu
