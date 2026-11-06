@@ -247,5 +247,5 @@ def main():
   f.write("- URLs e SHA256 oficiais dos pacotes sem referência verificável (não supor hashes).\n")
   f.write("\n**SEM merge, deploy, publicação ou homologação adicional.**\n")
  print(output/"RESUMO.md")
- return 0
+ return 2 if any(x["status"] in ("FALHA","PENDENTE") for x in rows) else 0
 if __name__=="__main__":raise SystemExit(main())

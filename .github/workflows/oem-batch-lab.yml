@@ -83,8 +83,11 @@ jobs:
         run: |
           NATIVE=''
           if [ -x build-oem/filuna_batch_test ]; then NATIVE="--native-binary=build-oem/filuna_batch_test"; fi
+          set +e
           python lab/filuna_batch_test.py --all --platform ubuntu --output qa-ubuntu/batch-ubuntu $NATIVE
+          STATUS=$?
           cat qa-ubuntu/batch-ubuntu/RESUMO.md >> "${GITHUB_STEP_SUMMARY}"
+          exit "$STATUS"
       - name: Preserve only QA evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -159,7 +162,9 @@ jobs:
             $argv += '--native-binary=build-oem/Release/filuna_batch_test.exe'
           }
           python @argv
+          $status = $LASTEXITCODE
           Get-Content qa-windows/batch-windows/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          exit $status
       - name: Preserve only QA evidence
         if: always()
         uses: actions/upload-artifact@v4
