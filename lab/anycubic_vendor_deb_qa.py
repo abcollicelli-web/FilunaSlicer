@@ -98,7 +98,12 @@ def main():
             index=response.read(5*1024*1024+1)
         if len(index)>5*1024*1024:
             raise ValueError("APT_INDEX_SIZE_LIMIT")
-        package=find_exact_package(apt_records(index.decode("utf-8")))
+        records=apt_records(index.decode("utf-8"))
+        current=[r for r in records if r.get("Package","").lower()=="anycubicslicernext"]
+        print("ANYCUBIC_APT_CANDIDATE="+json.dumps([{
+            key:r.get(key) for key in ("Package","Version","Filename","SHA256","Size")}
+            for r in current]),flush=True)
+        package=find_exact_package(records)
         add("VENDOR_APT_INDEX","PASS","official vendor Packages pins expected version/file/SHA/size",PACKAGES)
         pkg=cache/Path(FILENAME).name
         if not pkg.exists() or pkg.stat().st_size!=BYTES or sha(pkg)!=SHA256:
