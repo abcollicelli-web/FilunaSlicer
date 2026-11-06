@@ -52,3 +52,20 @@ No cruzamento de presets usando executável oficial, gerou-se arquivo de 215539 
 6. Windows real e Bambu A1 com firmware real só contam após QA e aprovação, mantendo gates bloqueados antes disso.
 
 **Estado final desta rodada:** política universal atualizada, testes de seleção e descoberta simulada passaram, comparador regressivo testado com controle positivo e mismatches reais. **Módulo completo Bambu ainda NÃO incorporado/carregado em Preparar; equivalência oficial NÃO demonstrada; sem homologação física.**
+
+
+## Rodada adicional: auditoria efetiva dos presets e gate automático
+
+Executado no Ubuntu via SentinelX: `FILUNA/qa/gcode/audit_oem_preset_parity.py` do commit `264dae727b60229711869633ad521a43f703683d`, contra os diretórios `resources/profiles/BBL` do Bambu oficial e do Filuna. O teste **terminou exit 1**, corretamente, após resolver `inherits` de máquina, filamento e processo:
+
+| Arquivo/preset | Valores efetivos divergentes | Resultado |
+|---|---:|---|
+| Bambu Lab A1 0.4 nozzle | 6 | MISMATCH |
+| Bambu PLA Basic @BBL A1 | 8 | MISMATCH |
+| 0.20mm Standard @BBL A1 | 19 | MISMATCH |
+
+Divergências influentes incluem `default_wipe_tower_pos`, `extruder_clearance_radius`, `use_3mf`, identidade do filamento, `filament_pre_heating_enabled`, `adaptive_layer_height`, `reduce_infill_retraction_mode`, `smooth_coefficient` e parâmetros `prime_tower_*`. Os arquivos de referência oficiais **não foram modificados**.
+
+O Bambu Studio oficial pertence a uma linha de código/versão diferente do fork Orca fixado. Alinhar arquivos JSON sem portar opções/algoritmos correspondentes não garante correspondência do G-code; a mensagem anterior `Vendor bundle contains invalid presets` deve ser tratada como bloqueio real de compatibilidade do parser/motor. O caminho correto é mapear cada opção incompatível para sua implementação específica e testar no pipeline, em vez de inserir valores silenciosamente ou falsificar equivalência.
+
+**Condição de aceite do módulo:** um trace no processo Filuna deve demonstrar: máquina registrada A1 → módulo implementado e carregado automaticamente em Preparar → parâmetros efetivos resolvidos → execução de código de slicing compatível e versão registrada → comparação de G-code oficial e Filuna sem modificação do oficial. Nenhuma dessas provas de execução end-to-end foi concluída. Simulador SSDP PASS não prova módulo carregado nem conexão MQTT/TLS.
