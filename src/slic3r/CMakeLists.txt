@@ -8,7 +8,7 @@ if(FILUNA_CC2_SDK)
     include("${CMAKE_SOURCE_DIR}/cmake/FilunaElegooCC2.cmake")
     add_executable(filuna-cc2-sdk Utils/FilunaCC2SdkCli.cpp)
     target_compile_features(filuna-cc2-sdk PRIVATE cxx_std_17)
-    target_link_libraries(filuna-cc2-sdk PRIVATE elegoolink)
+    target_link_libraries(filuna-cc2-sdk PRIVATE ${FILUNA_CC2_SDK_TARGET})
     install(TARGETS filuna-cc2-sdk RUNTIME DESTINATION bin)
 endif()
 
@@ -984,7 +984,7 @@ endif()
 target_link_libraries(libslic3r_gui libslic3r cereal::cereal imgui imguizmo minilzo libvgcode md4c-html glad ${_opengl_link_lib} hidapi mdns ${wxWidgets_LIBRARIES} glfw libcurl OpenSSL::SSL OpenSSL::Crypto LibDataChannel::LibDataChannel noise::noise pybind11::embed)
 if(FILUNA_CC2_SDK)
     target_compile_definitions(libslic3r_gui PRIVATE FILUNA_CC2_SDK=1)
-    target_link_libraries(libslic3r_gui PRIVATE elegoolink)
+    target_link_libraries(libslic3r_gui PRIVATE ${FILUNA_CC2_SDK_TARGET})
 endif()
 
 
