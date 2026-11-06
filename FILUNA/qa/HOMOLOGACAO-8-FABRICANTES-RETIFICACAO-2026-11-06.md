@@ -1,3 +1,5 @@
+**CLASSIFICAÇÃO FINAL:** todas as células T3 são NÃO EXECUTADO: conexão TCP ao Moonraker genérico não é teste da GUI Filuna. Histórico de erros não gera erros novos.
+
 # FILUNA — RETIFICAÇÃO DE HOMOLOGAÇÃO 8 FABRICANTES — 06/11/2026
 
 **Este documento substitui a classificação preliminar de 88 erros e BLOQUEADOS.** A fonte detalhada da nova rodada está em `/srv/site/incoming/filuna-local-oem-qa-20261106/HOMOLOGACAO-LAB-FILUNA-8-FABRICANTES-REAL-2026-11-06.md`. Regras: PASS e FALHA apenas com evidências reais; BLOQUEADO apenas após tentativa com pré-requisito verificado; o que não foi tentado é **NÃO EXECUTADO** e não gera erro; T2/T11 não automatizados ficam **PENDENTE DE CAMPO**. Nenhum merge, release, deploy, QA físico ou build homologado.
@@ -8,12 +10,12 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Bambu A1, AMS lite | NÃO EXECUTADO | PENDENTE DE CAMPO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
 | Elegoo CC2 Combo, CANVAS | NÃO EXECUTADO | PENDENTE DE CAMPO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
-| Flashforge AD5X, IFS | NÃO EXECUTADO | PENDENTE DE CAMPO | BLOQUEADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
+| Flashforge AD5X, IFS | NÃO EXECUTADO | PENDENTE DE CAMPO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
 | QIDI Q2 Combo, QIDI Box | NÃO EXECUTADO | PENDENTE DE CAMPO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
-| Creality K2 Plus Combo, CFS | NÃO EXECUTADO | PENDENTE DE CAMPO | BLOQUEADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
-| Snapmaker U1, SnapSwap | NÃO EXECUTADO | PENDENTE DE CAMPO | BLOQUEADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
-| Prusa CORE One + MMU3 | NÃO EXECUTADO | PENDENTE DE CAMPO | BLOQUEADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
-| Anycubic Kobra S1 Combo, ACE Pro | NÃO EXECUTADO | PENDENTE DE CAMPO | BLOQUEADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
+| Creality K2 Plus Combo, CFS | NÃO EXECUTADO | PENDENTE DE CAMPO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
+| Snapmaker U1, SnapSwap | NÃO EXECUTADO | PENDENTE DE CAMPO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
+| Prusa CORE One + MMU3 | NÃO EXECUTADO | PENDENTE DE CAMPO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
+| Anycubic Kobra S1 Combo, ACE Pro | NÃO EXECUTADO | PENDENTE DE CAMPO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE DE CAMPO | EM VALIDAÇÃO |
 
 ## Evidências positivas reaproveitadas com seu escopo
 
@@ -36,7 +38,7 @@ Prusa CORE One 10.77.0.13 80 ERROR 111
 Flashforge AD5X 10.77.0.13 8898 ERROR 111
 Anycubic Kobra S1 10.77.0.13 9883 ERROR 111
 ```
-`10.77.0.13` é Moonraker genérico, NÃO instância OEM dessas marcas. Os BLOQUEADOS T3 identificam falta de endpoint de laboratório adequado, não falha do protocolo/printer.
+`10.77.0.13` é Moonraker genérico, NÃO instância OEM dessas marcas. As recusas TCP identificam falta de endpoint nesse host genérico, não falha do protocolo/printer. Essas sondagens não executaram o T3 da GUI Filuna: todos os T3 ficam NÃO EXECUTADO.
 
 A tentativa de executar `timeout 18 xvfb-run -a wine64 .../CrealityPrint.exe --help` foi barrada pela ferramenta com texto `Esta ferramenta foi bloqueada pelas configurações de segurança da OpenAI. Verifique novamente o que está enviando.`; logo a CLI NÃO iniciou e não há saída/exit code da Creality a atribuir a essa tentativa. A execução `wine64 --version` foi barrada da mesma forma.
 
@@ -45,6 +47,6 @@ A tentativa de executar `timeout 18 xvfb-run -a wine64 .../CrealityPrint.exe --h
 - **E-01:** Creality Print 7.3.1 com projeto genérico/Ender-3 V3, `Filament nozzle mapping is incomplete`, código 205. Preparar 3MF específico da K2 Plus com presets oficiais e mapeamento filamento→bico.
 - **E-02:** Snapmaker Orca 2.4.1 terminou com código 0 sem produzir G-code. Reproduzir com debug máximo e presets oficiais U1 carregados do portátil, com linha de comando completa.
 
-Nenhuma outra entrada E-XX. Para Anycubic, protocolo MQTT LAN e câmera FLV são caminhos de implementação comunitária: não confundir Kobra 3 V2 modelId 20027 com Kobra S1 modelId 20025. Pesquisa/teste no modelo S1 ainda NÃO EXECUTADO; o erro de conexão ao host Moonraker é apenas bloqueio do simulador.
+Nenhuma outra entrada E-XX. Para Anycubic, protocolo MQTT LAN e câmera FLV são caminhos de implementação comunitária: T3 NÃO EXECUTADO; não confundir Kobra 3 V2 modelId 20027 com Kobra S1 modelId 20025. Pesquisa/teste no modelo S1 ainda NÃO EXECUTADO; o erro de conexão ao host Moonraker é apenas evidência auxiliar e não configura T3 BLOQUEADO.
 
 **T1 regra nova:** cada marca deve criar seu próprio 3MF via CLI do portátil oficial usando os seus presets oficiais machine/process/filament; usar o mesmo artefato no oficial e no Filuna, nunca reutilizar 3MF entre marcas. T1/T3–T10 seguem pendentes de execução integrada por falta de binário Filuna GUI identificado, fixture 4 cores e simuladores OEM completos. **Nenhum fabricante homologado e nenhum build de homologados criado.**
