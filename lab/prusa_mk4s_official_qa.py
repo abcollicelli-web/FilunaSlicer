@@ -27,7 +27,7 @@ FILAMENT = "Prusament PLA @MK4S"
 METADATA = {
     "inherits", "renamed_from", "compatible_printers_condition",
     "compatible_prints_condition", "default_print_profile",
-    "default_filament_profile", "printer_model", "printer_variant",
+    "default_filament_profile",
     "printer_preset", "print_preset", "filament_preset"
 }
 
