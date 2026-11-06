@@ -296,6 +296,19 @@ namespace Slic3r
             std::string dev_id          = j["dev_id"].get<std::string>();
             std::string dev_ip          = j["dev_ip"].get<std::string>();
             std::string printer_type_str= j["dev_type"].get<std::string>();
+            // Filuna OEM Bambu: consume manufacturer model/serial registry
+            // at the real NetworkAgent -> DeviceManager discovery boundary.
+            // An SSDP announcement is identification only, NOT paired/authenticated.
+            if (const auto* bambu_model = Filuna::Bambu::lookup_bambu_model(printer_type_str)) {
+                const bool serial_matches = Filuna::Bambu::is_valid_bambu_discovery_identity(
+                    printer_type_str, dev_id);
+                BOOST_LOG_TRIVIAL(info) << "FILUNA OEM Bambu network discovery model="
+                                        << bambu_model->model_id << " identity=" << serial_matches;
+                if (!serial_matches) {
+                    BOOST_LOG_TRIVIAL(warning) << "FILUNA OEM Bambu: rejected discovery with invalid serial/model prefix";
+                    return;
+                }
+            }
             std::string printer_signal  = j["dev_signal"].get<std::string>();
             std::string connect_type    = j["connect_type"].get<std::string>();
             std::string bind_state      = j["bind_state"].get<std::string>();
