@@ -50,6 +50,7 @@ def main():
     ap.add_argument("--filuna",type=Path,required=True)
     ap.add_argument("--out",type=Path,required=True)
     ap.add_argument("--candidate-is-integrated-oem",action="store_true")
+    ap.add_argument("--gate",choices=["B","C","NEGATIVE"],default="NEGATIVE")
     a=ap.parse_args()
     raw_off=hashlib.sha256(a.official.read_bytes()).hexdigest()
     raw_fil=hashlib.sha256(a.filuna.read_bytes()).hexdigest()
@@ -57,10 +58,11 @@ def main():
     result={"criterion":"exact normalized SHA256 after generator identity/date removal in HEADER only",
             "official_file":str(a.official),"filuna_file":str(a.filuna),
             "candidate_integrated_oem_engine":a.candidate_is_integrated_oem,
+            "gate":a.gate,
             "raw_official_sha256":raw_off,"raw_candidate_sha256":raw_fil,
             "normalized_official_sha256":norm_off,"normalized_candidate_sha256":norm_fil,
             "byte_equal_after_allowed_normalization":norm_off==norm_fil,
-            "e8_acceptance":"PASS" if a.candidate_is_integrated_oem and norm_off==norm_fil else "NOT_VALID_E8_CANDIDATE" if not a.candidate_is_integrated_oem else "FAIL",
+            "e8_acceptance":("PASS" if norm_off==norm_fil else "FAIL") if a.gate=="B" else ("PASS" if a.candidate_is_integrated_oem and norm_off==norm_fil else "NOT_VALID_E8_CANDIDATE" if not a.candidate_is_integrated_oem else "FAIL") if a.gate=="C" else "NEGATIVE_CONTROL",
             "first_difference":first_difference(a.official,a.filuna),
             "section_differences":{key:first_difference(a.official,a.filuna,key) for key in ("HEADER","CONFIG","EXEC")}}
     a.out.parent.mkdir(parents=True,exist_ok=True)
