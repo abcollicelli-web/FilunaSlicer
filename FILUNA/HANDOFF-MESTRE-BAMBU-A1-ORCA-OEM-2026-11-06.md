@@ -145,3 +145,7 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 
 ## RECEBIMENTO DO TXT E COMPARAÇÃO MODAL — 06/11/2026
 O usuário enviou `Filuna_Inventario_Modulos_Bambu_2026-11-06(1).txt`, o inventário anterior (282 linhas), **não novos fontes OEM**. A conferência e execução do parser modal ficaram documentadas em `FILUNA/qa/BAMBU-RECEBIMENTO-INVENTARIO-E-ANALISE-MODAL-2026-11-06.md`. Código novo `FILUNA/qa/gcode/compare_bambu_modal_features.py`, rodado em SentinelX Ubuntu, exit 0. Resultado crítico no topo: Bambu vs Orca **70/70 extrusões, 72/140 deslocamentos, 3/138 M204**; preenchimento sólido interno 665/677 extrusões, 30/86 deslocamentos. Não confundir aumento de G1 com mais extrusão. Rótulos Bridge/Internal Bridge diferem e devem ser normalizados. Nenhum módulo de planner OEM completo ou rede autenticada foi ativado; seguir testes/implementação reais.
+
+
+## RETOMADA — IMPLEMENTAÇÃO NOVA EM C++ (06/11/2026)
+Ler `FILUNA/qa/BAMBU-A1-INTEGRACAO-ENGINE-CONFIG-E-BUILD-2026-11-06.md`. As mudanças no motor estão em `FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp`, `src/libslic3r/PrintConfig.cpp`, `src/slic3r/GUI/Plater.cpp`, além da validação por modelo e serial em `DevManager.cpp::on_machine_alive`. Testes CLI no Orca portátil antigo NÃO substituem novo build Windows; os runs de Windows QA devem ser consultados. A linha Bambu ainda NÃO possui 100% rede/fatiamento integrados nem homologados. O manifesto Bambu foi atualizado com os novos estados e gates.
