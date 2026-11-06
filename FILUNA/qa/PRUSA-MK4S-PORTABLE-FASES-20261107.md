@@ -35,3 +35,22 @@
 O relatório do job e seus artefatos prevalecem sobre qualquer suposição. Em caso de exit code diferente de zero, G-code ausente ou hashes brutos divergentes, há falha técnica a investigar, jamais PASS presumido.
 
 A regra atual é `FILUNA/REGRA-FASES-HOMOLOGACAO-INTERNA-BETA-FISICA-20261107.md`. Somente a autenticação Bambu × Bambuddy foi **intencionalmente** adiada; todas as outras falhas técnicas continuam em investigação. O PR #6 permanece DRAFT.
+
+
+## Resultado comprovado: Windows A/B #42313866233
+
+Fonte: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42313866233
+
+- GitHub Actions: **SUCCESS**, Windows 2022, job de QA portátil oficial sem compilação.
+- Sintaxe Python e **6/6 testes positivos/negativos PASS**.
+- ZIP oficial verificado: **PASS** (SHA-256 5d4f395aeb6c344b300e0e1be37a0e1931622b642c3c3085eb19cdae211bc008).
+- prusa-slicer-console.exe: **PASS** (executável real encontrado no ZIP).
+- Herança de perfis originais MK4S 0,4 + processo 0,20 SPEED + Prusament PLA: **PASS** no ensaio (fonte imutável com Git blob verificado).
+- Cubo de controle: SHA-256 34aa50bdd117a7f1a8490fd695469a255c9e22879c7c87ca560d1fe703c149dd.
+- Execução oficial A: exit 0, G-code de **30.275 bytes**, SHA-256 ad2dc6f003a2f446a197d95f6096ee57c1d6591df013d16140c470433fa9a12d.
+- Execução oficial B: exit 0, G-code de **30.275 bytes**, SHA-256 ad2dc6f003a2f446a197d95f6096ee57c1d6591df013d16140c470433fa9a12d.
+- **OFFICIAL_A_B = PASS**, SHA-256 bruto idêntico; não houve necessidade de normalização.
+- **FILUNA_PARITY = PENDING**; **NETWORK = PENDING**; **HOMOLOGACAO_INTERNA = PENDING**; **HOMOLOGACAO_FISICA = PENDING (somente beta vigiado)**.
+- Artefato: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42313866233/artifacts/13548833742
+
+**Próxima etapa técnica Prusa:** executar separadamente G-code produzido pelo binário Filuna nativo com exatamente o mesmo modelo/versão/perfis, comparar sem normalizações não demonstradas e validar fluxo Dispositivos/Preparar/Fatiar/Enviar em simulador seguro. Não promover em resultado PASS_INTERNO antes dessas evidências.
