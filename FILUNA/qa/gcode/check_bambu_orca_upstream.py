@@ -45,8 +45,23 @@ def observe(manifest: dict, getter=request_json) -> dict:
     try:
         sha=getter("/repos/OrcaSlicer/OrcaSlicer/commits/main")["sha"]
         pin=manifest["filuna"]["upstream_orca_pin"]
-        rows.append({"role":"Orca_upstream","path":"main HEAD","expected":pin,"observed":sha,
-                     "status":"SAME" if sha==pin else "UPDATED_REVIEW_REQUIRED"})
+        record={"role":"Orca_upstream","path":"main HEAD","expected":pin,"observed":sha,
+                "status":"SAME" if sha==pin else "UPDATED_REVIEW_REQUIRED"}
+        if sha != pin:
+            # A version difference is not automatically an engine change.
+            # Compare filenames to select targeted QA without granting a PASS.
+            try:
+                diff=getter(f"/repos/OrcaSlicer/OrcaSlicer/compare/{pin}...{sha}")
+                changed=[item["filename"] for item in diff.get("files",[]) if "filename" in item]
+                engine=any(name.startswith(("src/libslic3r/","resources/profiles/","src/slic3r/Utils/",
+                                             "src/slic3r/GUI/DeviceCore/")) for name in changed)
+                record["changed_files"]=changed
+                record["review_scope"]="ENGINE_DEVICE_OR_PRESETS" if engine else "UI_DOC_OR_OTHER"
+                record["compare_complete"]=bool(diff.get("status")) and not diff.get("too_large",False)
+            except Exception as exc:
+                record["review_scope"]="UNKNOWN_FULL_REVIEW"
+                record["compare_error"]=type(exc).__name__+": "+str(exc)[:120]
+        rows.append(record)
     except Exception as exc:
         rows.append({"role":"Orca_upstream","path":"main HEAD","status":"CHECK_FAILED",
                      "error":type(exc).__name__+": "+str(exc)[:120]})
