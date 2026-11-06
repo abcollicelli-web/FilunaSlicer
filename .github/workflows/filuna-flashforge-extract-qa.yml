@@ -25,7 +25,7 @@ jobs:
       - name: Runtime extraction tool only (no compiler, no install of OEM)
         run: |
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y innoextract
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y innoextract 7zip
       - name: Restore official package cache
         id: cache-restore
         uses: actions/cache/restore@v4
