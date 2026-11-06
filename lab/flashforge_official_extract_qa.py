@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import subprocess
+import shutil
 import urllib.request
 
 VERSION="1.7.15"
@@ -64,8 +65,20 @@ def main():
    try:rc=subprocess.run(opts,stdout=f,stderr=subprocess.STDOUT,timeout=240,check=False).returncode
    except subprocess.TimeoutExpired:rc=124;f.write("TIMEOUT\n")
    except OSError as exc:rc=127;f.write(repr(exc)+"\n")
+  extractor="innoextract"
   if rc!=0:
-   add("PORTABLE_EXTRACTION","FAIL","innoextract exit="+str(rc)+"; inspect innoextract.log")
+   # NSIS/7z installers are not Inno; do not mask the failure or mix
+   # partial extraction trees from two different tools.
+   shutil.rmtree(unpack)
+   unpack.mkdir()
+   cmd=["7z","x","-y","-o"+str(unpack),str(pkg)]
+   with (out/"7zip-extract.log").open("w") as f:
+    try:rc=subprocess.run(cmd,stdout=f,stderr=subprocess.STDOUT,timeout=240,check=False).returncode
+    except subprocess.TimeoutExpired:rc=124;f.write("TIMEOUT\\n")
+    except OSError as exc:rc=127;f.write(repr(exc)+"\\n")
+   extractor="7zip"
+  if rc!=0:
+   add("PORTABLE_EXTRACTION","FAIL","innoextract unsupported; 7zip exit="+str(rc)+"; inspect both extraction logs")
   else:
    filepaths=sorted(x for x in unpack.rglob("*") if x.is_file())
    executables=[str(x.relative_to(unpack)) for x in filepaths if x.suffix.lower()==".exe"]
@@ -81,7 +94,7 @@ def main():
         +" resource_count="+str(len(resources)))
    else:
     add("PORTABLE_EXTRACTION","PASS",
-        "OFFICIAL_INSTALLER_EXTRACTED without installation/compilation; exe_count="+str(len(executables))
+        "OFFICIAL_INSTALLER_EXTRACTED_WITH_"+extractor+" without installation/compilation; exe_count="+str(len(executables))
         +" resources="+str(len(resources)))
   add("PORTABLE_CLI","PENDING","not yet proven runnable without install; needs verified official profile and G-code")
   add("FILUNA_PARITY","PENDING","Filuna native adapter has not been executed")
