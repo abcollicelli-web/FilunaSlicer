@@ -53,3 +53,7 @@ Esta regra se aplica ao código, manifestos, CI, documentação, atualizador e g
 
 ## PONTO DE RETOMADA OBRIGATÓRIO — 06/11/2026
 Para continuar a arquitetura Orca único + módulos completos apenas de diferenças OEM, começando pela Bambu A1, **abrir primeiro** `FILUNA/HANDOFF-MESTRE-BAMBU-A1-ORCA-OEM-2026-11-06.md`. Contém comandos, artefatos, testes realmente executados, números de comparação, proveniência, PR #5, pendências de compilação, escopo por fabricante e regra para não chamar um teste simulado de homologação real. A tarefa prioritária é concluir integração C++ real no pipeline e fatiamento novo Filuna x Bambu Studio oficial, medir tamanho final incorporado e confirmar cobertura da linha Bambu.
+
+
+## SUBORDINAÇÃO À REGRA PERMANENTE — 06/11/2026
+Este documento é histórico/técnico e só permanece válido quando consistente com `FILUNA/REGRA-MESTRE-PERMANENTE-3-CAMADAS-CONTRATO-OEM-E-ATUALIZACOES-2026-11-06.md`. Regra superior: **não editar raiz Orca para atender OEM**, nem alterar fontes OEM salvo patches versionados inevitáveis; Filuna conversa somente via `FilunaOemContract v1`, isolando engine por fabricante/versão e compartilhando por hash apenas arquivos idênticos; geração automática dos mapas M1–M5 e procedimento universal U1–U8; qualquer falha preserva módulo anterior e impede publicação. Perfis/roteamento isolados não contam como OEM nativo sem conformance.
