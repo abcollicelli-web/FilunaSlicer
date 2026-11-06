@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "policy": "FLN-OEM-SOURCE-DELTA-2026-11-06",
+  "manufacturer": "Bambu Lab",
+  "model": "Bambu Lab A1",
+  "nozzle_mm": 0.4,
+  "upstream": {
+    "repository": "bambulab/BambuStudio",
+    "reference": "GitHub default branch observed 2026-11-06; verify commit SHA before porting",
+    "official_binary": "Bambu Studio v0.29.0.170 Windows portable in offline Wine QA",
+    "license_note": "Check per-file license and third-party components. Never copy the closed networking plugin."
+  },
+  "filuna": {
+    "repository": "abcollicelli-web/FilunaSlicer",
+    "upstream_orca_pin": "a620d804efbe74162c96ad29d755cdab2b823530",
+    "base_branch": "filuna/qa-gates-hardening-20261105"
+  },
+  "components": [
+    {
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template machine_start_gcode.json",
+      "upstream_blob_sha": "21abf6fc88e41b3212c434e357f24cbe2f0b682a",
+      "state": "CONTENT_EQUAL_IN_WINE_2026_11_06"
+    },
+    {
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template machine_end_gcode.json",
+      "upstream_blob_sha": "55cde2b302e02d56035624c0ff4be93f6bd741f4",
+      "state": "CONTENT_EQUAL_IN_WINE_2026_11_06"
+    },
+    {
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template change_filament_gcode.json",
+      "upstream_blob_sha": "292299fef8a3a93a323e8c8e056bcc255902cb34",
+      "state": "CONTENT_EQUAL_IN_WINE_2026_11_06"
+    },
+    {
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template layer_change_gcode.json",
+      "upstream_blob_sha": "cd47b8d4cd755bf9415376a845c2e04c6a44dfe0",
+      "state": "CONTENT_EQUAL_IN_WINE_2026_11_06"
+    },
+    {
+      "path": "resources/profiles/BBL/machine/Bambu Lab A1 0.4 nozzle template time_lapse_gcode.json",
+      "upstream_blob_sha": "3895d8bd0ba329434f66f57b3f5eb99218c02c6c",
+      "state": "CONTENT_EQUAL_IN_WINE_2026_11_06"
+    }
+  ],
+  "upgrade_gates": [
+    "upstream source revision/commit and LICENSE provenance",
+    "per-file diff and dependencies",
+    "parser capability check",
+    "effective preset parity",
+    "trace OEM module loaded in Preparar",
+    "same fixture G-code semantic compare unchanged official binary",
+    "simulated LAN DeviceBridge",
+    "Windows and physical hardware",
+    "signing and rollback"
+  ],
+  "hardware_homologated": false
+}
