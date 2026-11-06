@@ -60,6 +60,17 @@ jobs:
           assert j['is_release_evidence'] is False
           print('SIMULATED PROTOCOLS ONLY:',j['pass'],'PASS',j['fail'],'FAIL',j['not_run'],'NOT_RUN')
           PY
+      - name: Adversarial protocol checks (negative auth, disconnect, upload)
+        run: |
+          python3 FILUNA/qa/virtual-lab/adversarial_regression.py /tmp/filuna-lan-adversarial.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/filuna-lan-adversarial.json'))
+          assert j['fail']==0
+          assert j['pass']==7
+          assert j['is_release_evidence'] is False
+          print('EMULATOR NEGATIVE TESTS:',j['pass'],'PASS',j['fail'],'FAIL')
+          PY
       - name: Upload non-release protocol evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -67,6 +78,7 @@ jobs:
           name: filuna-virtual-lan-regression-${{ github.sha }}
           path: |
             /tmp/filuna-lan-regression.json
+            /tmp/filuna-lan-adversarial.json
             /tmp/filuna-lab.log
           if-no-files-found: warn
           retention-days: 30
