@@ -36,3 +36,11 @@ A árvore `resources/profiles/Snapmaker` do Filuna herdado contém valores e nom
 - Primeira execução: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42311663149
 
 Nenhum merge, release ou instalação de teste autorizado por esta evidência.
+
+## Diagnóstico real do Windows — 07/11/2026
+
+- Execução `#42311663149`: ZIP e binário oficial validados. Falha no check de SHA do perfil de máquina no **arquivo de trabalho Windows**: o checkout converteu fim de linha, sem alterar o objeto Git original. Corrigido usando `git show HEAD:<path>` com bytes originais para validar os blobs e alimentar a CLI.
+- Execução `#42311921546`: `OFFICIAL_PORTABLE_ARCHIVE=PASS`, `PORTABLE_EXECUTABLE=PASS`, `U1_OFFICIAL_PROFILE_PROVENANCE=PASS` e `CUBE_FIXTURE=PASS`. O binário original retornou **exit 3221225477 = 0xC0000005 (access violation)** ao carregar o `verified-process.json`, antes da geração de G-code. `OFFICIAL_A=FAIL`, `OFFICIAL_A_B=PENDENTE`, `U1_PROJECT_EXPORT=PENDENTE`. Logs: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42311921546/artifacts/13548229696 .
+- O `process.json` original possui BOM UTF-8, mas **a causa do crash ainda não está comprovada**. O runner foi estendido com testes isolados (help, só máquina, só processo, processo sem BOM e máquina+processo original) para determinar a origem sem alterar binário OEM. Essa matriz nunca é promovida automaticamente a homologação.
+
+**Esta não é uma falha de impressora física**, e nenhum teste com hardware será realizado até o beta vigiado, conforme regra vigente.
