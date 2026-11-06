@@ -125,11 +125,17 @@ def main():
     o=read_trace(a.official,a.bed_x,a.bed_y,a.max_z)
     f=read_trace(a.filuna,a.bed_x,a.bed_y,a.max_z)
     diff=compare(o,f)
-    identical=(not diff and not o["issues"] and not f["issues"])
+    provenance_verified = ("SYNTHETIC" not in a.official_provenance.upper() and
+                           "SYNTHETIC" not in a.filuna_provenance.upper() and
+                           "ELEGOO" in a.official_provenance.upper() and
+                           "FILUNA" in a.filuna_provenance.upper())
+    identical=(not diff and not o["issues"] and not f["issues"] and provenance_verified)
     report={"scope":"offline-trace-only-not-firmware-simulation-not-hardware-safety",
         "official_provenance":a.official_provenance,"filuna_provenance":a.filuna_provenance,
         "printer_bounds_mm":{"x":a.bed_x,"y":a.bed_y,"z":a.max_z},
         "status":"PARTIAL_TRACE_EQUIVALENT" if identical else "BLOCKED_DIFFERENCES_OR_UNSUPPORTED",
+        "provenance_text_passed_basic_checks":provenance_verified,
+        "provenance_is_independently_verified":False,
         "is_hardware_homologation":False,"is_release_evidence":False,
         "official":{k:v for k,v in o.items() if k not in ("motions","controls")},
         "filuna":{k:v for k,v in f.items() if k not in ("motions","controls")},
