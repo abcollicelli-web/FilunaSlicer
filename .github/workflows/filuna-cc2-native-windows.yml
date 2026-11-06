@@ -1,0 +1,22 @@
+name: Filuna CC2 Windows native integration
+on:
+  push:
+    branches:
+      - filuna/cc2-native-integration-20261106
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  filuna_windows_cc2:
+    name: Filuna Windows CC2 SDK enabled
+    uses: ./.github/workflows/build_check_cache.yml
+    with:
+      os: windows-latest
+      arch: x64
+      compiler: clang
+      build-deps-only: false
+      force-build: true
+    secrets: inherit
