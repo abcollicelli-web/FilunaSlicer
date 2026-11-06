@@ -86,6 +86,32 @@
       "kind": "native_bambu_module",
       "path": "FILUNA/fabricantes/bambu/engine/BambuA1Module.hpp",
       "state": "IN_PROCESS_ENTRYPOINT_UNIT_PASS_NOT_SLICING_EQUIVALENT"
+    },
+    {
+      "kind": "active_source_hook",
+      "path": "src/slic3r/GUI/DeviceCore/DevManager.cpp",
+      "status": "MODEL_SERIAL_CHECK_IN_ON_MACHINE_ALIVE_SOURCE_WINDOWS_BUILD_NOT_YET_VERIFIED"
+    },
+    {
+      "kind": "active_source_hook",
+      "path": "src/slic3r/GUI/Plater.cpp",
+      "status": "A1_REGISTERED_PRESET_AUTOMATCH_AND_PRINT_APPLY_TRANSLATION_SOURCE_WINDOWS_BUILD_NOT_YET_VERIFIED"
+    },
+    {
+      "kind": "engine_config_delta",
+      "path": "FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp",
+      "status": "A1_DEFAULT_TRANSLATION_SOURCE_WINDOWS_BUILD_NOT_YET_VERIFIED",
+      "options": [
+        "precise_outer_wall",
+        "accel_to_decel_enable",
+        "internal_solid_infill_pattern",
+        "travel_jerk"
+      ]
+    },
+    {
+      "kind": "engine_parser_option",
+      "path": "src/libslic3r/PrintConfig.cpp",
+      "status": "IP_ZIGZAG_INTERNAL_SOLID_ENABLED_IN_SOURCE_WINDOWS_BUILD_NOT_YET_VERIFIED"
     }
   ],
   "network_priority": [
@@ -102,8 +128,27 @@
     "physical_print": "NOT_RUN",
     "discovery_native_emulator": "PASS",
     "native_entrypoint_compiled": "PASS",
-    "prepare_source_hook": "IMPLEMENTED_NOT_WINDOWS_COMPILED"
+    "prepare_source_hook": "IMPLEMENTED_NOT_WINDOWS_COMPILED",
+    "current_source_diff_validation": "PASS",
+    "new_windows_full_build": "IN_PROGRESS_NOT_APPROVED",
+    "current_planner_oem_parity": "NOT_PASS",
+    "current_network_transport_oem_complete": "NOT_RUN",
+    "new_module_gcode": "NOT_RUN",
+    "old_orca_official_flat_profile": "MISMATCH"
   },
   "requires_validation_before_use": true,
-  "automatic_hardware_activation": false
+  "automatic_hardware_activation": false,
+  "manufacturer_model_registry": {
+    "path": "FILUNA/fabricantes/bambu/transport/BambuModelRegistry.hpp",
+    "model_codes": 17,
+    "validated_by": "FILUNA/qa/test_bambu_manufacturer_models.cpp",
+    "status": "CANDIDATE_NETWORK_IDENTITY_ONLY"
+  },
+  "reference_experiment": {
+    "source": "Bambu Studio 02.09.01.70",
+    "oem_official_gcode_bytes": 343563,
+    "old_orca_flat_bambu_json_bytes": 373539,
+    "old_orca_approx_translated_bytes": 372034,
+    "warning": "OLD ORCA BINARY with rectilinear substitution, not the newly compiled zigzag engine"
+  }
 }
