@@ -377,3 +377,7 @@ Por ordem do proprietário, a política válida para **todos os fabricantes e mo
 
 ## PONTO DE RETOMADA OBRIGATÓRIO — 06/11/2026
 Para continuar a arquitetura Orca único + módulos completos apenas de diferenças OEM, começando pela Bambu A1, **abrir primeiro** `FILUNA/HANDOFF-MESTRE-BAMBU-A1-ORCA-OEM-2026-11-06.md`. Contém comandos, artefatos, testes realmente executados, números de comparação, proveniência, PR #5, pendências de compilação, escopo por fabricante e regra para não chamar um teste simulado de homologação real. A tarefa prioritária é concluir integração C++ real no pipeline e fatiamento novo Filuna x Bambu Studio oficial, medir tamanho final incorporado e confirmar cobertura da linha Bambu.
+
+
+## REGRA PRIORITÁRIA MAIS RECENTE — 06/11/2026
+O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do módulo OEM de FATIAMENTO em Preparar**, com o Orca apenas como núcleo comum único; são **dois módulos distintos, completos e selecionados automaticamente pelo dispositivo/firmware**, nunca fatiadores duplicados. A regra normativa integral está em `FILUNA/REGRA-PRIORITARIA-100-PORCENTO-MODULOS-OEM-REDE-FATIAR-2026-11-06.md`. **Prevalece sobre descrições anteriores de seleção ou módulos parciais.** A Bambu A1 atual NÃO está 100% integrada em nenhuma das etapas; não declarar conclusão por PASS isolado.
