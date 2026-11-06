@@ -77,3 +77,7 @@ Documentar no **mesmo** `FILUNA/REGISTRO-CONTINUIDADE-ETAPAS.md`; testes e adapt
 **Primeiro piloto:** Bambu Lab A1. **Próximos:** Flashforge AD5X, Anycubic Kobra 3 V2 (não confundir com nome informal Kobra V3 sem confirmação de identidade) e Elegoo Centauri Carbon 2. A política também vale às demais marcas e novos dispositivos.
 
 **Estado de prova:** apenas seleção candidato por modelo/ABI em C++ e emuladores parciais; nenhum módulo OEM completo comprovado no pipeline Preparar. Wine CLI não valida GUI/firmware/hardware. Não declarar gates G2-G6 PASS nem release; preservar evidências e testes negativos.
+
+
+## Decisão vinculante adicional — atualizações diferenciais OEM/Orca (06/11/2026)
+Por ordem do proprietário, a política válida para **todos os fabricantes e modelos** é [REGRA-MESTRE-ATUALIZACAO-INCREMENTAL-OEM-ORCA-2026-11-06.md](REGRA-MESTRE-ATUALIZACAO-INCREMENTAL-OEM-ORCA-2026-11-06.md). Em atualizações Bambu Studio, Orca ou outros OEM, comparar SHA/versão/licença por arquivo, reutilizar apenas diferenças necessárias, compilar, testar a ligação real com Preparar, G-code oficial inalterado, rede simulada, Windows e hardware. Sem promover módulo não testado e sem update ou merge automático. Primeiro piloto A1: cinco macros já idênticos, port C++ do candidato matemático testado isoladamente, integração ao pipeline **NOT RUN**, G-code oficial×Filuna **MISMATCH**. A atualização de fontes é um alerta para revisão, nunca aprovação.
