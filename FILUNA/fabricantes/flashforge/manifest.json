@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "manufacturer": "Flashforge",
+  "module_id": "filuna-oem-flashforge",
+  "abi": 1,
+  "engine": "ORCA_SINGLE_ENGINE",
+  "state": "CANDIDATE_NOT_VALIDATED",
+  "models": [
+    {
+      "id": "FLASHFORGE-AD5X",
+      "display": "AD5X",
+      "firmware_verified": false
+    }
+  ],
+  "module_is_compatible_overlay_only": true,
+  "shared_engine": "src/libslic3r",
+  "source_license_and_shas": "REVIEW_REQUIRED",
+  "protocol": "FLASHFORGE_LAN_TO_VALIDATE",
+  "network_priority": [
+    "DISCOVERY_ALLOWED",
+    "PROTOCOLS_FIRST_AUTHENTICATED",
+    "LAN_CODE_ONLY_IF_NEEDED_AND_SUPPORTED"
+  ],
+  "components": [],
+  "checks": {
+    "module_loaded_in_prepare": "NOT_RUN",
+    "gcode_equivalence": "NOT_RUN",
+    "hardware": "NOT_RUN"
+  },
+  "automatic_hardware_activation": false
+}
