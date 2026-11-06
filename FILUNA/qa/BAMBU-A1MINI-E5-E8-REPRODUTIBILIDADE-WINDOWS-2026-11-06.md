@@ -47,3 +47,15 @@ Um build auxiliar Linux da tag foi iniciado na pasta isolada `/var/tmp/filuna-qa
 
 ## Comunicação e segurança
 O AGPL não autoriza inferir que qualquer biblioteca proprietária publicada apenas em binário tenha código automaticamente disponível. Não extrair chaves, não contornar assinatura, não republicar blob de terceiro sem verificar termos. Solicitações formais de código podem ser redigidas, mas envio exige destino confirmado pelo usuário. 
+
+## AJUSTE MAIS RECENTE: GATE B NO MESMO RUNNER WINDOWS
+
+- Fonte oficial Windows: https://github.com/bambulab/BambuStudio/releases/tag/v02.09.01.70 ; ZIP portátil Bambu_Studio_win-v02.09.01.70-20261103183404.zip (496653167 bytes).
+- Entrada 3MF original (não resalvar para B): SHA256 3649d011b82a52aceed643f7e82c22803a59001704f5e3e415e16a7ed590c365 (15846184 bytes).
+- Controle Wine: SHA256 321a29de1290a42edf785674e789b9d69d41c5ba979a69144faf081aa69372df (73159248 bytes). Original foi copiado sem alterações para /srv/site/incoming/filuna-a1mini-wine-reference-02090170.gcode para transferência segura.
+- Workflow versionado .github/workflows/filuna-bambu-pinned-windows-e5.yml: runner windows-latest, tag Bambu commit 56a57d00, deps oficiais, MSVC VS 2026, Release, BBL_RELEASE_TO_PUBLIC=1 e BBL_INTERNAL_TESTING=0. Registra ImageOS, ImageVersion e versão exata do cl.exe.
+- Script FILUNA/qa/windows_bambu_same_runner_b_test.ps1: StageOnly recebe links temporários POST de 3MF e Wine e valida hashes; CompareOnly baixa ZIP oficial da Bambu, roda ambas CLIs com o mesmo modelo, placa 0 e parâmetros, produz oficial_win.gcode e compilado_win.gcode; compara hashes RAW e os hashes normalizados com primeiro desvio; compara Windows oficial com Wine.
+- Comparador FILUNA/qa/gcode/compare_oem_exact_sha.py possui gates B (build oficial) e C (Filuna integrado) distintos. Validado com dois arquivos idênticos (PASS) e controle divergente (FAIL, primeira linha 3).
+- Execução antiga 42161455007 falhou porque where.exe cl rodava antes do MSVC setup; erro corrigido. Workflow de build 42162864143 foi enfileirado via push mas NÃO recebeu arquivos, então NÃO executa o gate B.
+- O acionamento manual do workflow com os links temporários foi RECUSADO pelo canal de execução do servidor; o arquivo 3MF de terceiros e o G-code de 73MB NÃO foram publicados em repositório público. Links expiram e precisam ser recriados na sessão de disparo.
+- STATUS: build Windows pendente; teste B Windows oficial x compilado NÃO EXECUTADO; teste Windows x Wine NÃO EXECUTADO; teste A e teste C NÃO EXECUTADOS. Não declarar equivalência nem homologação.
