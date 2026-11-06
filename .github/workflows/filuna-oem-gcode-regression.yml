@@ -31,6 +31,12 @@ jobs:
             FILUNA/qa/gcode/test_bambu_speed_mapping.cpp \
             -o /tmp/filuna-bambu-speed-mapping-test
           /tmp/filuna-bambu-speed-mapping-test
+      - name: Compile single Orca OEM overlay mapping (standalone contract)
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror \
+            FILUNA/qa/test_oem_overlay_selection.cpp \
+            -o /tmp/filuna-oem-overlay-test
+          /tmp/filuna-oem-overlay-test
       - name: State evidence scope
         run: |
           echo "Only parity checker behavior was tested with synthetic fixtures."
