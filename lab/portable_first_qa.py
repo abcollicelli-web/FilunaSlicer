@@ -122,7 +122,14 @@ def extract_executable(archive:Path,exe_name:str,extract_dir:Path)->Path:
  if len(candidates)==0 and "snapmaker" in exe_name.lower():
   # Snapmaker upstream ZIP filename may differ from its previously extracted Windows package.
   candidates=sorted(x for x in extract_dir.rglob("*.exe") if x.is_file() and "snapmaker" in x.stem.lower() and all(w not in x.stem.lower() for w in ("uninstall","setup","update","crash")))
- if len(candidates)!=1:raise ValueError("PORTABLE_EXE_NOT_UNIQUE count="+str(len(candidates))+" file="+exe_name)
+ if len(candidates)>1 and "snapmaker" in exe_name.lower():
+  # A real GUI slicer can coexist with its console/validator/support tools.
+  # Prefer exactly one main executable; fail closed if still ambiguous.
+  main=[p for p in candidates if not any(word in p.stem.lower() for word in ("console","validator","profile","updater","update","test","crash"))]
+  if len(main)==1:candidates=main
+ if len(candidates)!=1:
+  names=[p.relative_to(extract_dir).as_posix() for p in candidates]
+  raise ValueError("PORTABLE_EXE_NOT_UNIQUE count="+str(len(candidates))+" file="+exe_name+" candidates="+repr(names[:20]))
  return candidates[0]
 
 def run_cli(exe:Path,project:Path,out:Path,logfile:Path,timeout:int)->tuple[int,list[Path]]:
