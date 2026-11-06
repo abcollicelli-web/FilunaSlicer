@@ -1,0 +1,46 @@
+# FILUNA — CONTRATO DE HOMOLOGAÇÃO 01: dispositivo registrado → preparar Orca + compatibilidade OEM
+
+**Decisão expressa do proprietário:** 06/11/2026 (Europe/Rome). **Estado:** requisito aprovado; integração nativa completa **NÃO IMPLEMENTADA/NÃO HOMOLOGADA**. Escopo exclusivo: fork já compilado `abcollicelli-web/FilunaSlicer`, não reconstruir nem substituir o aplicativo.
+
+## Fluxo obrigatório
+1. **Dispositivos:** descoberta real em LAN através de implementação reutilizável e auditada do fabricante, e identificação estável por fabricante/modelo/revisão/firmware/protocolo. Descoberta isolada não significa conexão. Solicitar pareamento/autenticação exigidos pelo fabricante e verificar ACK real.
+2. **Registro do cliente:** persistir identidade estável e associação entre dispositivo, módulo OEM, ABI, protocolo e firmware confirmado. Não fingir conexão nem inferir suporte de modelos aparentados. Em offline, preservar registro sem declarar online.
+3. **Preparar:** carregar **a interface e o motor Orca nativos do Filuna já compilado**. Ao escolher um dispositivo registrado, resolver seu módulo de compatibilidade OEM **realmente executável**, aplicar capacidades/perfis/algoritmos/macros e integração para aquele equipamento. Não basta retornar um candidato do registry nem listar presets JSON.
+4. **Fatiar:** rotear, quando permitido pela licença e compatibilidade técnica, os componentes livres pertinentes da implementação oficial da marca no pipeline de slicing do Filuna, preservando proveniência, sem invocar fatiador externo instalado, sem carregar executável OEM separado e sem acessar nuvem privada sem integração autorizada. Se o componente oficial é incompatível ou fechado, apresentar recurso não disponível ou fallback Orca **identificado**; nunca afirmar equivalência não comprovada.
+5. **Imprimir:** listar **somente impressoras previamente registradas pelo cliente**, inclusive offline identificadas como offline; comandos apenas nas conectadas/autorizadas. Confirmar material, perfil, formato, firmware, e autorização de iniciar; ACK real antes de mostrar sucesso. A biblioteca de perfis disponíveis para cadastro não deve popular a lista de dispositivos registrados.
+6. **Atualização incremental:** manifesto de módulo com fornecedor, commit origem, licença por arquivo, ABI, versão, firmware compatível, hashes, assinatura e rollback. Atualizar módulos/perfis de modo independente quando possível; alterações de binário nativo exigem updater apropriado, reinício seguro e validação, sem prometer hot-swap arbitrário de DLL.
+
+## Quatro alvos da primeira homologação
+- Bambu Lab A1 (modelo `BBL-A1`).
+- Flashforge Adventurer 5X / AD5X (modelo `FLASHFORGE-AD5X`).
+- Anycubic Kobra: fala atual cita **"Kobra V3"**, histórico e fixtures atuais citam **Kobra 3 V2** (`ANYCUBIC-KOBRA3-V2`). **Não tratar como identificadores equivalentes**; obter identidade da máquina/discovery antes de vincular módulo. Conservar resultados anteriores rotulados Kobra 3 V2.
+- Elegoo Centauri Carbon 2 (modelo `Elegoo-CC2`).
+
+## Falhas da arquitetura existente verificadas
+- `src/slic3r/GUI/DeviceCore/FilunaModuleSelection.hpp` seleciona metadados com `select_candidate`, **não carrega nenhum módulo OEM**. `DevManager.cpp` apenas registra log do candidato, sem invocar pipeline Preparar/Fatiar e sem validar firmware. O teste do seletor imprime `hardware-locked` em quatro modelos.
+- Em Wine: CC2 oficial ElegooSlicer v1.5.3.5 gerou 209800 bytes, G1 5424, G92 3; Filuna 255165 bytes, G1 7532, G92 103, com troca cruzada de presets previamente feita. **MISMATCH**; arquivo gerado não é prova de equivalência.
+- Bambu A1 oficial: 214953 bytes/G1 6429; Filuna: 372272 bytes/G1 6100. **NÃO CONCLUSIVO** sem validar todos os valores efetivos, versão e o cenário de comparação.
+- Flashforge AD5X: Filuna gerou 348091 bytes, mas comparação binária oficial na mesma fixture **NOT RUN**.
+- Anycubic Kobra 3 V2: fluxo Filuna abortou por `retraction_distances_when_cut: 0 not in range [10,18]`. **FAIL na fixture/configuração**; nenhuma comparação concluída.
+- Simuladores LAN (14 PASS/6 NOT RUN anteriores) NÃO equivalem ao Filuna DeviceBridge conectado nem a firmware físico.
+
+## Critérios de aceite mensuráveis
+| Caso | Esperado | Status em 06/11 |
+|---|---|---|
+| H01 discovery oficial modelo+firmware | identidade validada por módulo OEM | NOT RUN no app real |
+| H02 pareamento/registro persistente | registro fica associado a usuário/dispositivo e credenciais seguras | NOT RUN |
+| H03 Preparar roteia engine OEM-compatible | execução demonstrada por tracing de função/módulo dentro do Filuna | NOT RUN |
+| H04 apenas registrados no menu Imprimir | registro do cliente é fonte da lista, sem catálogo global de perfis | NOT RUN |
+| H05 binário oficial x Filuna comparativo | mesma peça, perfil efetivo, firmware, formato e análise semântica | CC2 MISMATCH; A1 INCONCLUSIVO; AD5X NOT RUN; Kobra FAIL |
+| H06 envio/comandos | ACK, falha de auth, desconexão, retry seguro | NOT RUN na integração real |
+| H07 Windows e quatro máquinas físicas | impressão, segurança, sensores, multimaterial e logs versionados | NOT RUN |
+| H08 atualização modular | assinatura+hash+rollback+ABI e preservação de trabalhos | NOT RUN |
+
+## Execução
+1. Mapear fontes oficiais por modelo/família/commit, verificar licença **de cada componente**, dependências fechadas, protocolo, compatibilidade com Orca pinado e versão firmware.
+2. Implementar ligação real entre o DeviceManager e registro persistente, e entre seleção em Preparar e resolução/ativação de componentes do pipeline. Criar contrato de capabilities por firmware com default fail-closed.
+3. Reproduzir matriz de G-code dos quatro alvos, cruzar presets e salvar arquivos, parâmetros, versão, SHA, comandos por camada, calor, extrusão e macros.
+4. Testar DeviceBridge no Filuna sob Wine contra LAN virtual e após isso Windows/hardware físico. Não habilitar envio automático ou distribuir módulos apenas porque a geração de G-code completou.
+5. Seguir gates G0–G6; esta especificação **não muda automaticamente gates de NOT RUN para PASS**. Sem merge ou deploy até evidências e aprovação.
+
+**Objetivo final:** uma única aplicação Filuna com Orca nativo, módulos OEM reutilizáveis por dispositivo e lista de impressão restrita às impressoras do cliente. Não declarar que elimina toda insegurança ou todo defeito sem homologação física.
