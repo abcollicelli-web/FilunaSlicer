@@ -15,6 +15,7 @@ import time
 import zipfile
 
 from portable_first_qa import OFFICIAL, obtain, extract_executable, digest
+from snapmaker_u1_inherit import build_effective_original_presets
 
 ROOT=Path(__file__).resolve().parents[1]
 TAG="v2.4.1"
@@ -266,6 +267,48 @@ def main():
   else:
    add("U1_PROJECT_EXPORT","PENDING","CLI_EXPORT_NOT_PROVEN exit="+str(rc)
        +" file_present="+str(project_path.is_file()))
+  # Separate, explicit experiment: leaf JSON alone is not a complete preset.
+  # Build the effective official configuration by recursively merging ONLY
+  # version-pinned original source blobs; do not alter the OEM source files.
+  try:
+   effective=build_effective_original_presets(out)
+   add("OFFICIAL_U1_INHERITANCE","PASS",
+       "verified all 9 official parent blobs and built temporary effective profiles",
+       "effective-profile-derivation.json")
+   effective_settings=str(effective["machine"])+";"+str(effective["process"])
+   effective_filaments=";".join([str(effective["filament"])]*4)
+   effective_outputs=[]
+   for letter in ("A","B"):
+    directory=out/("effective-run-"+letter)
+    if directory.exists():shutil.rmtree(directory)
+    directory.mkdir(parents=True)
+    argv=["--debug","3","--slice","0",
+          "--load-settings",effective_settings,
+          "--load-filaments",effective_filaments,
+          "--outputdir",str(directory),str(cube.resolve())]
+    rc=command(exe,argv,exe.parent,out/("effective-"+letter+".log"),args.timeout)
+    gcodes=generated_gcodes(directory)
+    if rc!=0 or len(gcodes)!=1:
+     add("OFFICIAL_EFFECTIVE_"+letter,"FAIL",
+         "CLI_EXIT="+str(rc)+" GCODE_COUNT="+str(len(gcodes)),
+         "effective-"+letter+".log")
+     add("OFFICIAL_EFFECTIVE_A_B","PENDING","EFFECTIVE_OEM_CLI_NOT_SUCCESSFUL")
+     break
+    g=gcodes[0]
+    effective_outputs.append(g)
+    add("OFFICIAL_EFFECTIVE_"+letter,"PASS",
+        "gcode_bytes="+str(g.stat().st_size)+" sha256="+digest(g),
+        str(g.relative_to(out)))
+   if len(effective_outputs)==2:
+    if effective_outputs[0].resolve()==effective_outputs[1].resolve():
+     add("OFFICIAL_EFFECTIVE_A_B","FAIL","REUSED_SAME_OUTPUT_FILE")
+    elif digest(effective_outputs[0])!=digest(effective_outputs[1]):
+     add("OFFICIAL_EFFECTIVE_A_B","FAIL",
+         "RAW_SHA_DIFF A="+digest(effective_outputs[0])+" B="+digest(effective_outputs[1]))
+    else:
+     add("OFFICIAL_EFFECTIVE_A_B","PASS","RAW_SHA_IDENTICAL "+digest(effective_outputs[0]))
+  except Exception as exc:
+   add("OFFICIAL_U1_INHERITANCE","FAIL",type(exc).__name__+": "+str(exc))
   add("FILUNA_PARITY","PENDING","No separately executing Filuna OEM engine; official A/B is not Filuna parity")
   add("DEVICE_NETWORK","PENDING","Simulator-only U1 OEM contract not yet executed")
   add("PHYSICAL_BETA","PENDING","By owner: ONLY after all internal QA, final Filuna build and supervised beta")
