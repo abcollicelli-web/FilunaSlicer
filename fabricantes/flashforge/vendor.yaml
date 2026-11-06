@@ -1,0 +1,52 @@
+{
+  "schema": "filuna.oem.vendor.v1",
+  "brand": "flashforge",
+  "model": "Flashforge AD5X IFS",
+  "version": "1.7.15",
+  "official": {
+    "download_url": null,
+    "archive_sha256": null,
+    "archive_kind": null,
+    "exe_relative_path": null,
+    "cached_source_reference": "flashforge-1.7.15",
+    "license_source": null
+  },
+  "cli": {
+    "slice": [
+      "{exe}",
+      "--slice",
+      "0",
+      "--outputdir",
+      "{out}",
+      "{input}"
+    ],
+    "filament_ids": null,
+    "settings": null,
+    "filaments": null,
+    "verified": false
+  },
+  "filuna": {
+    "exe_relative_path": null,
+    "slice": null
+  },
+  "normalization": [],
+  "evidence": null,
+  "lab_simulator": {
+    "ip": null,
+    "ports": {}
+  },
+  "fixtures": {
+    "cube": "fixtures/cube20.stl",
+    "multicolor_3mf_gpg": null,
+    "passphrase_secret": null
+  },
+  "network": {
+    "native_source_paths": [],
+    "compiled_into_app": false,
+    "contract_ready": false
+  },
+  "flags": {
+    "owner_multicolor_pending": false,
+    "defer_bambuddy_authenticated": false
+  }
+}

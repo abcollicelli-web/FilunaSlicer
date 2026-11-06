@@ -1,0 +1,54 @@
+{
+  "schema": "filuna.oem.vendor.v1",
+  "brand": "elegoo",
+  "model": "Elegoo Centauri Carbon 2 CANVAS",
+  "version": "1.5.3.5",
+  "official": {
+    "download_url": null,
+    "archive_sha256": null,
+    "archive_kind": null,
+    "exe_relative_path": "elegoo-slicer.exe",
+    "cached_source_reference": "elegoo-v1.5.3.5",
+    "license_source": null
+  },
+  "cli": {
+    "slice": [
+      "{exe}",
+      "--slice",
+      "0",
+      "--outputdir",
+      "{out}",
+      "{input}"
+    ],
+    "filament_ids": "--load-filament-ids",
+    "settings": null,
+    "filaments": null,
+    "verified": false
+  },
+  "filuna": {
+    "exe_relative_path": null,
+    "slice": null
+  },
+  "normalization": [],
+  "evidence": null,
+  "lab_simulator": {
+    "ip": "10.77.0.11",
+    "ports": {
+      "discovery_udp": 52700
+    }
+  },
+  "fixtures": {
+    "cube": "fixtures/cube20.stl",
+    "multicolor_3mf_gpg": null,
+    "passphrase_secret": null
+  },
+  "network": {
+    "native_source_paths": [],
+    "compiled_into_app": false,
+    "contract_ready": false
+  },
+  "flags": {
+    "owner_multicolor_pending": true,
+    "defer_bambuddy_authenticated": false
+  }
+}

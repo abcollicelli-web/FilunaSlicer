@@ -1,0 +1,56 @@
+{
+  "schema": "filuna.oem.vendor.v1",
+  "brand": "bambu",
+  "model": "Bambu A1 AMS lite",
+  "version": "02.09.01.70",
+  "official": {
+    "download_url": null,
+    "archive_sha256": null,
+    "archive_kind": null,
+    "exe_relative_path": "bambu-studio.exe",
+    "cached_source_reference": "bambu-v02.09.01.70",
+    "license_source": null
+  },
+  "cli": {
+    "slice": [
+      "{exe}",
+      "--slice",
+      "0",
+      "--outputdir",
+      "{out}",
+      "{input}"
+    ],
+    "filament_ids": "--load-filament-ids",
+    "settings": null,
+    "filaments": null,
+    "verified": false
+  },
+  "filuna": {
+    "exe_relative_path": null,
+    "slice": null
+  },
+  "normalization": [],
+  "evidence": null,
+  "lab_simulator": {
+    "ip": "10.77.0.15",
+    "ports": {
+      "ssdp": 2021,
+      "mqtt_tls": 8883,
+      "ftps": 990
+    }
+  },
+  "fixtures": {
+    "cube": "fixtures/cube20.stl",
+    "multicolor_3mf_gpg": null,
+    "passphrase_secret": null
+  },
+  "network": {
+    "native_source_paths": [],
+    "compiled_into_app": false,
+    "contract_ready": false
+  },
+  "flags": {
+    "owner_multicolor_pending": false,
+    "defer_bambuddy_authenticated": true
+  }
+}

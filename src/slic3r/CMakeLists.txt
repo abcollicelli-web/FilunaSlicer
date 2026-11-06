@@ -1111,3 +1111,6 @@ if (ORCA_BUILD_PYTHON_STUBGEN_MODULE)
         PREFIX ""
     )
 endif()
+
+# OEM lab targets are shared by the GUI and the test runner; no release/deploy.
+add_subdirectory("${CMAKE_SOURCE_DIR}/fabricantes" "${CMAKE_BINARY_DIR}/filuna_oem")
