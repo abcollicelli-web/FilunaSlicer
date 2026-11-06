@@ -1,4 +1,5 @@
 name: Filuna OEM native Windows QA (no release)
+# PR #5 A1: force a real compilation gate after integrating DeviceManager and Plater.
 on:
   workflow_dispatch:
   push:
