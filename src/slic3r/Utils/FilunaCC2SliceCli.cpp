@@ -59,7 +59,10 @@ int main(int argc, char** argv)
             std::cerr << "CC2_SLICE_GET_MODULE_FAILED: " << GetLastError() << '\n';
             return 11;
         }
-        portable = fs::path(module).parent_path() / "engines" / "elegoo-v1.5.3.5" / "elegoo-slicer.exe";
+        fs::path installed = fs::path(module).parent_path();
+        if (installed.filename() == L"bin")
+            installed = installed.parent_path();
+        portable = installed / "engines" / "elegoo-v1.5.3.5" / "elegoo-slicer.exe";
     }
     if (!fs::is_regular_file(portable)) {
         std::cerr << "CC2_SLICE_PORTABLE_NOT_BUNDLED: " << portable.u8string() << '\n';
