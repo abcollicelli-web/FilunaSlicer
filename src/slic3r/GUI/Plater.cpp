@@ -21268,6 +21268,34 @@ void Plater::reslice()
         return;
     }
 
+    // Filuna OEM A1: the printer chosen in Dispositivos must also be the
+    // printer preset used by Preparar; never slice an A1 device with a
+    // different machine definition. Preserve the existing UI-safe plate
+    // migration routine, which handles bed geometry on preset changes.
+    if (auto* manager = wxGetApp().getDeviceManager()) {
+        if (auto* device = manager->get_selected_machine()) {
+            if (Filuna::Bambu::A1Module::accepts(device->printer_type)) {
+                Preset* matching = get_printer_preset(device);
+                if (!matching) {
+                    BOOST_LOG_TRIVIAL(error) << "FILUNA OEM A1: missing matching nozzle/machine preset; slicing blocked";
+                    return;
+                }
+                const std::string target_name = matching->name;
+                if (wxGetApp().preset_bundle->printers.get_selected_preset().name != target_name) {
+                    BOOST_LOG_TRIVIAL(info) << "FILUNA OEM A1: selecting registered device's machine preset: " << target_name;
+                    this->update_objects_position_when_select_preset([target_name]() {
+                        if (auto* tab = GUI::wxGetApp().get_tab(Preset::TYPE_PRINTER))
+                            tab->select_preset(target_name);
+                    });
+                    if (wxGetApp().preset_bundle->printers.get_selected_preset().name != target_name) {
+                        BOOST_LOG_TRIVIAL(error) << "FILUNA OEM A1: auto-preset selection refused; slicing blocked";
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     // In case SLA gizmo is in editing mode, refuse to continue
     // and notify user that he should leave it first.
     if (get_view3D_canvas3D()->get_gizmos_manager().is_in_editing_mode(true))
