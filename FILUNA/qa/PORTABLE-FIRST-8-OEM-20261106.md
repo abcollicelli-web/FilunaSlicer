@@ -28,6 +28,14 @@ Os arquivos `fixtures/oem/{bambu,elegoo,qidi}/cube-profiled.3mf.b64` contêm som
 
 Origem: rodada local `run-20261106T153215Z` documentada em `FILUNA/qa/HOMOLOGACAO-LAB-8-FABRICANTES-R3-20261106.md`. Os 3MF são de cubos anteriores, **não** substituem o multicor original do proprietário nem validam o CANVAS/CFS/AMS.
 
+## Decisão de escopo do proprietário — Bambuddy fica para depois
+
+**Única validação deliberadamente adiada:** linha **Bambu com Bambuddy**, incluindo o contrato autenticado e a integração com impressora virtual Bambuddy. Marcar `BAMBU_BAMBUDDY = PENDENTE (ADIADO PELO PROPRIETÁRIO)`, nunca `PASS`, `FALHA` ou `HOMOLOGADO` por ausência de execução.
+
+A decisão **não suspende** os testes do portátil Bambu Studio, G-code oficial A×B, comparação Filuna×Bambu, perfis, reconhecimento normal do dispositivo e demais verificações que possam ocorrer sem Bambuddy. Tampouco adia outros fabricantes. Todos os outros bloqueios técnicos, lacunas de corpus e falhas descobertas devem ser investigados e resolvidos agora, registrando evidência real para cada gate; não promovê-los a PASS sem prova.
+
+Não iniciar ou configurar testes Bambuddy, nem tentar autenticação ou ações na impressora virtual nesta fase. Retomar Bambuddy somente após decisão expressa do proprietário.
+
 ## Critérios de QA e gates que NÃO podem ser confundidos
 
 1. `PACKAGE_SHA256`: ZIP oficial pinado e íntegro.
