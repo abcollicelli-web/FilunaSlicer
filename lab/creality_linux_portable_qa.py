@@ -69,24 +69,31 @@ def get_package(cache:Path)->Path:
  return archive
 
 def diff_proof(a:Path,b:Path,out:Path)->tuple[str,str]:
- la=a.read_bytes().splitlines()
- lb=b.read_bytes().splitlines()
+ # Byte-exact comparison except metadata proven to vary in official A/B.
+ # splitlines(keepends=True) is mandatory: never silently erase CRLF/LF differences.
+ la=a.read_bytes().splitlines(keepends=True)
+ lb=b.read_bytes().splitlines(keepends=True)
  if len(la)!=len(lb):return "FAIL","GCODE_LINE_COUNT_CHANGED A="+str(len(la))+" B="+str(len(lb))
  changes=[]
  na=[];nb=[]
+ def newline(value:bytes)->bytes:
+  return b"\r\n" if value.endswith(b"\r\n") else (b"\n" if value.endswith(b"\n") else b"")
  for idx,(aa,bb) in enumerate(zip(la,lb),1):
   if aa!=bb:
    rx=AUTHORIZED.get(idx)
-   if rx is None or not rx.fullmatch(aa) or not rx.fullmatch(bb):
+   if (rx is None or newline(aa)!=newline(bb)
+       or not rx.fullmatch(aa.rstrip(b"\r\n")) or not rx.fullmatch(bb.rstrip(b"\r\n"))):
     return "FAIL",f"UNAUTHORIZED_GCODE_DIFFERENCE line={idx} A={aa[:160]!r} B={bb[:160]!r}"
-   changes.append({"line":idx,"A":aa.decode("utf-8","replace"),"B":bb.decode("utf-8","replace")})
-   aa=bb=b"; PROVEN OEM GENERATED VARIABLE"
+   changes.append({"line":idx,"A":aa.rstrip(b"\r\n").decode("utf-8","replace"),
+                   "B":bb.rstrip(b"\r\n").decode("utf-8","replace")})
+   aa=bb=b"; PROVEN OEM GENERATED VARIABLE"+newline(aa)
   na.append(aa);nb.append(bb)
  proof={"source":"same official CrealityPrint AppImage","version":VERSION,
         "raw_sha_A":sha(a),"raw_sha_B":sha(b),"variable_lines":changes,
         "normalization_scope":"only lines 2/7 IF actually different",
-        "normalized_sha_A":hashlib.sha256(b"\n".join(na)).hexdigest(),
-        "normalized_sha_B":hashlib.sha256(b"\n".join(nb)).hexdigest()}
+        "line_endings":"preserved byte-exactly except allowed metadata values",
+        "normalized_sha_A":hashlib.sha256(b"".join(na)).hexdigest(),
+        "normalized_sha_B":hashlib.sha256(b"".join(nb)).hexdigest()}
  (out/"A-B-proof.json").write_text(json.dumps(proof,indent=2)+"\n",encoding="utf-8")
  if na!=nb:return "FAIL","NORMALIZATION_MISMATCH"
  return "PASS",("RAW_IDENTICAL" if not changes else "STRICT_HEADER_ONLY_NORMALIZED")+" sha="+proof["normalized_sha_A"]
