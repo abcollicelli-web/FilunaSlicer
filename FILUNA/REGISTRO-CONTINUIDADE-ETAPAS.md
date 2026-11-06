@@ -331,3 +331,14 @@ O proprietário reafirma que o Filuna não pode ser apenas um Orca renomeado com
 **Evidência CC2 agora executada**, corrigindo o estado da etapa 27: ElegooSlicer oficial v1.5.3.5 portátil Windows (SHA256 ZIP `0215cd958d6a52ae1bd33a5ad7509ecd1b156baf63fbe04333e04cf0305793e5`), DLL oficial `cb5d66cc79b1b8d9940d2cb2a0fad287d2400457f6a1a1dd50830c4b066305b3`; Filuna DLL `f0914911be85fbd1809a739f5b1865e82dd4f6708f5b3f5645476f72b092aa9f`. Dois executáveis distintos geraram G-code com sucesso no Wine com CC2 0.4, PLA Elegoo, 0.20mm e OBJ 20mm (4 runs incluindo inversão de perfis). **Diferenças persistem:** 5.424 vs 7.532 G1; 209.800 vs 255.165 bytes; 428 vs 201 `SET_VELOCITY_LIMIT`; M204 S1000 vs S5000. Classificação **PARTIAL_COMPARISON_MISMATCH**, sem equivalência e sem homologação física.
 
 **Próxima execução:** comparar parâmetros efetivos após herança, avançar um adaptador CC2 sobre o código real do DeviceBridge (não apenas emuladores) e testar no Wine; posteriormente aplicar o mesmo contrato aos demais fabricantes. G3/G4 permanecem bloqueados para promoção/release, sem impedir desenvolvimento independente ou simulação parcial.
+
+
+## 29. Inicialização adaptativa + atualização modular por fabricante — 06/11/2026
+
+**Ordem do proprietário:** ao abrir Filuna, reconhecer modelo e firmware do cliente, resolver automaticamente módulo compatível, aproveitar código e recursos livres do fatiador oficial somados ao Orca interno. Atualizações futuras de fatiadores devem gerar incrementos em módulos/perfis, sem refazer o aplicativo completo ou exigir instalador pesado, salvo necessidade técnica comprovada.
+
+**Contrato de projeto:** [FILUNA/MODULOS-FABRICANTES-ATUALIZACAO-INTELIGENTE.md](https://github.com/abcollicelli-web/FilunaSlicer/blob/filuna/qa-gates-hardening-20261105/FILUNA/MODULOS-FABRICANTES-ATUALIZACAO-INTELIGENTE.md). Inclui identificação, manifesto com versão/ABI/firmware/hashes/assinatura, atualizações por modelo, verificação de regressão de G-code, rollback, funcionamento offline e restrição contra uso de serviços/login próprios de fabricante.
+
+**Código já incorporado na branch QA:** registro nativo dos quatro modelos, seletor `FilunaModuleSelection.hpp` por modelo + ABI e consulta no `DeviceManager.cpp` ao restaurar dispositivo. **Teste local:** compilação C++17 de seletor com 4 casos de seleção, incompatibilidade ABI rejeitada e operações de hardware bloqueadas por ausência de comprovação. **Status PARTIAL_NATIVE_IMPLEMENTATION**; *não* declarar carregamento de módulos baixados, integração real de protocolos, comparação de G-code das quatro máquinas ou compilação Windows homologados.
+
+**Próximos bloqueadores concretos:** resolver identidade e firmware reais, portar componentes OEM AGPL com rastreabilidade, integrá-los ao DeviceBridge existente, construir atualizador assinado/rollback, compilar Windows e rodar a matriz real/simulada. Sem merge, deploy ou comando em impressora física.
