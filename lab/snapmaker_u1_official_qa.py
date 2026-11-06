@@ -65,6 +65,39 @@ def generated_gcodes(folder:Path)->list[Path]:
    except zipfile.BadZipFile:pass
  return sorted(set(found))
 
+def diagnose_process_profile(exe:Path,out:Path,cube:Path,profiles:dict,timeout:int):
+ """Diagnostic-only matrix; cannot turn a failed original profile into PASS."""
+ diagnostics=out/"profile-load-diagnostics"
+ diagnostics.mkdir(exist_ok=True)
+ machine=profiles["machine"]
+ process=profiles["process"]
+ filament=profiles["filament"]
+ raw=process.read_bytes()
+ bom_removed=diagnostics/"process-bom-removed.json"
+ bom_removed.write_bytes(raw[3:] if raw.startswith(b"\xef\xbb\xbf") else raw)
+ cases=[
+   ("help",["--help"]),
+   ("machine-only",["--debug","3","--load-settings",str(machine),
+      "--export-3mf",str(diagnostics/"machine-only.3mf"),str(cube)]),
+   ("process-only",["--debug","3","--load-settings",str(process),
+      "--export-3mf",str(diagnostics/"process-only.3mf"),str(cube)]),
+   ("machine-process-no-bom",["--debug","3","--load-settings",str(machine)+";"+str(bom_removed),
+      "--export-3mf",str(diagnostics/"without-bom.3mf"),str(cube)]),
+   ("machine-process-original",["--debug","3","--load-settings",str(machine)+";"+str(process),
+      "--export-3mf",str(diagnostics/"original-no-filament.3mf"),str(cube)])
+ ]
+ details=[]
+ for label,params in cases:
+  log=diagnostics/(label+".log")
+  code=command(exe,params,exe.parent,log,min(timeout,75))
+  details.append({"name":label,"exit_code":code,
+     "log":str(log.relative_to(out)),
+     "crashed_access_violation":code in (3221225477,-1073741819),
+     "profile_process_original_sha256":digest(process),
+     "profile_process_without_bom_sha256":digest(bom_removed)})
+ (diagnostics/"matrix.json").write_text(json.dumps(details,indent=2)+"\n",encoding="utf-8")
+ return details
+
 def main():
  ap=argparse.ArgumentParser()
  ap.add_argument("--cache",type=Path,default=Path(".oem-portable-cache"))
@@ -158,6 +191,11 @@ def main():
    if rc!=0 or len(gcodes)!=1:
     add("OFFICIAL_"+letter,"FAIL",f"EXIT={rc} GCODE_COUNT={len(gcodes)}; see CLI log/inventory",
         "official-"+letter+".log")
+    if letter=="A":
+     matrix=diagnose_process_profile(exe,out,cube.resolve(),resolved,args.timeout)
+     add("PROFILE_LOAD_DIAGNOSTICS","PENDING",
+         "EXECUTED_ISOLATED_PROBES="+str(len(matrix))+
+         " (not an OEM parity pass)", "profile-load-diagnostics/matrix.json")
     add("OFFICIAL_A_B","PENDING","OFFICIAL_CLI_NOT_YET_SUCCESSFUL")
     break
    g=gcodes[0]
