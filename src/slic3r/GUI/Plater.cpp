@@ -1,5 +1,6 @@
 #include "Plater.hpp"
 #include "DeviceCore/FilunaOEMOverlay.hpp"
+#include "../../../FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp"
 #include "DeviceCore/FilunaVendorRegistry.hpp"
 #include "../../../FILUNA/fabricantes/bambu/engine/BambuA1Module.hpp"
 #include "../Utils/NetworkAgent.hpp"
@@ -11704,6 +11705,27 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
 
     Print::ApplyStatus invalidated;
     const auto& preset_bundle = wxGetApp().preset_bundle;
+    // Filuna / Orca + OEM Bambu A1: translate OEM-default mismatches at the
+    // ACTUAL background-process config handoff, not just in reslice logging.
+    // This is intentionally scoped to a selected registered A1 AND an A1
+    // print preset. Leave non-Bambu jobs and customized nondefault values alone.
+    auto filuna_config_for_selected_device = [&](DynamicPrintConfig cfg) {
+        if (auto* device_manager = wxGetApp().getDeviceManager()) {
+            if (auto* device = device_manager->get_selected_machine()) {
+                const auto* model = preset_bundle->printers.get_selected_preset().config
+                    .option<ConfigOptionString>("printer_model");
+                const bool is_a1_preset = model && model->value == "Bambu Lab A1";
+                const bool is_a1_device = Filuna::Bambu::A1Module::accepts(device->printer_type);
+                if (is_a1_preset && is_a1_device) {
+                    const unsigned translated = Filuna::Bambu::apply_a1_slicing_defaults(cfg);
+                    BOOST_LOG_TRIVIAL(info) << "FILUNA OEM: Bambu A1 config applied at Print::apply"
+                                            << " translated=" << translated
+                                            << " (Bambu GCode planner parity still under QA)";
+                }
+            }
+        }
+        return cfg;
+    };
     if (preset_bundle->get_printer_extruder_count() > 1) {
         PartPlate* cur_plate = background_process.get_current_plate();
         std::vector<int> f_maps = cur_plate->get_real_filament_maps(preset_bundle->project_config);
@@ -11714,10 +11736,10 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
         // Set the device filament info before Print::apply: it compares the payload and invalidates the
         // grouping steps when the AMS material inventory changed, so apply must see it in the same pass.
         background_process.fff_print()->set_extruder_filament_info(get_extruder_filament_info());
-        invalidated = background_process.apply(this->model, preset_bundle->full_config(false, f_maps, f_volume_maps));
+        invalidated = background_process.apply(this->model, filuna_config_for_selected_device(preset_bundle->full_config(false, f_maps, f_volume_maps)));
     }
     else
-        invalidated = background_process.apply(this->model, preset_bundle->full_config(false));
+        invalidated = background_process.apply(this->model, filuna_config_for_selected_device(preset_bundle->full_config(false)));
 
     if ((invalidated == Print::APPLY_STATUS_CHANGED) || (invalidated == Print::APPLY_STATUS_INVALIDATED))
         // BBS: add only gcode mode
