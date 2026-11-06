@@ -31,3 +31,29 @@
 
 ## Testes em execução e resultados
 A tentativa Bambu oficial do 3MF foi iniciada. A primeira invocação no Ubuntu/Wine atingiu o limite de 78 segundos sem finalizar, enquanto o processo consumia CPU e já criava `plate_1.gcode.tmp`. **Resultado G-code final ainda não verificado nesse instante.** Preservar processo/arquivo temporário e aguardar a conclusão do trabalho em curso antes de lançar outro slicing do mesmo objeto.
+
+
+## RESULTADO REAL — BIMBO STUDIO OFICIAL A1 MINI (não Filuna)
+**Bambu Studio binário 02.09.01.70, mesmo 3MF original sem alterações, CLI Wine --slice 0, 2026-11-06.**
+- `/var/tmp/filuna-qa-wine/qa-a1mini-evolutions-bambu-official/result.json`: `return_code=0`, `error_string="Success."`, sem alerta no campo `warning_message`.
+- `/var/tmp/filuna-qa-wine/qa-a1mini-evolutions-bambu-official/plate_1.gcode`: **73.159.248 bytes**, SHA-256 `321a29de1290a42edf785674e789b9d69d41c5ba979a69144faf081aa69372df`.
+- **8h45m38s** total estimado, 8h39m28s modelo, **701 camadas**, altura máxima **140,20 mm**.
+- **160,736404 g** de filamento reportados no `result.json`, **uma** entrada `filaments` efetivamente consumida. O 3MF original contém cinco perfis, mas o resultado CLI não é prova de impressão em cinco cores/materiais. `filament_change_times=0`.
+- Comandos totais: `G0=28`, `G1=1.422.451`, `G2=250.192`, `G3=419.029`, `G92=1407`, `M204=135.457`, `M1002=2124`, `M620=3`, `M621=2`.
+- `HEADER_BLOCK` preservado, inclui modelo `Bambu Lab A1 mini`, nozzle `0.4`, perfil `0.20mm Standard @BBL A1M`, tempo, camadas e altura. `CONFIG_BLOCK` preservado. Nesta execução foi gerado `.gcode`, **não** pacote `.gcode.3mf`; metadados/imagens de placa precisam de teste próprio.
+- Tempo para geração real da peça grande: a primeira espera CLI encerrou ao limite 78s, mas o processo permaneceu ativo e depois produziu arquivo completo e `result.json`, sem reiniciar o fatiamento.
+- Resumo do tamanho: exec G-code 65.060.885 bytes, comentários do corpo 8.049.580, config 46.978, header 1.802 e outros 3. **Não usar bytes brutos como critério de equivalência de movimento.**
+- Movimento G-code usa `M83`, extrusão relativa e contém `G2/G3`; futuros comparadores devem levar em conta eixos modais, arcos e reinícios `G92`. Medir apenas G1 descartaria centenas de milhares de movimentos.
+- Projetos MakerWorld não devem ser reinterpretados como P2S. **Manter A1 mini.**
+- Saída da ferramenta oficial inclui `triangle_count=1.055.850`, `sliced_time=217565` ms, `peak_rss_mb=2009.62`.
+- Os limites de posição precisam ser auditados por feature e arcos antes de decidir segurança de mesa; o 3MF contém `Metadata/plate_1.json` com bbox do modelo na placa. Não inferir que a máquina aceita todos os movimentos só pela ausência de warning CLI.
+
+## FONTE EXATA DO MESMO RELEASE E AUDITORIA INICIAL DO DELTA
+- Tag oficial **`v02.09.01.70`** encontrada em `bambulab/BambuStudio`, commit **`56a57d00a591360cf41bf21383915ee5bf357be5`**. Clone completo desta tag em `/srv/site/incoming/filuna-bambu-v0290170-source`. Fonte de `master` atual em `/srv/site/incoming/filuna-bambu-source-qa-20261106`, commit `355d71eee5a9ebc794693fe57e63674806019770`. **Usar commit da TAG no comparativo e port, não o master atual.**
+- Auditoria preliminar do repositório público TAG vs checkout de base Orca do laboratório:
+  - `src/libslic3r`: 539 arquivos oficiais; 22 arquivos com bytes idênticos, 432 diferentes no mesmo caminho, 85 exclusivos do caminho oficial.
+  - `src/slic3r/GUI/DeviceCore`: 89 arquivos; 2 idênticos, 68 diferentes, 19 exclusivos do caminho oficial.
+  - `src/slic3r/Utils`: 89 arquivos oficiais sem arquivo de mesmo caminho no checkout Orca comparado. **Pode ser reorganização de paths, NÃO significa 89 módulos necessários automaticamente**.
+  - `resources/profiles/BBL`: 2.727 arquivos; 1.309 binariamente idênticos, 1.206 diferentes e 212 ausentes no checkout de comparação. Esta auditoria é de bytes por caminho, distinta da anterior de equivalência semântica JSON.
+  - Relatório JSON no servidor: `/var/tmp/filuna-qa-wine/qa-a1mini-evolutions-bambu-official/full_bambu_tag_delta_audit.json`.
+- **Clonar as fontes do fabricante ≠ incorporar todos os componentes no motor Filuna e recompilar**. Os componentes Bambu/Orca de código C++ requerem integração de APIs, ABI, opções PrintConfig e testes de compilação; rede fechada não pode ser distribuída por dedução. Ainda falta um novo executável Filuna com módulo de rede/engine A1 mini ativo. Não foi realizado fatiamento válido de comparação Filuna OEM para este projeto.
