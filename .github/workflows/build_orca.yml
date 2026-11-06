@@ -33,6 +33,7 @@ jobs:
       ubuntu-ver: '2404'
       ubuntu-ver-str: '_Ubuntu2404'
       ORCA_UPDATER_SIG_KEY: ${{ secrets.ORCA_UPDATER_SIG_KEY }}
+      ORCA_SLICER_CMAKE_ARGS: ${{ github.ref == 'refs/heads/filuna/cc2-native-integration-20261106' && '-DFILUNA_CC2_SDK=ON' || '' }}
       NSIS_VERSION: '3.13'
       NSIS_SHA256: BA63DFFC4410EE89193E1CB5A41989991BD77C61068DA17E3156D136B7B0B3D8
 
