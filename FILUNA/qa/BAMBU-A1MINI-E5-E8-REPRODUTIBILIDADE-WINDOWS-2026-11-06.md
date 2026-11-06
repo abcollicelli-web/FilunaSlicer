@@ -1,0 +1,49 @@
+# FILUNA — Bambu A1 mini: E5/E8 e paridade EXATA entre sistemas (06/11/2026)
+
+**Decisão do proprietário:** executar comparações A → B → C nesta ordem, usando o mesmo projeto salvo pelo Bambu Studio da versão `02.09.01.70` e idênticos comandos/placa. Sem tolerâncias. Comparar SHA-256 depois de remover *somente* data/hora e identidade/versão do gerador do `HEADER_BLOCK`; se diferença, primeira linha divergente.
+
+## Origem real da referência existente
+- `/var/tmp/filuna-qa-wine/qa-a1mini-evolutions-bambu-official/plate_1.gcode`: **Bambu Studio oficial WINDOWS (bambu-studio.exe) v02.09.01.70 rodando no Ubuntu Linux via WINE e XVFB, em modo CLI**. O G-code **não foi emitido por Bambu Studio Linux nativo e não foi produzido pela GUI**.
+- SHA-256 RAW oficial: `321a29de1290a42edf785674e789b9d69d41c5ba979a69144faf081aa69372df`. 73.159.248 bytes; A1 mini 0.4 mm; 701 camadas; tempo estimado 8h45min38s; filamento 160,74 g.
+- **FONTE 3MF ORIGINAL:** `/srv/site/incoming/filuna-qa-a1-mini-original.3mf`. O campo `<metadata name="Application">` dentro de `3D/3dmodel.model` registra `BambuStudio-02.07.01.57`, **NÃO 02.09.01.70**. O projeto tem A1 mini e NÃO deve ser editado para P2S, nem ter perfis regravados manualmente. Para o teste A/B/C do proprietário, precisa ser reaberto e **salvo nativamente pelo Bambu Studio 02.09.01.70**, pela própria versão, preservando a A1 mini e suas definições. Sem esse projeto resalvo oficialmente, este corpus não satisfaz estritamente a condição de origem pedida.
+- Versão oficial do código para rebuild: tag `bambulab/BambuStudio/v02.09.01.70` commit `56a57d00a591360cf41bf21383915ee5bf357be5`; checkout imutável de referência no Ubuntu: `/srv/site/incoming/filuna-bambu-v0290170-source`.
+- Ubuntu/Wine pode servir de **ambiente de execução Windows** para os dois executáveis `exe`, desde que compiler/ABI/arquitetura Windows sejam os da referência. Um binário construído com GCC/Linux NÃO é comparável à compilação oficial Windows como evidência rigorosa de reprodução.
+
+## Toolchain e flags extraídos DA MESMA TAG (não inventados)
+Fonte exata: `.github/workflows/build_bambu.yml` linhas ~115–134, `.github/workflows/build_deps.yml` linhas ~59–70, `BuildLinux.sh` linhas ~194–212, `CMakeLists.txt` da tag.
+- **Windows x64 oficial:** `windows-latest`, `microsoft/setup-msbuild@v2`, gerador CMake **Visual Studio 18 2026**, arquitetura **X64**, config **Release**, `-DBBL_RELEASE_TO_PUBLIC=1`, `-DBBL_INTERNAL_TESTING=0`, `-DCMAKE_BUILD_TYPE=Release`, `-DWIN10SDK_PATH="C:/Program Files (x86)/Windows Kits/10/Include/10.0.22000.0"`, `-DCMAKE_PREFIX_PATH=deps/build/BambuStudio_dep/usr/local`, `-DCMAKE_INSTALL_PREFIX=../install-dir`. Build: `cmake --build . --target install --config Release -- -m`.
+- **Dependências Windows oficiais:** `cmake ../ -G "Visual Studio 18 2026" -A x64 -DDESTDIR="./BambuStudio_dep" -DCMAKE_BUILD_TYPE=Release -DDEP_DEBUG=OFF`, `msbuild /m ALL_BUILD.vcxproj`; Strawberry Perl, pkgconfiglite, NSIS conforme workflow. Não misturar dependências do sistema.
+- **Linux oficial (não usar para comparar com .exe Windows):** `./BuildLinux.sh -isfr`; flags `-DCMAKE_BUILD_TYPE=Release -DBBL_RELEASE_TO_PUBLIC=1 -DBBL_INTERNAL_TESTING=0 -DSLIC3R_STATIC=1` com GCC da própria imagem Linux. A tag NÃO fixa uma versão GCC numérica única em `BuildLinux.sh`; reportar a do ambiente real se fizer build Linux, mas nunca afirmar que corresponde ao MSVC/Windows.
+- Workflow Windows específico criado **na branch Filuna**: `.github/workflows/filuna-bambu-pinned-windows-e5.yml`, apenas build; **não publica, não integra no Filuna e não proclama paridade**. GitHub Actions execução `42161471485` tinha estado `queued` quando consultada.
+
+## Estado da compilação Linux exploratória
+Um build auxiliar Linux da tag foi iniciado na pasta isolada `/var/tmp/filuna-qa-wine/bambu-a1mini-e5-build`. A versão Linux desse build **NÃO é a referência de paridade**, pois a referência é Windows:
+- CMake inicialmente falhou por falta Boost, depois TBB, GLEW, GLFW, cereal, NLopt.
+- Dependências oficiais do `deps/` construídas em `/var/tmp/filuna-qa-wine/bambu-a1mini-e5-deps-build` até Boost 1.84, TBB, GLEW, GLFW, Cereal e NLopt, com logs separados, sem alterar produção.
+- Linux executável **ainda não compilado**; não o usar como equivalente ao binário Windows. Prioridade no rebuild Windows da tag pelo workflow oficial.
+
+## Comparações obrigatórias A → B → C (aceite EXATO)
+| Gate | Entrada/gerador | SHA normalizado | Resultado |
+|---|---|---|---|
+| A | GUI Bambu Studio 02.09.01.70 × CLI Bambu Studio 02.09.01.70, **mesmo 3MF salvo nessa versão, mesma placa** | AGUARDANDO | **NOT RUN**: só há G-code CLI de arquivo salvo em 02.07.01.57 |
+| B | CLI Bambu Studio Windows oficial 02.09.01.70 × CLI Windows compilado da TAG usando mesmo comando e mesma entrada | AGUARDANDO | **NOT RUN**: build Windows ainda sem binário homologável |
+| C | CLI Windows compilado da TAG × Filuna com motor OEM Bambu isolado realmente carregado | AGUARDANDO | **NOT RUN**: Filuna ainda sem motor Bambu integral compilado/carregado |
+
+**Controle NEGATIVO existente, fora A/B/C:**
+- Bambu Studio Windows oficial CLI × Orca portátil anterior `2.5.0-dev` com `--allow-newer-file`, ambos sobre o 3MF original 02.07:
+  - SHA-256 normalizado Bambu: `9f722a9b83367240f553b19193b5ddbdf523685ff16e64859f8e9c14fd834652`.
+  - SHA-256 normalizado Orca: `457b175af81089cb7d208705318d375c87aab0cd84128dbafa892a72c7865da2`.
+  - **DIFERENTES.** Primeira linha diferente *após* exclusão permitida de identidade do gerador no cabeçalho: **linha 3 de ambos**: oficial `; model printing time: 8h 39m 28s; total estimated time: 8h 45m 38s` × Orca `; model printing time: 9h 34m 41s; total estimated time: 9h 40m 52s`.
+  - Primeira diferença CONFIG: oficial linha 18 `; accel_to_decel_enable = 0` × Orca linha 14 `; accel_to_decel_enable = 1`.
+  - Primeira diferença EXEC: oficial linha 639 `M73 P0 R525` × Orca linha 767 `M73 P0 R580`.
+  - Script versionado `FILUNA/qa/gcode/compare_oem_exact_sha.py`; relatório real no Ubuntu `/var/tmp/filuna-qa-wine/oem-7-brands-audit-20261106/a1mini-e8-old-orca-negative-control.json`. Esse arquivo **NÃO** é um E8 de Filuna com engine OEM carregado.
+
+## Pendências rastreáveis
+1. Gerar com Bambu GUI 02.09.01.70 um 3MF salvo nessa versão (sem edição de JSON), e seu G-code nativo, para completar A.
+2. Rebuild Bambu **Windows** pelo workflow pinado, conferir toolchain efetivo Windows/MSVC/SDK e comparar SHA normalizado CLI com G-code da mesma entrada (B).
+3. Montar motor OEM isolado Bambu como o código dessa tag no Filuna e provar que realmente foi ele quem recebeu 3MF e gerou G-code; versão/proveniência/ABI/hash; depois C.
+4. Qualquer SHA divergente: informar **primeira linha** usando `compare_oem_exact_sha.py`, não tolerância, nem byte-count.
+5. **Não declarar homologação ou compatibilidade de rede física** antes dos gates e testes OEM de transporte/autenticação.
+
+## Comunicação e segurança
+O AGPL não autoriza inferir que qualquer biblioteca proprietária publicada apenas em binário tenha código automaticamente disponível. Não extrair chaves, não contornar assinatura, não republicar blob de terceiro sem verificar termos. Solicitações formais de código podem ser redigidas, mas envio exige destino confirmado pelo usuário. 
