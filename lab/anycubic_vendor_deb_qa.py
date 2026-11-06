@@ -15,11 +15,11 @@ import urllib.request
 
 APT_ROOT = "https://cdn-universe-slicer.anycubic.com/prod/"
 PACKAGES = APT_ROOT + "dists/noble/main/binary-amd64/Packages"
-VERSION = "2.0.06"
-APP_VERSION = "2.0.0.5"
-FILENAME = "pool/main/a/anycubicslicernext/AnycubicSlicerNext_linux-v2.0.0.5-20260913065625.deb"
-SHA256 = "fe087a56014ed25cdfe4c3c293b517adaee0a9b2e1ded79f5e394b7968817c15"
-BYTES = 153422098
+VERSION = "1:2.0.0.6"
+APP_VERSION = "2.0.0.6"
+FILENAME = "pool/main/a/anycubicslicernext/AnycubicSlicerNext_linux-v2.0.0.6-20261030105113.deb"
+SHA256 = "fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678"
+BYTES = 153586194
 
 
 def sha(path):
