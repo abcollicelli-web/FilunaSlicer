@@ -95,3 +95,20 @@ A release oficial `CrealityPrint-V7.3.1.6378-x86_64-Release.AppImage` foi fixada
 - **Ainda não existe PASS confirmado de fatiamento A/B Creality nesta etapa**, nem paridade Filuna. Executar e inspecionar os próximos artefatos antes de qualquer conclusão.
 
 O laboratório continua com status real de cada gate. **A única validação adiada por decisão do proprietário é a autenticada Bambu + Bambuddy.** Falhas técnicas das demais linhas são registradas e trabalhadas; nenhuma é marcada como homologada sem prova.
+
+### Resultado comprovado: Creality K2 Plus Linux AppImage (#42309346648)
+
+**SUCCESS** no Ubuntu 24.04 com **AppImage oficial da Creality** `v7.3.1.6378`, executado em modo CLI sob Xvfb, com perfis originais de K2 Plus. Sem compilação ou instalação. A/B independentes em diretórios distintos:
+
+- Cada G-code: **273.858 bytes**, códigos de saída 0/0.
+- SHA-256 bruto A: `b6452d5d2adca0906a9c55e2b1b9d476ddec42448d7b231c6a963e835b98cbf0`.
+- SHA-256 bruto B: `0f45246939254c96a355701367b5abc8f0256ea188d965b91fb8037bfd4a13bf`.
+- **Única diferença A×B: linha 7** `; creality_uuid: <uuid>` com identificadores diferentes; a comparação conservadora não removeu nem ignorou qualquer movimento, temperatura ou extrusão.
+- SHA-256 estritamente normalizado A=B: `08b599d64c88db4f42d44ad8ec739194a052af58f7bedd0d397447e8ff47a968`.
+- Artefato integral: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42309346648/artifacts/13548226124
+
+**Significado do PASS:** fatiamento oficial Creality reproduzível, não equivalência com Filuna nem prova da integração de rede CFS. G-code Filuna ainda precisa rodar separadamente.
+
+### Flashforge 1.7.15: extração controlada de pacote oficial
+
+O pacote oficial `Flash_Studio_Desktop_1.7.15_x64.exe` teve SHA-256 confirmado `b3cc8804e0426e3f4bb2c0953667e27512c0047af51099c0e1af5c5d1b3ef8f3`. O primeiro teste com `innoextract` resultou `Not a supported Inno Setup installer!` (artefato #42309552276). O laboratório testa em seguida **7-Zip** em diretório isolado, sem instalar o aplicativo nem compilar. A extração não será rotulada como release portátil do fabricante; a capacidade de executar o binário, possuir os resources e produzir G-code com perfil oficial exige provas adicionais.
