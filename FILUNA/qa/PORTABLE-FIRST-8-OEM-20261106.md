@@ -46,6 +46,16 @@ Não iniciar ou configurar testes Bambuddy, nem tentar autenticação ou ações
 6. `NETWORK`: somente após Dispositivos → Preparar → Fatiar → Enviar com SDK real e logs/ACK de simulador ou hardware; provas experimentais de rede não aprovam o aplicativo.
 7. `HOMOLOGACAO`: exige todos os gates aplicáveis, decisão explícita do proprietário e prova de todas as capacidades previstas para o modelo.
 
+## DECISÃO DO PROPRIETÁRIO — única validação intencionalmente adiada
+
+**06/11/2026 — Escopo da espera:** somente a validação **autenticada da linha Bambu por meio do Bambuddy** será executada em etapa posterior, conforme decisão do proprietário. O laboratório não deverá tentar ou simular essa autenticação para promovê-la a PASS prematuramente.
+
+**Não adiar os demais trabalhos:** continuam agora as provas portáteis, os perfis, o G-code oficial A×B, a paridade real Filuna×OEM, a identificação e o registro dos dispositivos, os testes com simuladores adequados e a integração das demais marcas, incluindo os testes Bambu que não dependem da autenticação com Bambuddy.
+
+**Sem falsos aprovados:** problemas concretos como pacote indisponível, 3MF multicor original ainda ausente, teste de rede não realizado ou função não integrada continuam registrados como **FALHA/PENDENTE técnico**, com solução buscada nesta fase. Eles não constituem novas etapas propositalmente adiadas nem equivalem a homologação. A aprovação final de cada fabricante depende de evidência efetiva e da decisão do proprietário.
+
+**Manifesto:** `fabricantes/bambu/vendor.yaml → flags.defer_bambuddy_authenticated=true`. O gate separado `BAMBUDDY_AUTH` permanece `PENDENTE`; os outros gates Bambu T3–T9 não recebem mais a etiqueta indevida `OWNER_DEFERRED_BAMBUDDY_AUTHENTICATED`.
+
 ## GitHub Actions
 
 Workflow: `.github/workflows/filuna-oem-portable-first.yml`. Runner Windows 2022, apenas Python e binários ZIP oficiais, sem CMake/MSVC/compilar fatiadores. Artefato `filuna-portable-first-five-official-eight-brands`: relatório `RESUMO.md`, `results.csv`, `results.json`, lock de cada fabricante, logs A/B e hashes. Arquivos ZIP de centenas de MB permanecem apenas no cache do GitHub Actions, não entram no artefato.
