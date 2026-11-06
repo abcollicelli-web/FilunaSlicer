@@ -58,14 +58,17 @@ $b=Get-ChildItem (Join-Path $dir 'slice-compiled') -Filter '*.gcode' -File | Sel
 if (!$a -or !$b) { throw 'Missing a Windows G-code; impossible to compare' }
 Write-Host "OFFICIAL_WIN_GCODE_SHA256 $(Hash $a.FullName)"
 Write-Host "COMPILED_WIN_GCODE_SHA256 $(Hash $b.FullName)"
+$rawEqual = ((Hash $a.FullName) -eq (Hash $b.FullName))
+Write-Host "EXACT_RAW_SHA256_MATCH $rawEqual"
+Write-Host "WINE_DIORAMA_SHA256 321a29de1290a42edf785674e789b9d69d41c5ba979a69144faf081aa69372df (not comparable with own cube)"
 $report=Join-Path $dir 'b-public-cube-report.json'
 python filuna/FILUNA/qa/gcode/compare_oem_exact_sha.py --gate B --official $a.FullName --filuna $b.FullName --out $report
 $comparisonExit=$LASTEXITCODE
 Write-Host "B_PUBLIC_TEST_RESULT_EXIT $comparisonExit"
 # Only the small report may be uploaded, never either G-code, 3MF or packaged executable.
 if (!(Test-Path $report)) { throw 'Missing B test report' }
-if ($comparisonExit -ne 0) {
+if ($comparisonExit -ne 0 -or !$rawEqual) {
   Get-Content $report
-  throw 'B FAILED: SHA mismatch; review the first divergent line in report'
+  throw 'B FAILED: exact raw SHA256 mismatch or normalized mismatch; see first divergent line in report'
 }
 Write-Host "B_PUBLIC_TEST_PASS"
