@@ -294,3 +294,19 @@ check 113/113, CMP 7/7 e testes unitários **não** são autorização para prog
 - O workflow `filuna-virtual-lan-regression.yml` passou a executar os 11 testes OctoPrint e anexar JSON de evidência. Verificar o status da nova execução antes de marcar CI PASS.
 - **Classificação:** `PARTIAL_SIMULATED` para o subconjunto HTTP OctoPrint; DeviceBridge/Filuna Wine e firmware real continuam `NOT_RUN`. A matriz física gerada permanece com 30 ensaios reais `NOT_RUN`; G3/G4 `BLOCKED`.
 - **Próximo:** completar os protocolos WS/TLS/FTPS e transferência OctoPrint no laboratório; depois testar o cliente Filuna real no Wine. Em paralelo podem avançar tarefas sem dependência de hardware.
+
+
+## 26. Regra do proprietário — perfis oficiais + Orca + camada Filuna (06/11/2026)
+
+**Decisão normativa:** a compatibilidade de hardware do Filuna deve utilizar **dados oficiais dos fatiadores dos fabricantes**, combinados com o motor Orca e a camada de integração Filuna. Não homologar impressora com perfil genérico aproximado quando existir referência oficial adequada. Respeitar licenças, proveniência e versão do firmware/perfil; não redistribuir componentes proprietários sem permissão.
+
+**Método por impressora:**
+1. Obter e registrar versão, origem e licença dos perfis/configurações e fatiador oficial do fabricante; preservar checksum e associação com modelo, revisão de hardware e firmware.
+2. Mapear no Orca os limites e os comandos do perfil oficial (mesa, bico, material, temperaturas, velocidades, aceleração, G-code inicial/final, purga, ventilação e comandos especiais), sem assumir equivalência de semântica.
+3. Gerar o mesmo modelo 3D nos dois fatiadores com a mesma impressora, bico, material, altura de camada e parâmetros equivalentes. Comparar movimentos, extrusão, temperaturas, ventilação, acelerações, limites, comandos específicos e simulação visual; divergências exigem explicação e teste.
+4. Emular o protocolo e a interpretação de comandos em laboratório, registrando `PARTIAL_SIMULATED` quando aplicável; não promover automaticamente a homologação física.
+5. Registrar checklist de firmware e impressora real para homologação final do proprietário.
+
+**Primeiro alvo:** Elegoo Centauri Carbon 2. O G-code gerado anteriormente com perfil **Bambu P1S** não constitui referência de Elegoo nem comparação oficial. O comparador `FILUNA/qa/gcode/elegoo_official_trace_compare.py` é apenas ferramenta inicial de análise offline; bloqueia comandos desconhecidos, trajetórias fora de limites e proveniência sintética, e **não substitui simulador real de firmware nem prova de segurança**. A primeira execução em G-code Bambu P1S registrou comandos proprietários e limites que impedem equivalência; isso é resultado de diagnóstico, não falha homologada da Elegoo.
+
+**Portões:** comparação documental e sintética podem avançar como `PARTIAL_SIMULATED`; homologação final de hardware permanece `PENDING` até ensaio real com firmware e dispositivo identificados.
