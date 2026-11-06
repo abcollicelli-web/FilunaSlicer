@@ -115,7 +115,12 @@ def main():
   if not f.is_file() or f.is_symlink():raise RuntimeError("Nonregular "+path)
   body=f.read_bytes()
   actual=hashlib.sha1(b"blob "+str(len(body)).encode()+b"\0"+body).hexdigest()
-  if actual!=blob:raise RuntimeError("Git content differs "+path)
+  if actual!=blob:
+   # Git checkout may apply CRLF/smudge filters; the official Git blob is
+   # authoritative for byte-exact OEM preservation.
+   body=run(a.official,"cat-file","blob",blob)
+   actual=hashlib.sha1(b"blob "+str(len(body)).encode()+b"\0"+body).hexdigest()
+   if actual!=blob:raise RuntimeError("Git object differs "+path)
   rows.append({"path":path,"category":cat,"status":status,"sha256":hashlib.sha256(body).hexdigest(),
                "git_blob":blob,"bytes":len(body),"mode":mode})
   if a.copy:
