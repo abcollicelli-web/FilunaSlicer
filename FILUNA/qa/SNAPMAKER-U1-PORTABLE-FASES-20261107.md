@@ -58,3 +58,18 @@ O programa seguinte de diagnóstico faz a derivação **efetiva** dos perfis por
 Os **nove arquivos-pai** foram copiados da tag oficial `v2.4.1` para `fixtures/oem/snapmaker/official-profiles/parents/`, com SHA Git por arquivo e manifesto `parents.lock.json`. O script `lab/snapmaker_u1_inherit.py` valida os 12 blobs (folhas + pais), deriva temporariamente uma configuração por tipo com precedência do filho, registra `effective-profile-derivation.json` e testa a CLI oficial A/B de novo. A saída é categorizada como `OFFICIAL_EFFECTIVE_A_B`, **não** paridade Filuna. Sem G-code real e hashes, não há PASS.
 
 A fase de homologação física permanece reservada exclusivamente ao beta vigiado posterior ao build final, sem nenhuma impressão de teste remota automática.
+
+
+## Resultado efetivo Windows — run #42313078703 (06/11/2026 UTC)
+
+Prova: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42313078703
+
+- ZIP oficial v2.4.1 e executável: PASS.
+- Perfis-pai oficiais originais (9) e folhas (3), configuração efetiva derivada: PASS na verificação de origem e herança.
+- Ao fatiar cubo, a CLI oficial A retornou **3221225477 (0xC0000005, access violation)**, nenhum arquivo G-code.
+- Com todas as heranças efetivas, a CLI oficial A novamente retornou **3221225477 (0xC0000005)**, nenhum G-code. Portanto, a herança incompleta sozinha NÃO explica a falha.
+- OFFICIAL_A_B e OFFICIAL_EFFECTIVE_A_B: PENDING (G-code não gerado).
+- PARIDADE_FILUNA, DISPOSITIVOS/REDE, HOMOLOGACAO_INTERNA: PENDING.
+- Artefatos dos logs e dos perfis efetivos: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42313078703/artifacts/13548907984
+
+**Diagnóstico obrigatório:** comparar as opções CLI suportadas por esse executável e a formação de configuração efetiva; investigar access violation em Windows com caso mínimo ou dump, sem alterar os perfis oficiais nem atribuir causa sem prova. Teste físico somente no beta vigiado após validação interna e compilação final. Snapmaker U1 permanece NÃO HOMOLOGADA; a investigação continua em paralelo à Prusa.
