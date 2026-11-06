@@ -517,6 +517,29 @@ jobs:
         run: |
           cpack -G NSIS
 
+      - name: Bundle official ElegooSlicer 1.5.3.5 for CC2 Windows pilot
+        if: runner.os == 'Windows' && github.ref == 'refs/heads/filuna/cc2-native-integration-20261106'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = 'https://github.com/elegooofficial/ElegooSlicer/releases/download/v1.5.3.5/ElegooSlicer_Windows_V1.5.3.5_portable.zip'
+          $archive = Join-Path $env:RUNNER_TEMP 'elegoo-1.5.3.5-portable.zip'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected = '0215cd958d6a52ae1bd33a5ad7509ecd1b156baf63fbe04333e04cf0305793e5'
+          if ($actual -ne $expected) { throw "Official Elegoo portable SHA256 mismatch: $actual" }
+          $expanded = Join-Path $env:RUNNER_TEMP 'filuna-elegoo-portable'
+          Expand-Archive -Path $archive -DestinationPath $expanded -Force
+          $exe = Get-ChildItem -Path $expanded -Recurse -File -Filter 'elegoo-slicer.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'Official Elegoo portable executable absent from verified archive' }
+          $destination = Join-Path $env:BUILD_DIR 'OrcaSlicer/engines/elegoo-v1.5.3.5'
+          New-Item -ItemType Directory -Path $destination -Force | Out-Null
+          Copy-Item -Path (Join-Path $exe.DirectoryName '*') -Destination $destination -Recurse -Force
+          if (-not (Test-Path (Join-Path $destination 'elegoo-slicer.exe'))) {
+            throw 'Official CC2 portable was not bundled into the Filuna output'
+          }
+          Write-Host 'Filuna CC2 portable engine bundled and SHA256 verified'
+
       - name: Pack app
         if: runner.os == 'Windows'
         working-directory: ${{ github.workspace }}/${{ env.BUILD_DIR }}
