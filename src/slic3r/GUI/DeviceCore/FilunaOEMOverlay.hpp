@@ -27,6 +27,10 @@ inline constexpr std::array<OEMOverlayBinding,4> kOEMBindings = {{
 // path. Unknown models and incompatible ABI must not load an arbitrary module.
 inline const OEMOverlayBinding* resolve_oem_overlay(std::string_view model_id, unsigned app_abi)
 {
+    // Same OEM module for network identity N2S and commercial name A1.
+    // Other manufacturers must provide separate, verified mappings.
+    if (model_id == "N2S" || model_id == "Bambu Lab A1")
+        model_id = "BBL-A1";
     const auto* selected=select_candidate(model_id,app_abi);
     if(!selected) return nullptr;
     for(const auto& binding:kOEMBindings)
