@@ -68,6 +68,11 @@ def read_mqtt(reader):
 
 
 def cc2_result(method):
+    # Fail closed for unrecognized methods: never falsely ACK unsupported commands.
+    # This is an emulator behavior, not a statement about real Elegoo firmware.
+    supported = {1002, 2005, 1020, 1021, 1022, 1023}
+    if method not in supported:
+        return {"error_code": 404, "error_message": "unsupported lab method"}
     with LOCK:
         if method == 1020:
             STATE.update(state="printing", progress=1)
