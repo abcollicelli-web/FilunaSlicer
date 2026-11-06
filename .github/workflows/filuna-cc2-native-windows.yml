@@ -9,6 +9,10 @@ permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: filuna-cc2-native-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   filuna_windows_cc2:
     name: Filuna Windows CC2 SDK enabled
