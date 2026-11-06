@@ -22,6 +22,7 @@
 #include "CloudProvider.hpp"
 #include "DevUtil.h"
 #include "FilunaVendorRegistry.hpp"
+#include "FilunaModuleSelection.hpp"
 
 // TODO: remove this include
 #include "slic3r/GUI/DeviceManager.hpp"
@@ -107,6 +108,12 @@ namespace Slic3r
             // Diagnostic-only vendor classification: never auto-confirm a LAN
             // connection or grant commands based on model name or mock data.
             if (const auto* filuna_model = Filuna::model_for_name(m.printer_type)) {
+                const auto* selected_module = Filuna::select_candidate(filuna_model->model_id, 1);
+                if (selected_module) {
+                    BOOST_LOG_TRIVIAL(info) << "Filuna candidate module: "
+                        << selected_module->module_id << " ABI=" << selected_module->abi
+                        << " (hardware operations disabled until independently verified)";
+                }
                 BOOST_LOG_TRIVIAL(info) << "Filuna vendor model recognized: "
                     << filuna_model->model_id << ", capability evidence="
                     << Filuna::evidence_label(Filuna::integration_evidence(*filuna_model));
