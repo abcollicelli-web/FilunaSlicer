@@ -31,15 +31,8 @@ $project=Join-Path $fixtureDir 'filuna_a1mini_cube.3mf'
 if (!(Test-Path $project)) { throw 'Official 3MF was not generated' }
 Write-Host "PUBLIC_TEST_3MF_SHA256 $(Hash $project)"
 # Validate the manufacturer identity from Bambu-native 3MF, not by looking at its name.
-@'
-import sys,zipfile,json
-with zipfile.ZipFile(sys.argv[1]) as z:
- d=json.loads(z.read('Metadata/project_settings.config'))
- assert d['printer_model']=='Bambu Lab A1 mini',d.get('printer_model')
- assert d['printer_settings_id']=='Bambu Lab A1 mini 0.4 nozzle'
- assert d['print_settings_id']=='0.20mm Standard @BBL A1M'
- print('OFFICIAL_A1MINI_PROJECT_VALID')
-'@ | python - $project
+$checkScript = "import json,sys,zipfile; z=zipfile.ZipFile(sys.argv[1]); d=json.loads(z.read('Metadata/project_settings.config')); assert d['printer_model']=='Bambu Lab A1 mini',d.get('printer_model'); assert d['printer_settings_id']=='Bambu Lab A1 mini 0.4 nozzle'; assert d['print_settings_id']=='0.20mm Standard @BBL A1M'; print('OFFICIAL_A1MINI_PROJECT_VALID')"
+python -c $checkScript $project
 if ($LASTEXITCODE -ne 0) { throw 'Generated 3MF does not include correct A1-mini preset' }
 $cases=@(
   [pscustomobject]@{Exe=$official.FullName;Name='official'},
