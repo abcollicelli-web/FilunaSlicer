@@ -44,3 +44,17 @@ Nenhum merge, release ou instalação de teste autorizado por esta evidência.
 - O `process.json` original possui BOM UTF-8, mas **a causa do crash ainda não está comprovada**. O runner foi estendido com testes isolados (help, só máquina, só processo, processo sem BOM e máquina+processo original) para determinar a origem sem alterar binário OEM. Essa matriz nunca é promovida automaticamente a homologação.
 
 **Esta não é uma falha de impressora física**, e nenhum teste com hardware será realizado até o beta vigiado, conforme regra vigente.
+
+## Isolamento complementar e resolução da herança original
+
+A execução `#42312556473` demonstrou `HELP=0`; somente máquina chega à verificação de compatibilidade sem crash (`exit=-17` em signed), mas só processo, máquina+processo e **processo mínimo** resultaram em `0xC0000005`. Assim, não é comprovado defeito de BOM nem de uma única opção extra. Matriz: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42312556473/artifacts/13549247169 .
+
+O programa seguinte de diagnóstico faz a derivação **efetiva** dos perfis por árvore de herança OEM completa, sem reescrever nenhum blob upstream:
+
+- Máquina: `Snapmaker U1 (0.4 nozzle)` → `fdm_U1` → `fdm_toolchanger` → `fdm_klipper`.
+- Processo: `0.20mm Standard @Snapmaker U1 (0.4 nozzle)` → `fdm_process_U1_0.20` → `fdm_process_U1_common` → `fdm_process_U1`.
+- Filamento: `Snapmaker PLA Basic @U1` → `Snapmaker PLA Basic @U1 base` → `fdm_filament_pla_category` → `fdm_filament_common`.
+
+Os **nove arquivos-pai** foram copiados da tag oficial `v2.4.1` para `fixtures/oem/snapmaker/official-profiles/parents/`, com SHA Git por arquivo e manifesto `parents.lock.json`. O script `lab/snapmaker_u1_inherit.py` valida os 12 blobs (folhas + pais), deriva temporariamente uma configuração por tipo com precedência do filho, registra `effective-profile-derivation.json` e testa a CLI oficial A/B de novo. A saída é categorizada como `OFFICIAL_EFFECTIVE_A_B`, **não** paridade Filuna. Sem G-code real e hashes, não há PASS.
+
+A fase de homologação física permanece reservada exclusivamente ao beta vigiado posterior ao build final, sem nenhuma impressão de teste remota automática.
