@@ -92,3 +92,23 @@ Comparação oficial OrcaSlicer `a620d804efbe74162c96ad29d755cdab2b823530...c782
 - `.github/pull_request_template.md` (documentação/template);
 - `src/slic3r/GUI/Gizmos/GLGizmosManager.cpp` e `.hpp` (UI gizmos).
 **Nenhum arquivo de motor `libslic3r`, perfis, G-code ou DeviceBridge modificado nesta atualização específica.** Portanto, a revisão dirigida deve primeiro verificar UI/Gizmos e regressão associada; os testes obrigatórios globais continuam vigentes no release, mas **não é necessário assumir um novo motor Bambu ou alterar seus módulos por essa revisão**. O pin Filuna continua fixo; comparação não é merge. O monitor `check_bambu_orca_upstream.py` foi atualizado para listar arquivos e classificar escopo `UI_DOC_OR_OTHER` ou `ENGINE_DEVICE_OR_PRESETS` antes de propor nova integração. Execução Ubuntu: 4 testes unitários PASS; consulta real retornou Orca UPDATED_REVIEW_REQUIRED com `compare_complete=true`, 7 arquivos Bambu SAME.
+
+
+## Nova rodada: módulo C++ OEM Bambu A1 no fluxo Filuna / Orca (06/11/2026)
+O módulo foi organizado em `FILUNA/fabricantes/bambu/`:
+- `modelos/a1/N2S.json`: snapshot original da matriz oficial `bambulab/BambuStudio/resources/printers/N2S.json`, blob `3a5929b98244d7800ee06a7fe41662f0141306ce`; **modelo técnico Bambu Lab A1 = N2S**, número de série prefixo `039`; capacidades variam com firmware. Não equivale a driver de rede proprietário.
+- `transport/BambuLanDiscovery.hpp`: parser C++ de resposta SSDP do fabricante, com validação do modelo N2S e prefixo 039; sem chaves nem envio de impressão.
+- `engine/BambuA1Module.hpp`: código C++ nativo compartilhado entre Dispositivos e Preparar, com entrada de ativação e candidato de suavização. **Não substitui ainda o planner GCode inteiro do Bambu Studio**.
+- `src/slic3r/GUI/DeviceCore/FilunaVendorRegistry.hpp` e `FilunaOEMOverlay.hpp`: aliases `N2S`, `Bambu Lab A1`, `BBL-A1` apontam para o mesmo módulo.
+- `DevManager.cpp`: caminho de seleção de máquina registra resolução do módulo Bambu.
+- `Plater.cpp::reslice()`: entrada Preparar também invoca ativação do módulo. **Esta modificação de C++ do aplicativo não passou por compilação Windows integral nesta rodada**; validar no próximo build antes de promoção.
+
+**Teste conjunto real executado no servidor via SentinelX** com `FILUNA/qa/virtual-lab/bambu_a1_side_by_side.py`, ambiente isolado `10.77.0.0/24`, relatório `/var/tmp/filuna-qa-wine/bambu-side-by-side-20261106/result.json`:
+- Compilação C++17 nativa `test_bambu_a1_module.cpp`: **PASS**.
+- Resolução Dispositivos e Preparar: **PASS de ponto de entrada isolado** (não prova execução integral do Plater Windows).
+- Compilação do parser SSDP nativo: **PASS**.
+- Descoberta real do **simulador** Bambu A1: **PASS**, `N2S`, USN `039LAB0000001`, IP `10.77.0.12`.
+- G-code oficial Bambu Studio anterior × Filuna Orca anterior: **MISMATCH** (`df954ca85031bc7b8f451db8b4f326243ce03e5045a46a58a6c9261a2aa723bf` versus `f549436593d381d9a0a2118ba200084ffcf133f138a4259eade6c5dc95c62379`). A comparação usa arquivos gerados antes das alterações atuais — **NÃO** representa um resultado do novo executável com módulo.
+- Status global: **HOMOLOGATION_BLOCKED**. MQTT/TLS, FTPS, LAN Code, ACK real, Windows rebuild e hardware físico: **NOT RUN**. Impressão automática proibida.
+
+**Atenção às diferenças de capability:** `resources/printers/N2S.json` no fork não era idêntico à matriz oficial (divergências em `sn_prefix`, `timelapse_slow_down`, `support_ams_ext_mix_print`, imagem de filamento e campo de detecção). Preservar os valores conservadores do fork até validar firmware e motor; não habilitar AMS extra apenas porque consta no upstream.
