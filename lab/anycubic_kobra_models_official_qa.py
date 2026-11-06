@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""Anycubic original v2.0.0.6 CLI A/B, Kobra S1 / Kobra 3 V2 0.4 only.
+
+Original vendor Linux .deb extracted in isolated GitHub Actions, no OEM build
+or system install. No Filuna parity, network, ACE authentication or physical test.
+"""
+from __future__ import annotations
+import argparse
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import urllib.request
+
+from anycubic_vendor_deb_qa import (
+ APT_ROOT, PACKAGES, FILENAME, SHA256, BYTES, APP_VERSION,
+ apt_records, find_exact_package, download, sha
+)
+from portable_first_qa import digest
+
+ROOT=Path(__file__).resolve().parents[1]
+TARGETS={
+ "kobra_s1_04": "Anycubic Kobra S1 0.4 nozzle",
+ "kobra_3_v2_04": "Anycubic Kobra 3 V2 0.4 nozzle",
+}
+FIELDS=("type","from","name","inherits","compatible_printers")
+
+
+def profiles_for(root:Path, name:str):
+    folder=root/"usr/share/AnycubicSlicerNext/resources/profiles/Anycubic"
+    stem=name
+    paths={
+      "machine":folder/"machine"/(stem+".json"),
+      "process":folder/"process"/("0.20mm Standard @"+stem+".json"),
+      "filament":folder/"filament"/("Anycubic PLA @"+stem+".json"),
+    }
+    config={}
+    for kind,path in paths.items():
+        if not path.is_file():
+            raise ValueError("MISSING_"+kind.upper()+"_OFFICIAL_PROFILE "+str(path))
+        values=json.loads(path.read_text(encoding="utf-8-sig"))
+        if values.get("type")!=kind or values.get("name")!=path.stem:
+            raise ValueError("MISMATCH_"+kind.upper()+"_TYPE_OR_NAME "+
+                             str(values.get("type"))+"/"+str(values.get("name")))
+        config[kind]=values
+    machine=config["machine"]
+    if "0.4" not in machine.get("name",""):
+        raise ValueError("WRONG_NOZZLE_NAME")
+    nozzles=machine.get("nozzle_diameter")
+    if nozzles and nozzles!=["0.4"] and nozzles!="0.4":
+        raise ValueError("NOZZLE_NOT_0_4 "+str(nozzles))
+    for kind in ("process","filament"):
+        compatible=config[kind].get("compatible_printers",[])
+        if compatible and name not in compatible:
+            raise ValueError(kind.upper()+"_NOT_COMPATIBLE_WITH_SELECTED_MACHINE")
+    return paths,config
+
+
+def run(exe:Path, root:Path, paths:dict, cube:Path, out:Path, letter, timeout):
+    directory=out/("run-"+letter)
+    if directory.exists():shutil.rmtree(directory)
+    directory.mkdir(parents=True)
+    args=["--debug","3","--slice","0",
+          "--load-settings",str(paths["machine"])+";"+str(paths["process"]),
+          "--load-filaments",str(paths["filament"]),
+          "--outputdir",str(directory),str(cube.resolve())]
+    env=os.environ.copy()
+    env["GDK_BACKEND"]="x11"
+    env["LIBGL_ALWAYS_SOFTWARE"]="1"
+    command=["xvfb-run","-a",str(exe),*args]
+    log=out/("official-"+letter+".log")
+    with log.open("w",encoding="utf-8",errors="replace") as fp:
+        fp.write("COMMAND_JSON="+json.dumps(command,ensure_ascii=False)+"\n")
+        fp.flush()
+        try:
+            code=subprocess.run(command,cwd=exe.parent,env=env,
+                                stdout=fp,stderr=subprocess.STDOUT,
+                                timeout=timeout,check=False).returncode
+        except subprocess.TimeoutExpired:
+            code=124
+            fp.write("\nQA_TIMEOUT\n")
+        except OSError as err:
+            code=127
+            fp.write("\nQA_OSERROR="+repr(err)+"\n")
+    gcodes=sorted(p for p in directory.rglob("*") if p.is_file() and
+                   p.suffix.lower() in (".gcode",".gco") and p.stat().st_size>0)
+    proof={"run":letter,"exit_code":code,"gcodes":[
+      {"path":str(p.relative_to(out)),"bytes":p.stat().st_size,
+       "sha256":sha(p)} for p in gcodes],
+       "log":str(log.relative_to(out))}
+    (out/("inventory-"+letter+".json")).write_text(
+      json.dumps(proof,indent=2)+"\n",encoding="utf-8")
+    return proof
+
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--cache",type=Path,default=Path(".anycubic-vendor-cache"))
+    parser.add_argument("--out",type=Path,default=Path("qa-anycubic-kobra-ab"))
+    parser.add_argument("--timeout",type=int,default=180)
+    args=parser.parse_args()
+    cache=args.cache.resolve();out=args.out.resolve()
+    cache.mkdir(parents=True,exist_ok=True);out.mkdir(parents=True,exist_ok=True)
+    rows=[]
+    def add(model,stage,status,detail,evidence=""):
+        assert status in ("PASS","FAIL","PENDING")
+        rows.append({"model":model,"stage":stage,"status":status,
+                     "detail":detail,"evidence":evidence})
+        print("ANYCUBIC_KOBRA",model,stage,status,detail,flush=True)
+    try:
+        req=urllib.request.Request(PACKAGES,headers={"User-Agent":"Filuna-OEM-QA/1"})
+        with urllib.request.urlopen(req,timeout=60) as fp:
+            text=fp.read(5*1024*1024+1)
+        if len(text)>5*1024*1024:
+            raise ValueError("VENDOR_APT_INDEX_TOO_LARGE")
+        info=find_exact_package(apt_records(text.decode("utf-8")))
+        package=cache/Path(FILENAME).name
+        if not package.exists() or package.stat().st_size!=BYTES or digest(package)!=SHA256:
+            package.unlink(missing_ok=True)
+            download(APT_ROOT+FILENAME,package,BYTES+1)
+        if package.stat().st_size!=BYTES or digest(package)!=SHA256:
+            raise ValueError("OFFICIAL_PACKAGE_HASH_OR_SIZE_MISMATCH")
+        add("common","OFFICIAL_PACKAGE_SHA","PASS",SHA256)
+        folder=cache/"extracted"
+        exe=folder/"usr/bin/AnycubicSlicerNext"
+        if not exe.is_file():
+            folder.mkdir(parents=True,exist_ok=True)
+            with (out/"dpkg-extract.log").open("w") as fp:
+                code=subprocess.run(["dpkg-deb","-x",str(package),str(folder)],
+                                    stdout=fp,stderr=subprocess.STDOUT,timeout=180,
+                                    check=False).returncode
+            if code:raise ValueError("DPKG_EXTRACT_FAILED_"+str(code))
+        version=folder/"usr/share/AnycubicSlicerNext/resources/build-version.txt"
+        if not version.is_file() or version.read_text().strip()!=APP_VERSION:
+            raise ValueError("EXTRACTED_APP_VERSION_NOT_VERIFIED")
+        if not exe.is_file():raise ValueError("OFFICIAL_CLI_MISSING")
+        exe.chmod(exe.stat().st_mode|0o111)
+        add("common","OFFICIAL_APP_EXTRACTED","PASS",APP_VERSION)
+        with (out/"official-runtime-dependencies.log").open("w") as fp:
+            subprocess.run(["ldd",str(exe)],stdout=fp,stderr=subprocess.STDOUT,
+                           timeout=40,check=False)
+        cube=ROOT/"fixtures/cube20.stl"
+        if not cube.is_file():raise ValueError("CUBE_FIXTURE_MISSING")
+        for target_id,name in TARGETS.items():
+            dest=out/target_id;dest.mkdir(parents=True,exist_ok=True)
+            try:
+                paths,values=profiles_for(folder,name)
+                (dest/"profile-lock.json").write_text(
+                    json.dumps({"name":name,"version":APP_VERSION,"sha256_archive":SHA256,
+                                "profiles":{k:{"relative":str(p.relative_to(folder)),
+                                                "sha256":sha(p),
+                                                "inherits":values[k].get("inherits")}
+                                            for k,p in paths.items()}},indent=2,ensure_ascii=False)
+                    +"\n",encoding="utf-8")
+                add(target_id,"EXACT_MODEL_PRESET","PASS","machine/process/PLA names and compatibility",
+                    str((dest/"profile-lock.json").relative_to(out)))
+                results=[]
+                for letter in ("A","B"):
+                    item=run(exe,folder,paths,cube,dest,letter,args.timeout)
+                    if item["exit_code"]!=0 or len(item["gcodes"])!=1:
+                        add(target_id,"OFFICIAL_"+letter,"FAIL",
+                            "CLI_EXIT="+str(item["exit_code"])+" GCODE_COUNT="+str(len(item["gcodes"])),
+                            str((dest/("official-"+letter+".log")).relative_to(out)))
+                        break
+                    g=item["gcodes"][0]
+                    results.append(g)
+                    add(target_id,"OFFICIAL_"+letter,"PASS",
+                        "bytes="+str(g["bytes"])+" sha256="+g["sha256"],g["path"])
+                if len(results)<2:
+                    add(target_id,"OFFICIAL_A_B","PENDING","TWO_SUCCESSFUL_CLI_RUNS_NOT_AVAILABLE")
+                elif results[0]["path"]==results[1]["path"]:
+                    add(target_id,"OFFICIAL_A_B","FAIL","GCODE_PATH_REUSED")
+                elif results[0]["sha256"]!=results[1]["sha256"]:
+                    add(target_id,"OFFICIAL_A_B","FAIL","GCODE_RAW_SHA_MISMATCH")
+                else:
+                    add(target_id,"OFFICIAL_A_B","PASS","RAW_SHA256_IDENTICAL "+results[0]["sha256"])
+            except Exception as exc:
+                add(target_id,"MODEL_RUNNER","FAIL",repr(exc))
+            add(target_id,"FILUNA_PARITY","PENDING","NO_SEPARATE_FILUNA_NATIVE_CLI_OUTPUT")
+            add(target_id,"NETWORK","PENDING","NO_APP_DEVICE_PROTOCOL_SIMULATOR_PROOF")
+            add(target_id,"PHYSICAL_BETA","PENDING","ONLY_AFTER_FINAL_BUILD_AND_SUPERVISED_BETA")
+    except Exception as exc:
+        add("common","RUNNER","FAIL",type(exc).__name__+": "+str(exc))
+    (out/"results.json").write_text(json.dumps(rows,indent=2,ensure_ascii=False)+"\n")
+    (out/"RESUMO.md").write_text("# Anycubic original 2.0.0.6 — Kobra S1 and Kobra 3 V2 official CLI A/B\n\n"
+      "Original verified .deb extraction on isolated Linux; not an official portable ZIP.\n"
+      "No physical print, Filuna parity, ACE authentication, or vendor recompilation.\n\n"
+      "| Model | Gate | Status | Detail |\n|---|---|---|---|\n"
+      + "".join("| "+r["model"]+" | "+r["stage"]+" | "+r["status"]+" | "+
+                str(r["detail"]).replace("|","/")+" |\n" for r in rows),encoding="utf-8")
+    return 1 if any(x["status"]=="FAIL" for x in rows) else 0
+
+
+if __name__=="__main__":
+    raise SystemExit(main())
