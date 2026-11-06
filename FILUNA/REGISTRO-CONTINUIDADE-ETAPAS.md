@@ -321,3 +321,13 @@ check 113/113, CMP 7/7 e testes unitários **não** são autorização para prog
 - Relatório: [ECC2-OFFICIAL-PROFILE-AUDIT-2026-11-06.md](https://github.com/abcollicelli-web/FilunaSlicer/blob/filuna/qa-gates-hardening-20261105/FILUNA/qa/gcode/ECC2-OFFICIAL-PROFILE-AUDIT-2026-11-06.md).
 - Estado: **PARTIAL_PROFILE_AUDIT**, não é equivalência de G-code; binário oficial ElegooSlicer e G-code independente ainda `NOT_RUN`. Homologação física `PENDING`.
 - Próxima etapa: validar herança dos perfis e, no laboratório Wine, executar **ambos** os fatiadores sobre o mesmo modelo/mesmos parâmetros para gerar G-codes independentes e comparar simulação por camada, sem usar o G-code Bambu como referência Elegoo.
+
+## 28. Regra oficial: Orca + adaptadores Filuna por fabricante — 06/11/2026
+
+O proprietário reafirma que o Filuna não pode ser apenas um Orca renomeado com perfis genéricos. Orca segue motor-base; integrações por fabricante/modelo implementam descoberta, identificação, autenticação, estado, câmera, comandos, transferência, filamento, recursos, perfis, G-code e segurança. Fontes oficiais são prioritárias; código oficial só pode ser reutilizado após auditoria de licença/AGPL e dependências. Onde a licença não permitir cópia, criar implementação interoperável própria baseada em documentação/APIs permitidas.
+
+**Especificação versionada:** [FILUNA/ARQUITETURA-COMPATIBILIDADE-FABRICANTES.md](https://github.com/abcollicelli-web/FilunaSlicer/blob/filuna/qa-gates-hardening-20261105/FILUNA/ARQUITETURA-COMPATIBILIDADE-FABRICANTES.md). Famílias: Bambu, Elegoo, Creality, Flashforge, QIDI, Moonraker, OctoPrint. Compatibilidade e homologação são POR MODELO/FIRMWARE, não por marca inteira.
+
+**Evidência CC2 agora executada**, corrigindo o estado da etapa 27: ElegooSlicer oficial v1.5.3.5 portátil Windows (SHA256 ZIP `0215cd958d6a52ae1bd33a5ad7509ecd1b156baf63fbe04333e04cf0305793e5`), DLL oficial `cb5d66cc79b1b8d9940d2cb2a0fad287d2400457f6a1a1dd50830c4b066305b3`; Filuna DLL `f0914911be85fbd1809a739f5b1865e82dd4f6708f5b3f5645476f72b092aa9f`. Dois executáveis distintos geraram G-code com sucesso no Wine com CC2 0.4, PLA Elegoo, 0.20mm e OBJ 20mm (4 runs incluindo inversão de perfis). **Diferenças persistem:** 5.424 vs 7.532 G1; 209.800 vs 255.165 bytes; 428 vs 201 `SET_VELOCITY_LIMIT`; M204 S1000 vs S5000. Classificação **PARTIAL_COMPARISON_MISMATCH**, sem equivalência e sem homologação física.
+
+**Próxima execução:** comparar parâmetros efetivos após herança, avançar um adaptador CC2 sobre o código real do DeviceBridge (não apenas emuladores) e testar no Wine; posteriormente aplicar o mesmo contrato aos demais fabricantes. G3/G4 permanecem bloqueados para promoção/release, sem impedir desenvolvimento independente ou simulação parcial.
