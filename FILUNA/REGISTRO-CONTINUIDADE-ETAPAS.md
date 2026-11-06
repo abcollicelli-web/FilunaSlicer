@@ -310,3 +310,14 @@ check 113/113, CMP 7/7 e testes unitários **não** são autorização para prog
 **Primeiro alvo:** Elegoo Centauri Carbon 2. O G-code gerado anteriormente com perfil **Bambu P1S** não constitui referência de Elegoo nem comparação oficial. O comparador `FILUNA/qa/gcode/elegoo_official_trace_compare.py` é apenas ferramenta inicial de análise offline; bloqueia comandos desconhecidos, trajetórias fora de limites e proveniência sintética, e **não substitui simulador real de firmware nem prova de segurança**. A primeira execução em G-code Bambu P1S registrou comandos proprietários e limites que impedem equivalência; isso é resultado de diagnóstico, não falha homologada da Elegoo.
 
 **Portões:** comparação documental e sintética podem avançar como `PARTIAL_SIMULATED`; homologação final de hardware permanece `PENDING` até ensaio real com firmware e dispositivo identificados.
+
+
+## 27. Auditoria Elegoo CC2 — fonte oficial fixada e comparação dos perfis (06/11/2026)
+
+- Referência real do fabricante localizada: `elegooofficial/ElegooSlicer`, commit `2d507e39a96ab9562b35d06b23ef5df8fe613297` (23/09/2026), perfil Centauri Carbon 2 bico 0,4 mm.
+- Três arquivos oficiais foram comparados com o Filuna: máquina, processo 0,20 mm Standard e filamento Elegoo PLA.
+- **Oito divergências:** seis na máquina (`setting_id`, tempos de carga/descarga, `default_bed_type`, `support_mms`, `support_multi_filament`), uma no `setting_id` do processo e uma no `setting_id` do filamento. **Não alterar valores automaticamente sem validar herança e semântica.**
+- Comandos oficiais específicos identificados: `M6211`, `G180`, `BED_MESH_CALIBRATE`, `SET_PRINT_STATS_INFO`. Comparador genérico precisa tratá-los explicitamente; não chamar comandos específicos de inválidos por padrão.
+- Relatório: [ECC2-OFFICIAL-PROFILE-AUDIT-2026-11-06.md](https://github.com/abcollicelli-web/FilunaSlicer/blob/filuna/qa-gates-hardening-20261105/FILUNA/qa/gcode/ECC2-OFFICIAL-PROFILE-AUDIT-2026-11-06.md).
+- Estado: **PARTIAL_PROFILE_AUDIT**, não é equivalência de G-code; binário oficial ElegooSlicer e G-code independente ainda `NOT_RUN`. Homologação física `PENDING`.
+- Próxima etapa: validar herança dos perfis e, no laboratório Wine, executar **ambos** os fatiadores sobre o mesmo modelo/mesmos parâmetros para gerar G-codes independentes e comparar simulação por camada, sem usar o G-code Bambu como referência Elegoo.
