@@ -73,3 +73,21 @@ Prova: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42313078703
 - Artefatos dos logs e dos perfis efetivos: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42313078703/artifacts/13548907984
 
 **Diagnóstico obrigatório:** comparar as opções CLI suportadas por esse executável e a formação de configuração efetiva; investigar access violation em Windows com caso mínimo ou dump, sem alterar os perfis oficiais nem atribuir causa sem prova. Teste físico somente no beta vigiado após validação interna e compilação final. Snapmaker U1 permanece NÃO HOMOLOGADA; a investigação continua em paralelo à Prusa.
+
+
+## Hipótese de vetor de processo isolada, mas NÃO confirmada — run #42314656389
+
+Análise do código original Snapmaker `src/Snapmaker_Orca.cpp` na tag `v2.4.1` apontou possível acesso sem guarda a `different_settings_to_system[0]`, quando a lista poderia estar vazia. O diagnóstico criou uma **cópia temporária** do processo efetivo, acrescendo **apenas** `"different_settings_to_system": [""]`, com as configurações OEM originais intactas.
+
+Execução Windows: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42314656389
+
+- ZIP/binário verificados: PASS.
+- 12 fontes oficiais da árvore de herança: PASS.
+- Cópia de campo único com hash próprio: PASS.
+- Controle com processo original efetivo: reproduziu `0xC0000005` sem G-code: PASS como reprodução de bug.
+- **Cópia diagnóstica com vetor preenchido: também apresentou `0xC0000005`**, sem G-code: FAIL do diagnóstico; portanto **não foi solução**.
+- `OFFICIAL_A_B`, `FILUNA_PARITY`, `NETWORK`: PENDENTE; U1 continua NÃO HOMOLOGADA.
+
+Artefato: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42314656389/artifacts/13550241939
+
+Próximo foco técnico: isolar `ConfigBase::load_from_json` e `DynamicPrintConfig::normalize_fdm()` no binário v2.4.1 mediante matriz mínima de processos ou depurador disponível no runner. Não afirmar causalidade do campo `different_settings_to_system` sem backtrace. Nenhuma alteração de perfis ativos OEM, compilação ou impressão física.
