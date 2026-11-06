@@ -91,14 +91,29 @@ def main():
             "printer_variant":VARIANT,"asset_sha256":cfg["sha256"],"official_profiles":{}}
   for kind,gitsha in OFFICIAL_PROFILE_BLOBS.items():
    path=profiles/(kind+".json")
-   actual=git_blob_sha(path)
-   if actual!=gitsha:raise ValueError("OFFICIAL_PROFILE_PROVENANCE_MISMATCH "+kind+" expected="+gitsha+" actual="+actual)
-   info=json.loads(path.read_text(encoding="utf-8-sig"))
+   if not path.is_file():raise ValueError("CHECKOUT_PROFILE_MISSING "+str(path))
+   # git checkout on Windows can turn LF into CRLF, changing the worktree
+   # hash. Read the ORIGINAL GIT OBJECT bytes; never weaken provenance checks.
+   gitpath=path.relative_to(ROOT).as_posix()
+   blob=subprocess.run(["git","show","HEAD:"+gitpath],cwd=ROOT,
+                       stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=False)
+   if blob.returncode!=0:
+    raise ValueError("ORIGINAL_PROFILE_GIT_OBJECT_NOT_FOUND "+gitpath+" "+
+                     blob.stderr.decode("utf-8","replace")[:300])
+   source=blob.stdout
+   actual=hashlib.sha1(b"blob "+str(len(source)).encode("ascii")+b"\0"+source).hexdigest()
+   if actual!=gitsha:
+    raise ValueError("OFFICIAL_PROFILE_PROVENANCE_MISMATCH "+kind+" expected="+gitsha+" actual="+actual)
+   source_path=out/("verified-"+kind+".json")
+   source_path.write_bytes(source)
+   info=json.loads(source.decode("utf-8-sig"))
    if info.get("type")!=kind or info.get("from")!="system":
     raise ValueError("OFFICIAL_PROFILE_TYPE_MISMATCH "+kind)
-   resolved[kind]=path
+   resolved[kind]=source_path
    manifest["official_profiles"][kind]={"git_blob_sha":gitsha,
-       "sha256":digest(path),"name":info["name"],"inherits":info.get("inherits"),
+       "sha256":digest(source_path),"name":info["name"],"inherits":info.get("inherits"),
+       "git_object_used_for_execution":gitpath,
+       "checkout_worktree_sha256":digest(path),
        "origin":"resources/profiles/Snapmaker/"+kind+"/"+{
          "machine":"Snapmaker U1 (0.4 nozzle).json",
          "process":"0.20mm Standard @Snapmaker U1 (0.4 nozzle).json",
