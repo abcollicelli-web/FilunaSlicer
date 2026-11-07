@@ -418,3 +418,15 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Correção de ambiente: provisionar somente `libgstreamer-plugins-base1.0-0`; novo CI da CLI e da geração G-code A/B **AD5X 0,4 + Adventurer 5M 0,4** em andamento. Checar logs antes de marcar PASS. Não afirmar IFS/câmera/LAN ou Filuna nativo sem testes.
 
 **Regra de evidências:** pacote OEM e código-fonte integral pinados são `PASS_SOURCE`, G-code do **oficial** A/B é `PASS_OEM_ONLY`, **não** é `PASS_FILUNA_PARITY`, `PASS_NETWORK` ou `HOMOLOGACAO_INTERNA`. Nenhum dos três fabricantes foi promovido, mesclado, instalado ou habilitado fisicamente. Bambu × Bambuddy autenticado permanece único adiamento deliberado.
+
+
+## DECISÃO DO PROPRIETÁRIO — INSTALADOR LEVE E HOMOLOGAÇÃO POR CHECKLIST EM TRÊS TESTES (07/11/2026)
+
+**Fonte normativa de implantação:** [PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md §13](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md) **§13** — `REGRA_MOTOR_BASE_ON_DEMAND_PROFILES_BETA_3_TESTES`.
+
+**Nova regra prioritária e vinculante:** compilar para entrega apenas **um motor-base Filuna/Orca e os deltas OEM indispensáveis**, nunca os fatiadores oficiais completos ou todos os catálogos de perfis de todas as marcas no instalador. Perfis de máquina, processo e filamento vêm de catálogo oficial auditado por **download seletivo assinado na primeira conexão autorizada**, com herança/compatibilidade automática e cache offline. Cada impressora física recém-conectada executa assistente guiado: sistema mede rede/portas/identidade/segurança/G-code, cliente visualiza preview real de câmera local e confirma, sistema lê slots AMS/ACE/CFS/IFS e cliente confirma filamentos/cores. Não permitir que o cliente “aprove” uma porta inexistente.
+
+**Mensagens de beta:** todos os testes locais PASS → **"Impressora liberada para teste de impressão"**. Primeira impressão física válida completa → **"Impressora parcialmente homologada"** no próximo vínculo do mesmo modelo/firmware, ainda com teste local obrigatório. Três impressões físicas distintas, com matrizes e evidências completas PASS, sem incidentes críticos → **"Impressora homologada — liberada para impressão"** no beta. Duplicidades não contam, novos firmwares/variações exigem gate correspondente. O proprietário ainda aprova releases estáveis; o servidor observa sem comandar máquinas dos clientes. As normas anteriores de homologação física e observabilidade continuam válidas em tudo que não contrariar expressamente esta regra mais recente.
+
+**Status factual:** `NOVA_REGRA_DOCUMENTADA=PASS`, `NOVO_INSTALADOR=NOT_RUN`, `PROFILE_CATALOG_RUNTIME=NOT_RUN`, `FIRST_CONNECT_WIZARD=NOT_RUN`, `BETA_3_PRINTS=NOT_RUN`; sem publicação, compilação final ou ensaio físico por este registro. Retomar Snapmaker, Anycubic e Flashforge como QA OEM interno, sem confundir A/B oficial com engine Filuna.
+
