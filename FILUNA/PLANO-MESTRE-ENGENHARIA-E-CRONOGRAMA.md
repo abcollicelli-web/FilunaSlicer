@@ -118,6 +118,12 @@ Após o assistente e quando começar o **beta vigiado**, o servidor Filuna receb
 
 ---
 
+### Nota técnica de implementação parcial do pacote leve (07/11/2026)
+
+O protótipo **de dados por modelo sob demanda**, sem integrar ainda o aplicativo Windows, está em \`FILUNA/tools/oem_on_demand_profiles.py\`. Ele parte do catálogo OEM completo em **origem oficial SHA/commit fixado**, recebe o modelo real escolhido, entrega **somente máquina, processos e filamentos explicitamente compatíveis** em arquivos JSON individuais, grava manifesto SHA-256 e recusa integridade violada, modelos desconhecidos, nomes de caminho inseguros, catálogo com heranças quebradas e expressões OEM de compatibilidade não interpretadas. Nunca mistura perfis de outras máquinas ou utiliza uma whitelist de dois modelos. Presets condicionais desconhecidos são bloqueados para avaliação pelo interpretador OEM do motor.
+
+**Evidência:** [workflow #42321919685](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321919685), **SUCCESS, 7/7 testes unitários e negativos**. Este PASS **não** significa que o instalador atual já está leve, que o backend publica catálogos assinados, que os dados já chegam ao app por dispositivo, ou que há protocolo de rede/câmera/multicolor ativo. Estado: \`ON_DEMAND_DATA_SNAPSHOT_PROTOTYPE=PASS_QA_ONLY\`; \`SIGNED_DISTRIBUTION=NOT_RUN\`; \`FILUNA_APP_DYNAMIC_LOADER=NOT_RUN\`; \`BETA_WIZARD=NOT_RUN\`. Assinatura/servidor/API, ABI, suporte offline e dashboard precisam ser implementados e homologados antes de distribuição.
+
 ## 2. Status de referência — não confundir gerações
 
 **A. Site anterior:** \`abcollicelli-web/Filuna\`, documentação \`Filuna-Slicer/\` e módulo legado do site. Fonte de requisitos, UI, histórico e decisões, NÃO base de código a importar sem licença/testes.  
