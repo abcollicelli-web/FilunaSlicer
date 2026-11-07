@@ -2808,6 +2808,15 @@ void PrintConfigDef::init_fff_params()
     // Existing users and all ordinary Orca presets keep precisely the CCW default.
     def->set_default_value(new ConfigOptionEnum<WallDirection>(WallDirection::CounterClockwise));
 
+    // Exact FlashForge/Orca-Flashforge 1.7.9 option candidate: consistent
+    // rectilinear fill aligned to the unshifted extended object bounding box.
+    // Always off by default, until a verified OEM module explicitly opts in.
+    def = this->add("filuna_oem_legacy_infill_anchor", coBool);
+    def->label = L("OEM legacy infill anchor (QA only)");
+    def->tooltip = L("Use the verified OEM alignment reference for consistent infill patterns. Requires OEM module validation and G-code parity testing.");
+    def->mode = comDevelop;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("extruder", coInt);
     def->gui_type = ConfigOptionDef::GUIType::i_enum_open;
     def->label = L("Extruder");
