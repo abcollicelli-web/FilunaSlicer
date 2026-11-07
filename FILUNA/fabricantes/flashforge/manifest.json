@@ -137,5 +137,49 @@
     "overall_internal_homologation": "BLOCKED"
   },
   "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
-  "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_DOWNLOAD_NO_ALL_PRESETS_EMBEDDED"
+  "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_DOWNLOAD_NO_ALL_PRESETS_EMBEDDED",
+  "native_engine_deltas_candidate": {
+    "source_version": "FlashForge/Orca-Flashforge 1.7.9",
+    "source_commit": "70f2359ba8b4bc8ff9e54818a4bb1d05e56e7856",
+    "portability_warning": "Server Windows installer 1.7.15 and public Windows 1.7.20 are not proven equivalent to Linux 1.7.9; do not claim coverage from this port.",
+    "actual_source_port": [
+      {
+        "function": "FillRectilinear::fill_surface_by_lines",
+        "official_file": "src/libslic3r/Fill/FillRectilinear.cpp",
+        "official_blob_sha": "59c69a9d321042fef7a8a38a64df32a6006da8f9",
+        "filuna_file": "src/libslic3r/Fill/FillRectilinear.cpp",
+        "candidate_config": "filuna_oem_legacy_infill_anchor",
+        "default": false,
+        "state": "PORTED_OPT_IN_SOURCE_ONLY_NOT_ACTIVATED_AND_NOT_PARITY_TESTED"
+      },
+      {
+        "function": "WallDirection::Auto and explicit profile parse",
+        "official_file": "src/libslic3r/PerimeterGenerator.cpp",
+        "filuna_files": [
+          "src/libslic3r/PerimeterGenerator.cpp",
+          "src/libslic3r/PrintConfig.cpp"
+        ],
+        "default_global": "ccw",
+        "state": "SOURCE_PORT_CANDIDATE_STATIC_QA_PASS_RUNTIME_NOT_TESTED"
+      }
+    ],
+    "original_effective_defaults_differences_for_review": {
+      "wall_direction": "auto",
+      "filament_change_length": "0",
+      "wipe_tower_type": "type1",
+      "flush_volumes_matrix": "OEM_MATRIX_4X4_MUST_PRESERVE_ORIGINAL_VALUES",
+      "enable_arc_fitting": "1_OEM_VS_ENABLED_FILUNA_NEEDS_SEMANTIC_CHECK"
+    },
+    "activation": "NEVER_AUTO_ACTIVATE_BY_MODEL_NAME; requires signed OEM source+profile module, matching ABI, file-license review and G-code A/B proof",
+    "qa_ci": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42342575400",
+    "tested_native_gcode": "NOT_RUN",
+    "original_ad5x_movement_mismatches_at_old_binary": {
+      "g0_to_g3_vendor": 5759,
+      "g0_to_g3_filuna": 5753,
+      "geometry_edit_groups": 534,
+      "extrusion_differences": 182,
+      "feedrate_differences": 374
+    },
+    "overall_status": "CANDIDATE_SOURCE_ONLY_BETA_BLOCKED"
+  }
 }
