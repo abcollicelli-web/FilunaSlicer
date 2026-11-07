@@ -1622,6 +1622,9 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                is_infill_first))
     ((ConfigOptionBool,                small_area_infill_flow_compensation))
     ((ConfigOptionEnum<WallDirection>,  wall_direction))
+    // OEM: opt-in legacy alignment for consistent rectilinear fill patterns.
+    // Never inherited implicitly by Orca/other manufacturers.
+    ((ConfigOptionBool,                filuna_oem_legacy_infill_anchor))
 
     // Orca: other flow ratios (available for overriding, if set_other_flow_ratios is enabled)
     ((ConfigOptionFloat,                first_layer_flow_ratio))
