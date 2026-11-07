@@ -99,7 +99,15 @@
       ]
     },
     "official_ab_workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321095370",
-    "official_ab_scope_note": "Only two original vendor CLI samples; NOT Filuna parity, camera, IFS, LAN or internal homologation."
+    "official_ab_scope_note": "Only two original vendor CLI samples; NOT Filuna parity, camera, IFS, LAN or internal homologation.",
+    "existing_pre_oem_filuna_windows_baseline": {
+      "source_binary_build": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42102469888",
+      "comparison_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324852127",
+      "status": "FAIL_PRE_OEM_FILUNA_MACHINE_PROFILE_NOT_IN_LOADED_BUNDLE",
+      "error": "can not resolve preset ... machine.json: Preset was not found in the loaded bundle",
+      "note": "Actual original OEM G-code and source profiles compared to pre-OEM Windows Filuna portable; new native OEM integration not yet linked, so this negative baseline is not a test of a completed OEM module.",
+      "native_homologation": "BLOCKED"
+    }
   },
   "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
   "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_DOWNLOAD_NO_ALL_PRESETS_EMBEDDED"
