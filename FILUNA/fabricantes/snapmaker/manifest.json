@@ -209,7 +209,27 @@
       "error": "machine_start_gcode Parsing error at line 10: Not a variable name {if chamber_cooling_mode==0}",
       "note": "Actual original OEM G-code and source profiles compared to pre-OEM Windows Filuna portable; new native OEM integration not yet linked, so this negative baseline is not a test of a completed OEM module.",
       "native_homologation": "BLOCKED"
-    }
+    },
+    "original_cli_stress_40": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321783683",
+      "status": "FAIL_REAL_SEMANTIC_GCODE_VARIANCE",
+      "versions_also_fail": [
+        "v2.4.0",
+        "v2.4.1"
+      ],
+      "fixed_n_cpus_no_resolution": true,
+      "experimental_seam_wipe_no_resolution": true
+    },
+    "pre_oem_filuna_baseline": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325032419",
+      "status": "BLOCKED_NO_NATIVE_GCODE",
+      "unknown_oem_placeholder": "chamber_cooling_mode",
+      "not_oem_integration": true
+    },
+    "native_filuna_engine_parity": "BLOCKED_OR_NOT_RUN",
+    "native_printer_network_control": "NOT_RUN",
+    "physical_homologation": "BETA_LATER_NOT_RUN",
+    "overall_internal_homologation": "BLOCKED"
   },
   "automatic_hardware_activation": false,
   "production_promotion": "BLOCKED_UNTIL_TOOLPATH_SAFETY_AND_NATIVE_NETWORK_VALIDATED",
