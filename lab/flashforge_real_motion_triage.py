@@ -16,7 +16,7 @@ from pathlib import Path
 import re
 
 MOTION = re.compile(r"^(G[0123])(?:\s|$)", re.I)
-VALUE = re.compile(r"(?:^|\s)([XYZEF])([+-]?(?:\d+\.?\d*|\.\d+)(?:[Ee][+-]?\d+)?)")
+VALUE = re.compile(r"(?:^|\s)([XYZEFIJP])([+-]?(?:\d+\.?\d*|\.\d+)(?:[Ee][+-]?\d+)?)")
 OTHER = ("M106", "M73", "SET_VELOCITY_LIMIT", "M104", "M109", "M140", "M190")
 
 
