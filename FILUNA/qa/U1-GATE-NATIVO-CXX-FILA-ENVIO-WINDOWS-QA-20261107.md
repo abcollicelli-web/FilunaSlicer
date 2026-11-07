@@ -1,0 +1,30 @@
+# Filuna Slicer — continuidade da correção U1: validador C++ real na fila de envio
+
+**Data:** 07/11/2026. **Branch:** `filuna/oem-portable-first-qa-20261106`, PR #6 **DRAFT**, sem merge/deploy/release/instalador.
+
+## Código integrado de fato nesta rodada
+
+1. `src/slic3r/Utils/FilunaGCodeSafety.hpp`: **validador geométrico C++17 autocontido**, nenhuma dependência de Python, sem reescrita do G-code, com mapa de extrusões por XY/Z, distinção de torre de purga, cálculo de travessia de XY sem extrusão, arcos G2/G3 com I/J, posições desconhecidas antes de homing, troca de ferramenta, retrações curtas, limites 270³ mm, classificação PASS/WARN/BLOCK/REVIEW e linha/camada/XYZ. **Não é o firmware Klipper**, nem auditoria de 100% dos comandos e macros.
+2. `src/slic3r/Utils/PrintHost.hpp`: preserva `filuna_effective_printer_model` nas cópias por movimento de `PrintHostJob`. O construtor em `PrintHost.cpp` obtém o **modelo do preset efetivo** no momento do job, sem declarar que representa um dispositivo autenticado.
+3. `src/slic3r/Utils/PrintHost.cpp`: `PrintHostJobQueue::upload_job` verifica G-code **antes** de chamar `job.printhost->upload` no piloto **Snapmaker U1**. BLOCK/REVIEW impedem o envio e descrevem linha, camada e posição quando disponíveis; 3MF não analisável é recusado; WARN comunica risco sem modificar bytes. Este gate é no caminho Orca PrintHost, **não** em todo DeviceBridge/fabricante.
+4. `src/slic3r/GUI/PrintHostDialogs.cpp`: o aviso `filuna_u1_safety_warning` deixa de ser ignorado por `on_info` e é mostrado por `wxMessageBox` na thread wxWidgets. **Ainda falta assegurar exibição antes do início da impressão** em todos os fluxos e autorização explícita dos riscos comprovados do OEM por usuário/log seguro.
+5. `src/slic3r/CMakeLists.txt`: header registrado como fonte da biblioteca `libslic3r_gui`. Nenhum subprocesso Python no cliente e nenhum algoritmo da Snapmaker oficial foi reescrito.
+
+## Provas executadas, não simuladas como impressão
+
+- [GitHub Actions #42362530764](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42362530764): compila C++17 com `-Wall -Wextra -Wpedantic -Werror`; casos sintéticos PASS/BLOCK/WARN; quatro G-codes originais checados por SHA. **Snapmaker U1 monocor PASS**, **Snapmaker U1 bicolor BLOCK** com exatamente 1 risco real na **linha 38911, camada 14, X≈63,569 Y147,185 Z3,05**, **Bambu A1 PASS** e **Creality PASS** para geometria. A proteção de volume Bambu/Creality não foi homologada (serviço fora da mesa).
+- [GitHub Actions #42363101061](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42363101061): compila novamente núcleo C++17, repete originais e executa 7 testes do contrato de ligação a `PrintHost::upload_job` e aviso GUI: **PASS**. São testes de arquivo/contrato; não prova Windows ligado/ACK.
+- **Windows GUI:** primeira tentativa [#42362859858](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42362859858) falhou **somente por cache de dependências inacessível** na branch; o workflow foi corrigido para construir dependências do próprio QA sem criar instalador. A execução [#42363069593](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42363069593) iniciou a reconstrução; **resultado da compilação da biblioteca/GUI não comprovado na elaboração deste relatório**.
+- **U1 quatro extrusoras:** primeiro 3MF sintético foi rejeitado pelo importer do OEM, antes de gerar G-code: [#42363527057](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42363527057) **FAIL, não homologar**. Agora `lab/snapmaker_u1_fourtool_original_qa.py` clona como fixture o projeto `resources/handy_models/OrcaCube_v2.3mf` do próprio portátil 2.4.1, preservando pacote OEM e adicionando quatro objetos com extrusoras 1..4 **apenas na cópia de laboratório**. Reteste [#42363769245](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42363769245), **em andamento, sem presumir PASS**.
+
+## Pontos que ainda impedem declarar “somente impressão física”
+
+- No registro de dispositivo, a identidade é a do perfil selecionado, **não** serial/firmware/sessão pareada e atestada. O gate hoje cobre a fila clássica PrintHost no escopo U1, **não** todos os caminhos do DeviceBridge.
+- O motor Filuna do HEAD ainda não possui **A/B nativo compilado e comprovado** com todas as versões/presets OEM, nem 4 ferramentas oficiais provadas, nem validação da configuração Moonraker real na U1. É proibido declarar paridade Filuna × Snapmaker.
+- A **aceitação consciente do risco OEM** ainda existe no laboratório Python, com log por SHA; falta implementar **em UI/app** autenticação efetiva, vínculo de hash do arquivo/versão OEM/risco, persistência auditável e permissão somente quando o mesmo risco está comprovado no arquivo oficial. Nunca permitir override para divergência exclusiva Filuna.
+- O verificador C++ usa análise geométrica **limitada a deslocamentos críticos e 50 MiB por arquivo** e não expande macros não provadas. São limites de QA que exigem endurecimento antes da entrega comercial (arquivos longos, ferramentas semânticas, firmware real).
+- No evento WARN de volume, `on_info` agora mostra diálogo, mas a prova de aviso **antes** de executar qualquer comando de impressão ainda requer integração de UI/confirm antes de enfileirar.
+- **Anycubic e Flashforge**: ainda falta compilar patches nativos, comparar novos G-codes reais e integrar módulos sob demanda, perfis e protocolos de rede com ACK. Os contratos de fonte anteriores não promovem essas marcas.
+- **Estado correto:** `FILUNA_NATIVE_SAFETY_HEADER_QA=PASS`, `NATIVE_UPLOAD_SOURCE_HOOK_QA=PASS`, `WINDOWS_CPP_GUI_COMPILE=NOT_PROVEN`, `INTERNAL_HOMOLOGATION_3_OEM=0/3`, `G4-I=BLOCKED`, `G4-F_PHYSICAL=NOT_RUN`.
+
+**Regra imutável:** o validador não edita o G-code oficial nem injeta Z-hop; se risco só aparece no Filuna, corrigir motor/perfil até equivalência, nunca mascarar com pós-processamento. Evidências e macros estão em `FILUNA/fabricantes/snapmaker/vendor.yaml` e `FILUNA/qa/SNAPMAKER-U1-GCODE-IMUTAVEL-VALIDADOR-GEOMETRICO-20261107.md`.
