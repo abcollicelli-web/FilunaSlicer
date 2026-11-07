@@ -17,7 +17,7 @@ concurrency:
 jobs:
   compile-libslic3r-gui-windows:
     runs-on: windows-2022
-    timeout-minutes: 90
+    timeout-minutes: 180
     steps:
       - name: Checkout current QA branch
         uses: actions/checkout@v4
@@ -32,7 +32,23 @@ jobs:
         with:
           path: deps/build/OrcaSlicer_dep
           key: windows-x64-clang-cache-orcaslicer_deps-build-${{ hashFiles('deps/**') }}
-          fail-on-cache-miss: true
+          fail-on-cache-miss: false
+      - name: Build pinned Orca Windows deps on this QA branch when the cache is unavailable
+        if: steps.deps.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\","/")
+          .\build_win.bat -d --arch x64 --deps-dir $deps -l -x --jobs 4
+          if ($LASTEXITCODE -ne 0) {
+            throw "FILUNA_QA_WINDOWS_DEPENDENCIES_FAILED exit=$LASTEXITCODE"
+          }
+      - name: Cache exact dependencies for repeatable QA
+        if: steps.deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: deps/build/OrcaSlicer_dep
+          key: windows-x64-clang-cache-orcaslicer_deps-build-${{ hashFiles('deps/**') }}
       - name: Compile shared engine and GUI including PrintHost send path (no packaging)
         shell: pwsh
         run: |
