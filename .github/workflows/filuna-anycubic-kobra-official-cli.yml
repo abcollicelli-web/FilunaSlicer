@@ -1,20 +1,22 @@
-name: Filuna Anycubic two-model official Linux CLI A/B
+name: Filuna Anycubic three-model official Linux CLI A/B
 on:
   push:
     branches:
       - filuna/oem-portable-first-qa-20261106
     paths:
       - "lab/anycubic_kobra_models_official_qa.py"
+      - "lab/anycubic_original_gcode_strict.py"
+      - "lab/test_anycubic_original_gcode_strict.py"
       - ".github/workflows/filuna-anycubic-kobra-official-cli.yml"
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: filuna-anycubic-two-model-official-cli
+  group: filuna-anycubic-three-model-official-cli
   cancel-in-progress: true
 jobs:
-  original-cli-two-models:
-    name: SHA-pinned Anycubic 2.0.0.6 original Debian extracted, Kobra S1 and Kobra 3 V2
+  original-cli-three-models:
+    name: SHA-pinned Anycubic 2.0.0.6 original Debian extracted, Kobra S1, Kobra 3 V2 and Kobra 4
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
@@ -22,6 +24,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Eight strict positive/negative original G-code comparator unit tests
+        env:
+          PYTHONPATH: lab
+        run: python -m unittest -v lab/test_anycubic_original_gcode_strict.py
       - name: Runtime-only dependencies for uninstalled original CLI
         run: |
           sudo apt-get update -qq
@@ -36,7 +42,7 @@ jobs:
         with:
           path: .anycubic-vendor-cache
           key: anycubic-vendor-2.0.06-153422098-20261107
-      - name: Slice two models with original CLI in independent directories
+      - name: Slice three models with original CLI in independent directories
         run: |
           python lab/anycubic_kobra_models_official_qa.py \
             --cache .anycubic-vendor-cache --out qa-anycubic-kobra-official --timeout 240
