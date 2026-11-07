@@ -62,5 +62,19 @@ class NativeSendGateContract(unittest.TestCase):
         self.assertNotIn('upload_allowed = true',upload)
         self.assertIn('original_bytes.str()',upload)
 
+    def test_08_warn_requires_ack_before_transfer(self):
+        # The UI receives info_fn asynchronously. A WARN may not be cleared
+        # merely by queuing wxMessageBox while the worker uploads the file.
+        upload=CPP.split('bool PrintHostJobQueue::upload_job(',1)[1]
+        warn='if (safety.decision == Filuna::Safety::Report::Decision::Warn)'
+        self.assertIn(warn,upload)
+        section=upload.split(warn,1)[1].split('success = job.printhost->upload(',1)[0]
+        self.assertIn('filuna_u1_safety_warning',section)
+        self.assertIn('throw std::runtime_error("Filuna U1: geometry warning requires confirmation before upload',section)
+        self.assertIn('authenticated approval is not available',section)
+        self.assertIn('G-code unchanged; upload cancelled',section)
+        # No success path may be entered inside the WARN branch.
+        self.assertNotIn('upload_allowed = true',section)
+
 if __name__=="__main__":
     unittest.main()
