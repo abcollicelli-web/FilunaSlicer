@@ -1661,26 +1661,6 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
         if (new_extruder_id != -1 && new_extruder_id != tcr.new_tool)
             throw Slic3r::InvalidArgument("Error: WipeTowerIntegration::append_tcr was asked to do a toolchange it didn't expect.");
 
-        // Filuna OEM fail-closed guard (Snapmaker upstream #1149):
-        // a final wipe-tower purge may be followed by an unsafe travel without
-        // a verified Z lift. The presence of this OEM start macro is only a
-        // conservative compatibility marker, NOT proof of a connected printer.
-        // Until the corrected native path and resulting G-code pass the safety
-        // tests for the real firmware, refuse the final purge instead of
-        // producing potentially colliding multi-material G-code.
-        const bool unverified_oem_chamber_macro =
-            gcodegen.config().machine_start_gcode.value.find("chamber_cooling_mode") != std::string::npos;
-        const bool oem_final_purge = unverified_oem_chamber_macro && !tcr.priming && new_extruder_id == -1;
-        // Upstream Snapmaker/OrcaSlicer PR #1150: move to tower with retraction,
-        // Z-lift, unretraction before the final purge, instead of bare XY travel.
-        // This opt-in is NOT homologation; do not enable until native G-code
-        // and firmware-simulator A/B evidence is approved.
-        const bool candidate_safe_final_purge_travel =
-            oem_final_purge && gcodegen.config().filuna_oem_final_purge_lift.value;
-        if (oem_final_purge && !candidate_safe_final_purge_travel)
-            throw Slic3r::InvalidArgument("Final purge Z-hop safety not yet validated for this OEM profile; G-code export blocked.");
-
-
         const std::optional<GCode::ToolchangePositionState> position_before_toolchange =
             gcodegen.capture_toolchange_position();
 
@@ -1706,10 +1686,7 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
 
         std::string tcr_rotated_gcode = post_process_wipe_tower_moves(tcr, wipe_tower_offset, wipe_tower_rotation);
 
-        // Do not drop a previously established Z-lift before the candidate
-        // final-purge safe tower travel. Other Orca paths remain unchanged.
-        if (!candidate_safe_final_purge_travel)
-            gcode += gcodegen.writer().unlift(); // Standard Orca path.
+        gcode += gcodegen.writer().unlift(); // Make sure there is no z-hop (in most cases, there isn't).
 
         double current_z = gcodegen.writer().get_position().z();
 
@@ -1730,8 +1707,7 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
                                                              || !needs_toolchange // this is just finishing the tower with no toolchange
                                                              || will_go_down // Make sure to move to prime tower before moving down
                                                              || is_ramming
-                                                             || tool_change_on_wipe_tower
-                                                             || candidate_safe_final_purge_travel);
+                                                             || tool_change_on_wipe_tower);
 
         const Point start_wipe_pos     = wipe_tower_point_to_object_point(gcodegen, start_pos + plate_origin_2d);
         const bool travel_to_tower_now = should_travel_to_tower || gcodegen.m_need_change_layer_lift_z;
