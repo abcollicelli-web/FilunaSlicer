@@ -159,3 +159,65 @@ jobs:
         if: always()
         run: |
           echo "Source: DesignMaster-Solutions/u1-dryrun @38ab8c7, original Snapmaker Orca Linux AppImage 2.4.1. Firmware 2.0/2.1 dry-run by upstream contributor is independent; not a new Filuna native build, 4-color test, or physical homologation." >> "$GITHUB_STEP_SUMMARY"
+
+  cross-brand-original-cubes-regression:
+    needs: source-and-synthetic-geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download verified original Bambu A1 cube
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-portable-first-five-official-eight-brands
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42312894880
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-bambu
+      - name: Download verified original Creality cube
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-creality-7.3.1-official-portable-qa
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42310133259
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-creality
+      - name: Assert exact official G-code SHA and no false critical-risk blocks
+        run: |
+          mkdir -p qa-cross-brand
+          python - <<'PY'
+          import hashlib,json,sys
+          from pathlib import Path
+          sys.path.insert(0,"lab")
+          from snapmaker_spatial_gcode_validator import validate_gcode
+          cases=[
+            ("bambu",Path(".oem-bambu/bambu/run-A/plate_1.gcode"),
+             "ac7731e7653bd9a46531217307d745a1f1996d20bb14e065a50bf691d7db96d5",
+             [256,256,256],"Bambu A1"),
+            ("creality",Path(".oem-creality/run-A/plate_1.gcode"),
+             "3ed1de4e20a61f35c45b68a7cd21cdaa454200d1eeb449b3373b76e9a76142a3",
+             [350,350,350],"Creality K2 Plus")]
+          for vendor,p,sha,volume,model in cases:
+            raw=p.read_bytes()
+            assert hashlib.sha256(raw).hexdigest()==sha,(vendor,"ORIGINAL_GCODE_SHA_MISMATCH")
+            policy={"manufacturer":vendor,"printer_model":model,"volume_mm":volume,
+                    "safe_macros":[]}
+            result=validate_gcode(raw,policy,source="official")
+            Path("qa-cross-brand/"+vendor+".json").write_text(json.dumps(result,indent=2))
+            print("ORIGINAL_CUBE_REGRESSION",vendor,result["status"],
+                  "issues",result["issues"][:4],"warnings",result["warnings"][:4])
+            assert result["status"]=="PASS",(vendor,"FALSE_POSITIVE_OR_OUTSIDE_VOLUME")
+          PY
+      - name: Preserve actual official cross-brand QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-bambu-creality-gcode-validator-cross-brand
+          path: qa-cross-brand/
+          if-no-files-found: warn
+          retention-days: 30
