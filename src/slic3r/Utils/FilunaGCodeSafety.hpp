@@ -189,7 +189,11 @@ inline Report inspect(const std::string& gcode, const Policy& policy = {})
             final_marker = line_no;
         if (has(comment, "spiral") && (has(comment, "hop") || has(comment,"lift")))
             spiral_marker = line_no;
-        if (has(comment, "layer_change"))
+        // Only the exact Orca LAYER_CHANGE marker advances the layer.
+        // BEFORE_LAYER_CHANGE and AFTER_LAYER_CHANGE are not new layers.
+        const auto first_text = comment.find_first_not_of(" \t");
+        if (first_text != std::string::npos &&
+            comment.compare(first_text, 12, "layer_change") == 0)
             ++layer;
         const auto layerpos = comment.find("layer:");
         if (layerpos != std::string::npos) {
