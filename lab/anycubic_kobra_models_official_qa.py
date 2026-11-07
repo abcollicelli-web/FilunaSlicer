@@ -165,6 +165,25 @@ def main():
             "count_dirs="+str(len(vendor_dirs))+" libcloud_mqtt="+
             str(any((p/"libcloud_mqtt.so").is_file() for p in vendor_dirs)),
             "vendor-libraries.lock.json")
+        # Whole manufacturer catalog, not a whitelist of the two QA fixtures.
+        # The pilot A/B models below are samples only; all original machine,
+        # process and filament files are indexed and inherited generically.
+        import sys
+        sys.path.insert(0,str(ROOT/"FILUNA"/"tools"))
+        from oem_universal_inventory import read_catalog
+        entire=read_catalog(
+            folder/"usr/share/AnycubicSlicerNext/resources/profiles/Anycubic")
+        (out/"all-models-all-profiles.json").write_text(
+            json.dumps(entire,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+        add("common","ALL_MODELS_CATALOG_INVENTORY","PASS",
+            "machines="+str(len(entire["machines"]))+
+            " profiles="+str(entire["profiles_per_type"])+
+            " issues="+str(len(entire["issues"])),
+            "all-models-all-profiles.json")
+        add("common","ALL_PROFILES_INHERITANCE",
+            "PASS" if not entire["issues"] else "PENDING",
+            "issues="+str(len(entire["issues"]))+
+            " (catalog presence is not proven compatibility)")
         cube=ROOT/"fixtures/cube20.stl"
         if not cube.is_file():raise ValueError("CUBE_FIXTURE_MISSING")
         for target_id,name in TARGETS.items():
