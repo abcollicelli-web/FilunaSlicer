@@ -225,6 +225,17 @@ def main():
                     input_b=(dest/results[1]["path"]).resolve()
                     if input_a==input_b or not input_a.is_relative_to(dest.resolve()) or not input_b.is_relative_to(dest.resolve()):
                         raise ValueError("UNSAFE_OR_REUSED_OFFICIAL_AB_PATH")
+                    if not input_a.is_file() or not input_b.is_file():
+                        raise FileNotFoundError(
+                            "OFFICIAL_GCODE_PATH_RESOLUTION_MISMATCH "+
+                            json.dumps({"destination":str(dest),
+                                        "a":str(input_a),"b":str(input_b),
+                                        "a_present":input_a.is_file(),
+                                        "b_present":input_b.is_file()}))
+                    if sha(input_a)!=results[0]["sha256"] or sha(input_b)!=results[1]["sha256"]:
+                        raise ValueError("OFFICIAL_OUTPUT_FILE_CHANGED_BEFORE_AB_COMPARISON")
+                    add(target_id,"OUTPUT_FILE_PROVENANCE","PASS",
+                        "distinct_files_verified_sha256_and_paths")
                     proof=compare_files(input_a,input_b,
                                         dest/"strict-original-ab-proof.json")
                     outcome=proof["status"]
