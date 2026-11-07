@@ -2,6 +2,14 @@
 
 **Decisão expressa do proprietário:** 07/11/2026. Válida para todos os fabricantes, módulos OEM e modelos do Filuna Slicer. Esta decisão complementa, sem substituir, as regras de segurança, código-fonte, contrato OEM, evidências e aprovação do proprietário.
 
+## Atualização vinculante do proprietário — empacotamento leve e beta guiado (07/11/2026)
+
+O plano mestre [PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md §13](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md) §13 estabelece que o **build final** inclua apenas o motor-base compartilhado e os módulos/deltas OEM necessários, **sem empacotar as árvores completas de perfis de máquina, filamento e processo**. Esses perfis são descarregados individualmente sob demanda na primeira conexão de uma impressora em **Dispositivos**, com validação de origem, compatibilidade, cache local e funcionamento offline quando já configurada.
+
+No **beta físico**, cada impressora recém-vinculada passa pelo assistente guiado: rede/portas/protocolo e fatiamento avaliados pelo sistema; câmera visualizada localmente e confirmada pelo cliente; módulos multicolor/slots detectados pelo sistema e filamentos confirmados pelo cliente. Todos os testes obrigatórios PASS → **"Impressora liberada para teste de impressão"**. Após uma execução física completa e validada → **"Impressora parcialmente homologada"** para a próxima unidade da mesma combinação; após **três execuções físicas independentes totalmente PASS**, sem incidentes críticos e com evidência real → **"Impressora homologada — liberada para impressão"** no beta. Cada nova unidade ainda faz seu teste local. Três retries, reconexões ou eventos duplicados não contam. Releases estáveis seguem aprovação expressa do proprietário.
+
+A regra não antecipa fase física, build final, coleta real ou autorização de envio remoto antes da fase beta.
+
 ## 1. Fases obrigatórias e ordem
 
 **Fase A — desenvolvimento e homologação técnica interna (AGORA).**
