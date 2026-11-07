@@ -9,6 +9,7 @@ on:
       - "src/libslic3r/PrintConfig.cpp"
       - "src/libslic3r/PrintConfig.hpp"
       - "src/libslic3r/PerimeterGenerator.cpp"
+      - "src/libslic3r/Fill/FillRectilinear.cpp"
       - "lab/test_oem_native_source_contract.py"
       - ".github/workflows/filuna-oem-native-source-contract-qa.yml"
   workflow_dispatch:
