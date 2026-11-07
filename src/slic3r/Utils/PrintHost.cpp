@@ -507,8 +507,13 @@ bool PrintHostJobQueue::upload_job(PrintHostJob &job, PrintHost::ProgressFn prog
             if (safety.decision == Filuna::Safety::Report::Decision::Review)
                 throw std::runtime_error("Filuna U1: geometry cannot be validated; upload cancelled: " + safety.explanation);
             if (safety.decision == Filuna::Safety::Report::Decision::Warn) {
+                // info_fn queues an asynchronous GUI event: it cannot obtain
+                // informed consent before upload() starts on this worker.
+                // Fail closed until an authenticated, per-file approval and
+                // audit trail exist. No OEM G-code is altered or re-exported.
                 info_fn(wxString::FromUTF8("filuna_u1_safety_warning"),
-                        wxString::FromUTF8("Travel may leave the 270 mm volume. If using Auto spiral Z-hop, review Normal Z-hop. File is not changed."));
+                        wxString::FromUTF8("Travel may leave the 270 mm volume. Review the Z-hop setting and the original OEM motion. Upload is blocked until this risk can be acknowledged before transfer; G-code is unchanged."));
+                throw std::runtime_error("Filuna U1: geometry warning requires confirmation before upload; authenticated approval is not available. G-code unchanged; upload cancelled.");
             }
         }
         success = job.printhost->upload(std::move(job.upload_data), std::move(progress_fn), error_fn, std::move(info_fn));
