@@ -28,8 +28,8 @@
     },
     {
       "kind": "official_portable_qa",
-      "path": "lab/flashforge_appimage_original_qa.py",
-      "status": "APPIMAGE_PROBE_RUNNING_NO_GCODE"
+      "path": "lab/flashforge_original_ad5x_ad5m_cli_qa.py",
+      "status": "PASS_2_OEM_ORIGINAL_CLI_SAMPLES_NATIVE_NOT_INTEGRATED"
     }
   ],
   "checks": {
@@ -70,13 +70,37 @@
   "qa": {
     "source_tree_inventory": "PASS_SOURCE_CANDIDATES_ONLY",
     "all_source_profiles_inventory": "PASS_LIST_AND_INHERITANCE_ONLY",
-    "original_linux_appimage_integrity": "RUNNING",
-    "original_model_cli_ab": "NOT_RUN",
+    "original_linux_appimage_integrity": "PASS_SHA256_AND_PORTABLE_EXTRACT",
+    "original_model_cli_ab": "PASS_2_SAMPLES_ONLY_AD5X_AD5M",
     "filuna_native_slicing": "NOT_RUN",
     "filuna_native_network": "NOT_RUN",
     "full_oem_dependencies_review": "BLOCKED_64_AND_NETWORK_PLUGIN_LICENSE",
     "internal_homologation": "BLOCKED",
-    "physical_beta": "NOT_RUN"
+    "physical_beta": "NOT_RUN",
+    "sample_ad5x": {
+      "name": "Flashforge AD5X 0.4 nozzle",
+      "tested_release": "1.7.9",
+      "process": "0.20mm Standard @FF AD5X",
+      "material": "Flashforge HS PLA @FF AD5X",
+      "gcode_bytes": 209677,
+      "repeatability": "PASS_RAW_SHA_IDENTICAL",
+      "sha256": "68ed51e6e830ed7ad1d2159a26640b4d54d046f857851f3ad9054b3d045063d6"
+    },
+    "sample_adventurer_5m": {
+      "name": "Flashforge Adventurer 5M 0.4 Nozzle",
+      "tested_release": "1.7.9",
+      "process": "0.20mm Standard @Flashforge AD5M 0.4 Nozzle",
+      "material": "Flashforge Generic PLA",
+      "gcode_bytes": 185038,
+      "repeatability": "PASS_ONLY_ACTUAL_VERIFIED_GENERATED_AT_HEADER_LINE_2_NORMALIZED",
+      "normalized_sha256": "d1df7a1024d4e21722054e07d9f05644aeb3a2019c4d9f22e812eb176ce8ea66",
+      "normalized_diff_lines": [
+        2
+      ]
+    },
+    "official_ab_workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321095370",
+    "official_ab_scope_note": "Only two original vendor CLI samples; NOT Filuna parity, camera, IFS, LAN or internal homologation."
   },
-  "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL"
+  "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
+  "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_DOWNLOAD_NO_ALL_PRESETS_EMBEDDED"
 }
