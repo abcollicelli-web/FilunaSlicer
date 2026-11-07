@@ -50,3 +50,17 @@ Base documental: `FILUNA/qa/ESTADO-SNAPMAKER-ANYCUBIC-FLASHFORGE-20261107.md`, `
 6. **Promoção:** quando cada gate interno aplicável tiver evidência verificável, seguir Plano Mestre G4-I → build final/regressão → G5 → G6-B → G4-F → G6-S com aprovação expressa do proprietário.
 
 **Política operacional nesta rodada:** nenhum merge, release, instalação, alteração de produção/servidor/firmware, comando LAN a impressora, impressão física ou aprovação automática. O caráter DRAFT da PR #6 permanece obrigatório.
+
+
+## 5. Releitura independente de artefato e andamento do Windows — 07/11/2026 17:16 UTC
+
+**WIN-CACHE-02** — [#42394738274](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42394738274): `in_progress`, job `128469957670` ainda na etapa **Build pinned Orca Windows deps on this QA branch when the cache is unavailable**. Nenhum erro novo de compilação e **nenhum PASS** da GUI até o fechamento do job. Não reexecutar nem disparar builds concorrentes enquanto esse run estiver ativo.
+
+**U1-CORE-02 / U1-3MF-01 / U1-3MF-02** — artefato bruto do run [#42394922180](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42394922180), ID `13583545231`, reaberto e comparado diretamente, sem depender apenas do status geral:
+- `fourtool-proof.json`: `minimal_core_3mf_slice_control.exit_code=4294967290`, `gcodes=[]`. O log termina em `_BBS_3MF_Importer::_load_model_from_file:1687 IMPORT_STAGE_READ_FILES`, depois `Loading of a model file failed`. Isso é **rejeição durante importação**, não violação de acesso. O teste de integridade da fixture verifica ZIP/OPC, fechamento geométrico e malha, **não garante** que o importer BBS aceite todos os metadados/extensões. Causa detalhada ainda **NOT_PROVEN**.
+- `official-unmodified-3mf-control.exit_code=3221225477` = `0xC0000005`. O log do 3MF oficial chega a `IMPORT_STAGE_FINISH`, `plate count 0`; crash ocorre **depois da importação**, diferentemente da fixture Core. O arquivo OEM original permaneceu intacto (SHA-256 `302cb4d3b1583aa06bb56cad94265b3faf6d16dae82f9f2a882a39b27aafe8b0`).
+- `oem_exported_3mf_control.exit_code=3221225477` = `0xC0000005`. A última etapa logada é `render_thumbnail` com Mesa OpenGL, após `glfwInit Success` e `glewInit Sucess`. **Correlação temporal**, não prova de culpa do driver. A saída 3MF não foi criada.
+- `raw_stl_control.exit_code=0`: um G-code original produzido com `250183` bytes, SHA-256 `86e61b359fa2f25aa6a1296400b6638b274956c344fb9d28a230a940f26ce6ad`; o resultado **não prova repetibilidade** e não permite promover Snapmaker.
+- `four-tool-1.exit_code=3221225477`: quatro extrusoras **não testadas com G-code**. Crash do 3MF de referência sem alterações demonstra que a presença de quatro ferramentas não é causa necessária da falha, mas não identifica a causa suficiente.
+
+**Conclusão diagnóstica:** há pelo menos **dois modos de falha distintos** no caminho 3MF da CLI oficial Snapmaker 2.4.1 no runner Windows: rejeição de importação Core e access violation em projetos BBS/exportação. Nenhum deles autoriza editar G-code OEM, omitir testes negativos, concluir bug de firmware ou considerar o binário Filuna homologado. Próximo ensaio seguro: controle de importação Core com metadados mínimos do padrão BBS, crash stack ou dump em ambiente QA, e comparação da execução sem aceleração de renderização; qualquer intervenção deve permanecer somente no runner/fixture e documentar hashes.
