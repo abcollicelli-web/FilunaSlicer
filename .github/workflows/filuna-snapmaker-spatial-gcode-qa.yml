@@ -140,6 +140,14 @@ jobs:
             print("MOTION_CONTEXT",number,[(i+1,lines[i][:120])
                     for i in range(max(0,number-5),min(number+4,len(lines)))])
           assert x["status"]=="BLOCK" and x["issues"], "FINAL_PURGE_RISK_NOT_DETECTED"
+          # Fail if a future parser falsely blocks an unrelated ordinary
+          # tool change while missing the proved real final-purge collision.
+          final=[i for i in x["issues"] if i["line"]==38911
+                 and i["layer"]==14
+                 and i["context"]=="FINAL_PURGE_OR_END"]
+          assert len(final)==1, ("PROVEN_FINAL_PURGE_NOT_ISOLATED",x["issues"])
+          assert final[0]["xyz_mm"]==[63.569,147.185,3.05]
+          assert x["gcode_sha256"]=="05f227dd12598bd99626dd60a29e3ecdc2a97ae65db803d6e4f9520587254f48"
           assert x["gcode_modified"] is False
           PY
           verified=$?
