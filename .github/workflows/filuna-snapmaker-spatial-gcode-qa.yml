@@ -205,8 +205,12 @@ jobs:
           for vendor,p,sha,volume,model in cases:
             raw=p.read_bytes()
             assert hashlib.sha256(raw).hexdigest()==sha,(vendor,"ORIGINAL_GCODE_SHA_MISMATCH")
+            # These vendors have legitimate out-of-bed purge/parking paths:
+            # their mechanically permitted service envelopes are NOT
+            # established by the printable bed dimensions alone. Check
+            # collision false positives here, not uncertified machine bounds.
             policy={"manufacturer":vendor,"printer_model":model,"volume_mm":volume,
-                    "safe_macros":[]}
+                    "safe_macros":[],"check_bounds":False}
             result=validate_gcode(raw,policy,source="official")
             Path("qa-cross-brand/"+vendor+".json").write_text(json.dumps(result,indent=2))
             print("ORIGINAL_CUBE_REGRESSION",vendor,result["status"],
