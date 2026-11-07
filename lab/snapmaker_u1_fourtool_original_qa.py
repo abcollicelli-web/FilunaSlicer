@@ -148,6 +148,14 @@ def build_from_official_3mf(template:Path,out:Path)->dict:
     old_plate=setting_root.find("plate")
     if old_plate is None:
         old_plate=ET.SubElement(setting_root,"plate")
+    # A handy-model 3MF is not a full slicer project and may not contain
+    # any plate metadata. Snapmaker 2.4.1's BBS importer nevertheless
+    # consumes model_settings.config and rejects a plate with index absent.
+    plate_id=old_plate.find("./metadata[@key='plater_id']")
+    if plate_id is None:
+        ET.SubElement(old_plate,"metadata",{"key":"plater_id","value":"1"})
+    else:
+        plate_id.attrib["value"]="1"
     existing_ids=[int(x.attrib["id"]) for x in resources if x.attrib.get("id","").isdigit()]
     base_id=max(existing_ids+[1])+1
     for item in list(build):
