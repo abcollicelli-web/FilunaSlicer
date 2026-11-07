@@ -155,5 +155,14 @@ class SpatialSafetyTests(unittest.TestCase):
         self.assertEqual(report["warnings"],[])
 
 
+
+    def test_16_layer_change_reported_in_collision(self):
+        raw=geometry_square().replace(
+            b"G1 X20 Y10 E1", b";LAYER_CHANGE\nG1 X20 Y10 E1")
+        report=validate_gcode(raw,VENDOR,source="official")
+        self.assertEqual(report["status"],"BLOCK",report)
+        self.assertEqual(report["issues"][0]["layer"],0)
+
+
 if __name__=="__main__":
     unittest.main()
