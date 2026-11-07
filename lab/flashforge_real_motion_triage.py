@@ -16,7 +16,7 @@ from pathlib import Path
 import re
 
 MOTION = re.compile(r"^(G[0123])(?:\s|$)", re.I)
-VALUE = re.compile(r"(?:^|\s)([XYZEFIJP])([+-]?(?:\d+\.?\d*|\.\d+)(?:[Ee][+-]?\d+)?)")
+VALUE = re.compile(r"(?:^|\s)([XYZEFIJPR])([+-]?(?:\d+\.?\d*|\.\d+)(?:[Ee][+-]?\d+)?)")
 OTHER = ("M106", "M73", "SET_VELOCITY_LIMIT", "M104", "M109", "M140", "M190")
 
 
@@ -43,7 +43,7 @@ def parse(blob: bytes) -> tuple[dict[int, list[dict]], Counter]:
         attrs = {a.upper(): b for a, b in VALUE.findall(cmd)}
         # XY/Z comparison uses literal values, no tolerance or rounding.
         spatial = (token, attrs.get("X"), attrs.get("Y"), attrs.get("Z"),
-                   attrs.get("I"), attrs.get("J"))
+                   attrs.get("I"), attrs.get("J"), attrs.get("P"), attrs.get("R"))
         layers[layer].append({
             "line": line_number, "gcode": cmd, "geometry": spatial,
             "e": attrs.get("E"), "f": attrs.get("F")
