@@ -430,3 +430,11 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 
 **Status factual:** `NOVA_REGRA_DOCUMENTADA=PASS`, `NOVO_INSTALADOR=NOT_RUN`, `PROFILE_CATALOG_RUNTIME=NOT_RUN`, `FIRST_CONNECT_WIZARD=NOT_RUN`, `BETA_3_PRINTS=NOT_RUN`; sem publicação, compilação final ou ensaio físico por este registro. Retomar Snapmaker, Anycubic e Flashforge como QA OEM interno, sem confundir A/B oficial com engine Filuna.
 
+
+## Checkpoint 07/11/2026 — três OEMs, correção de fonte e etapa seguinte
+- **Autoridade/escopo:** ordem do proprietário de corrigir Snapmaker U1, Anycubic e Flashforge após leitura de `REGRA-MESTRE-QUALIDADE.md` e `PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md`; tudo isolado no PR draft #6.
+- **Correções de fonte candidatas aplicadas:** `PrintConfig.cpp` agora preserva `wall_direction=auto` explícito da Flashforge; `Print.cpp` bloqueia NaN/Inf na retração ativa, mantendo o zero desativado da Anycubic; `GCode.cpp` falha fechado para purga final não validada de perfil com `chamber_cooling_mode`, sem transformar isso em promessa de segurança para a Snapmaker.
+- **Prova real:** [Actions #42342020907](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42342020907), 15/15 testes **de fonte** PASS, commit `f02e1e43`; não há compilação do motor alterado, comparação nativa nova ou impressão. Falha transitória anterior #42341898566 foi corrigida sem afrouxar o guard.
+- **Continua bloqueado:** `INTERNAL_HOMOLOGATION=0/3`; Snapmaker não reproduz consistentemente o G-code OEM e upstream #1149 segue aberto; Flashforge mantém diferenças reais de G-code; Anycubic ainda não tem paridade do binário corrigido; `G4-I=BLOCKED`, `G4-F=NOT_RUN`. Bambuddy autenticado permanece adiado.
+- **Dossiê de continuidade:** [CORRECOES-CANDIDATAS-3-OEM-E-PROXIMA-ETAPA-20261107.md](qa/CORRECOES-CANDIDATAS-3-OEM-E-PROXIMA-ETAPA-20261107.md).
+- **Próxima etapa técnica desse lote:** concluir paridade do motor nativo e demais gates internos por fabricante; só então compilação final e beta físico autorizado. **Próxima onda global do Plano Mestre ainda pendente:** **01 — Fundação** (CI, baseline G-code, isolamento de dados e logs), seguida de Onda 02 Qualidade Orca. Nenhuma onda foi marcada PASS por este lote.
