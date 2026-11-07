@@ -11,6 +11,7 @@ ROOT=Path(__file__).resolve().parents[1]
 CPP=(ROOT/"src/slic3r/Utils/PrintHost.cpp").read_text(encoding="utf-8")
 HPP=(ROOT/"src/slic3r/Utils/PrintHost.hpp").read_text(encoding="utf-8")
 NATIVE=(ROOT/"src/slic3r/Utils/FilunaGCodeSafety.hpp").read_text(encoding="utf-8")
+GUI=(ROOT/"src/slic3r/GUI/PrintHostDialogs.cpp").read_text(encoding="utf-8")
 
 class NativeSendGateContract(unittest.TestCase):
     def test_01_effective_profile_captured_at_job_creation(self):
@@ -48,6 +49,12 @@ class NativeSendGateContract(unittest.TestCase):
         self.assertIn('TRAVEL_CROSSES_PRINTED_GEOMETRY',NATIVE)
         self.assertIn('GCODE_TRAVEL_CROSSES_ALREADY_PRINTED_PART',NATIVE)
         self.assertNotIn('std::system(',NATIVE)
+
+    def test_07_warning_has_real_gui_handler(self):
+        self.assertIn('info_fn(wxString::FromUTF8("filuna_u1_safety_warning")',CPP)
+        self.assertIn('if (evt.tag == "filuna_u1_safety_warning")', GUI)
+        self.assertIn('wxMessageBox(evt.status', GUI)
+        self.assertIn('wxICON_WARNING, this)', GUI)
 
     def test_06_no_unverified_physical_override(self):
         upload=CPP.split('bool PrintHostJobQueue::upload_job(',1)[1]
