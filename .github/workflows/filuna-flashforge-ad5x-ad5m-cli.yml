@@ -25,6 +25,10 @@ jobs:
         run: |
           command -v xvfb-run || echo 'xvfb-run is absent; report CLI failure, no secret dependencies'
           python -m py_compile lab/flashforge_original_ad5x_ad5m_cli_qa.py
+      - name: Provide only libgstvideo original AppImage runtime requirement
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libgstreamer-plugins-base1.0-0
+          ldconfig -p | grep -F 'libgstvideo-1.0.so.0'
       - name: Restore immutable Flashforge original Linux AppImage by SHA
         uses: actions/cache/restore@v4
         with:
