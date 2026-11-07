@@ -11,6 +11,13 @@ import json
 from pathlib import Path
 import subprocess
 
+def baseline_sample_verdict(official_bytes, filuna_bytes):
+    """A single equal G-code sample is only a diagnostic, never native OEM PASS."""
+    if not official_bytes or not filuna_bytes:
+        return "FAIL_EMPTY_GCODE"
+    return ("DIAGNOSTIC_ONE_SAMPLE_IDENTICAL_NOT_HOMOLOGATED"
+            if official_bytes == filuna_bytes else "FAIL_GCODE_DIFFERENT_NOT_OEM_PARITY")
+
 def h(p):
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
@@ -92,7 +99,7 @@ def diagnostic_fully_resolved_user_preset_attempt(vendor, paths, exe, stl, dest,
             report["filuna_bytes"]=actual.stat().st_size
             report["filuna_sha256"]=h(actual)
             left=official.read_bytes();right=actual.read_bytes()
-            if left==right:
+            if baseline_sample_verdict(left,right)=="DIAGNOSTIC_ONE_SAMPLE_IDENTICAL_NOT_HOMOLOGATED":
                 report["status"]="DIAGNOSTIC_ONE_SAMPLE_IDENTICAL_NOT_HOMOLOGATED"
             else:
                 aa=left.decode("utf-8","replace").splitlines()
@@ -157,8 +164,8 @@ def run_one(vendor,model,artifact,exe,stl,out):
             produced=products[0]
             data["filuna_gcode"]={"sha256":h(produced),"bytes":produced.stat().st_size}
             left=original.read_bytes();right=produced.read_bytes()
-            if left==right:
-                data["status"]="PASS_IDENTICAL_GCODE_SINGLE_SAMPLE"
+            if baseline_sample_verdict(left,right)=="DIAGNOSTIC_ONE_SAMPLE_IDENTICAL_NOT_HOMOLOGATED":
+                data["status"]="DIAGNOSTIC_ONE_SAMPLE_IDENTICAL_NOT_HOMOLOGATED"
             else:
                 al=left.decode("utf-8","replace").splitlines()
                 bl=right.decode("utf-8","replace").splitlines()
