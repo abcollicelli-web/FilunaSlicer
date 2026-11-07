@@ -34,6 +34,16 @@
 
 A validação autenticada da **linha Bambu com Bambuddy** é a **única atividade propositalmente adiada**, conforme ordem anterior. Permanece `BAMBUDDY_AUTH=PENDENTE` até ordem posterior. Os demais testes Bambu independentes do Bambuddy e as outras marcas prosseguem agora. Impedimentos técnicos reais são tratados e registrados, não classificados como adiamentos voluntários.
 
+## 2.1. Obrigação adicional da fase beta — ferramenta de monitoramento no servidor
+
+**Nova determinação expressa do proprietário em 07/11/2026:** antes de abrir o **beta vigiado**, implementar e validar o monitoramento automático, no **servidor Filuna**, das impressoras cuja homologação física esteja pendente, conforme [REGRA-BETA-MONITORAMENTO-HOMOLOGACAO-FISICA-20261107.md](REGRA-BETA-MONITORAMENTO-HOMOLOGACAO-FISICA-20261107.md).
+
+A instrumentação transversal ao app, Orca interno e módulos OEM deve acompanhar, sob observabilidade autorizada: **abertura do programa/arquivo, seleção de impressora, heranças de perfis, fatiamento, AMS e multimaterial, G-code gerado, G-code enviado e ACK, status real da impressão, conclusão, pausa/cancelamento e falhas**. O painel administrativo privado deve correlacionar por modelo, firmware, versão, módulo e trabalho, detectar inconsistências e preservar evidências para homologação modelo a modelo.
+
+A comparação de G-code deve separar **gerado, enviado, confirmado pela impressora e executado (somente quando comprovável)**; não declarar o G-code executado como conhecido quando o firmware não fornece essa evidência. O sistema é **observador, não controlador**: jamais autoriza o administrador a imprimir, parar, aquecer ou acessar câmeras; usuários participam com escopos de privacidade consentidos e revogáveis.
+
+**Fase atual:** requisito **documentado, ainda não implementado nem ativado**. Não alterar a sequência A→B→C→D, não fazer coleta real nesta fase, não antecipar testes físicos nem promover automaticamente resultados a homologação. Antes da abertura do beta, validar ingestão, privacidade, integridade, autorização, armazenamento, dashboard e casos negativos, além dos gates atuais.
+
 ## 3. Critério de comunicação
 
 Separar sempre: `BINARIO_OEM_PORTATIL_VERIFICADO`, `A_B_OFICIAL_PASS`, `PARIDADE_FILUNA_PASS`, `REDE_SIMULADA_PASS`, `HOMOLOGACAO_INTERNA_PASS`, `BUILD_FINAL_PASS`, `BETA_VIGIADO`, `HOMOLOGACAO_FISICA_PASS` e `ESTAVEL_APROVADA`. Esses estados não são equivalentes e não podem ser inferidos um do outro.
