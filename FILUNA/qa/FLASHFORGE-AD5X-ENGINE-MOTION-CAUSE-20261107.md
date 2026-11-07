@@ -60,3 +60,22 @@ Auditoria adicional feita sobre os **blocos CONFIG preservados no G-code real**:
 **Correção de hipótese:** a diferença estática de bounding box em `FillRectilinear::fill_surface_by_lines` mencionada acima **não está causalmente comprovada** para AD5X; `FillGrid` não habilita automaticamente o caminho `has_consistent_pattern()`. Não reverter genericamente código Orca por essa hipótese.
 
 **Gates após patch:** `FLASHFORGE_AUTO_WALL_SCHEMA=SOURCE_PATCH_PASS`, `FLASHFORGE_DEFAULT_OEM_SELECTION=NOT_INTEGRATED`, `FLASHFORGE_FILUNA_GCODE_GENERATED_WITH_PATCH=NOT_RUN`, `FLASHFORGE_GCODE_PARITY=FAIL_NOT_READY`, `OEM_NATIVE_DEVICE=NOT_RUN`, `INTERNAL_HOMOLOGATION=BLOCKED`. Não gerar build intermediário, instalador, release ou impressão física.
+
+
+## Verificação de configuração embutida nos dois G-codes reais (CI 07/11/2026)
+
+[Workflow #42339362945](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42339362945) **SUCCESS**, com 10/10 testes do comparador passando. Artefato JSON `filuna-flashforge-ad5x-motion-delta-root-cause-evidence` (ID 13560627477) inspecionado. O teste lê apenas os intervalos `; CONFIG_BLOCK_START` até `; CONFIG_BLOCK_END`, sem reescrever G-code.
+
+Foram **580 campos de configuração em comum**, com **cinco diferenças serializadas detectadas**:
+
+| Chave | Oficial Flashforge | Filuna pré-OEM |
+| --- | --- | --- |
+| `wall_direction` | `auto` | `ccw` |
+| `wipe_tower_type` | `type1` | `type2` |
+| `filament_change_length` | `0` | `10` |
+| `flush_volumes_matrix` | matriz 4×4, diagonais 0 e restantes 280 | `0` |
+| `enable_arc_fitting` | `1` | `enabled` |
+
+**Interpretação:** a primeira diferença é uma incompatibilidade real de escolha de default e esquema do motor. O patch C++ de `wall_direction=auto` nesta branch permite o modo **apenas quando explicitamente escolhido**, mas ainda **não implementa** a origem/default assinado `auto` do OEM no mecanismo de perfis sob demanda; portanto não é legítimo afirmar que o Filuna agora produz a mesma trajetória. A diferença `enable_arc_fitting` pode ser somente formato de serialização e requer verificação semântica. Não assumir que opções de purga/torre são irrelevantes sem testar o contexto. A quantidade de 534 blocos geométricos distintos não foi reduzida pelo patch, pois o teste continua sobre **binário anterior imutável**.
+
+**Estado:** `FLASHFORGE_GCODE_PARITY=FAIL`, `FLASHFORGE_AUTO_SOURCE_CANDIDATE=PASS_STATIC`, `FLASHFORGE_NATIVE_INTEGRATION=NOT_RUN`, `HOMOLOGACAO_INTERNA=BLOCKED`.
