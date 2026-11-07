@@ -10004,9 +10004,9 @@ void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &va
     } else if (opt_key == "machine_switch_extruder_time") {
         opt_key = "machine_tool_change_time";
     }
-    else if (opt_key == "wall_direction" && value == "auto") {
-        value = "ccw";
-    }
+    // Filuna OEM: wall_direction=auto is now a valid explicit enum value.
+    // Do not silently migrate it to ccw: Flashforge OEM profiles need to
+    // retain Auto, while ordinary Orca profiles retain the CCW default.
     // Orca: the IDEX/IQEX parallel printing keys shipped to testers as ixex_* before the feature
     // was renamed IMEX, and the two clearance keys were renamed again to say what they measure:
     // nozzle to carriage edge on the collision side, not the carriage's full width. Without this
