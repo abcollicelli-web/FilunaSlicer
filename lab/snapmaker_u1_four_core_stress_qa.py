@@ -70,8 +70,8 @@ def execute(cache:Path,out:Path,runs:int)->dict:
             data=file.read_bytes()
             meta=header_date_only_normalization(data)
             tools=sorted({int(m.group(1)) for m in re.finditer(
-                rb"(?m)^\\s*T([0-3])(?:\\s|;|$)",data)})
-            changes=len(re.findall(rb"(?m)^;\\s*CP TOOLCHANGE START",data))
+                rb"(?m)^\s*T([0-3])(?:\s|;|$)",data)})
+            changes=len(re.findall(rb"(?m)^;\s*CP TOOLCHANGE START",data))
             result.update({"status":"PASS_FILE_GENERATED",
                            "original_sha256":meta["raw_sha256"],
                            "functional_sha256":meta["normalized_sha256"],
