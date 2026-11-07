@@ -136,17 +136,16 @@ class OEMSourceGuardTests(unittest.TestCase):
         self.assertIn('Do not silently migrate it to ccw', CONFIG_CPP)
         self.assertIn('new ConfigOptionEnum<WallDirection>(WallDirection::CounterClockwise)', CONFIG_CPP)
 
-    def test_14_snapmaker_final_purge_fail_closed_until_native_safety_proof(self):
-        # Source guard only: not a successful physical Z-hop test. The
-        # unverified final purge must stop before any generated travel.
-        block = GCODE_CPP.split('WipeTowerIntegration::append_tcr2(', 1)[1]
-        marker = 'oem_final_purge = unverified_oem_chamber_macro && !tcr.priming && new_extruder_id == -1'
-        self.assertIn(marker, block)
-        self.assertIn('if (oem_final_purge && !candidate_safe_final_purge_travel)', block)
-        self.assertIn('G-code export blocked.', block)
-        self.assertLess(block.index('if (oem_final_purge && !candidate_safe_final_purge_travel)'),
-                        block.index('gcode += gcodegen.writer().unlift()'))
-        self.assertIn('machine_start_gcode.value.find("chamber_cooling_mode")', block)
+    def test_14_snapmaker_gcode_is_not_rewritten_or_blindly_blocked(self):
+        # Owner's binding rule: generated G-code is immutable and safety is
+        # delegated to the independent spatial validator.
+        self.assertNotIn('unverified_oem_chamber_macro', GCODE_CPP)
+        self.assertNotIn('candidate_safe_final_purge_travel', GCODE_CPP)
+        self.assertNotIn('Final purge Z-hop safety not yet validated', GCODE_CPP)
+        self.assertIn('gcode += gcodegen.writer().unlift();', GCODE_CPP)
+        self.assertIn('|| tool_change_on_wipe_tower);', GCODE_CPP)
+        self.assertNotIn('filuna_oem_final_purge_lift', CONFIG_HPP)
+        self.assertNotIn('filuna_oem_final_purge_lift', CONFIG_CPP)
 
     def test_15_snapmaker_vendor_still_blocked_even_with_source_guard(self):
         manifest = json.loads((ROOT / "FILUNA/fabricantes/snapmaker/manifest.json").read_text(encoding="utf-8"))
@@ -187,22 +186,15 @@ class OEMSourceGuardTests(unittest.TestCase):
         self.assertFalse(manifest["automatic_hardware_activation"])
 
 
-    def test_18_snapmaker_upstream_1150_candidate_requires_opt_in(self):
-        # The safety fix is real C++ control flow but remains opt-in. This test
-        # does not prove resulting G-code or firmware motion safety.
-        self.assertIn('((ConfigOptionBool,                filuna_oem_final_purge_lift))', CONFIG_HPP)
-        self.assertRegex(CONFIG_CPP, re.compile(
-            r'add\("filuna_oem_final_purge_lift", coBool\);.{0,550}new ConfigOptionBool\(false\)', re.S))
-        section = GCODE_CPP.split('WipeTowerIntegration::append_tcr2(', 1)[1]
-        self.assertIn('candidate_safe_final_purge_travel =', section)
-        self.assertIn('oem_final_purge && gcodegen.config().filuna_oem_final_purge_lift.value', section)
-        self.assertIn('if (!candidate_safe_final_purge_travel)\n            gcode += gcodegen.writer().unlift()', section)
-        self.assertIn('|| candidate_safe_final_purge_travel);', section)
-        self.assertIn('gcode += gcodegen.retract(false, false, lift_type);', section)
-        self.assertIn('gcode += gcodegen.travel_to(start_wipe_pos, erMixed, "Travel to a Wipe Tower");', section)
-        self.assertLess(section.index('gcode += gcodegen.retract(false, false, lift_type);'),
-                        section.index('gcode += gcodegen.travel_to(start_wipe_pos, erMixed, "Travel to a Wipe Tower");'))
-        self.assertIn('gcode += gcodegen.unretract();', section)
+    def test_18_snapmaker_validator_vendor_proof_and_no_mutation(self):
+        validator=(ROOT/"lab/snapmaker_spatial_gcode_validator.py").read_text(encoding="utf-8")
+        d=json.loads((ROOT/"FILUNA/fabricantes/snapmaker/vendor.yaml").read_text(encoding="utf-8"))
+        self.assertEqual(d["gcode_policy"],"READ_ONLY_SPATIAL_VALIDATION_NEVER_POSTPROCESS")
+        self.assertIn("def paired_audit(", validator)
+        self.assertIn("def acknowledge_risk(", validator)
+        self.assertIn("def arc_points(", validator)
+        self.assertIn("GCODE_CHANGED_DURING_VALIDATION", validator)
+        self.assertNotIn("all_travels", [x["scope"] for x in d["safe_macros"]])
 
 
 
