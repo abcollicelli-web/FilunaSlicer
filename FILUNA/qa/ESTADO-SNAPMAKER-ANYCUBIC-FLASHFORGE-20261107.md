@@ -94,3 +94,35 @@ Foi criado o bloqueio preventivo \`FILUNA/tools/oem_three_brand_promotion_guard.
 4. `HOMOLOGACAO_INTERNA_FILUNA=BLOCKED (0/3)`, `PARIDADE_NATIVA=FAIL_NOT_READY`, `HOMOLOGACAO_FISICA=NOT_RUN`, `BAMBUDDY_AUTH=OWNER_DEFERRED`. A fase física será no beta vigiado, após gates internos e compilação final. **Não fazer merge, release, deploy, instalar motor OEM completo ou iniciar impressão física.**
 
 **Site e servidor:** consulta somente leitura ao SentinelX em 07/11: diretório legado `/srv/site` preservado; `https://filuna3d.com/filuna-slicer-dev/` respondeu HTTP **401** sem autenticação, comportamento compatível com a rota beta privada protegida. Essa resposta não certifica funcionamento interno do app, login nem release; nenhum deploy foi executado.
+
+
+## Correções OEM nativas candidatas — 07/11/2026 (sem compilar versões intermediárias)
+
+**Ordem de escopo:** resolver falhas encontradas no motor Filuna, sem trocar preset do fabricante, sem G-code pós-processado para forçar igualdade, sem distribuir motor OEM completo. O código-fonte do Orca Filuna foi alterado **apenas na branch DRAFT**. Os testes de fonte foram executados, mas **o executável Filuna imutável de 05/11 ainda não incorpora estas alterações**: qualquer diagnóstico obtido dele continua sendo a linha-base anterior, não prova do patch.
+
+### 1. Anycubic — valor 0 com corte longo desativado
+
+- Evidência real: Kobra 3 V2 oficial, `retraction_distances_when_cut=["0"]`, `long_retractions_when_cut=["0"]`, `enable_long_retraction_when_cut=0`; Filuna portátil anterior recusava `0 not in range [10,18]`.
+- Código candidato: `src/libslic3r/PrintConfig.cpp` aceita **zero sem alterar seu valor** no esquema. `src/libslic3r/Print.cpp` mantém gate obrigatório de **10 a 18 mm se a opção estiver ativa**. Correção independente: o vetor de override nullable de retração era preenchido por engano no vetor de outra opção, agora corrigido.
+- **Garantia limitada:** o teste unitário de inspeção da fonte passa; o schema sozinho não garante que a máquina carregue o preset, nem que o Filuna gere G-code ou seja equivalente ao Anycubic 2.0.0.6. Verificação real do motor recompilado final continua `NOT_RUN`.
+
+### 2. Snapmaker U1 — contexto original da macro `chamber_cooling_mode`
+
+- Fonte oficial auditada: `Snapmaker/OrcaSlicer` commit `bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c`, `src/libslic3r/GCode.cpp`, cálculo do modo de resfriamento a partir de `filament_is_high_temperature` e `temperature_vitrification` de cada filamento em uso.
+- Código candidato: adicionada definição `filament_is_high_temperature` ao esquema/default, e injetado `chamber_cooling_mode` imediatamente antes de processar o `machine_start_gcode`, **somente quando o template pede essa variável**. Valores OEM: 0 = conservar aquecimento, 1 = resfriamento fraco em temperatura de amolecimento até 70 °C, 2 = resfriamento forte até 50 °C. O perfil oficial de teste U1 PLA (45 °C, high-temperature=0) seleciona modo **2** no vetor de referência.
+- **Garantia limitada:** somente inspeção estática e casos unitários de regra; não há ainda saída G-code do Filuna com o patch, nem segurança comprovada. A questão upstream de purga/elevação Z `Snapmaker/OrcaSlicer#1149` e a **não-repetibilidade em 2.4.0/2.4.1** seguem bloqueios separados. Não acionar U1 real.
+
+### 3. Flashforge AD5X — diferença de trajetória verdadeira, não apenas cabeçalho
+
+- Comparação de arquivos **efetivamente gerados**: oficial 1.7.9 `209677` bytes / SHA `68ed51e6e830ed7ad1d2159a26640b4d54d046f857851f3ad9054b3d045063d6`; Filuna pré-OEM `214319` bytes / SHA `254904898873768d77bca7f2c03387c92fe6b8ac308120d330fcdf932c65cf70`.
+- G0–G3: **5759 movimentos oficiais vs 5753 Filuna**; G1 **5658 vs 5652**; M73 110 vs 110 (deslocados de posição), `SET_VELOCITY_LIMIT` 373 vs 379, M106 9 vs 8. Primeiro movimento divergente: **E.02839 no oficial vs E.0284 no Filuna**. Em posições seguintes, velocidades 7947 vs 7970, geometrias XY e trajetórias diferem. Não é apenas arredondamento, pois existem deslocamentos reais no plano.
+- Atualizado o comparador `lab/oem_functional_gcode_diff.py` para registrar hashes e divergência dos movimentos **sem reescrever saídas**; adicionados testes negativos para rejeitar falso PASS mesmo se só movimentos coincidirem e a temperatura diferir.
+- **Correção de paridade do motor ainda NÃO aplicada**: requer porte e teste dos deltas do gerador/planner da fonte oficial, auditoria de ABI e licença; não converter G-code OEM em suposto G-code Filuna, nem manipular postprocessor para esconder divergência.
+
+### Evidência e gates
+
+- [CI fonte #42337828214](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42337828214): **9/9 testes de fonte PASS**, incluindo os vetores da macro oficial Snapmaker, corte longo ativo/inativo e proteção contra falso PASS. **Não compila nem executa o motor novo.**
+- [CI diferencial Windows inicial #42336460665](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42336460665): teste real do **portátil anterior**, não dos patches C++ da branch; fonte do corpus e relatórios preservados.
+- Teste diferencial com análise detalhada de movimentos: CI `.github/workflows/filuna-existing-portable-vs-three-oem.yml` acionado por atualização do comparador; status sujeito à inspeção da execução correspondente (nunca inferir paridade de `SUCCESS`).
+- `SOURCE_PATCH_ANYCUBIC=IMPLEMENTADO_NAO_COMPILADO`; `SOURCE_PATCH_SNAPMAKER_MACRO=IMPLEMENTADO_NAO_COMPILADO`; `FLASHFORGE_NATIVE_MOTION_PARITY=FAIL`; `ALL_THREE_INTERNAL_HOMOLOGATION=BLOCKED`; `DEVICE_NETWORK=NOT_RUN`; `PHYSICAL_BETA=NOT_RUN`; `BAMBUDDY_AUTH=OWNER_DEFERRED`.
+- A sequência permanece **gates internos → compilação final → beta vigiado com validação física → aprovação estável**, sem reclassificar patch estático como homologação. Nenhum deploy de site/instalador/dispositivos foi efetuado.
