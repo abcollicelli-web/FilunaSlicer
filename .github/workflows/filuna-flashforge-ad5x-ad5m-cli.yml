@@ -27,6 +27,7 @@ jobs:
           python -m py_compile lab/flashforge_original_ad5x_ad5m_cli_qa.py
       - name: Provide only libgstvideo original AppImage runtime requirement
         run: |
+          sudo apt-get update -qq
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libgstreamer-plugins-base1.0-0 libwebkit2gtk-4.1-0
           ldconfig -p | grep -F 'libgstvideo-1.0.so.0'
           ldconfig -p | grep -F 'libwebkit2gtk-4.1.so.0'
