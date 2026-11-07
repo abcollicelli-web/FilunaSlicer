@@ -106,7 +106,7 @@ class OEMSourceGuardTests(unittest.TestCase):
 
     def test_10_flashforge_auto_schema_is_opt_in(self):
         perimeter = (ROOT / "src/libslic3r/PerimeterGenerator.cpp").read_text(encoding="utf-8")
-        self.assertRegex(CONFIG_HPP, r"enum class WallDirection\s*\{\s*CounterClockwise,\s*Clockwise,.*?Auto,\s*Count,", msg="enum keeps existing Orca CCW/CW indexes")
+        self.assertRegex(CONFIG_HPP, r"enum class WallDirection\s*\{\s*CounterClockwise,\s*Clockwise,[\s\S]*?Auto,\s*Count,", msg="enum keeps existing Orca CCW/CW indexes")
         self.assertIn('{ "auto",  int(WallDirection::Auto)}', CONFIG_CPP)
         self.assertIn('def->enum_values.push_back("auto");', CONFIG_CPP)
         self.assertIn('new ConfigOptionEnum<WallDirection>(WallDirection::CounterClockwise)', CONFIG_CPP)
