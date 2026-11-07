@@ -141,7 +141,30 @@
       "error": "can not resolve preset ... process.json: Preset was not found in the loaded bundle",
       "note": "Existing Filuna pre-OEM portable baseline does not yet have Anycubic native module or on-demand catalog integrated; this is NOT the same executable as official Anycubic.",
       "native_homologation": "BLOCKED"
-    }
+    },
+    "original_cli_stress_20_per_model": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325230868",
+      "status": "PASS_OEM_ORIGINAL_ONLY",
+      "models": [
+        "Kobra S1 0.4",
+        "Kobra 3 V2 0.4",
+        "Kobra 4 0.4"
+      ],
+      "additional_independent_runs": 60,
+      "normalization": "ONLY_VENDOR_HEADER_GENERATED_AT_TIMESTAMP",
+      "functional_gcode_variances": 0
+    },
+    "pre_oem_filuna_baseline": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325032419",
+      "status": "BLOCKED_NO_NATIVE_GCODE",
+      "root_first_error": "OEM process preset not in loaded bundle",
+      "temp_user_profile_diagnostic": "retraction_distances_when_cut: 0 rejected by core range 10-18",
+      "not_oem_integration": true
+    },
+    "native_filuna_engine_parity": "BLOCKED_OR_NOT_RUN",
+    "native_printer_network_control": "NOT_RUN",
+    "physical_homologation": "BETA_LATER_NOT_RUN",
+    "overall_internal_homologation": "BLOCKED"
   },
   "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
   "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_PROFILE_DATA_NOT_FINAL_INSTALLER"
