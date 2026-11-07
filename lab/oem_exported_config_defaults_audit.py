@@ -33,9 +33,19 @@ def read_config(text: str) -> dict[str, str]:
             if not m:
                 continue  # multiline comments in OEM configs are not parsed as keys
             key = m.group(1)
-            if key in active:
-                raise ValueError("DUPLICATE_CONFIG_KEY_" + key)
-            active[key] = m.group(2)
+            # OEM exports may legally print one config key twice (e.g.
+            # wipe_tower_x = 15.000 followed by wipe_tower_x = 15).
+            # Keep every exact occurrence in order; never silently choose
+            # the last value or treat conflicting values as equivalent.
+            value = m.group(2)
+            if key not in active:
+                active[key] = value
+            else:
+                previous = active[key]
+                if isinstance(previous, list):
+                    previous.append(value)
+                else:
+                    active[key] = [previous, value]
     if active is not None or len(blocks) != 1 or not blocks[0]:
         raise ValueError("ONE_COMPLETE_NONEMPTY_CONFIG_BLOCK_REQUIRED")
     return blocks[0]
