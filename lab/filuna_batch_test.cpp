@@ -1,6 +1,7 @@
 // The test binary links precisely the same filuna_oem_* static library targets as the application.
 // Startup is a link/constructor check, NOT a T3-T9 PASS.
 #include "IPrinterAdapter.hpp"
+#include "PendingVendorAdapter.hpp"
 #include <iostream>
 #include <memory>
 #include <string>
