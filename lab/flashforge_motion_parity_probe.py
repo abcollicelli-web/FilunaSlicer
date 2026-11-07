@@ -20,6 +20,27 @@ AXES = re.compile(r"(?<![A-Z])([XYZEF])(-?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+))")
 LAYER = re.compile(r"^;LAYER_CHANGE(?:\s|$)")
 
 
+CONFIG_ENTRY = re.compile(r"^;\s*([a-zA-Z_][a-zA-Z_0-9]*)\s*=\s*(.*?)\s*$")
+
+
+def runtime_config(data: bytes) -> dict[str, str]:
+    """Read actual embedded OEM/Filuna config evidence, without rewriting it."""
+    inside = False
+    result = {}
+    for line in data.decode("utf-8", "replace").splitlines():
+        if line == "; CONFIG_BLOCK_START":
+            inside = True
+            continue
+        if line == "; CONFIG_BLOCK_END":
+            inside = False
+            continue
+        if inside:
+            match = CONFIG_ENTRY.fullmatch(line)
+            if match:
+                result[match.group(1)] = match.group(2)
+    return result
+
+
 def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -76,6 +97,13 @@ def first_motion_delta(official: bytes, candidate: bytes, max_samples: int = 12)
             "official": a[i]["code"] if i < len(a) and i < j else None,
             "filuna": b[k]["code"] if k < len(b) and k < l else None,
         })
+    official_settings = runtime_config(official)
+    filuna_settings = runtime_config(candidate)
+    shared_deltas = {
+        key: {"official": official_settings[key], "filuna": filuna_settings[key]}
+        for key in sorted(official_settings.keys() & filuna_settings.keys())
+        if official_settings[key] != filuna_settings[key]
+    }
     raw_equal = official == candidate
     movement_equal = [x["code"] for x in a] == [x["code"] for x in b]
     geometry_equal = akeys == bkeys
@@ -85,6 +113,8 @@ def first_motion_delta(official: bytes, candidate: bytes, max_samples: int = 12)
                    if raw_equal else "FAIL_REAL_GCODE_PARITY"),
         "native_parity": "NOT_PROVEN",
         "raw_equal": raw_equal,
+        "embedded_runtime_config_differences": shared_deltas,
+        "embedded_runtime_config_common_count": len(official_settings.keys() & filuna_settings.keys()),
         "movement_equal": movement_equal,
         "geometry_equal": geometry_equal,
         "official_sha256": digest(official),
