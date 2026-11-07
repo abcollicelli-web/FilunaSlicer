@@ -126,3 +126,20 @@ Foi criado o bloqueio preventivo \`FILUNA/tools/oem_three_brand_promotion_guard.
 - Teste diferencial com análise detalhada de movimentos: CI `.github/workflows/filuna-existing-portable-vs-three-oem.yml` acionado por atualização do comparador; status sujeito à inspeção da execução correspondente (nunca inferir paridade de `SUCCESS`).
 - `SOURCE_PATCH_ANYCUBIC=IMPLEMENTADO_NAO_COMPILADO`; `SOURCE_PATCH_SNAPMAKER_MACRO=IMPLEMENTADO_NAO_COMPILADO`; `FLASHFORGE_NATIVE_MOTION_PARITY=FAIL`; `ALL_THREE_INTERNAL_HOMOLOGATION=BLOCKED`; `DEVICE_NETWORK=NOT_RUN`; `PHYSICAL_BETA=NOT_RUN`; `BAMBUDDY_AUTH=OWNER_DEFERRED`.
 - A sequência permanece **gates internos → compilação final → beta vigiado com validação física → aprovação estável**, sem reclassificar patch estático como homologação. Nenhum deploy de site/instalador/dispositivos foi efetuado.
+
+ 
+## Rastreio da triagem funcional Flashforge e prova dos dois bloqueios de CLI (07/11/2026, 04:27 UTC)
+
+**Workflow real [#42338506954](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42338506954)**, SHA `273cd1a5709ba019dcf14964766f9088240a2329`, preservou executável portátil Filuna antigo e G-code oficial Flashforge 1.7.9, sem recompilar. O laboratório passou nos **8 novos testes de classificação** de movimento (arco, XYZ, extrusão, feedrate, temperatura, fan, ausência de G-code e bloqueio de falso PASS), além dos testes anteriores. O artefato `filuna-existing-windows-base-versus-3-official-oem-gcodes` (ID 13559854682) guarda `flashforge/flashforge-motion-triage.json`, `model-manifest-probe/verdicts.json` e logs reais.
+
+**Modelo de fonte OEM sob demanda — ensaio com um único modelo, SEM parâmetros inventados:** o probe criado no mesmo PR gerou arquivos de fonte temporários com presets efetivos oficiais por máquina, mantendo valores de temperatura, retração, velocidade, G-code e herança já resolvida. **Não é um carregador de produção**, mas confirmou no binário pré-OEM:
+- Anycubic Kobra 3 V2: sistema carrega até a validação e recusa `retraction_distances_when_cut: 0 not in range [10,18]`. Patch C++ de aceitar zero desativado está na branch e não no binário antigo; **ainda não revalidado em executável gerado do código novo**.
+- Snapmaker U1: presets carregam até a macro e o parser antigo não reconhece `chamber_cooling_mode`. Patch C++ de macro está na branch, mas **ainda não revalidado em executável gerado do código novo**. U1 segue também bloqueada por não-repetibilidade do próprio OEM e risco de purga/Z-hop.
+- Flashforge AD5X: fonte temporária por máquina produz G-code do Filuna portátil, **mas não igual ao oficial**. A propriedade `from=system` e a indexação de um só modelo não corrigem o planejador; nome/tipo/perfil não são a explicação suficiente.
+
+**Triagem por trajetória original, sem arredondar ou ocultar desvios:**
+- Movimentos `G0/G1/G2/G3`: **5759 oficial versus 5753 Filuna**.
+- Na comparação espacial por camada, **182 extrusões numéricas diferentes, 374 diferenças de feedrate, 534 grupos de edições geométricas**, atingindo **100 de 100 camadas**. Os grupos de edição não são defeitos independentes e não provam 534 caminhos diferentes; a contagem é diagnóstico de alinhamento de sequências, preservado em JSON com primeiro exemplo por categoria.
+- Diferenças incluem feedrate, E, XY/arc, fan `M106` e planejamento. Não normalizar nem editar G-code gerado para falsificar paridade. A solução exige portar e revisar os deltas de geração e planejamento da versão OEM Flashforge sobre o motor Orca compartilhado, com proteção por fabricante/modelo/firmware e regressão total.
+
+**Decisão:** `ANYCUBIC_SOURCE_CANDIDATE=IMPLEMENTADO_NAO_EXECUTADO`, `SNAPMAKER_MACRO_SOURCE_CANDIDATE=IMPLEMENTADO_NAO_EXECUTADO`, `FLASHFORGE_NATIVE_PARITY=FAIL`, `THREE_OEM_INTERNAL_HOMOLOGATION=0/3`. Corrigir fonte e comparar binário Filuna real com provas repetidas antes de promoção. Não publicar motor OEM inteiro, pacote final, website ou impressora real; beta físico permanece após gates internos e compilação final. Bambuddy autenticado continua adiado por ordem do proprietário.
