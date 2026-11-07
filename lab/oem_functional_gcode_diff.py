@@ -57,6 +57,17 @@ def analyze_bytes(official: bytes, candidate: bytes, vendor: str) -> dict:
                 "filuna_parity": "NOT_PROVEN"}
     a, a_comments = commands_with_lines(official)
     b, b_comments = commands_with_lines(candidate)
+    movement_a = [(ln, cmd) for ln, cmd in a if command_family(cmd).startswith("MOVEMENT_")]
+    movement_b = [(ln, cmd) for ln, cmd in b if command_family(cmd).startswith("MOVEMENT_")]
+    move_a = "\n".join(cmd for _, cmd in movement_a).encode("utf-8")
+    move_b = "\n".join(cmd for _, cmd in movement_b).encode("utf-8")
+    first_motion = next((i for i in range(min(len(movement_a), len(movement_b)))
+                         if movement_a[i][1] != movement_b[i][1]),
+                        min(len(movement_a), len(movement_b)))
+    motion_difference = ({"index": first_motion,
+                          "official": movement_a[first_motion:first_motion + 3],
+                          "filuna": movement_b[first_motion:first_motion + 3]}
+                         if first_motion < max(len(movement_a), len(movement_b)) else None)
     c_a = Counter(command_family(x) for _, x in a)
     c_b = Counter(command_family(x) for _, x in b)
     a_command_text = "\n".join(x for _, x in a).encode("utf-8")
@@ -92,6 +103,10 @@ def analyze_bytes(official: bytes, candidate: bytes, vendor: str) -> dict:
             "official": sha256(a_command_text), "filuna": sha256(b_command_text)},
         "noncomment_command_equal_diagnostic_only": equal_commands,
         "command_counts": {"official": len(a), "filuna": len(b)},
+        "motion_counts": {"official": len(movement_a), "filuna": len(movement_b)},
+        "motion_sha256": {"official": sha256(move_a), "filuna": sha256(move_b)},
+        "motion_equal_diagnostic_only": move_a == move_b,
+        "first_motion_difference": motion_difference,
         "comment_lines": {"official": a_comments, "filuna": b_comments},
         "families": {family: {"official": c_a.get(family, 0),
                               "filuna": c_b.get(family, 0)}
