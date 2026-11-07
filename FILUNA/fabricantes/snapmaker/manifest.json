@@ -92,7 +92,7 @@
     "u1_official_cli_temporary_guard_ab": "PASS_DIAGNOSTIC_ONLY",
     "u1_filuna_native_gcode_parity": "NOT_RUN",
     "u1_network_protocol": "NOT_RUN",
-    "internal_homologation": "BLOCKED_INTERMITTENT_NON_TIMESTAMP_GCODE_AND_OPEN_SNAPMAKER_SAFETY_ISSUE_1149",
+    "internal_homologation": "BLOCKED_BOTH_240_241_REAL_TOOLPATH_NONDETERMINISM_AND_241_ZHOP_ISSUE_1149",
     "physical_beta": "NOT_RUN",
     "u1_spaced_second_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
     "u1_cross_minute_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
@@ -176,7 +176,32 @@
       "experimental_settings_not_for_release": true,
       "conclusion": "Neither wipe-off nor nearest seam singly or together fixes intermittent original OEM CLI G-code non-repeatability"
     },
-    "u1_root_cause": "NOT_ISOLATED_AFTER_10_40_48_80_CLI_RUNS"
+    "u1_root_cause": "SAME_OUTPUT_INSTABILITY_CONFIRMED_IN_2_4_0_AND_2_4_1_NOT_ISOLATED",
+    "u1_original_240_portable_regression_reference": {
+      "release": "v2.4.0",
+      "binary_name": "Snapmaker_Orca_Windows_V2.4.0_portable.zip",
+      "official_zip_sha256": "089b7ca20ccfc4be57ffb5a7f9f81e3a2b55db3a9622755fee2b20208bfcb8c2",
+      "official_source_profiles": "from same immutable v2.4.0 ZIP resources Snapmaker",
+      "diagnostic_only_guard": "process-only nozzle_diameter inherited from machine when required",
+      "action_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324349445",
+      "result": "FAIL_REAL_NON_TIMESTAMP_GCODE_VARIANTS",
+      "independent_attempts": 30,
+      "distinct_normalized_gcodes": 4,
+      "histogram_counts": [
+        27,
+        1,
+        1,
+        1
+      ],
+      "examples_bytes": [
+        248825,
+        248197,
+        247867,
+        247789
+      ],
+      "source_diff": "different feedrate F/motion/wipe trajectories and M73 positions, not only time",
+      "conclusion": "2.4.0 also has occasional genuine toolpath non-repeatability in U1 official CLI; not unique to 2.4.1, no fallback homologation"
+    }
   },
   "automatic_hardware_activation": false,
   "production_promotion": "BLOCKED_UNTIL_TOOLPATH_SAFETY_AND_NATIVE_NETWORK_VALIDATED",
