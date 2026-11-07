@@ -141,6 +141,13 @@ def build_from_official_3mf(template:Path,out:Path)->dict:
                           if obj.attrib.get("id")==original_id),None)
     if original_object is None:
         raise ValueError("OEM_TEMPLATE_MODEL_ID_NOT_REFERENCED")
+    # The OEM handy model's build item points to a COMPONENTS wrapper.
+    # Snapmaker BBS importer's object map does not accept duplicated wrapper
+    # IDs as new top-level print objects. Clone the referenced *mesh* itself.
+    mesh_object=next((obj for obj in resources if obj.find(ns+"mesh") is not None),None)
+    if mesh_object is None:
+        raise ValueError("OEM_TEMPLATE_MISSING_DIRECT_MESH")
+    original_object=mesh_object
     settings_name="Metadata/model_settings.config"
     setting_root=ET.fromstring(payload[settings_name]) if settings_name in payload else ET.Element("config")
     old_entry=next((e for e in setting_root.findall("object")
@@ -179,7 +186,7 @@ def build_from_official_3mf(template:Path,out:Path)->dict:
         resources.append(clone)
         item=copy.deepcopy(initial_item)
         item.attrib["objectid"]=object_id
-        item.attrib["transform"]=f"1 0 0 0 1 0 0 0 1 {45+idx*55} 135 0"
+        item.attrib["transform"]=f"1 0 0 0 1 0 0 0 1 {45+idx*55} 135 15"
         for attr in list(item.attrib):
             if attr.endswith("}UUID"):
                 item.attrib[attr]=str(uuid.uuid5(uuid.NAMESPACE_URL,f"filuna-fourtool-build-{idx}"))
