@@ -66,7 +66,19 @@
       "processes": 191,
       "filaments": 382,
       "inheritance_issues": 0
-    }
+    },
+    "source_branches_audited": {
+      "main": {
+        "sha": "6103ed8b511609658d00d0538cc7f0609cdb57da",
+        "timestamp": "2026-02-02T08:32:28Z"
+      },
+      "develop_and_WL_Master": {
+        "sha": "987a3c2bf9ed13934137326bfd522896c70e5101",
+        "timestamp": "2026-02-02T10:20:41Z",
+        "version_inc": "SoftFever_VERSION=2.3.1.0"
+      }
+    },
+    "source_to_binary_exact_build_match": "BLOCKED_NO_VERIFIED_2_0_0_6_SOURCE_COMMIT"
   },
   "qa": {
     "source_tree_inventory": "PASS_SOURCE_CANDIDATES_ONLY",
