@@ -66,8 +66,8 @@ jobs:
         with:
           name: filuna-${{ matrix.vendor }}-all-model-source-review
           path: |
-            /tmp/filuna-${{ matrix.vendor }}-source/source-manifest.json
-            /tmp/filuna-${{ matrix.vendor }}-source/all-models-all-profiles.json
-            /tmp/filuna-${{ matrix.vendor }}-source/SUMMARY.json
+            ${{ runner.temp }}/filuna-${{ matrix.vendor }}-source/source-manifest.json
+            ${{ runner.temp }}/filuna-${{ matrix.vendor }}-source/all-models-all-profiles.json
+            ${{ runner.temp }}/filuna-${{ matrix.vendor }}-source/SUMMARY.json
           if-no-files-found: warn
           retention-days: 30
