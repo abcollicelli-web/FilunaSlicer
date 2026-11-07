@@ -73,11 +73,27 @@ def main():
         process_b=duplicate(original,"alternate-name-process-B.json")
         machine_b=duplicate(machine,"alternate-name-machine-B.json")
         filament_b=duplicate(filament,"alternate-name-filament-B.json")
+        # Same-name/different-folder tests isolate basename from full path.
+        # Repeated controls rule out order/time/process-state effects.
+        alias_dir=out/"renamed-location";alias_dir.mkdir(parents=True,exist_ok=True)
+        process_same_name=alias_dir/original.name
+        filament_same_name=alias_dir/filament.name
+        shutil.copyfile(original,process_same_name)
+        shutil.copyfile(filament,filament_same_name)
+        if digest(original)!=digest(process_same_name) or digest(filament)!=digest(filament_same_name):
+            raise ValueError("PATH_CONTROL_DUPLICATE_CHANGED_CONTENT")
         cases=[
             ("base",machine,original,filament),
             ("process-path-only",machine,process_b,filament),
+            ("base-after-process",machine,original,filament),
+            ("process-same-basename-newdir",machine,process_same_name,filament),
             ("machine-path-only",machine_b,original,filament),
-            ("filament-path-only",machine,original,filament_b)
+            ("filament-path-only",machine,original,filament_b),
+            ("base-after-filament",machine,original,filament),
+            ("filament-same-basename-newdir",machine,original,filament_same_name),
+            ("process-path-repeat",machine,process_b,filament),
+            ("filament-path-repeat",machine,original,filament_b),
+            ("base-final-repeat",machine,original,filament)
         ]
         (out/"source-lock.json").write_text(json.dumps({
             "upstream_package_sha256":digest(archive),
@@ -119,6 +135,37 @@ def main():
                 +" B="+proof["candidate"]["normalized_sha256"])
         (out/"path-comparison.json").write_text(json.dumps(
             variants,indent=2,ensure_ascii=False)+"\n")
+        # A fail-closed distinction between a pure filename alias issue and
+        # genuine non-repeatability across separate OEM CLI process instances.
+        try:
+            normalized={name:header_date_only_normalization(p.read_bytes())["normalized_sha256"]
+                        for name,p in gcodes.items()}
+            proof={
+               "all_same_original_config_bytes":True,
+               "input_paths_only_difference":True,
+               "base_consistent_across_repetition":len({normalized[n] for n in
+                   ("base","base-after-process","base-after-filament","base-final-repeat")})==1,
+               "process_alias_consistent":normalized["process-path-only"]==normalized["process-path-repeat"],
+               "filament_alias_consistent":normalized["filament-path-only"]==normalized["filament-path-repeat"],
+               "process_basename_vs_directory":{
+                   "different_basename":normalized["process-path-only"],
+                   "same_basename_in_other_directory":normalized["process-same-basename-newdir"],
+                   "base":normalized["base"]},
+               "filament_basename_vs_directory":{
+                   "different_basename":normalized["filament-path-only"],
+                   "same_basename_in_other_directory":normalized["filament-same-basename-newdir"],
+                   "base":normalized["base"]},
+               "source": "Snapmaker v2.4.1 original Windows portable, SHA locked, only temporary nozzle guard",
+               "filuna_parity_or_network_proved":False}
+            (out/"repeat-and-path-causality.json").write_text(json.dumps(proof,indent=2)+"\\n")
+            add("BASE_REPEAT_INDEPENDENT", "PASS" if proof["base_consistent_across_repetition"] else "FAIL",
+                "same normalized G-code across 4 independent CLI invocations="+str(proof["base_consistent_across_repetition"]))
+            add("ALIAS_REPEAT_INDEPENDENT",
+                "PASS" if proof["process_alias_consistent"] and proof["filament_alias_consistent"] else "FAIL",
+                "process_alias_consistent="+str(proof["process_alias_consistent"])+
+                ", filament_alias_consistent="+str(proof["filament_alias_consistent"]))
+        except KeyError as err:
+            add("PATH_CAUSALITY_INCOMPLETE","FAIL","Missing case: "+str(err))
         add("FILUNA_NATIVE_PARITY","PENDING","no Filuna application binary")
         add("NETWORK_AND_CONTROL","PENDING","no U1 device access/ACK simulation")
         add("PHYSICAL_BETA","PENDING","only later with beta and real hardware")
