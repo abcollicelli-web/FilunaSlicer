@@ -1,30 +1,17 @@
-From: Filuna QA <qa@invalid.example>
-Subject: [RFC ONLY - NOT APPLIED] Snapmaker CLI: protect process-only wipe_tower_filament normalization
-Upstream: Snapmaker/OrcaSlicer v2.4.1 commit bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c
-Origin: src/libslic3r/PrintConfig.cpp DynamicPrintConfig::normalize_fdm
-State: PATCH_CANDIDATE_NOT_COMPILED_NOT_PORTED
-Observed: GitHub Actions #42316614470 exact OEM portable 2.4.1
-Scope: manufacturer-isolated Snapmaker engine candidate, NOT shared Orca root
-License: original upstream AGPL attribution and dependency audit required
-
-Do not apply automatically to the Filuna common Orca tree. Source remains
-pinned and byte-exact; if needed, adapt inside the isolated OEM-native module
-under the verified license and ABI, and test after internal portable QA.
-
+# Snapmaker v2.4.1 OEM source-only crash guard candidate. NOT APPLIED/COMPILED.
+# Upstream commit: bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c
+# Source: src/libslic3r/PrintConfig.cpp DynamicPrintConfig::normalize_fdm
+# GitHub Actions: source-only conformance, never promotion to Filuna parity.
+diff --git a/src/libslic3r/PrintConfig.cpp b/src/libslic3r/PrintConfig.cpp
 --- a/src/libslic3r/PrintConfig.cpp
 +++ b/src/libslic3r/PrintConfig.cpp
-@@
+@@ -7892,7 +7892,10 @@
      if (this->has("wipe_tower_filament")) {
          // If invalid, replace with 0.
          int extruder      = this->opt<ConfigOptionInt>("wipe_tower_filament")->value;
 -        int num_extruders = this->opt<ConfigOptionFloats>("nozzle_diameter")->size();
 -        if (extruder < 0 || extruder > num_extruders)
 -            this->option("wipe_tower_filament")->setInt(0);
-+        // Loading CLI --load-settings can normalize the PROCESS before merging
-+        // the separately loaded MACHINE. The process may define
-+        // wipe_tower_filament yet not define nozzle_diameter. Never dereference
-+        // a missing nozzle option. Validate again when the merged config
-+        // contains printer nozzle metadata.
 +        const auto* nozzles = this->opt<ConfigOptionFloats>("nozzle_diameter");
 +        if (nozzles && nozzles->size() > 0) {
 +            int num_extruders = int(nozzles->size());
@@ -32,4 +19,3 @@ under the verified license and ABI, and test after internal portable QA.
 +                this->option("wipe_tower_filament")->setInt(0);
 +        }
      }
-
