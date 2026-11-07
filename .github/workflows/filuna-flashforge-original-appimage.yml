@@ -30,6 +30,10 @@ jobs:
           echo 'Do not apt install heavy browsers/webkit before identifying precise missing ELF library'
       - name: Syntax check
         run: python -m py_compile lab/flashforge_appimage_original_qa.py
+      - name: Provide only libgstvideo original AppImage runtime requirement
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libgstreamer-plugins-base1.0-0
+          ldconfig -p | grep -F 'libgstvideo-1.0.so.0'
       - name: Restore official immutable AppImage cache
         id: cache
         uses: actions/cache/restore@v4
