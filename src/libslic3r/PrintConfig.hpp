@@ -1622,9 +1622,6 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                is_infill_first))
     ((ConfigOptionBool,                small_area_infill_flow_compensation))
     ((ConfigOptionEnum<WallDirection>,  wall_direction))
-    // OEM: opt-in legacy alignment for consistent rectilinear fill patterns.
-    // Never inherited implicitly by Orca/other manufacturers.
-    ((ConfigOptionBool,                filuna_oem_legacy_infill_anchor))
 
     // Orca: other flow ratios (available for overriding, if set_other_flow_ratios is enabled)
     ((ConfigOptionFloat,                first_layer_flow_ratio))
@@ -1963,6 +1960,11 @@ PRINT_CONFIG_CLASS_DEFINE(
 PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     PrintConfig,
     (MachineEnvelopeConfig, GCodeConfig),
+
+    // OEM: legacy consistent-fill anchor is scoped to print-level config.
+    // The Fill object carries PrintConfig*, not PrintRegionConfig*.
+    // Default false; enable only for verified OEM behavior.
+    ((ConfigOptionBool,                filuna_oem_legacy_infill_anchor))
 
     // Build plate tilt for off-axis gravity support generation (printer-level setting).
     ((ConfigOptionFloat,               build_plate_tilt_x))
