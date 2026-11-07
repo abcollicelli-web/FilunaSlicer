@@ -10,7 +10,7 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 import zipfile
 
-from snapmaker_u1_fourtool_original_qa import CORE, build_minimal_core_3mf
+from snapmaker_u1_fourtool_original_qa import CORE, build_minimal_core_3mf, build_four_from_core_3mf
 
 class MinimalCore3MF(unittest.TestCase):
     def setUp(self):
@@ -58,6 +58,26 @@ class MinimalCore3MF(unittest.TestCase):
             edges.update(tuple(sorted(e)) for e in ((a,b),(b,c),(c,a)))
         self.assertEqual(len(edges),18)
         self.assertTrue(all(count==2 for count in edges.values()))
+
+    def test_four_independent_cubes_preserve_distinct_extruder_values(self):
+        out=Path(self.tmp.name)/"qa-core-four-tools.3mf"
+        report=build_four_from_core_3mf(self.fixture,out)
+        self.assertEqual(report["object_count"],4)
+        self.assertEqual(report["extruder_values"],[1,2,3,4])
+        self.assertTrue(report["not_official_oem_project"])
+        with zipfile.ZipFile(out) as z:
+            self.assertIsNone(z.testzip())
+            model=ET.fromstring(z.read("3D/3dmodel.model"))
+            settings=ET.fromstring(z.read("Metadata/model_settings.config"))
+        n="{"+CORE+"}"
+        objects=model.findall("./"+n+"resources/"+n+"object")
+        items=model.findall("./"+n+"build/"+n+"item")
+        self.assertEqual([o.attrib["id"] for o in objects],["1","2","3","4"])
+        self.assertEqual([o.attrib["objectid"] for o in items],["1","2","3","4"])
+        meta=settings.findall("object")
+        self.assertEqual([m.find("./metadata[@key='extruder']").attrib["value"]
+                          for m in meta],["1","2","3","4"])
+        self.assertEqual(len(settings.findall("./plate/model_instance")),4)
 
 if __name__=="__main__":
     unittest.main()
