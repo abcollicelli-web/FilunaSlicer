@@ -57,7 +57,7 @@ def build_four_colour_3mf(out:Path)->dict:
         ET.SubElement(tr,f"{{{CORE}}}triangle",{"v1":str(a),"v2":str(b),"v3":str(c)})
     # Bambu/Orca extension: wrapper object (id >=2) references a model mesh
     # in the same OPC 3MF archive; each has an independent extruder assignment.
-    main=ET.Element(f"{{{CORE}}}model",{"unit":"millimeter"})
+    main=ET.Element(f"{{{CORE}}}model",{"unit":"millimeter","requiredextensions":"p"})
     ET.SubElement(main,f"{{{CORE}}}metadata",{"name":"Application"}).text="Filuna QA 4-extruder fixture"
     rs=ET.SubElement(main,f"{{{CORE}}}resources")
     build=ET.SubElement(main,f"{{{CORE}}}build")
@@ -71,7 +71,8 @@ def build_four_colour_3mf(out:Path)->dict:
         obj=ET.SubElement(rs,f"{{{CORE}}}object",{"id":str(objid),"type":"model"})
         components=ET.SubElement(obj,f"{{{CORE}}}components")
         ET.SubElement(components,f"{{{CORE}}}component",{
-            "objectid":"1","transform":"1 0 0 0 1 0 0 0 1 0 0 10"})
+            "objectid":"1",f"{{{PROD}}}path":"/3D/Objects/object_1.model",
+            "transform":"1 0 0 0 1 0 0 0 1 0 0 10"})
         ET.SubElement(build,f"{{{CORE}}}item",{
             "objectid":str(objid),
             "transform":f"1 0 0 0 1 0 0 0 1 {origin[i]} 135 0",
@@ -86,6 +87,10 @@ def build_four_colour_3mf(out:Path)->dict:
     rel=ET.Element(f"{{{REL}}}Relationships")
     ET.SubElement(rel,f"{{{REL}}}Relationship",{"Target":"/3D/3dmodel.model",
        "Id":"rel-1","Type":"http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"})
+    model_rel=ET.Element(f"{{{REL}}}Relationships")
+    ET.SubElement(model_rel,f"{{{REL}}}Relationship",{
+        "Target":"/3D/Objects/object_1.model","Id":"rel-model-1",
+        "Type":"http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"})
     content=ET.Element(f"{{{TYPES}}}Types")
     ET.SubElement(content,f"{{{TYPES}}}Default",{"Extension":"rels",
        "ContentType":"application/vnd.openxmlformats-package.relationships+xml"})
@@ -96,6 +101,7 @@ def build_four_colour_3mf(out:Path)->dict:
         z.writestr("_rels/.rels",xml(rel))
         z.writestr("3D/3dmodel.model",xml(main))
         z.writestr("3D/Objects/object_1.model",xml(objroot))
+        z.writestr("3D/_rels/3dmodel.model.rels",xml(model_rel))
         z.writestr("Metadata/model_settings.config",xml(settings))
     # Check file structure, four separate instances, and distinct extruders.
     with zipfile.ZipFile(out) as z:
