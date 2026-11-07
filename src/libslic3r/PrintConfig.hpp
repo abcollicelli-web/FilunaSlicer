@@ -255,6 +255,9 @@ enum class WallDirection
 {
     CounterClockwise,
     Clockwise,
+    // OEM Flashforge supports an automatic wall direction which is distinct
+    // from Orca's explicit CCW/CW choices. Append for existing enum stability.
+    Auto,
     Count,
 };
 
