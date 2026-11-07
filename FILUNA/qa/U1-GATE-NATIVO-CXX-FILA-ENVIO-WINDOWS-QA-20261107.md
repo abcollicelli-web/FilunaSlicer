@@ -51,3 +51,19 @@ Consequência: **a falha não foi criada pela atribuição de quatro ferramentas
 O workflow `.github/workflows/filuna-native-send-qa-windows-compile.yml` foi alterado (somente QA) para a rota nativa alternativa **MSVC/MSBuild**, com cache separado para não misturar artefatos clang. Essa nova execução **não é considerada PASS enquanto não produzir resultado real de compilação**.
 
 **Próxima prova técnica obrigatória:** se a CLI original não suporta nem o 3MF distribuído pelo fabricante com o perfil U1, obter 3MF projetado/exportado por uma versão original que a CLI aceite, ou usar UI original em QA, mantendo hash de insumos; só depois ensaiar 4 ferramentas e comparar com Filuna. O escopo de contrato Python, C++ scanner, PrintHost upload hook e DeviceBridge continua separado do teste de impressão.
+
+## Continuidade de homologação — 07/11/2026, rodada de segurança e causalidade 3MF
+
+### Correção do fluxo de aviso antes do envio
+- Foi comprovado pelo código que `info_fn(...filuna_u1_safety_warning...)` apenas enfileirava evento da GUI e o worker podia iniciar `printhost->upload` sem aguardar leitura/aceite. Isso não é consentimento.
+- Correção em `src/slic3r/Utils/PrintHost.cpp` commit `1a97e2e`: para **WARN** da U1, enfileirar a informação e **falhar fechado** antes do transporte, até existir confirmação autenticada, vinculada ao SHA e auditável. Para BLOCK/REVIEW o bloqueio pré-existente permanece. Nenhum byte do G-code é alterado.
+- Regressão `test_08_warn_requires_ack_before_transfer` no commit `5f54179e`: exige que o WARN tenha `throw` antes de `job.printhost->upload`.
+- Prova: [Actions #42393531370](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42393531370) **SUCCESS** — compilação isolada C++17 com avisos estritos, 8/8 testes do contrato de envio (inclusive WARN), 4 arquivos G-code OEM originais por SHA e verificação geométrica cruzada. **Não é prova de GUI/ACK/DeviceBridge Windows.**
+- A verificação da GUI/compilação Windows está separada em [#42393511281](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42393511281), status **PENDENTE** no checkpoint; seu êxito deve ser lido do job, nunca presumido.
+
+### Controle adicional do crash oficial da U1 com quatro extrusoras
+- A execução anterior [#42364790537](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42364790537) demonstrou `0xC0000005` tanto no 3MF imutável fornecido pelo próprio portátil Snapmaker 2.4.1 quanto na cópia de QA quatro objetos; isso refuta a atribuição do crash exclusivamente à montagem de quatro ferramentas.
+- Novo commit `68dff907` em `lab/snapmaker_u1_fourtool_original_qa.py` introduz **três controles independentes**, sempre no executável OEM de SHA pinado e com mesmo perfil efetivo: (1) slice do STL original do cubo, (2) export de 3MF pelo próprio OEM a partir deste STL, (3) reimport/slice deste 3MF exportado sem alterá-lo. O relatório preserva status/exit code/SHA/log, inclusive quando o caso quatro ferramentas falha.
+- CI dedicado: [#42393665358](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42393665358), status **PENDENTE** neste checkpoint. Não interpretar início do run como PASS de quatro ferramentas.
+
+**Gates inalterados:** `SNAPMAKER_GCODE_NATIVE_PARITY=NOT_PROVEN`, `SNAPMAKER_FOUR_TOOLS=BLOCKED`, `WINDOWS_GUI_COMPILE=NOT_PROVEN`, `DEVICE_NETWORK_ACK=NOT_RUN`, `PHYSICAL_BETA=NOT_RUN`, `HOMOLOGACAO_INTERNA_3_OEM=0/3`. Branch/PR #6 permanecem DRAFT. Sem merge, deploy, instalador, publicação ou impressão; Bambuddy autenticado segue adiado.
