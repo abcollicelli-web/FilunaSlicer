@@ -1661,7 +1661,7 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
         if (new_extruder_id != -1 && new_extruder_id != tcr.new_tool)
             throw Slic3r::InvalidArgument("Error: WipeTowerIntegration::append_tcr was asked to do a toolchange it didn't expect.");
 
-        // Filuna OEM fail-closed guard (Snapmaker U1 upstream #1149):
+        // Filuna OEM fail-closed guard (Snapmaker upstream #1149):
         // a final wipe-tower purge may be followed by an unsafe travel without
         // a verified Z lift. The presence of this OEM start macro is only a
         // conservative compatibility marker, NOT proof of a connected printer.
