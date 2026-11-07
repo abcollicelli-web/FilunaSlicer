@@ -72,10 +72,32 @@ class FlashforgeMotionRegression(unittest.TestCase):
         self.assertEqual(d["native_parity"], "NOT_PROVEN")
 
     def test_runtime_config_outside_block_is_not_evidence(self):
-        self.assertEqual(runtime_config(b"; wall_direction = auto\nG1 X1\n"), {})
+        with self.assertRaisesRegex(ValueError, "ONE_COMPLETE_NONEMPTY_CONFIG_BLOCK_REQUIRED"):
+            runtime_config(b"; wall_direction = auto\nG1 X1\n")
         self.assertEqual(runtime_config(
             b"; CONFIG_BLOCK_START\n; wall_direction = auto\n; CONFIG_BLOCK_END\n"),
             {"wall_direction": "auto"})
+
+
+    def test_duplicate_oem_key_is_not_silently_overwritten(self):
+        official = (b"; CONFIG_BLOCK_START\n; wipe_tower_x = 15.000\n"
+                    b"; wipe_tower_x = 15\n; CONFIG_BLOCK_END\nG1 X1 Y1\n")
+        filuna = (b"; CONFIG_BLOCK_START\n; wipe_tower_x = 15\n"
+                  b"; CONFIG_BLOCK_END\nG1 X1 Y1\n")
+        d = first_motion_delta(official, filuna)
+        self.assertEqual(d["embedded_runtime_config_evidence"], "VALID")
+        self.assertEqual(d["embedded_runtime_config_differences"]["wipe_tower_x"],
+                         {"official": ["15.000", "15"], "filuna": "15"})
+        self.assertEqual(d["status"], "FAIL_REAL_GCODE_PARITY")
+
+    def test_malformed_embedded_config_is_explicitly_untrusted(self):
+        official = b"; CONFIG_BLOCK_START\n; wall_direction = auto\nG1 X1 Y1\n"
+        filuna = (b"; CONFIG_BLOCK_START\n; wall_direction = ccw\n"
+                  b"; CONFIG_BLOCK_END\nG1 X1 Y1\n")
+        d = first_motion_delta(official, filuna)
+        self.assertTrue(d["embedded_runtime_config_evidence"].startswith(
+            "INVALID_OR_MISSING_CONFIG_BLOCK:"))
+        self.assertEqual(d["native_parity"], "NOT_PROVEN")
 
 if __name__ == "__main__":
     unittest.main()
