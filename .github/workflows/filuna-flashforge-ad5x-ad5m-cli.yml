@@ -25,6 +25,7 @@ jobs:
         run: |
           command -v xvfb-run || echo 'xvfb-run is absent; report CLI failure, no secret dependencies'
           python -m py_compile lab/flashforge_original_ad5x_ad5m_cli_qa.py
+          python -m unittest discover -s lab -p 'test_flashforge_original_ab_qa.py' -v
       - name: Provide only libgstvideo original AppImage runtime requirement
         run: |
           sudo apt-get update -qq
