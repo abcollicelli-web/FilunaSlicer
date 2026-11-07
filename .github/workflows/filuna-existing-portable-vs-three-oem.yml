@@ -1,0 +1,84 @@
+name: Filuna existing portable baseline versus three official OEM outputs
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/filuna_baseline_three_oem_qacheck.py"
+      - ".github/workflows/filuna-existing-portable-vs-three-oem.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: filuna-existing-portable-three-oem-probe
+  cancel-in-progress: true
+jobs:
+  existing-windows-binary-comparison:
+    name: Existing Filuna portable vs actual OEM original G-code (no compilation)
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Retrieve unchanged preexisting Filuna portable, built Nov 5
+        uses: actions/download-artifact@v4
+        with:
+          name: Filuna_Windows_x64_portable
+          run-id: 42102469888
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .filuna-old-base
+      - name: Retrieve real Anycubic original Linux official CLI result and profiles
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-anycubic-kobra-s1-kobra3v2-original-cli-ab
+          run-id: 42323305372
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-anycubic
+      - name: Retrieve real Flashforge original AppImage official CLI result and profiles
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-flashforge-179-ad5x-ad5m-actual-oem-cli-ab
+          run-id: 42321095370
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-flashforge
+      - name: Retrieve real Snapmaker original portable stress result and profiles
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-40-original-cli-reproducibility
+          run-id: 42321783683
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-snapmaker
+      - name: Source syntax check (no Filuna/OEM compilation)
+        shell: pwsh
+        run: python -m py_compile lab/filuna_baseline_three_oem_qacheck.py
+      - name: Run prebuilt Filuna CLI and compare real G-code
+        shell: pwsh
+        run: |
+          python lab/filuna_baseline_three_oem_qacheck.py --base .filuna-old-base --anycubic .oem-anycubic --flashforge .oem-flashforge --snapmaker .oem-snapmaker --out qa-existing-filuna-vs-oem
+          $result = $LASTEXITCODE
+          if (Test-Path qa-existing-filuna-vs-oem/RESUMO.md) {
+            Get-Content qa-existing-filuna-vs-oem/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $result
+      - name: Preserve actual native CLI logs and exact G-code diff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-existing-windows-base-versus-3-official-oem-gcodes
+          path: qa-existing-filuna-vs-oem/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Mark this as pre-OEM diagnostic only
+        if: always()
+        shell: pwsh
+        run: |
+          "No new installer, no new slicer build. PREEXISTING Filuna base only, not native OEM modules; no hardware/LAN/IFS/camera test." | Add-Content $env:GITHUB_STEP_SUMMARY
