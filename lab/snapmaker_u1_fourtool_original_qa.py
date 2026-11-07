@@ -188,7 +188,7 @@ def build_from_official_3mf(template:Path,out:Path)->dict:
         ET.SubElement(instance,"metadata",{"key":"object_id","value":object_id})
         ET.SubElement(instance,"metadata",{"key":"instance_id","value":"0"})
         ET.SubElement(instance,"metadata",{"key":"identify_id","value":str(100+idx)})
-        identifiers.append([int(object_id),idx+1])
+        identifiers.append((int(object_id),idx+1))
     payload[model_name]=xml(master)
     payload[settings_name]=xml(setting_root)
     with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED) as zout:
