@@ -230,3 +230,14 @@ Patch candidato novo, isolado e **não ativado**: \`FILUNA/fabricantes/snapmaker
 **Nenhum desses perfis experimentais** pode ser entregue ao cliente ou registrado como compatível; todos falharam na repetibilidade, o que demonstra que desligar limpeza e/ou mudar costura não constitui solução. Estes testes não provam causalidade nem isolam bug de concorrência, RNG, geometria ou outro subsistema; exigem auditoria upstream adicional e eventual correção fonte nativa segura.
 
 **Veredito inalterável até prova:** \`SNAPMAKER_U1_GCODE_STABILITY=FAIL\`, \`UPSTREAM_FINAL_PURGE_Z_HOP_SAFETY=OPEN_BLOCKER\`, \`SOURCE_PATCH_APPLIES=PASS_NOT_FUNCTIONAL\`, \`FILUNA_NATIVE_COMPARISON=NOT_RUN\`, \`NETWORK_GATEWAY_ACK=NOT_RUN\`, \`HOMOLOGACAO_INTERNA=BLOCKED\`, \`BETA_FISICO=NOT_RUN\`. **Não compilar instalador final, ativar U1 ou disparar impressões por causa desses patches.**
+
+
+## Referência regressiva independente — Snapmaker Orca 2.4.0 também varia (07/11/2026)
+
+[Execução #42324349445](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324349445) **FAIL legítimo de estabilidade**, **30 subprocessos CLI Windows reais**, pacote portátil oficial \`Snapmaker_Orca_Windows_V2.4.0_portable.zip\` SHA-256 \`089b7ca20ccfc4be57ffb5a7f9f81e3a2b55db3a9622755fee2b20208bfcb8c2\`. **Perfis máquina/processo/Generic PLA originais da própria versão 2.4.0**, com herança resolvida da mesma árvore do ZIP, e guarda temporária de acesso nulo idêntica em todas as execuções; **não** se misturaram perfis v2.4.1 com motor 2.4.0. O STL, invocações e parâmetros de fatiamento permaneceram fixados. Teste mantém somente a exceção de data de geração \`Snapmaker Orca 2.4.0\` em cabeçalho.
+
+**Histograma:** 27/30 fatiamentos de 248.825 bytes iguais após normalização; 3/30 divergentes, cada um com SHA funcional distinto e 248.197, 247.867 e 247.789 bytes. **Quatro toolpaths diferentes** no total. Diff real aponta mudanças em feedrate \`G1 F...\`, segmentos de wipe/retração, posicionamento de \`M73\` e outros movimentos; **não** são só comentários/time stamps.
+
+**Conclusão verificável:** a instabilidade no CLI oficial **não foi introduzida exclusivamente na 2.4.1**. Trocar automaticamente para 2.4.0 **não** seria solução homologada. O bug de falta de Z-hop final multi-cor [#1149](https://github.com/Snapmaker/OrcaSlicer/issues/1149) é **outro problema distinto** e tem evidência de regressão na 2.4.1. Os dois continuam P0. Necessário rastrear determinismo/custos/ordenação/perímetros sob fonte e provar paridade do **Filuna nativo** antes de qualquer liberação de impressão.
+
+\`U1_VENDOR_240_STRESS=FAIL\`, \`U1_VENDOR_241_STRESS=FAIL\`, \`FILUNA_NATIVE_PARITY=NOT_RUN\`, \`U1_FINAL_PURGE_SAFETY=NOT_RUN\`, \`HOMOLOGACAO_INTERNA=BLOCKED\`.
