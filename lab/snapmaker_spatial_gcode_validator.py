@@ -152,6 +152,8 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
             final_marker = lineno
         if SPIRAL.search(comments):
             spiral_marker = lineno
+        if comments.strip().upper().startswith("LAYER_CHANGE"):
+            layer = 0 if layer is None else layer + 1
         layer_m = LAY.search(comments)
         if layer_m:
             layer=int(layer_m.group(1))
