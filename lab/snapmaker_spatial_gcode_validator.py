@@ -96,6 +96,10 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
     if not (0 <= clearance <= 3 and 0.1 <= pitch <= 2):
         raise ValueError("INVALID_GEOMETRY_PARAMS")
     lines = raw.decode("utf-8", errors="replace").splitlines()
+    # This slicer closes objects on *every layer*, not only after final print.
+    final_object_close = max(
+        (i for i,line in enumerate(lines,1) if STOP.search(line.partition(";")[2])),
+        default=-1)
     res = pitch
     # Occupancy is max deposited Z per XY voxel and the deposition line.
     occupied = {}
@@ -122,7 +126,7 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
         comments = line.partition(";")[2]
         if START.search(comments):
             final_tail = False
-        if STOP.search(comments):
+        if STOP.search(comments) and lineno == final_object_close:
             final_tail = True
         if FINAL.search(comments):
             final_marker = lineno
@@ -234,7 +238,7 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
                            "context":"FINAL_PURGE_OR_END" if final_tail or lineno-final_marker<=25
                                      else "TOOLCHANGE" if lineno-recent_tool<=20 else "TRAVEL",
                            "clearance_mm":clearance})
-    status="BLOCK" if issues else "WARN" if warnings else "REVIEW_REQUIRED" if uncertain else "PASS"
+    status="BLOCK" if issues else "WARN" if warnings else "REVIEW_REQUIRED" if (uncertain or not deposition) else "PASS"
     if issues and source=="filuna":
         # Not manufacturer-attributed without a paired official reference.
         status="REVIEW_REQUIRED"
