@@ -372,6 +372,9 @@ CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(WallSequence)
 static t_config_enum_values s_keys_map_WallDirection{
     { "ccw",  int(WallDirection::CounterClockwise) },
     { "cw",   int(WallDirection::Clockwise)},
+    // Flashforge OEM 1.7.9 can request automatic reversal.
+    // Only explicit profiles select Auto; keep core Orca CCW default.
+    { "auto",  int(WallDirection::Auto)},
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(WallDirection)
 
@@ -2797,9 +2800,12 @@ void PrintConfigDef::init_fff_params()
     def->enum_keys_map = &ConfigOptionEnum<WallDirection>::get_enum_values();
     def->enum_values.push_back("ccw");
     def->enum_values.push_back("cw");
+    def->enum_values.push_back("auto");
     def->enum_labels.push_back(L("Counter clockwise"));
     def->enum_labels.push_back(L("Clockwise"));
+    def->enum_labels.push_back(L("Automatic (OEM compatible)"));
     def->mode = comAdvanced;
+    // Existing users and all ordinary Orca presets keep precisely the CCW default.
     def->set_default_value(new ConfigOptionEnum<WallDirection>(WallDirection::CounterClockwise));
 
     def = this->add("extruder", coInt);
