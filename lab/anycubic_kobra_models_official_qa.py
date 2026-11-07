@@ -18,6 +18,7 @@ from anycubic_vendor_deb_qa import (
  apt_records, find_exact_package, download, sha
 )
 from portable_first_qa import digest
+from anycubic_original_gcode_strict import compare_files
 
 ROOT=Path(__file__).resolve().parents[1]
 TARGETS={
@@ -216,10 +217,16 @@ def main():
                     add(target_id,"OFFICIAL_A_B","PENDING","TWO_SUCCESSFUL_CLI_RUNS_NOT_AVAILABLE")
                 elif results[0]["path"]==results[1]["path"]:
                     add(target_id,"OFFICIAL_A_B","FAIL","GCODE_PATH_REUSED")
-                elif results[0]["sha256"]!=results[1]["sha256"]:
-                    add(target_id,"OFFICIAL_A_B","FAIL","GCODE_RAW_SHA_MISMATCH")
                 else:
-                    add(target_id,"OFFICIAL_A_B","PASS","RAW_SHA256_IDENTICAL "+results[0]["sha256"])
+                    proof=compare_files(dest/results[0]["path"],
+                                        dest/results[1]["path"],
+                                        dest/"strict-original-ab-proof.json")
+                    outcome=proof["status"]
+                    passed=outcome.startswith("PASS_")
+                    add(target_id,"OFFICIAL_A_B","PASS" if passed else "FAIL",
+                        outcome+" normalized_sha256="+proof.get("normalized_sha256","")+
+                        " changed_lines="+str(proof.get("changed_lines",[])),
+                        "strict-original-ab-proof.json")
             except Exception as exc:
                 add(target_id,"MODEL_RUNNER","FAIL",repr(exc))
             add(target_id,"FILUNA_PARITY","PENDING","NO_SEPARATE_FILUNA_NATIVE_CLI_OUTPUT")
