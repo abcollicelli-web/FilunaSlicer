@@ -137,6 +137,7 @@ def main():
     p.add_argument("--cache",type=Path,default=Path(".flashforge-appimage-cache"))
     p.add_argument("--out",type=Path,default=Path("qa-flashforge-ad5x-ad5m-ab"))
     p.add_argument("--timeout",type=int,default=180)
+    p.add_argument("--stress-count",type=int,default=0,help="extra independent CLI runs per model; 0 for regular A/B")
     a=p.parse_args()
     cache=a.cache.resolve();out=a.out.resolve()
     cache.mkdir(parents=True,exist_ok=True);out.mkdir(parents=True,exist_ok=True)
@@ -218,6 +219,44 @@ def main():
                     add(key,"OEM_ORIGINAL_A_B","FAIL","SAME_FILE_PATH_INVALID_AB")
                 else:
                     add(key,"OEM_ORIGINAL_A_B","PENDING","official CLI did not produce two complete G-codes")
+                if a.stress_count:
+                    if not 1<=a.stress_count<=50:
+                        raise ValueError("STRESS_COUNT_OUT_OF_BOUNDS")
+                    if len(runs)<2:
+                        add(key,"STRESS_GCODE","PENDING","OFFICIAL_REFERENCE_GCODE_NOT_READY")
+                    else:
+                        original=(out/runs[0]["path"]).resolve()
+                        repeat=[]
+                        for n in range(a.stress_count):
+                            label="stress-"+str(n).zfill(2)
+                            folder=destination/label
+                            folder.mkdir(parents=True,exist_ok=True)
+                            command=[
+                                "xvfb-run","-a","-s","-screen 0 1600x900x24",
+                                str(exe),"--debug","3","--slice","0",
+                                "--load-settings",str(files["machine"])+";"+str(files["process"]),
+                                "--load-filaments",str(files["filament"]),
+                                "--outputdir",str(folder),str(model)]
+                            log=destination/("official-"+label+".log")
+                            exit_code=launch(command,log,extracted,a.timeout)
+                            gc=sorted(p for p in folder.rglob("*.gcode") if p.is_file()
+                                      and p.stat().st_size>0)
+                            if exit_code or len(gc)!=1:
+                                repeat.append({"run":label,"status":"FAIL_CLI_GENERATION",
+                                               "exit":exit_code,"gcode_count":len(gc)})
+                                continue
+                            proof=compare_original_gcode(
+                                original,gc[0],destination/("strict-"+label+"-proof.json"))
+                            repeat.append({"run":label,"status":proof["result"],
+                                           "bytes":gc[0].stat().st_size,
+                                           "sha256":digest(gc[0]),
+                                           "normalized_sha256":proof.get("normalized_sha256","")})
+                        (destination/"stress-results.json").write_text(
+                            json.dumps(repeat,indent=2,ensure_ascii=False)+"\n")
+                        ok=len(repeat)==a.stress_count and all(
+                            x["status"].startswith("PASS_") for x in repeat)
+                        add(key,"STRESS_GCODE","PASS" if ok else "FAIL",
+                            "repeats="+str(len(repeat))+" strict_header_only="+str(ok))
             except Exception as exc:
                 add(key,"MODEL_RUNNER","FAIL",type(exc).__name__+": "+str(exc))
             add(key,"FILUNA_PARITY","PENDING","no separate actual Filuna-native G-code")
