@@ -49,3 +49,26 @@ Esses erros pertencem ao **Filuna pré-integração**, não aos executáveis OEM
 Foi criado o bloqueio preventivo \`FILUNA/tools/oem_three_brand_promotion_guard.py\`, executado no [CI #42324838562](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324838562), **9/9 controles positivos/negativos PASS**. Ele fiscaliza os manifests e arquivos reais dos adaptadores C++ para impedir declarar homologação interna enquanto ainda instanciam \`PendingVendorAdapter\`, sem provas de G-code Filuna, rede/ACK e segurança, incluindo o bug U1 #1149. **PASS do verificador significa que as marcas continuam corretamente bloqueadas, NÃO homologadas**.
 
 **Contagem atual:** Anycubic 3 amostras OEM original A/B PASS, Flashforge 2 amostras OEM original A/B PASS, Snapmaker U1 G-code variável tanto 2.4.0 quanto 2.4.1 e risco de Z-hop #1149. **Homologação interna Filuna completa: 0/3**. **Homologação física: 0/3** (somente beta futuro). Não publicar release, não liberar impressão nem promover PR #6 por causa do resultado do verificador.
+
+
+## Checkpoint novo: 100 fatiamentos oficiais adicionais e comparação nativa Filuna (07/11/2026)
+
+**A homologação interna continua 0/3.** Teste do programa oficial, simulador de LAN e diagnóstico do executável Filuna antigo são gates diferentes.
+
+### Anycubic: três amostras, 60 execuções adicionais PASS OEM
+- [Workflow #42325230868](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325230868) SUCCESS: Kobra S1 20/20, Kobra 3 V2 20/20, Kobra 4 20/20, além dos pares de referência originais. G-code idêntico fora da linha de data/hora comprovada quando aplicável; nenhuma diferença funcional autorizada.
+- [Filuna pre-OEM #42325032419](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325032419): perfil OEM não reconhecido no preset bundle. Após cópia TEMPORÁRIA de perfis já resolvidos como User (somente para diagnóstico), a CLI rejeita o valor de retraction_distances_when_cut=0 por intervalo Orca 10–18. Não alterar retracção para forçar aprovação. G-code nativo Anycubic do Filuna: NOT_GENERATED; OEM_ADAPTER: PENDING.
+
+### Flashforge: duas amostras, 40 execuções adicionais PASS OEM
+- [Workflow #42325288710](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325288710) SUCCESS: AD5X 20/20; Adventurer 5M 20/20; comparação estrita que desconsidera somente data/hora OEM comprovada.
+- [Rede simulada #42324056247](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324056247): 10/10 PASS de protocolo local somente leitura (checkCode/detail/product), com fonte documental pública de firmware comunitária; NÃO é o adaptador nativo, nem LAN físico, IFS ou câmera.
+- [Filuna pre-OEM #42325032419](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325032419): presets OEM não carregados pelo bundle nativo. Após cópia TEMPORÁRIA já resolvida como User, gerou **G-code Filuna real de 214.319 bytes/9.048 linhas versus OEM AD5X 209.677 bytes/8.905 linhas**. Há diferenças reais de macros/trajetórias; sem paridade. Não é homologação da AD5X, mesmo com CLI verde.
+
+### Snapmaker: duas versões oficiais falham no teste prolongado
+- [OEM v2.4.0 #42324349445](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324349445): 30 processos originais independentes e 4 hashes G-code funcionais distintos, **FAIL**. A v2.4.1 já falhou em 40 execuções e nas análises de afinidade CPU e costura/wipe. Não ocultar divergência de retração/movimento.
+- [Gateway local simulado #42324207144](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324207144): 14/14 PASS de health, cache, modelo e bicos, mas o serviço gateway do aplicativo NÃO é conexão LAN da impressora nem transporte real do Filuna.
+- [Filuna pre-OEM #42325032419](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325032419): parser não reconhece a variável OEM chamber_cooling_mode no G-code inicial U1; não gerou G-code. A correção fonte apenas do issue #1149 de purge/Z-hop teve teste git apply PASS, não execução.
+ 
+### Base Filuna e requisito de beta
+
+[On-demand data 7/7 #42321919685](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321919685) e [assistente/3 provas beta 15/15 #42323736471](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323736471) são testes isolados, sem API assinada, interface vinculada, impressão física ou motor nativo homologado. [Anti-falsa homologação 9/9 #42324838562](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324838562) confirma que os três adaptadores C++ ainda instanciam PendingVendorAdapter, sem integração OEM completa. O PR #6 deve ficar draft e não deve ser promovido, compilado em instalador final ou utilizado para liberar a primeira impressão física. Status: HOMOLOGACAO_INTERNA=BLOCKED para 3/3, BETA_FISICO=NOT_RUN para 3/3.
