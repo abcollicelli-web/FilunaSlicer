@@ -84,3 +84,68 @@ jobs:
         if: always()
         run: |
           echo "Only original U1 2.4.1 *single-color* cube replay. Four-color final purge, matched Filuna native G-code, dynamic Klipper macros, and real printing remain NOT_RUN. No G-code rewrite." >> "$GITHUB_STEP_SUMMARY"
+
+  official-u1-241-two-color-final-purge:
+    needs: source-and-synthetic-geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Retrieve pinned independently published official 2.4.1 G-code (not Filuna)
+        run: |
+          set -euo pipefail
+          mkdir -p qa-two-color
+          curl -fL --retry 3 --max-time 45 \
+            "https://raw.githubusercontent.com/DesignMaster-Solutions/u1-dryrun/38ab8c7/examples/sign-orca-2.4.1-linux.gcode.gz" \
+            -o qa-two-color/original.gcode.gz
+          printf '%s  %s\n' \
+            "ee6943bcf5ed255736218fc4942b05217d8f607c" \
+            "qa-two-color/original.gcode.gz" > qa-two-color/blob-expected.txt
+          test "$(git hash-object qa-two-color/original.gcode.gz)" = "ee6943bcf5ed255736218fc4942b05217d8f607c"
+          python - <<'PY'
+          import gzip
+          from pathlib import Path
+          p=Path("qa-two-color/original.gcode.gz")
+          Path("qa-two-color/original.gcode").write_bytes(gzip.decompress(p.read_bytes()))
+          PY
+      - name: Scan actual final purge without altering original bytes
+        shell: bash
+        run: |
+          set +e
+          python lab/snapmaker_spatial_gcode_validator.py \
+            --origin official --scope critical \
+            --gcode qa-two-color/original.gcode \
+            --vendor FILUNA/fabricantes/snapmaker/vendor.yaml \
+            --report qa-two-color/verdict.json
+          rc=$?
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("qa-two-color/verdict.json").read_text())
+          print("OFFICIAL_TWO_COLOR_GCODE_SAFETY",x["status"],"events",len(x["issues"]))
+          print("FIRST_EVENTS",x["issues"][:4])
+          assert x["status"]=="BLOCK" and x["issues"], "FINAL_PURGE_RISK_NOT_DETECTED"
+          assert x["gcode_modified"] is False
+          PY
+          verified=$?
+          if [ "$rc" -ne 2 ] || [ "$verified" -ne 0 ]; then
+            echo "FAIL: original OEM collision evidence not detected reliably"
+            exit 1
+          fi
+      - name: Upload independent official 2-color QA result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-original-241-two-color-final-purge-geometry
+          path: qa-two-color/verdict.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Evidence provenance reminder
+        if: always()
+        run: |
+          echo "Source: DesignMaster-Solutions/u1-dryrun @38ab8c7, original Snapmaker Orca Linux AppImage 2.4.1. Firmware 2.0/2.1 dry-run by upstream contributor is independent; not a new Filuna native build, 4-color test, or physical homologation." >> "$GITHUB_STEP_SUMMARY"
