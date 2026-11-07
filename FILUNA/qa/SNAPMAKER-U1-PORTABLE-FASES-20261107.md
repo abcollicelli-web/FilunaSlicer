@@ -91,3 +91,35 @@ Execução Windows: https://github.com/abcollicelli-web/FilunaSlicer/actions/run
 Artefato: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42314656389/artifacts/13550241939
 
 Próximo foco técnico: isolar `ConfigBase::load_from_json` e `DynamicPrintConfig::normalize_fdm()` no binário v2.4.1 mediante matriz mínima de processos ou depurador disponível no runner. Não afirmar causalidade do campo `different_settings_to_system` sem backtrace. Nenhuma alteração de perfis ativos OEM, compilação ou impressão física.
+
+
+## Diagnóstico causal e fatiamento de controle com bicos OEM — runs #42316614470 e #42316895543 (07/11/2026)
+
+A auditoria da tag oficial `v2.4.1`, commit `bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c`, revelou uma falha de segurança de acesso em `src/libslic3r/PrintConfig.cpp`, função `DynamicPrintConfig::normalize_fdm`: se um preset de **processo** define `wipe_tower_filament`, a rotina dereferencia `this->opt<ConfigOptionFloats>("nozzle_diameter")->size()` sem checar a ausência de `nozzle_diameter`. No fluxo CLI, **cada** arquivo `--load-settings` é normalizado isoladamente antes da união de máquina+processo, então o bico presente no perfil da máquina ainda não está no processo.
+
+**Reprodução causal em Windows original** — https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42316614470:
+
+| Caso no binário oficial, com cópia temporária de processo | CLI exit | `loaded process config` | G-code |
+|---|---:|---|---|
+| Perfil original completo | `3221225477 / 0xC0000005` | Não | Não |
+| Perfil mínimo sem `wipe_tower_filament` | 0 | Sim | Sim |
+| Mesmo mínimo com `wipe_tower_filament` | `0xC0000005` | Não | Não |
+| Completo removendo somente `wipe_tower_filament` | 0 | Sim | Sim |
+| Completo acrescentando somente `nozzle_diameter` da máquina | 0 | Sim | Sim |
+
+A prova isolou a condição e confirmou o defeito de carregamento da CLI da fonte oficial. Não altera nem aprova o binário original, não simula impressão física. A hipótese anterior `different_settings_to_system` já foi descartada; não é a causa.
+
+**Workaround de ensaio genérico e preservador de comportamento:** `lab/snapmaker_runtime_nozzle_guard_qa.py` identifica automaticamente modelo/compatibilidade e **lê todos os valores e a quantidade de bicos do preset efetivo da máquina**, não fixa U1 nem quatro extrusoras. Cria cópia temporária do processo com só `nozzle_diameter` acrescentado e mantém `wipe_tower_filament` original. Se identidade, tipo, compatibilidade ou medidas forem inválidos, bloqueia. Seis testes unitários positivos/negativos PASS.
+
+Execução: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42316895543
+
+- ZIP portátil oficial SHA-256 `1f002e2168c576f800bcfd0509b5e164b5ad65a0963abc2bef8317d929d48c9d`: **PASS**.
+- Perfis 12 blobs originais + quatro bicos de 0,4 obtidos por herança OEM verificada: **PASS**.
+- G-code U1 cubo A e B: **250.183 bytes cada**, SHA-256 bruto idêntico `ae4551a3274e3015247007fb57a6c0d8231ba7c1e1b989118508bf361926d4a6`: **PASS para cópia de processo de laboratório**, em saídas independentes.
+- O G-code contém sequência OEM `PRINT_START`, preparação de extrusoras, `SM_PRINT_CHECK_SWITCH_EXTRUDER`, `BED_MESH_CALIBRATE` e `PRINT_END`. A presença de comandos não comprova execução física.
+- **Limitação:** as duas chamadas geraram cabeçalho no mesmo segundo. Um controle separado temporalmente está em `lab/snapmaker_u1_temporal_ab_qa.py`: deve permitir remover somente a linha de geração situada em `HEADER_BLOCK` após confirmar que **todas as outras linhas** são idênticas.
+- Patch OEM nativo: **candidato não aplicado**, `FILUNA/fabricantes/snapmaker/patches/0001-guard-nozzle-diameter-process-load.patch`. Não editar a raiz Orca nem compilar OEM neste ciclo.
+
+**Nenhum dos seguintes gates mudou para PASS:** `OFFICIAL_UNMODIFIED_A_B`, `FILUNA_NATIVE_PARITY`, `NATIVE_NETWORK_ACCESS`, `SEND_ACK`, `MULTICOLOR`, `HOMOLOGACAO_INTERNA`, `FISICA_BETA`.
+
+**Escopo de marca corrigido:** a ferramenta `FILUNA/tools/oem_universal_inventory.py` auditou a fonte oficial completa, **100 perfis de máquina/variantes, 112 de impressão, 312 de filamento** e 2.115 registros de fonte/recurso no run https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42316033247. Há 101 itens em revisão; isso é inventário, não integração. O `FILUNA/fabricantes/snapmaker/manifest.json` usa descoberta de todos os modelos por árvore OEM e não uma whitelist de U1.
