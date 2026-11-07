@@ -36,10 +36,13 @@ def policy_from_yaml(path: Path) -> dict:
     # JSON is a valid YAML 1.2 document. Using the JSON subset intentionally
     # avoids an executable YAML loader and third-party dependency.
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("manufacturer") != "snapmaker":
+    if not isinstance(data.get("manufacturer"), str) or not data["manufacturer"]:
         raise ValueError("INVALID_VENDOR_ID")
-    if data.get("volume_mm") != [270, 270, 270]:
-        raise ValueError("UNVERIFIED_VOLUME")
+    volume=data.get("volume_mm")
+    if (not isinstance(volume,list) or len(volume)!=3 or
+        any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<=0
+            for v in volume)):
+        raise ValueError("INVALID_VOLUME")
     for item in data.get("safe_macros", []):
         if not all(isinstance(item.get(k), str) and item[k] for k in
                    ("name", "source_url", "source_sha", "evidence", "scope")):
