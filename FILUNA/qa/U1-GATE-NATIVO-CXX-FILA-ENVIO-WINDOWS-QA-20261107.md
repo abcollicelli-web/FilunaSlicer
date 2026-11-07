@@ -36,3 +36,18 @@
 - Imediatamente depois, porém, o **executável Snapmaker Orca Windows v2.4.1 original** retornou `3221225477 = 0xC0000005` e **zero G-codes**. Este resultado **não** confirma motor Filuna e **não** é homologação de quatro ferramentas. É obrigatório investigar a falha pós-importação do OEM: configurações do projeto 3MF, atribuição dos objetos/extrusoras, pipeline de `--slice` e eventual bug original. Registrar um controle 3MF oficial sem alterações antes de atribuir a falha às quatro ferramentas.
 - O CI Windows do Filuna [#42363069593](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42363069593) ainda estava **construindo dependências** no último check deste checkpoint, **sem resultado de compilação de `libslic3r_gui`**. O teste independente C++17 do validador e a ligação estática à fila de upload permanecem PASS e não devem ser promovidos a compilação Windows.
 - **Todos os gates não comprovados permanecem bloqueados; nenhum G-code foi alterado, nenhum instalador, merge, deploy ou impressão física executado.**
+
+
+## Controles adicionais: crash da CLI oficial em 3MF original e OCCT/lld
+
+**Controle 3MF decisivo:** [run #42364790537](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42364790537) executou **dois projetos com o Snapmaker Orca 2.4.1 original** sob a mesma configuração de máquina/processo/filamento:
+1. O 3MF **imutável `resources/handy_models/OrcaCube_v2.3mf` do próprio pacote oficial** → `3221225477 (0xC0000005)`, zero G-code;
+2. A cópia de QA com 4 objetos distintos e extrusoras 1,2,3,4 → **o mesmo `3221225477`**, zero G-code, apesar de log comprovar `begin to assemble objects, size 4`, `subobject_id 5..8`, `plate 1` e import concluído.
+
+Consequência: **a falha não foi criada pela atribuição de quatro ferramentas.** Trata-se de uma regressão na CLI 3MF do portátil oficial sob os argumentos/perfis usados, ainda não atribuída conclusivamente a componente interno específico (carregamento de projeto/configuração, pipeline fatiamento, biblioteca etc.). Não fingir 4-color pass, nem tentar “corrigir” com modificação de G-code. Artefato preservado no CI.
+
+**Bloqueio de compilação Windows:** [run #42363069593](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42363069593) avançou na reconstrução de dependências até aproximadamente **85%**, mas falhou ao linkar OpenCascade `TKG2d.dll` com `clang-cl/lld-link`: símbolos `std::_Variant_storage_<...>` indefinidos. É erro na toolchain/dependências **antes** da compilação da interface `libslic3r_gui`, não prova de falha ou sucesso do código `PrintHost.cpp`.
+
+O workflow `.github/workflows/filuna-native-send-qa-windows-compile.yml` foi alterado (somente QA) para a rota nativa alternativa **MSVC/MSBuild**, com cache separado para não misturar artefatos clang. Essa nova execução **não é considerada PASS enquanto não produzir resultado real de compilação**.
+
+**Próxima prova técnica obrigatória:** se a CLI original não suporta nem o 3MF distribuído pelo fabricante com o perfil U1, obter 3MF projetado/exportado por uma versão original que a CLI aceite, ou usar UI original em QA, mantendo hash de insumos; só depois ensaiar 4 ferramentas e comparar com Filuna. O escopo de contrato Python, C++ scanner, PrintHost upload hook e DeviceBridge continua separado do teste de impressão.
