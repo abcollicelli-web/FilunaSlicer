@@ -257,7 +257,8 @@ inline Report inspect(const std::string& gcode, const Policy& policy = {})
             if (arc) { report.explanation = "UNRESOLVED_GCODE_ARC"; }
             continue;
         }
-        const bool spiral = line_no >= spiral_marker && (line_no - spiral_marker <= 12) ||
+        const bool spiral = ((spiral_marker != 0) && line_no >= spiral_marker &&
+                             (line_no - spiral_marker <= 12)) ||
                             (arc && pos[2] > old[2] + 1e-5);
         if (policy.bounds_known) {
             for (const auto& q : points) {
