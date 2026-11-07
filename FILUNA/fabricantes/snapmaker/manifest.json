@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "manufacturer": "Snapmaker",
+  "manufacturer_id": "snapmaker",
+  "module_id": "filuna-oem-snapmaker",
+  "version": "0.1.0-source-candidate",
+  "abi": 1,
+  "engine": "ORCA_SHARED_WITH_ISOLATED_OEM_DELTAS",
+  "state": "SOURCE_AUDIT_AND_OFFICIAL_CLI_DIAGNOSTIC_ONLY_NOT_INTEGRATED",
+  "models": [],
+  "model_discovery": {
+    "mode": "FULL_AUTOMATIC_OFFICIAL_PROFILE_TREE",
+    "official_profile_root": "resources/profiles/Snapmaker",
+    "model_filter_policy": "ALL_VERIFIED_PROFILES_AND_VARIANTS_NOT_FIXED_LIST",
+    "model_fixture_qa": [
+      "Snapmaker U1 (0.4 nozzle)"
+    ],
+    "source_audit_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42316033247",
+    "machine_profile_candidates": 100,
+    "process_profiles": 112,
+    "filament_profiles": 312,
+    "profile_inheritance_issues_in_snapshot": 0,
+    "not_a_homologated_model_whitelist": true
+  },
+  "upstream": {
+    "repository": "https://github.com/Snapmaker/OrcaSlicer",
+    "tag": "v2.4.1",
+    "commit": "bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c",
+    "binary_sha256": "1f002e2168c576f800bcfd0509b5e164b5ad65a0963abc2bef8317d929d48c9d",
+    "source_files_inventory": 2115,
+    "changed_source_audit_candidates": 1978,
+    "review_items": 101,
+    "license_status": "PER_FILE_AND_DEPENDENCY_REVIEW_REQUIRED",
+    "base_orca_pin": "a620d804efbe74162c96ad29d755cdab2b823530"
+  },
+  "components": [
+    {
+      "kind": "all_vendor_sources_network_and_engine",
+      "path": "FILUNA/tools/oem_universal_inventory.py",
+      "status": "SOURCE_TREE_STAGE_PASS_NEEDS_DEPENDENCY_AND_LICENSE_REVIEW"
+    },
+    {
+      "kind": "specific_verified_cli_crash",
+      "path": "lab/snapmaker_u1_wipe_tower_probe.py",
+      "status": "ROOT_CAUSE_DIFFERENTIAL_PASS"
+    },
+    {
+      "kind": "generic_runtime_profile_workaround",
+      "path": "lab/snapmaker_runtime_nozzle_guard_qa.py",
+      "status": "DIAGNOSTIC_GCODE_AB_PASS_NOT_APP_INTEGRATED"
+    },
+    {
+      "kind": "native_source_patch_candidate",
+      "path": "FILUNA/fabricantes/snapmaker/patches/0001-guard-nozzle-diameter-process-load.patch",
+      "status": "CANDIDATE_NOT_APPLIED_NOT_BUILT"
+    }
+  ],
+  "capabilities": {
+    "discovery": "NOT_RUN",
+    "pairing": "NOT_RUN",
+    "access": "NOT_RUN",
+    "network": "NOT_RUN",
+    "upload": "NOT_RUN",
+    "ack": "NOT_RUN",
+    "start_pause_resume_stop": "NOT_RUN",
+    "camera": "NOT_RUN",
+    "multi_material": "NOT_RUN",
+    "native_slicing": "NOT_RUN"
+  },
+  "qa": {
+    "source_inventory": "PASS",
+    "source_review_complete": "NOT_RUN",
+    "all_models_profile_candidates_discovered": "PASS_INVENTORY_ONLY",
+    "all_models_profiles_validated_in_app": "NOT_RUN",
+    "u1_official_cli_unmodified": "FAIL_ACCESS_VIOLATION",
+    "u1_source_causal_reproduction": "PASS",
+    "u1_official_cli_temporary_guard_ab": "PASS_DIAGNOSTIC_ONLY",
+    "u1_filuna_native_gcode_parity": "NOT_RUN",
+    "u1_network_protocol": "NOT_RUN",
+    "internal_homologation": "BLOCKED",
+    "physical_beta": "NOT_RUN"
+  },
+  "automatic_hardware_activation": false,
+  "production_promotion": "BLOCKED_OWNER_APPROVAL_AND_QA_REQUIRED",
+  "guardrails": [
+    "No full OEM secondary slicer binary shipped",
+    "No OEM source compiled for this initial portable QA",
+    "No LAN credentials or access bypass",
+    "No physical prints before supervised beta",
+    "No success inferred from profile list, code clone, or guarded OEM CLI"
+  ]
+}
