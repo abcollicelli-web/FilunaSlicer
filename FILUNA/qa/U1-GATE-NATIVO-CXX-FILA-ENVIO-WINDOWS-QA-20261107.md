@@ -67,3 +67,19 @@ O workflow `.github/workflows/filuna-native-send-qa-windows-compile.yml` foi alt
 - CI dedicado: [#42393665358](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42393665358), status **PENDENTE** neste checkpoint. Não interpretar início do run como PASS de quatro ferramentas.
 
 **Gates inalterados:** `SNAPMAKER_GCODE_NATIVE_PARITY=NOT_PROVEN`, `SNAPMAKER_FOUR_TOOLS=BLOCKED`, `WINDOWS_GUI_COMPILE=NOT_PROVEN`, `DEVICE_NETWORK_ACK=NOT_RUN`, `PHYSICAL_BETA=NOT_RUN`, `HOMOLOGACAO_INTERNA_3_OEM=0/3`. Branch/PR #6 permanecem DRAFT. Sem merge, deploy, instalador, publicação ou impressão; Bambuddy autenticado segue adiado.
+
+## Resultado factual dos controles adicionais — run #42393665358 (07/11/2026)
+
+**GitHub Actions [#42393665358](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42393665358): FAILURE legítimo, artefato `13582403017` inspecionado.** O teste não foi abortado por sintaxe nem cache: o executável original Snapmaker Orca Windows 2.4.1 foi iniciado, manteve ZIP SHA pinado e produziu evidências específicas:
+
+| Caso com binário e perfis OEM idênticos | Retorno | G-code | Evidência |
+|---|---:|---|---|
+| Cubo `fixtures/cube20.stl` original direto | **0** | **250.183 bytes**, SHA `72e5eb86…` | `oem-raw-stl-control.log` |
+| `resources/handy_models/OrcaCube_v2.3mf` OEM imutável | **0xC0000005** | Nenhum | import 3MF chega a `IMPORT_STAGE_FINISH`, mas encontra `plate count 0` |
+| Exportação OEM de 3MF do mesmo STL fatiável | **0xC0000005** | Nenhum 3MF exportado | após `glfwInit Success`, OpenGL Mesa 4.6 e `render_thumbnail` |
+| Reimportação de 3MF recém-exportado | **NOT_RUN** | Não se aplica | exportação oficial falhou; sem arquivo de saída |
+| Cópia de QA com quatro objetos/ferramentas | **0xC0000005** | Nenhum | import conclui `plate count 1`, quatro volumes gerados, falha posterior |
+
+**O que está provado:** (a) binário OEM e perfis conseguem fatiar STL normalmente; (b) a montagem de quatro ferramentas não é condição necessária para um crash de importação 3MF, pois o 3MF OEM intocado também falha; (c) exportar 3MF usando CLI oficial também falha neste runner. **O que NÃO está provado:** se os crashes de importação e exportação compartilham uma única causa, se Mesa/thumbnail gera a exceção (somente último passo visível no log), ou se um 3MF preparado pelo aplicativo gráfico funcionará no CLI. Não classificar um erro oficial como regressão Filuna; sem paridade e sem quatro cores.
+
+**Gates preservados:** `U1_ORIGINAL_STL=PASS`, `U1_ORIGINAL_3MF_IMPORT=FAIL`, `U1_ORIGINAL_3MF_EXPORT=FAIL`, `U1_FOUR_TOOL=BLOCKED`, `U1_NATIVE_PARITY=NOT_PROVEN`, `PRINT_SEND_NETWORK=NOT_RUN`, `PHYSICAL=NOT_RUN`. Ações somente no branch de QA; sem alterar G-code, arquivos oficiais, firmware, executável OEM, produção ou aprovação de marca.
