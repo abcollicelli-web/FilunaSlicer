@@ -29,7 +29,7 @@
     {
       "kind": "official_portable_qa",
       "path": "lab/anycubic_kobra_models_official_qa.py",
-      "status": "PASS_TWO_MODELS_THIRD_ORIGINAL_TIMESTAMP_ONLY_VERIFIED_CI_PENDING"
+      "status": "PASS_3_INDEPENDENT_ORIGINAL_A_B_SAMPLES_WITH_8_NEGATIVE_CHECKS_NOT_FILUNA_NATIVE"
     }
   ],
   "checks": {
@@ -83,7 +83,7 @@
   "qa": {
     "source_tree_inventory": "PASS_SOURCE_CANDIDATES_ONLY",
     "all_binary_profiles_inventory": "PASS_LIST_AND_INHERITANCE_ONLY",
-    "sample_original_cli_ab": "PASS_KOBRA_S1_AND_KOBRA3V2_KOBRA4_TIMESTAMP_ONLY_PENDING_CI",
+    "sample_original_cli_ab": "PASS_KOBRA_S1_KOBRA3V2_KOBRA4_3_DISTINCT_ORIGINAL_AB_RAW_SHA_MATCH",
     "sample_gcode_sha256": {
       "kobra_s1_04": "cf60ff9d3412df392ed99077bf03e8a072e2b4c0fa273a76f6a3e5fdc6324401",
       "kobra3_v2_04": "4abf9fdd344d0c08f39b23b2ecd98f264bed92e25bda3be55054e6bb7ea53d5c"
@@ -97,9 +97,9 @@
       "official_package_sha256": "fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678",
       "upstream_binary_version": "2.0.0.6",
       "gcode_bytes": 215690,
-      "real_gcode_diff": "PASS_ONLY_ORIGINAL_GENERATED_AT_HEADER_LINE_2_MANUAL_BYTE_COMPARE",
-      "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321830613",
-      "strict_ci_validation": "RUNNING_PRESERVE_UNTIL_RESULT",
+      "real_gcode_diff": "PASS_RAW_SHA256_IDENTICAL_WITHIN_SEPARATE_OFFICIAL_A_B",
+      "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323305372",
+      "strict_ci_validation": "PASS_RERUN_42323305372",
       "native_filuna_gcode_parity": "NOT_RUN",
       "native_network": "NOT_RUN"
     },
@@ -133,7 +133,15 @@
       "module_native_ace_multimaterial": "NOT_RUN",
       "physical_beta": "NOT_RUN"
     },
-    "original_model_cli_ab": "PASS_3_OFFICIAL_SAMPLES_ONLY"
+    "original_model_cli_ab": "PASS_3_OFFICIAL_SAMPLES_ONLY",
+    "existing_pre_oem_filuna_windows_baseline": {
+      "source_binary_build": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42102469888",
+      "comparison_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324852127",
+      "status": "FAIL_PRE_OEM_FILUNA_PROFILE_NOT_IN_LOADED_BUNDLE",
+      "error": "can not resolve preset ... process.json: Preset was not found in the loaded bundle",
+      "note": "Existing Filuna pre-OEM portable baseline does not yet have Anycubic native module or on-demand catalog integrated; this is NOT the same executable as official Anycubic.",
+      "native_homologation": "BLOCKED"
+    }
   },
   "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
   "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_PROFILE_DATA_NOT_FINAL_INSTALLER"
