@@ -8,6 +8,7 @@ on:
       - "src/libslic3r/Print.cpp"
       - "src/libslic3r/PrintConfig.cpp"
       - "src/libslic3r/PrintConfig.hpp"
+      - "src/libslic3r/PerimeterGenerator.cpp"
       - "lab/test_oem_native_source_contract.py"
       - ".github/workflows/filuna-oem-native-source-contract-qa.yml"
   workflow_dispatch:
@@ -27,7 +28,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Source-only guards for disabled cut distance and Snapmaker macros
+      - name: Source-only guards for Anycubic cut, Snapmaker macros and opt-in Flashforge walls
         run: |
           python -m unittest discover -s lab -p 'test_oem_native_source_contract.py' -v
       - name: Preserve truthful readiness level
