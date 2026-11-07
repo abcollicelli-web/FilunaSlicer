@@ -91,7 +91,7 @@
     "filuna_native_slicing": "NOT_RUN",
     "filuna_native_network": "NOT_RUN",
     "full_oem_dependencies_review": "BLOCKED_65",
-    "internal_homologation": "BLOCKED",
+    "internal_homologation": "BLOCKED_NATIVE_GCODE_NETWORK_AND_SOURCE_VERSION_MISMATCH",
     "physical_beta": "NOT_RUN",
     "kobra4_04": {
       "official_package_sha256": "fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678",
@@ -102,8 +102,39 @@
       "strict_ci_validation": "RUNNING_PRESERVE_UNTIL_RESULT",
       "native_filuna_gcode_parity": "NOT_RUN",
       "native_network": "NOT_RUN"
-    }
+    },
+    "original_cli_three_model_ab": {
+      "status": "PASS_3_SAMPLES_ONLY_NATIVE_NOT_INTEGRATED",
+      "original_binary_version": "2.0.0.6",
+      "original_package_sha256": "fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678",
+      "actions_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323143169",
+      "strict_comparator_negative_tests": "PASS_8",
+      "results": {
+        "kobra_s1_04": {
+          "gcode_bytes": 210094,
+          "sha256_raw": "f2fbc6bd2df371e91d1999b8f107dd8cac65e70b7063ad868dd49b120bfb3f5a",
+          "ab": "PASS_RAW"
+        },
+        "kobra_3_v2_04": {
+          "gcode_bytes": 325731,
+          "sha256_raw": "dc1ed1656e3a3cf314f5b003d61b82840d031d9f0b8d6c2deab19f2026d3c62b",
+          "ab": "PASS_RAW"
+        },
+        "kobra_4_04": {
+          "gcode_bytes": 215690,
+          "sha256_raw": "5d397648d5eab5827cfdb7404b504f8cebff82ffa9b47b64cbeab4d89427e3b4",
+          "ab": "PASS_RAW"
+        }
+      },
+      "static_profile_catalog": "40 machines / 191 process / 382 filament / 0 inheritance errors",
+      "hardcoded_model_whitelist": false,
+      "module_native_gcode_parity": "NOT_RUN",
+      "module_native_network_ack": "NOT_RUN",
+      "module_native_ace_multimaterial": "NOT_RUN",
+      "physical_beta": "NOT_RUN"
+    },
+    "original_model_cli_ab": "PASS_3_OFFICIAL_SAMPLES_ONLY"
   },
   "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
-  "profile_delivery": "FUTURE_SIGNED_ON_DEMAND_ONLY_NO_ALL_OEM_JSON_IN_INSTALLER"
+  "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_PROFILE_DATA_NOT_FINAL_INSTALLER"
 }
