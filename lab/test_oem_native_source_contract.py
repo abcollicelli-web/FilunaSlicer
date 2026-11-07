@@ -104,5 +104,29 @@ class OEMSourceGuardTests(unittest.TestCase):
         self.assertNotIn('Snapmaker U1',GCODE_CPP)
 
 
+    def test_10_flashforge_auto_schema_is_opt_in(self):
+        perimeter = (ROOT / "src/libslic3r/PerimeterGenerator.cpp").read_text(encoding="utf-8")
+        self.assertRegex(CONFIG_HPP, r"enum class WallDirection\s*\{\s*CounterClockwise,\s*Clockwise,.*?Auto,\s*Count,", msg="enum keeps existing Orca CCW/CW indexes")
+        self.assertIn('{ "auto",  int(WallDirection::Auto)}', CONFIG_CPP)
+        self.assertIn('def->enum_values.push_back("auto");', CONFIG_CPP)
+        self.assertIn('new ConfigOptionEnum<WallDirection>(WallDirection::CounterClockwise)', CONFIG_CPP)
+        self.assertIn('perimeter_generator.config->wall_direction == WallDirection::Auto', perimeter)
+
+    def test_11_flashforge_auto_mode_gates_original_reversal(self):
+        perimeter = (ROOT / "src/libslic3r/PerimeterGenerator.cpp").read_text(encoding="utf-8")
+        self.assertEqual(perimeter.count('const bool auto_oem_wall_direction = config->wall_direction == WallDirection::Auto;'), 2)
+        self.assertEqual(perimeter.count('if (!config->overhang_reverse && !auto_oem_wall_direction) {'), 2)
+        self.assertEqual(perimeter.count('if (auto_oem_wall_direction || config->overhang_reverse) {'), 2)
+        self.assertIn('perimeter_generator.config->wall_direction == WallDirection::Auto ||', perimeter)
+        self.assertNotIn('manufacturer_id == "flashforge"', perimeter)
+        self.assertNotIn('Flashforge AD5X', perimeter)
+
+    def test_12_missing_native_flashforge_cannot_promote(self):
+        manifest = json.loads((ROOT / "FILUNA/fabricantes/flashforge/manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["qa"]["filuna_native_slicing"], "NOT_RUN")
+        self.assertNotEqual(manifest["qa"]["internal_homologation"], "PASS")
+        self.assertFalse(manifest["automatic_hardware_activation"])
+
+
 if __name__ == "__main__":
     unittest.main()
