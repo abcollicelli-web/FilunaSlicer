@@ -394,3 +394,27 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 **Norma completa:** [REGRA-BETA-MONITORAMENTO-HOMOLOGACAO-FISICA-20261107.md](REGRA-BETA-MONITORAMENTO-HOMOLOGACAO-FISICA-20261107.md); vinculada a `REGRA-FASES-HOMOLOGACAO-INTERNA-BETA-FISICA-20261107.md` e `ARQUITETURA-SERVIDOR-DADOS-REMOTO.md`. O servidor do Filuna será **somente observador**; sem credenciais OEM, controle remoto administrativo, impressão automática, câmera ou envio indiscriminado de projetos privados. Opt-in granular dos participantes beta, revogação, criptografia, minimização e segregação são bloqueadores da ativação. Término de impressão não equivale a peça homologada; requer evidência física/revisão e aprovação do proprietário.
 
 **Situação atual:** `BETA_MONITORAMENTO_FISICO = PLANEJADO_DOCUMENTADO_NAO_IMPLEMENTADO`; `BETA_ABERTO = NAO`; `COLETA_REAL = DESATIVADA`. Não confundir a criação deste registro com serviço ativo, testes reais ou homologação concluída. Abertura do beta somente depois dos gates internos, build final e prontidão da ferramenta, sem antecipar hardware.
+
+
+## CONTINUIDADE OEM PRIORITÁRIA — SNAPMAKER + ANYCUBIC + FLASHFORGE (07/11/2026, lote de QA)
+
+**Ordem do proprietário:** avançar estas três marcas para fechar o máximo de QA interno sem hardware, **sem instalar/compilar motores OEM nem liberar build final**. Todos os modelos/perfis/protocolos precisam de descoberta automatizada e módulo OEM completo; piloto com dois modelos NÃO define whitelist.
+
+### Snapmaker U1
+- Crise real do executável oficial `2.4.1` identificada e isolada: `wipe_tower_filament` presente em processo sem `nozzle_diameter`, acesso inválido durante `normalize_fdm` da CLI. Workaround temporário genérico usando bicos herdados do OEM gerou G-code real A/B idêntico (runs 42316614470, 42316895543, 42317564346).
+- **Patch de fonte completo e válido**, somente `PrintConfig.cpp`, contra upstream commit `bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c`; GitHub Actions [#42319819540](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42319819540) `SUCCESS`: apply/check/revert limpa, sem compilação.
+- Inventário integral de fonte e perfis automatizado. **Pendentes:** port de código nativo à arquitetura OEM Filuna, testes do gateway/controle/ACK real em simulador, comparação G-code Filuna×OEM, explicação de variância de trajetórias entre dois workflows diferentes. `HOMOLOGACAO_INTERNA=BLOCKED`.
+
+### Anycubic Slicer Next 2.0.0.6
+- Origem oficial .deb pinada SHA `fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678`; libcloud_mqtt carregada **somente da pasta original do próprio pacote** (não instalada nem distribuída no Filuna).
+- [A/B real dois modelos #42319417880](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42319417880) `SUCCESS`: **Kobra S1 0,4/PLA 210.094 bytes**, SHA bruto idêntico nas duas passagens; **Kobra 3 V2 0,4/PLA 325.731 bytes**, SHA bruto idêntico. [Catálogo #42319568616](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42319568616) `SUCCESS`: **40 máquinas, 191 processos, 382 filamentos, zero ancestrais ausentes/ciclos** na árvore original do pacote.
+- Inventário código-fonte Git oficial `6103ed8b...`: 19 máquinas, 42 processos, 45 filamentos; **diverge** do pacote .deb v2.0.0.6. 65 itens para revisão de código/dependências. [CI fonte #42319915138](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42319915138). Não misturar fontes e perfil de versões diferentes nem presumir módulo de rede/cloud distribuível.
+- `OEM_AB_2_SAMPLE=PASS`; `FULL_NATIVE_FILUNA_PARITY`, `NETWORK_ACE_ACK`, `MATERIAL_MULTICOLOR` = `NOT_RUN`; `HOMOLOGACAO_INTERNA=BLOCKED`.
+
+### Flashforge Flash Studio
+- **Versão 1.7.20 Windows atual é um instalador EXE**, mesmo que o botão oficial traga texto `win64.zip`. O pacote 1.7.15 original já teve SHA verificado mas não entregou executável+resources portátil pela extração 7z/Inno; nenhum PASS CLI 1.7.15.
+- Alternativa **portátil Linux oficial anterior 1.7.9** da release GitHub `Flash.Studio_ubuntu24.04_V1.7.9.AppImage`, SHA `96578656466416adc1ccd2e7ec656a0b217560edadeeb29642259e67922adf45`. [CI original #42320238666](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42320238666) `SUCCESS` de download/hash, AppRun e inventário **59 arquivos máquina, 130 processo, 636 filamento**; CLI ainda bloqueada inicialmente por runtime `libgstvideo-1.0.so.0`, **não** por formato ou preset.
+- [CI fonte oficial completo #42319915138](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42319915138) `SUCCESS`: **26 perfis-máquina, 60 de processo, 123 de filamento** interpretáveis, 2.453 arquivos-fonte/recurso, 2.267 deltas preparados isoladamente; 64 itens em revisão.
+- Correção de ambiente: provisionar somente `libgstreamer-plugins-base1.0-0`; novo CI da CLI e da geração G-code A/B **AD5X 0,4 + Adventurer 5M 0,4** em andamento. Checar logs antes de marcar PASS. Não afirmar IFS/câmera/LAN ou Filuna nativo sem testes.
+
+**Regra de evidências:** pacote OEM e código-fonte integral pinados são `PASS_SOURCE`, G-code do **oficial** A/B é `PASS_OEM_ONLY`, **não** é `PASS_FILUNA_PARITY`, `PASS_NETWORK` ou `HOMOLOGACAO_INTERNA`. Nenhum dos três fabricantes foi promovido, mesclado, instalado ou habilitado fisicamente. Bambu × Bambuddy autenticado permanece único adiamento deliberado.
