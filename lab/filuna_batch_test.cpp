@@ -32,10 +32,9 @@ int main(int argc, char **argv) {
   bool pending = false;
   for(unsigned i=0;i<8;++i) {
     if(!a[i]) { std::cerr << name[i] << " ADAPTER_MISSING\\n"; return 1; }
-    // Probe only the non-networking contract. No discovery, pairing or printer I/O.
-    const Outcome probe = a[i]->status_stream();
-    if(!probe.ok && !probe.attempted) {
-      std::cout << name[i] << " PENDING (LINKED, NOT IMPLEMENTED): " << probe.evidence << "\\n";
+    // RTTI-only readiness check: do not invoke a network-capable adapter method.
+    if(dynamic_cast<PendingVendorAdapter*>(a[i].get()) != nullptr) {
+      std::cout << name[i] << " PENDING (LINKED, NOT IMPLEMENTED)\\n";
       pending = true;
     } else {
       std::cout << name[i] << " LINKED (CONTRACT UNVERIFIED)\\n";
