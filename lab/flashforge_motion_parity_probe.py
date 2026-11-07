@@ -23,22 +23,14 @@ LAYER = re.compile(r"^;LAYER_CHANGE(?:\s|$)")
 CONFIG_ENTRY = re.compile(r"^;\s*([a-zA-Z_][a-zA-Z_0-9]*)\s*=\s*(.*?)\s*$")
 
 
-def runtime_config(data: bytes) -> dict[str, str]:
-    """Read actual embedded OEM/Filuna config evidence, without rewriting it."""
-    inside = False
-    result = {}
-    for line in data.decode("utf-8", "replace").splitlines():
-        if line == "; CONFIG_BLOCK_START":
-            inside = True
-            continue
-        if line == "; CONFIG_BLOCK_END":
-            inside = False
-            continue
-        if inside:
-            match = CONFIG_ENTRY.fullmatch(line)
-            if match:
-                result[match.group(1)] = match.group(2)
-    return result
+def runtime_config(data: bytes) -> dict[str, str | list[str]]:
+    """Read exact ordered config occurrences; do not hide repeated OEM keys.
+
+    Invalid/incomplete blocks fail closed in the diagnostic report rather
+    than silently returning a partial configuration as if it were complete.
+    """
+    from oem_exported_config_defaults_audit import read_config
+    return read_config(data.decode("utf-8", "replace"))
 
 
 def digest(data: bytes) -> str:
@@ -97,8 +89,14 @@ def first_motion_delta(official: bytes, candidate: bytes, max_samples: int = 12)
             "official": a[i]["code"] if i < len(a) and i < j else None,
             "filuna": b[k]["code"] if k < len(b) and k < l else None,
         })
-    official_settings = runtime_config(official)
-    filuna_settings = runtime_config(candidate)
+    try:
+        official_settings = runtime_config(official)
+        filuna_settings = runtime_config(candidate)
+        config_evidence = "VALID"
+    except ValueError as exc:
+        official_settings = {}
+        filuna_settings = {}
+        config_evidence = "INVALID_OR_MISSING_CONFIG_BLOCK: " + str(exc)
     shared_deltas = {
         key: {"official": official_settings[key], "filuna": filuna_settings[key]}
         for key in sorted(official_settings.keys() & filuna_settings.keys())
@@ -114,6 +112,7 @@ def first_motion_delta(official: bytes, candidate: bytes, max_samples: int = 12)
         "native_parity": "NOT_PROVEN",
         "raw_equal": raw_equal,
         "embedded_runtime_config_differences": shared_deltas,
+        "embedded_runtime_config_evidence": config_evidence,
         "embedded_runtime_config_common_count": len(official_settings.keys() & filuna_settings.keys()),
         "movement_equal": movement_equal,
         "geometry_equal": geometry_equal,
