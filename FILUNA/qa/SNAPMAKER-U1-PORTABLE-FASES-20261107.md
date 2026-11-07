@@ -211,3 +211,22 @@ A ferramenta `FILUNA/fabricantes/snapmaker/patches/0001-guard-nozzle-diameter-pr
 **Diagnóstico com limites:** A reprodução de variações no **mesmo** comando e perfil confirma **não repetibilidade ocasional do caminho de ferramenta no binário OEM original v2.4.1 nas condições testadas**; ainda não prova se a causa é concorrência interna, cache, algoritmos de costura, estado do processo, dependência runtime ou bug upstream. O nome de arquivo não é causa necessária. A guarda \`nozzle_diameter\` é uma correção de acesso nulo distinta e não resolve essa variação. Sem build Filuna, não sabemos se o Filuna nativo teria o mesmo comportamento.
 
 **Próximo gate bloqueador**: investigar fonte/configurações do planejador/wipe/seam e concorrência, estabelecer um conjunto de configuração de produção determinístico e teste de regressão de longa duração; comparar caminhos de verdade contra OEM original como referência de conformidade, sem ocultar divergências. **\`STRESS_STRICT_GCODE=FAIL\`**, **\`ROOT_CAUSE=NOT_IDENTIFIED\`**, **\`FILUNA_NATIVE_PARITY=NOT_RUN\`**, **\`GATE_REDE_U1=NOT_RUN\`**, **\`HOMOLOGACAO_INTERNA=BLOCKED\`**, **\`BETA_FISICO=NOT_RUN\`**. Nenhum build ou hardware iniciado por este diagnóstico.
+
+
+## Bloqueadores P0 de segurança e estabilidade — diagnóstico adicional de 07/11/2026
+
+**1. Bug upstream de colisão possível com peça finalizada.** Issue oficial [Snapmaker/OrcaSlicer #1149](https://github.com/Snapmaker/OrcaSlicer/issues/1149) **ABERTA** na consulta de 07/11/2026. Snapmaker Orca **2.4.1** pode omitir Z-hop/retração no deslocamento final à torre de purga U1 em impressão multicolor. Relato físico descreve arranhão na peça; a análise aponta **\`src/libslic3r/GCode.cpp\`, \`WipeTowerIntegration::append_tcr2()\`**, condição alterada no commit \`b626b4be6\`. **Não é o mesmo problema do acesso nulo em \`PrintConfig.cpp\`**, nem se deve declará-lo corrigido pelo patch \`0001\`. O fabricante ainda não publicou correção homologada nesta rodada. <https://forum.snapmaker.com/t/43865>
+
+Patch candidato novo, isolado e **não ativado**: \`FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch\`; [CI fonte #42323500007](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323500007) **SUCCESS de \`git apply --check\`/apply/revert em upstream exato**; **NÃO** testou G-code, firmware, segurança física, binário compilado ou Filuna nativo. Verificação verdadeira de trajetória no firmware real ou simulado permanece **P0 obrigatório**.
+
+**2. Afinidade a um único processador não elimina G-code diferente.** [CI #42323435503](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323435503) executou **24 subprocessos originais no modo CPU padrão e 24 fixados por máscara de afinidade Windows a um único núcleo**. No grupo normal houve **três hashes normalizados distintos** (22/24 resultado majoritário); no de um núcleo, **dois hashes distintos** (23/24 majoritário). \`AFFINITY_SINGLE_CORE_FIX=REFUTED\`; não alterar a execução em produção para um núcleo como correção.
+
+**3. Alterações isoladas de seam e wipe também não eliminam variação.** [CI #42323700744](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323700744): original fixado, **4 grupos × 20 fatiamentos oficiais**, mudanças controladas apenas em cópias temporárias dos perfis. G-code estrito (única normalização: data original do cabeçalho) produziu:
+- OEM original: **2 variantes**;
+- \`wipe=["0"]×4\` em vez do padrão: **3 variantes**;
+- \`seam_position=nearest\` em vez de \`aligned\`: **2 variantes**;
+- ambos: **3 variantes**.
+
+**Nenhum desses perfis experimentais** pode ser entregue ao cliente ou registrado como compatível; todos falharam na repetibilidade, o que demonstra que desligar limpeza e/ou mudar costura não constitui solução. Estes testes não provam causalidade nem isolam bug de concorrência, RNG, geometria ou outro subsistema; exigem auditoria upstream adicional e eventual correção fonte nativa segura.
+
+**Veredito inalterável até prova:** \`SNAPMAKER_U1_GCODE_STABILITY=FAIL\`, \`UPSTREAM_FINAL_PURGE_Z_HOP_SAFETY=OPEN_BLOCKER\`, \`SOURCE_PATCH_APPLIES=PASS_NOT_FUNCTIONAL\`, \`FILUNA_NATIVE_COMPARISON=NOT_RUN\`, \`NETWORK_GATEWAY_ACK=NOT_RUN\`, \`HOMOLOGACAO_INTERNA=BLOCKED\`, \`BETA_FISICO=NOT_RUN\`. **Não compilar instalador final, ativar U1 ou disparar impressões por causa desses patches.**
