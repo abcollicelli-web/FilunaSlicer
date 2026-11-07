@@ -42,3 +42,21 @@ Essa diferença é uma **candidata a explicar parte das coordenadas XY**; ainda 
 4. Só após o código OEM **real** estar ligado ao Filuna, executar no **binário final** os G-code oficiais equivalentes sob testes negativos e estresse, modelos AD5X e AD5M, perfis dinâmicos, depois protocolo nativo simulado/segurança/ACK. A validação física permanece exclusivamente para o beta vigiado.
 
 **Estado operacional:** `OEM_OFFICIAL_AB=PASS`; `FLASHFORGE_NATIVE_ENGINE_PARITY=FAIL`; `FLASHFORGE_SOURCE_CAUSAL_FIX=NOT_PROVEN`; `DEVICE_NETWORK_NATIVE=NOT_RUN`; `HOMOLOGACAO_INTERNA=BLOCKED`. Não publicar nem marcar correção funcional completa por SUCCESS do analisador.
+
+
+## Correção de compatibilidade nativa candidata — wall_direction=auto (07/11/2026)
+
+Auditoria adicional feita sobre os **blocos CONFIG preservados no G-code real**: o original Flashforge AD5X traz `wall_direction = auto` e o Filuna Windows pré-OEM traz `wall_direction = ccw`. A fonte FlashForge 1.7.9 implementa `WallDirection::Auto`, ao contrário do Orca base que só possuía CCW/CW. O modo é uma **diferença de semântica do core**, não uma linha de data a ser ignorada. Outros campos efetivos distintos observados nos blocos de configuração foram `filament_change_length`, `flush_volumes_matrix` e `wipe_tower_type`; `enable_arc_fitting` tem serialização distinta (`1` vs `enabled`) e exige verificação semântica antes de ser tratado como mismatch funcional.
+
+**Mudanças nesta branch de QA:**
+- `src/libslic3r/PrintConfig.hpp`: acrescentou `WallDirection::Auto` **após** os dois valores originais para preservar a numeração existente.
+- `src/libslic3r/PrintConfig.cpp`: reconhece e apresenta o valor explícito `"auto"`; **default global permanece CounterClockwise**, para não alterar projetos Orca e outras marcas.
+- `src/libslic3r/PerimeterGenerator.cpp`: o modo Auto usa laços CCW inicialmente e reversão condicional de sobreposição, somente quando escolhido explicitamente; os modos CCW/CW mantêm exatamente o ramo original. Inclui caminho de perímetro clássico e Arachne.
+- `lab/test_oem_native_source_contract.py`: três testes adicionais para reconhecimento, isolamento do modo opt-in e bloqueio de homologação, sem mascarar diferenças de G-code.
+- [CI #42339189237](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42339189237): **12/12 testes de contrato de fonte PASS**. Isso **NÃO compila** nem executa o novo motor; não prova que a opção Auto conserte as 534 diferenças geométricas, E/F, M73, ventiladores ou os perfis sob demanda.
+
+**Dependência indispensável ainda ausente:** os dados JSON OEM efetivos podem omitir `wall_direction` porque o próprio executável OEM fornece o valor default Auto. O app Filuna precisará carregar esse **default original da fonte/verificação OEM no módulo sob demanda**, sem inventar compatibilidade por nome de impressora e sem alterar arquivos oficiais. O executor Filuna pré-OEM ainda escolherá CCW. É **proibido** marcar paridade só por registrar Auto no schema.
+
+**Correção de hipótese:** a diferença estática de bounding box em `FillRectilinear::fill_surface_by_lines` mencionada acima **não está causalmente comprovada** para AD5X; `FillGrid` não habilita automaticamente o caminho `has_consistent_pattern()`. Não reverter genericamente código Orca por essa hipótese.
+
+**Gates após patch:** `FLASHFORGE_AUTO_WALL_SCHEMA=SOURCE_PATCH_PASS`, `FLASHFORGE_DEFAULT_OEM_SELECTION=NOT_INTEGRATED`, `FLASHFORGE_FILUNA_GCODE_GENERATED_WITH_PATCH=NOT_RUN`, `FLASHFORGE_GCODE_PARITY=FAIL_NOT_READY`, `OEM_NATIVE_DEVICE=NOT_RUN`, `INTERNAL_HOMOLOGATION=BLOCKED`. Não gerar build intermediário, instalador, release ou impressão física.
