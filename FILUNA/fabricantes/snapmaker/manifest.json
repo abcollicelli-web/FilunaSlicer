@@ -53,6 +53,16 @@
       "kind": "native_source_patch_candidate",
       "path": "FILUNA/fabricantes/snapmaker/patches/0001-guard-nozzle-diameter-process-load.patch",
       "status": "CANDIDATE_NOT_APPLIED_NOT_BUILT"
+    },
+    {
+      "kind": "official_gateway_network_source_map",
+      "path": "FILUNA/qa/SNAPMAKER-U1-REDE-CONTROLE-FONTES-20261107.md",
+      "status": "SOURCES_VERIFIED_NOT_INTEGRATED"
+    },
+    {
+      "kind": "cross_job_gcode_variance_negative_evidence",
+      "path": "lab/snapmaker_u1_cross_minute_qa.py",
+      "status": "CROSS_MINUTE_PASS_BUT_CROSS_JOB_FAIL"
     }
   ],
   "capabilities": {
@@ -77,8 +87,16 @@
     "u1_official_cli_temporary_guard_ab": "PASS_DIAGNOSTIC_ONLY",
     "u1_filuna_native_gcode_parity": "NOT_RUN",
     "u1_network_protocol": "NOT_RUN",
-    "internal_homologation": "BLOCKED",
-    "physical_beta": "NOT_RUN"
+    "internal_homologation": "BLOCKED_BY_CROSS_CI_GCODE_NATIVE_PARITY_NETWORK",
+    "physical_beta": "NOT_RUN",
+    "u1_spaced_second_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
+    "u1_cross_minute_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
+    "u1_cross_actions_run_gcode_reproducibility": "FAIL_NON_TIMESTAMP_TOOLPATH_DIFFERENCES",
+    "u1_cross_actions_run_size_bytes": [
+      250183,
+      249098,
+      250183
+    ]
   },
   "automatic_hardware_activation": false,
   "production_promotion": "BLOCKED_OWNER_APPROVAL_AND_QA_REQUIRED",
