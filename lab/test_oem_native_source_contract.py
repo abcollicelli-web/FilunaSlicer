@@ -153,5 +153,26 @@ class OEMSourceGuardTests(unittest.TestCase):
         self.assertEqual(manifest["qa"]["u1_filuna_native_gcode_parity"], "NOT_RUN")
 
 
+    def test_16_flashforge_legacy_infill_source_port_isolated(self):
+        fill = (ROOT / "src/libslic3r/Fill/FillRectilinear.cpp").read_text(encoding="utf-8")
+        self.assertIn('((ConfigOptionBool,                filuna_oem_legacy_infill_anchor))', CONFIG_HPP)
+        self.assertIn('def = this->add("filuna_oem_legacy_infill_anchor", coBool);', CONFIG_CPP)
+        self.assertRegex(CONFIG_CPP, re.compile(
+            r'add\("filuna_oem_legacy_infill_anchor", coBool\);.{0,550}new ConfigOptionBool\(false\)',
+            re.S))
+        self.assertIn('this->print_config->filuna_oem_legacy_infill_anchor.value', fill)
+        self.assertIn('if (!use_legacy_oem_anchor)', fill)
+        self.assertIn('bounding_box = this->extended_object_bounding_box();', fill)
+        self.assertIn('bounding_box.translate(c.rotated(- rotate_vector.first) - c);', fill)
+        self.assertNotIn('Flashforge AD5X', fill)
+        self.assertNotIn('manufacturer_id == "flashforge"', fill)
+
+    def test_17_flashforge_module_stays_unhomologated_without_real_compilation(self):
+        manifest = json.loads((ROOT / "FILUNA/fabricantes/flashforge/manifest.json").read_text(encoding="utf-8"))
+        self.assertNotEqual(manifest["qa"]["internal_homologation"], "PASS")
+        self.assertNotEqual(manifest["qa"]["filuna_native_slicing"], "PASS")
+        self.assertFalse(manifest["automatic_hardware_activation"])
+
+
 if __name__ == "__main__":
     unittest.main()
