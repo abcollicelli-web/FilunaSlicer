@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   compare-real-gcode:
-    name: Flashforge AD5X: original AppImage 1.7.9 vs unmodified pre-OEM Filuna portable
+    name: "Flashforge AD5X vs original AppImage 1.7.9, pre-OEM portable"
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
