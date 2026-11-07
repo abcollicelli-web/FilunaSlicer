@@ -255,6 +255,12 @@ def main()->int:
         if not template.is_file():
             raise ValueError("OFFICIAL_OEM_3MF_TEMPLATE_NOT_PRESENT")
         report["model"]=build_from_official_3mf(template,model)
+        # Essential causality control: does original unmodified OEM handy 3MF
+        # itself work through the official CLI? A crash shared with the
+        # 4-tool copy cannot be attributed to our extruder assignments.
+        original_control=run_cli(executable,profiles["machine"],adjusted,
+            profiles["filament"],template,out,"official-unmodified-3mf-control",timeout=220)
+        report["original_unmodified_oem_template_control"]=original_control
         report["vendor_original_zip_sha256"]=digest(package)
         report["vendor_url"]=source_url
         gcode_hashes=[]
