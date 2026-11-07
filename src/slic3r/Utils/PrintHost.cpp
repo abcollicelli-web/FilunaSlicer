@@ -507,7 +507,7 @@ bool PrintHostJobQueue::upload_job(PrintHostJob &job, PrintHost::ProgressFn prog
             if (safety.decision == Filuna::Safety::Report::Decision::Review)
                 throw std::runtime_error("Filuna U1: geometry cannot be validated; upload cancelled: " + safety.explanation);
             if (safety.decision == Filuna::Safety::Report::Decision::Warn) {
-                info_fn(wxString::FromUTF8("Filuna U1 G-code safety warning"),
+                info_fn(wxString::FromUTF8("filuna_u1_safety_warning"),
                         wxString::FromUTF8("Travel may leave the 270 mm volume. If using Auto spiral Z-hop, review Normal Z-hop. File is not changed."));
             }
         }
