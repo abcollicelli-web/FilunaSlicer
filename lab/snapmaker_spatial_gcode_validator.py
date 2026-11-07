@@ -103,6 +103,12 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
     res = pitch
     # Occupancy is max deposited Z per XY voxel and the deposition line.
     occupied = {}
+    # Wipe/prime towers are deliberate sacrificial regions. Record their
+    # extrusion separately: do not mistake normal travel near a built tower
+    # for a toolhead crossing the printed object. Never suppress a travel
+    # that actually crosses object occupancy, including the final purge.
+    prime_tower_deposition = 0
+    region = "object"
     pos = [None,None,None]
     epos = 0.0
     xyz_relative = False
@@ -125,6 +131,12 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
         raise ValueError("GCODE_TOO_LARGE_FOR_QA")
     for lineno,line in enumerate(lines,1):
         comments = line.partition(";")[2]
+        feature = comments.strip().lower()
+        if feature.startswith("type:prime tower") or feature.startswith("type:wipe tower"):
+            region = "prime_tower"
+        elif (feature.startswith("type:") and
+              not ("prime tower" in feature or "wipe tower" in feature)) or START.search(comments):
+            region = "object"
         # Intentional post-extrusion wipe retracts along a printed edge;
         # it is not a nozzle transit to the wipe tower. Ignore only
         # short XY retraction wipes, never a long unlifted travel.
@@ -209,6 +221,9 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
             continue
         if delta_e>0.00001:
             prior_extrusion=True
+            if region == "prime_tower":
+                prime_tower_deposition+=1
+                continue
             deposition+=1
             for _,q in pts:
                 # Centerline + approximate nozzle-radius footprint in XY.
@@ -257,9 +272,10 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
         "gcode_sha256":digest(raw),"gcode_bytes":len(raw),"gcode_lines":len(lines),
         "gcode_modified":False,"manufacturer":vendor["manufacturer"],
         "printer_model":vendor["printer_model"],"volume_mm":maxdim,
-        "geometry_method":"XY cell occupancy per extruded path and top-Z; conservative critical-travel sampling",
+        "geometry_method":"Object-only XY cell occupancy excluding documented prime/wipe tower extrusion; conservative critical-travel sampling",
         "geometry_resolution_mm":res,"clearance_mm":clearance,
         "scope":scan,"tested_travels":checked,"deposition_segments":deposition,
+        "prime_tower_deposition_segments":prime_tower_deposition,
         "issues":issues,"warnings":warnings,"unknowns":uncertain,
         "safe_macro_proof_scope":"Only macro-internal park; no blanket exemption for prior final purge",
         "firmware_macro_safety_for_final_purge":"NOT_PROVEN",
