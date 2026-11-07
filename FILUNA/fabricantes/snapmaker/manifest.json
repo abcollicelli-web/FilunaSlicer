@@ -92,7 +92,7 @@
     "u1_official_cli_temporary_guard_ab": "PASS_DIAGNOSTIC_ONLY",
     "u1_filuna_native_gcode_parity": "NOT_RUN",
     "u1_network_protocol": "NOT_RUN",
-    "internal_homologation": "BLOCKED_INTERMITTENT_GCODE_SAFETY_ISSUE_1149_AND_NATIVE_NETWORK",
+    "internal_homologation": "BLOCKED_INTERMITTENT_NON_TIMESTAMP_GCODE_AND_OPEN_SNAPMAKER_SAFETY_ISSUE_1149",
     "physical_beta": "NOT_RUN",
     "u1_spaced_second_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
     "u1_cross_minute_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
@@ -151,10 +151,32 @@
       "production_activation": false
     },
     "u1_seam_wipe_factor_diagnostic": {
-      "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/workflows/filuna-snapmaker-u1-seam-wipe-qa.yml",
-      "status": "IN_PROGRESS_AT_THIS_MANIFEST_VERSION",
-      "scope": "80 original portable CLI invocations; experimental profile copies never production"
-    }
+      "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323700744",
+      "status": "FAIL_ALL_FOUR_GROUPS_REAL_GCODE_VARIANTS",
+      "trials": 80,
+      "groups": {
+        "baseline": {
+          "trials": 20,
+          "distinct_normalized_sha256": 2
+        },
+        "wipe_off_only": {
+          "trials": 20,
+          "distinct_normalized_sha256": 3
+        },
+        "nearest_seam_only": {
+          "trials": 20,
+          "distinct_normalized_sha256": 2
+        },
+        "wipe_off_and_nearest": {
+          "trials": 20,
+          "distinct_normalized_sha256": 3
+        }
+      },
+      "diagnostic_only": true,
+      "experimental_settings_not_for_release": true,
+      "conclusion": "Neither wipe-off nor nearest seam singly or together fixes intermittent original OEM CLI G-code non-repeatability"
+    },
+    "u1_root_cause": "NOT_ISOLATED_AFTER_10_40_48_80_CLI_RUNS"
   },
   "automatic_hardware_activation": false,
   "production_promotion": "BLOCKED_UNTIL_TOOLPATH_SAFETY_AND_NATIVE_NETWORK_VALIDATED",
