@@ -7,6 +7,8 @@ on:
       - "lab/filuna_baseline_three_oem_qacheck.py"
       - "lab/test_filuna_baseline_single_sample.py"
       - "lab/oem_functional_gcode_diff.py"
+      - "lab/oem_exported_config_defaults_audit.py"
+      - "lab/test_oem_exported_config_defaults_audit.py"
       - "lab/oem_model_scoped_manifest_probe.py"
       - "lab/test_oem_model_scoped_manifest_probe.py"
       - "lab/test_oem_functional_gcode_diff.py"
@@ -105,6 +107,13 @@ jobs:
         shell: pwsh
         run: |
           python lab/flashforge_real_motion_triage.py --official ".oem-flashforge/ad5x_04/run-A/plate_1.gcode" --filuna "qa-existing-filuna-vs-oem/flashforge/Filuna-flat-User-run/plate_1.gcode" --out "qa-existing-filuna-vs-oem/flashforge/flashforge-motion-triage.json"
+          exit $LASTEXITCODE
+      - name: Flag differences in fully resolved OEM vs Filuna G-code defaults
+        shell: pwsh
+        run: |
+          python -m unittest discover -s lab -p test_oem_exported_config_defaults_audit.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python lab/oem_exported_config_defaults_audit.py --oem ".oem-flashforge/ad5x_04/run-A/plate_1.gcode" --filuna "qa-existing-filuna-vs-oem/model-manifest-probe/flashforge/sliced/plate_1.gcode" --out "qa-existing-filuna-vs-oem/model-manifest-probe/flashforge/full-config-defaults-diagnostic.json"
           exit $LASTEXITCODE
       - name: Preserve actual native CLI logs and exact G-code diff
         if: always()
