@@ -40,8 +40,8 @@ class GcodeDifferentialTests(unittest.TestCase):
         self.assertEqual(result["families"]["TOOLCHANGE_T1"]["filuna"], 1)
 
     def test_motion_fingerprint_flags_real_extrusion_and_speed_difference(self):
-        official = b"; header\\nM73 P5 R15\\nG1 X101.185 Y101.185 E.02839\\nG1 F7947\\n"
-        filuna = b"; header\\nM73 P5 R15\\nG1 X101.185 Y101.185 E.0284\\nG1 F7970\\n"
+        official = b"; header\nM73 P5 R15\nG1 X101.185 Y101.185 E.02839\nG1 F7947\n"
+        filuna = b"; header\nM73 P5 R15\nG1 X101.185 Y101.185 E.0284\nG1 F7970\n"
         result = analyze_bytes(official, filuna, "flashforge")
         self.assertEqual(result["motion_counts"], {"official": 2, "filuna": 2})
         self.assertFalse(result["motion_equal_diagnostic_only"])
@@ -49,8 +49,8 @@ class GcodeDifferentialTests(unittest.TestCase):
         self.assertEqual(result["filuna_parity"], "NOT_PROVEN")
 
     def test_motion_hash_equal_is_not_sufficient_for_parity(self):
-        result = analyze_bytes(b"M104 S215\\nG1 X1\\n",
-                               b"M104 S220\\nG1 X1\\n", "flashforge")
+        result = analyze_bytes(b"M104 S215\nG1 X1\n",
+                               b"M104 S220\nG1 X1\n", "flashforge")
         self.assertTrue(result["motion_equal_diagnostic_only"])
         self.assertEqual(result["status"], "FAIL_GCODE_COMMAND_STREAM_DIFFERENT")
         self.assertEqual(result["filuna_parity"], "NOT_PROVEN")
