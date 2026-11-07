@@ -5,6 +5,7 @@ on:
     paths:
       - "src/libslic3r/GCode.cpp"
       - "fabricantes/**"
+      - "fabricantes/CMakeLists.txt"
       - "lab/filuna_batch_test.cpp"
       - "src/slic3r/Utils/FilunaGCodeSafety.hpp"
       - "src/slic3r/Utils/PrintHost.cpp"
