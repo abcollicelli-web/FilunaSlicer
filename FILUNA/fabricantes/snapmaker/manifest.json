@@ -201,6 +201,14 @@
       ],
       "source_diff": "different feedrate F/motion/wipe trajectories and M73 positions, not only time",
       "conclusion": "2.4.0 also has occasional genuine toolpath non-repeatability in U1 official CLI; not unique to 2.4.1, no fallback homologation"
+    },
+    "existing_pre_oem_filuna_windows_baseline": {
+      "source_binary_build": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42102469888",
+      "comparison_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324852127",
+      "status": "FAIL_PRE_OEM_FILUNA_CUSTOM_GCODE_PARSER_INCOMPATIBLE",
+      "error": "machine_start_gcode Parsing error at line 10: Not a variable name {if chamber_cooling_mode==0}",
+      "note": "Actual original OEM G-code and source profiles compared to pre-OEM Windows Filuna portable; new native OEM integration not yet linked, so this negative baseline is not a test of a completed OEM module.",
+      "native_homologation": "BLOCKED"
     }
   },
   "automatic_hardware_activation": false,
