@@ -171,6 +171,14 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
             if prior_extrusion: recent_tool=lineno
             continue
         args={k.upper():float(v) for k,v in WORD.findall(code)}
+        if cmd in ("G28","G380"):
+            # Homing and vendor-specific endstop/probe moves invalidate
+            # the prior machine coordinate reference. Do not pretend that
+            # a subsequent relative Z move starts at the synthetic origin.
+            axes=[i for i,axis in enumerate("XYZ") if axis in args]
+            for i in (axes or range(3)):
+                pos[i]=None
+            continue
         if cmd=="G92":
             for i,axis in enumerate("XYZ"):
                 if axis in args:pos[i]=args[axis]
@@ -182,7 +190,9 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
         nxt=pos[:]
         for i,axis in enumerate("XYZ"):
             if axis in args:
-                nxt[i]=(0.0 if xyz_relative else 0.0 if pos[i] is None else pos[i]) + args[axis] if xyz_relative else args[axis]
+                nxt[i] = (
+                    None if pos[i] is None else pos[i] + args[axis]
+                ) if xyz_relative else args[axis]
         new_e=epos
         delta_e=0.0
         if "E" in args:
