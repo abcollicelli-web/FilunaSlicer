@@ -1,0 +1,32 @@
+name: Filuna first-connect beta model gates synthetic verification
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "FILUNA/tools/beta_first_connect_contract.py"
+      - "lab/test_beta_first_connect_contract.py"
+      - ".github/workflows/filuna-beta-first-connect-gates-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  three-vendors-no-hardware:
+    name: Snapmaker/Anycubic/Flashforge model-neutral onboarding and physical evidence gate tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax check without loading any OEM executable or actual printer
+        run: python -m py_compile FILUNA/tools/beta_first_connect_contract.py lab/test_beta_first_connect_contract.py
+      - name: Verify local system steps, user camera+filament confirmations, and three trustworthy real-test prerequisites
+        run: |
+          python -m unittest discover -s lab -p test_beta_first_connect_contract.py -v
+          echo 'Contract-only QA: pass does NOT mean real camera, network, G-code, hardware, Filuna app integration or 3 physical prints actually happened.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Strict rule - do not distribute any OEM profiles or executables
+        run: |
+          test ! -d qa-physical-user-telemetry
+          echo 'No OEM print started, no user images or projects collected, no stable release.' >> "$GITHUB_STEP_SUMMARY"
