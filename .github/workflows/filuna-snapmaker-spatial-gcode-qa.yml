@@ -129,6 +129,16 @@ jobs:
           x=json.loads(Path("qa-two-color/verdict.json").read_text())
           print("OFFICIAL_TWO_COLOR_GCODE_SAFETY",x["status"],"events",len(x["issues"]))
           print("FIRST_EVENTS",x["issues"][:4])
+          from pathlib import Path
+          lines=Path("qa-two-color/original.gcode").read_text(errors="replace").splitlines()
+          for number in (15695,38911):
+            lo=max(0,number-70)
+            markers=[(i+1,lines[i][:140]) for i in range(lo,number)
+                     if any(t in lines[i].upper() for t in
+                            ("TYPE:", "CP TOOLCHANGE", "EXCLUDE_OBJECT", "WIPE TOWER", "PRIME TOWER", "STOP PRINTING OBJECT"))]
+            print("ORIGINAL_CONTEXT",number,markers[-10:])
+            print("MOTION_CONTEXT",number,[(i+1,lines[i][:120])
+                    for i in range(max(0,number-5),min(number+4,len(lines)))])
           assert x["status"]=="BLOCK" and x["issues"], "FINAL_PURGE_RISK_NOT_DETECTED"
           assert x["gcode_modified"] is False
           PY
