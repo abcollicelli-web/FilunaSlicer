@@ -35,6 +35,82 @@ def model_files(vendor,artifact,model,out):
            "filament":artifact/"effective-filament.json"}
     return paths,artifact/"stress-00/plate_1.gcode","OEM_PROCESS_TEMPORARY_GUARD"
 
+
+
+def diagnostic_fully_resolved_user_preset_attempt(vendor, paths, exe, stl, dest,
+                                                   official):
+    """Try a DATA-ONLY temporary transformed preset on the PREEXISTING Filuna.
+
+    Not a real OEM integration: there is no Filuna vendor module or firmware,
+    and removing 'inherits' changes how the slicer handles metadata. This may
+    identify the first genuine incompatibility after preset inheritance.
+    Only FROM and INHERITS are changed in TEMPORARY copies; OEM refs untouched.
+    """
+    report={"status":"FAIL_DIAGNOSTIC_NOT_RUN",
+            "source":"temporary effective User-format test of existing Filuna baseline",
+            "claim_native_oem_homologation":False,
+            "original_oem_profiles_untouched":True,
+            "temporary_profile_changes":["from","inherits"]}
+    try:
+        local={}
+        for kind,path in paths.items():
+            original=json.loads(path.read_text(encoding="utf-8-sig"))
+            if not isinstance(original,dict) or original.get("type")!=kind:
+                raise ValueError("ORIGINAL_EFFECTIVE_PRESET_BAD_KIND")
+            transformed=dict(original)
+            transformed["from"]="User"
+            transformed["inherits"]=""
+            target=dest/("flat-"+kind+".json")
+            target.write_text(json.dumps(transformed,ensure_ascii=False,indent=2)+"\n",
+                              encoding="utf-8")
+            local[kind]=target.resolve()
+        report["temporary_profile_hashes"]={k:h(v) for k,v in local.items()}
+        output=(dest/"Filuna-flat-User-run").resolve()
+        output.mkdir(parents=True,exist_ok=True)
+        filament_list=";".join([str(local["filament"])]*
+                              (4 if vendor=="snapmaker" else 1))
+        cli=[str(exe),"--debug","3","--slice","0",
+             "--load-settings",str(local["machine"])+";"+str(local["process"]),
+             "--load-filaments",filament_list,
+             "--outputdir",str(output),str(stl)]
+        log=dest/"Filuna-flat-User-cli.log"
+        with log.open("w",encoding="utf-8",errors="replace") as fp:
+            fp.write("DIAGNOSTIC_TEMP_USER_PRESETS_ONLY\nCOMMAND_JSON="+json.dumps(cli)+"\n")
+            fp.flush()
+            try:exit_code=subprocess.run(
+                cli,cwd=exe.parent,stdout=fp,stderr=subprocess.STDOUT,
+                timeout=180,check=False).returncode
+            except subprocess.TimeoutExpired:
+                exit_code=124
+        generated=list(output.rglob("*.gcode"))
+        report["exit_code"]=exit_code
+        report["filuna_gcode_count"]=len(generated)
+        if exit_code or len(generated)!=1:
+            report["status"]="FAIL_FILUNA_CLI_WITH_USER_FORMAT"
+        else:
+            actual=generated[0]
+            report["filuna_bytes"]=actual.stat().st_size
+            report["filuna_sha256"]=h(actual)
+            left=official.read_bytes();right=actual.read_bytes()
+            if left==right:
+                report["status"]="DIAGNOSTIC_ONE_SAMPLE_IDENTICAL_NOT_HOMOLOGATED"
+            else:
+                aa=left.decode("utf-8","replace").splitlines()
+                bb=right.decode("utf-8","replace").splitlines()
+                delta=list(difflib.unified_diff(aa,bb,
+                         fromfile="UNMODIFIED-OEM-GCODE",
+                         tofile="PREEXISTING-FILUNA-FLAT-USER-GCODE",
+                         lineterm="",n=1))
+                (dest/"flat-user-real-gcode-diff.txt").write_text(
+                    "\n".join(delta[:600])+"\n",encoding="utf-8")
+                report["status"]="FAIL_GCODE_DIFFERENT_NOT_OEM_PARITY"
+                report["first_diff_lines"]=delta[:16]
+                report["line_counts"]={"OEM":len(aa),"Filuna":len(bb)}
+    except Exception as e:
+        report["status"]="FAIL_USER_PRESET_DIAGNOSTIC_SETUP"
+        report["reason"]=type(e).__name__+": "+str(e)
+    return report
+
 def run_one(vendor,model,artifact,exe,stl,out):
     dest=out/vendor
     dest.mkdir(parents=True)
@@ -75,6 +151,8 @@ def run_one(vendor,model,artifact,exe,stl,out):
         data["filuna_output_count"]=len(products)
         if status or len(products)!=1:
             data["status"]="FAIL_NO_FILUNA_GCODE_OR_CRASH"
+            data["flattened_user_diagnostic"]=diagnostic_fully_resolved_user_preset_attempt(
+                vendor,paths,exe,stl,dest,original)
         else:
             produced=products[0]
             data["filuna_gcode"]={"sha256":h(produced),"bytes":produced.stat().st_size}
