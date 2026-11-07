@@ -1,0 +1,62 @@
+name: Filuna Flashforge official original Linux AppImage profile/CLI QA
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/flashforge_appimage_original_qa.py"
+      - ".github/workflows/filuna-flashforge-original-appimage.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-flashforge-original-appimage
+  cancel-in-progress: true
+jobs:
+  flashforge:
+    name: Official 1.7.9 Flash Studio Linux AppImage - no vendor compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install only standard Linux runtime libraries, no OEM engine build
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb libgl1 libegl1 libglib2.0-0t64 libgtk-3-0t64 \
+            libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libfuse2t64 \
+            libwebkit2gtk-4.1-0
+      - name: Syntax check
+        run: python -m py_compile lab/flashforge_appimage_original_qa.py
+      - name: Restore official immutable AppImage cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .flashforge-appimage-cache
+          key: filuna-flashforge-original-linux-179-96578656466416adc-20261107
+      - name: Verify official SHA, AppRun and all Flashforge printer profile branches
+        run: |
+          python lab/flashforge_appimage_original_qa.py \
+            --cache .flashforge-appimage-cache --out qa-flashforge-original-appimage
+          ret=$?
+          if test -e qa-flashforge-original-appimage/RESUMO.md; then
+            cat qa-flashforge-original-appimage/RESUMO.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$ret"
+      - name: Save portable verified AppImage only to CI cache
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .flashforge-appimage-cache
+          key: filuna-flashforge-original-linux-179-96578656466416adc-20261107
+      - name: Archive logs, hashes and inventory, not third-party binary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-flashforge-official-linux-179-original-profile-inventory
+          path: qa-flashforge-original-appimage/
+          if-no-files-found: warn
+          retention-days: 30
