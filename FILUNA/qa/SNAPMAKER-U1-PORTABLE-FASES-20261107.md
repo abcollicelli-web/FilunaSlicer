@@ -168,3 +168,14 @@ O job `#42316895543`, tentativa **2**, foi reexecutado sem alterar script, parâ
 - O workflow **diferente** `#42317221768` manteve ZIP OEM e perfis byte-idênticos mas produziu outro G-code válido de 249.098 bytes, SHA normalizado `06687a6b84ee16d0d7ceb75f8c631272b649f452313ce4395864893e372247d7`, com diferenças de movimento/retração. Isso mantém `CROSS_WORKFLOW_TOOLPATH_VARIANCE=UNEXPLAINED/BLOCKED`, sem autorizar normalização de comandos e sem concluir que o mesmo job seja não determinístico.
 
 **Próxima verificação indicada:** comparar exatamente a invocação CLI, nomes/paths de perfis temporários e ambiente de runner dos dois workflows distintos, isolando um fator por vez. Enquanto não houver paridade do motor **Filuna** e implementação real de gateway/controle da U1, a homologação interna permanece **BLOQUEADA**. No PR só existe o patch de fonte **candidato**, não aplicado ao motor comum nem compilado.
+
+
+## Validação do patch de código-fonte OEM com Git apply (07/11/2026)
+
+A ferramenta `FILUNA/fabricantes/snapmaker/patches/0001-guard-nozzle-diameter-process-load.patch` foi convertida em diff Git válido e checada **contra o commit oficial exato** `bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c` no GitHub Actions Linux.
+
+- [Execução #42319819540](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42319819540): **SUCCESS** `git apply --check`, `git apply`, verificação de alteração **somente** em `src/libslic3r/PrintConfig.cpp`, verificação da presença da guarda de `nozzle_diameter`, `git diff --check`, `git apply -R` e confirmação de árvore OEM limpa. Sem build, instalador ou rede/print.
+- **Patch candidato válido** para correção nativa isolada da carga de processo; não afeta todo Orca até homologação de ABI/integração.
+- O A/B oficial temporário da U1 permaneceu PASS nos ensaios anteriores, mas as variações de G-code entre workflows, o build do Filuna, rede/controle do fabricante e comparação Filuna×OEM continuam pendentes.
+
+**`SOURCE_PATCH_APPLIES_EXACT_UPSTREAM=PASS`**, **`NATIVE_FILUNA_CODE_LINKED=NOT_RUN`**, **`HOMOLOGACAO_INTERNA=BLOCKED`**. Não usar sucesso de `git apply` como prova de execução de motor.
