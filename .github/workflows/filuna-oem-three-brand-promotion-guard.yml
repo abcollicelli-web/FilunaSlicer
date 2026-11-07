@@ -4,8 +4,12 @@ on:
     branches:
       - filuna/oem-portable-first-qa-20261106
     paths:
-      - "FILUNA/fabricantes/{snapmaker,anycubic,flashforge}/manifest.json"
-      - "fabricantes/{snapmaker,anycubic,flashforge}/adapter/*.cpp"
+      - "FILUNA/fabricantes/snapmaker/manifest.json"
+      - "FILUNA/fabricantes/anycubic/manifest.json"
+      - "FILUNA/fabricantes/flashforge/manifest.json"
+      - "fabricantes/snapmaker/adapter/*.cpp"
+      - "fabricantes/anycubic/adapter/*.cpp"
+      - "fabricantes/flashforge/adapter/*.cpp"
       - "FILUNA/tools/oem_three_brand_promotion_guard.py"
       - "lab/test_oem_three_brand_promotion_guard.py"
       - ".github/workflows/filuna-oem-three-brand-promotion-guard.yml"
