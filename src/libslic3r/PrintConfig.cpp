@@ -2817,15 +2817,6 @@ void PrintConfigDef::init_fff_params()
     def->mode = comDevelop;
     def->set_default_value(new ConfigOptionBool(false));
 
-    // Snapmaker upstream #1150 candidate reintroduces final-purge lift and
-    // safe travel before the tower. A module may opt in to exercise it in QA,
-    // but general Orca and unverified OEM profiles retain their old behavior.
-    def = this->add("filuna_oem_final_purge_lift", coBool);
-    def->label = L("OEM final purge Z-lift (QA only)");
-    def->tooltip = L("Candidate safe travel before the final purge. Requires pinned OEM firmware dry-run proof.");
-    def->mode = comDevelop;
-    def->set_default_value(new ConfigOptionBool(false));
-
     def = this->add("extruder", coInt);
     def->gui_type = ConfigOptionDef::GUIType::i_enum_open;
     def->label = L("Extruder");
