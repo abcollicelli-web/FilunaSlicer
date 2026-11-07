@@ -156,6 +156,17 @@ class OEMSourceGuardTests(unittest.TestCase):
     def test_16_flashforge_legacy_infill_source_port_isolated(self):
         fill = (ROOT / "src/libslic3r/Fill/FillRectilinear.cpp").read_text(encoding="utf-8")
         self.assertIn('((ConfigOptionBool,                filuna_oem_legacy_infill_anchor))', CONFIG_HPP)
+        # Critical C++ type check: Fill::print_config is PrintConfig*, not
+        # PrintRegionConfig*. A member registered in the wrong macro compiles
+        # neither the engine nor the FillRectilinear port.
+        self.assertEqual(
+            CONFIG_HPP.split('PRINT_CONFIG_CLASS_DERIVED_DEFINE(\n    PrintConfig,',1)[1]
+            .split('// This object is mapped to Perl as Slic3r::Config::Full.',1)[0]
+            .count('((ConfigOptionBool,                filuna_oem_legacy_infill_anchor))'),1)
+        self.assertNotIn(
+            'filuna_oem_legacy_infill_anchor',
+            CONFIG_HPP.split('PRINT_CONFIG_CLASS_DEFINE(\n    PrintRegionConfig,',1)[1]
+            .split('PRINT_CONFIG_CLASS_DEFINE(\n    MachineEnvelopeConfig,',1)[0])
         self.assertIn('def = this->add("filuna_oem_legacy_infill_anchor", coBool);', CONFIG_CPP)
         self.assertRegex(CONFIG_CPP, re.compile(
             r'add\("filuna_oem_legacy_infill_anchor", coBool\);.{0,550}new ConfigOptionBool\(false\)',
