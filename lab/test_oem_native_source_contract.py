@@ -41,8 +41,8 @@ class OEMSourceGuardTests(unittest.TestCase):
     def test_02_active_cut_guard_preserves_original_10_18(self):
         self.assertIn('if (!m_config.long_retractions_when_cut.get_at(extruder))',
                       PRINT_CPP)
-        self.assertIn('if (distance < 10.0 || distance > 18.0)', PRINT_CPP)
-        self.assertIn('return { L("Enabled filament cut retraction requires',
+        self.assertIn('if (!std::isfinite(distance) || distance < 10.0 || distance > 18.0)', PRINT_CPP)
+        self.assertIn('return { L("Enabled filament cut retraction requires a finite distance',
                       PRINT_CPP)
 
     def test_03_nullable_retraction_override_fills_correct_vector(self):
@@ -126,6 +126,31 @@ class OEMSourceGuardTests(unittest.TestCase):
         self.assertEqual(manifest["qa"]["filuna_native_slicing"], "NOT_RUN")
         self.assertNotEqual(manifest["qa"]["internal_homologation"], "PASS")
         self.assertFalse(manifest["automatic_hardware_activation"])
+
+
+    def test_13_flashforge_auto_survives_legacy_profile_parser(self):
+        # Regression: the newly supported OEM Auto value must not be
+        # silently transformed back into CCW by Orca's legacy import.
+        self.assertIn('{ "auto",  int(WallDirection::Auto)}', CONFIG_CPP)
+        self.assertNotIn('opt_key == "wall_direction" && value == "auto"', CONFIG_CPP)
+        self.assertIn('Do not silently migrate it to ccw', CONFIG_CPP)
+        self.assertIn('new ConfigOptionEnum<WallDirection>(WallDirection::CounterClockwise)', CONFIG_CPP)
+
+    def test_14_snapmaker_final_purge_fail_closed_until_native_safety_proof(self):
+        # Source guard only: not a successful physical Z-hop test. The
+        # unverified final purge must stop before any generated travel.
+        block = GCODE_CPP.split('WipeTowerIntegration::append_tcr2(', 1)[1]
+        marker = 'unverified_oem_chamber_macro && !tcr.priming && new_extruder_id == -1'
+        self.assertIn(marker, block)
+        self.assertIn('G-code export blocked.', block)
+        self.assertLess(block.index(marker), block.index('gcode += gcodegen.writer().unlift()'))
+        self.assertIn('machine_start_gcode.value.find("chamber_cooling_mode")', block)
+
+    def test_15_snapmaker_vendor_still_blocked_even_with_source_guard(self):
+        manifest = json.loads((ROOT / "FILUNA/fabricantes/snapmaker/manifest.json").read_text(encoding="utf-8"))
+        self.assertNotEqual(manifest["qa"]["internal_homologation"], "PASS")
+        self.assertEqual(manifest["capabilities"]["native_slicing"], "NOT_RUN")
+        self.assertEqual(manifest["qa"]["u1_filuna_native_gcode_parity"], "NOT_RUN")
 
 
 if __name__ == "__main__":
