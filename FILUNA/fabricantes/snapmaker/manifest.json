@@ -63,6 +63,11 @@
       "kind": "cross_job_gcode_variance_negative_evidence",
       "path": "lab/snapmaker_u1_cross_minute_qa.py",
       "status": "CROSS_MINUTE_PASS_BUT_CROSS_JOB_FAIL"
+    },
+    {
+      "kind": "final_purge_safety_issue_patch_candidate",
+      "path": "FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch",
+      "status": "SOURCE_APPLY_TEST_PASS_ONLY_NOT_COMPILED_NOT_VALIDATED_NOT_PRODUCTION"
     }
   ],
   "capabilities": {
@@ -87,7 +92,7 @@
     "u1_official_cli_temporary_guard_ab": "PASS_DIAGNOSTIC_ONLY",
     "u1_filuna_native_gcode_parity": "NOT_RUN",
     "u1_network_protocol": "NOT_RUN",
-    "internal_homologation": "BLOCKED_INTERMITTENT_TOOLPATH_VARIANTS_AND_NATIVE_GCODE_NETWORK",
+    "internal_homologation": "BLOCKED_INTERMITTENT_GCODE_SAFETY_ISSUE_1149_AND_NATIVE_NETWORK",
     "physical_beta": "NOT_RUN",
     "u1_spaced_second_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
     "u1_cross_minute_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
@@ -115,10 +120,44 @@
     ],
     "u1_path_is_cause": "REFUTED_NOT_SUFFICIENT_SAME_PATH_CAN_PRODUCE_DIFFERENT_GCODE",
     "stress_run_link": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321783683",
-    "stress_scope": "40 independent official Snapmaker 2.4.1 CLI fatiamentos; no Filuna-native engine; guard only process load"
+    "stress_scope": "40 independent official Snapmaker 2.4.1 CLI fatiamentos; no Filuna-native engine; guard only process load",
+    "u1_original_cpu_affinity_diagnostic": {
+      "action_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323435503",
+      "result": "FAIL_BOTH_DEFAULT_AND_SINGLE_CPU_HAVE_REAL_TOOLPATH_VARIANCE",
+      "default_cpu": {
+        "trials": 24,
+        "variants": 3,
+        "majority_runs": 22
+      },
+      "assigned_single_cpu": {
+        "trials": 24,
+        "variants": 2,
+        "majority_runs": 23
+      },
+      "conclusion": "CPU affinity does not eliminate OEM toolpath difference, cannot promote U1"
+    },
+    "u1_final_purge_safety_regression": {
+      "official_issue": "https://github.com/Snapmaker/OrcaSlicer/issues/1149",
+      "vendor_issue_status_at_check": "OPEN",
+      "severity": "HARDWARE_SAFETY_BLOCKER_MULTICOLOR_FINAL_PURGE",
+      "source_location": "src/libslic3r/GCode.cpp WipeTowerIntegration::append_tcr2",
+      "source_version": "v2.4.1",
+      "candidate_patch": "FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch",
+      "source_only_ci": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323500007",
+      "source_check": "PASS_APPLY_REVERSE_ONLY",
+      "simulated_firmware_gcode_safety": "NOT_RUN",
+      "compiled_native_version": "NOT_RUN",
+      "physical_beta": "NOT_RUN",
+      "production_activation": false
+    },
+    "u1_seam_wipe_factor_diagnostic": {
+      "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/workflows/filuna-snapmaker-u1-seam-wipe-qa.yml",
+      "status": "IN_PROGRESS_AT_THIS_MANIFEST_VERSION",
+      "scope": "80 original portable CLI invocations; experimental profile copies never production"
+    }
   },
   "automatic_hardware_activation": false,
-  "production_promotion": "BLOCKED_OWNER_APPROVAL_AND_QA_REQUIRED",
+  "production_promotion": "BLOCKED_UNTIL_TOOLPATH_SAFETY_AND_NATIVE_NETWORK_VALIDATED",
   "guardrails": [
     "No full OEM secondary slicer binary shipped",
     "No OEM source compiled for this initial portable QA",
