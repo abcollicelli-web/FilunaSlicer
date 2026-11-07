@@ -92,7 +92,7 @@
     "u1_official_cli_temporary_guard_ab": "PASS_DIAGNOSTIC_ONLY",
     "u1_filuna_native_gcode_parity": "NOT_RUN",
     "u1_network_protocol": "NOT_RUN",
-    "internal_homologation": "BLOCKED_BOTH_240_241_REAL_TOOLPATH_NONDETERMINISM_AND_241_ZHOP_ISSUE_1149",
+    "internal_homologation": "BLOCKED_EXTERNAL_SPATIAL_QA_PASS_NATIVE_INTEGRATION_PARITY_AND_FIRMWARE_NOT_RUN",
     "physical_beta": "NOT_RUN",
     "u1_spaced_second_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
     "u1_cross_minute_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
@@ -250,10 +250,9 @@
         "state": "SOURCE_PORT_STATIC_PASS_NOT_COMPILED_OR_PROVED"
       },
       {
-        "source": "Snapmaker final purge Z-hop upstream #1149",
-        "candidate_patch": "FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch",
-        "target": "src/libslic3r/GCode.cpp",
-        "state": "FAIL_CLOSED_EXPORT_GUARD_ONLY; NO MOTION FIX PROVED"
+        "source": "Snapmaker original unmodified final purge G-code",
+        "target": "lab/snapmaker_spatial_gcode_validator.py",
+        "state": "EXTERNAL_READ_ONLY_GEOMETRY_VALIDATOR_CI_PASS_NOT_NATIVE_DEVICEBRIDGE_INTEGRATED"
       }
     ],
     "original_oem_functional_variability": "FAIL_2_4_0_AND_2_4_1_MULTIPLE_OUTPUT_HASHES_WITH_SAME_INPUTS",
@@ -261,6 +260,35 @@
     "parity_qa": "NOT_RUN",
     "hardware_activation": false,
     "activation": "SIGNED_VERIFIED_OEM_MODULE_ONLY_AFTER_PASSED_RUNTIME_TESTS",
-    "overall_status": "CANDIDATE_SOURCE_ONLY_BETA_BLOCKED"
+    "overall_status": "CANDIDATE_SOURCE_ONLY_BETA_BLOCKED",
+    "no_gcode_rewriting": true,
+    "removed_old_guard": true,
+    "upstream_1150_not_applied": "Original OEM collision is vendor behavior; no postprocessing or toolpath patch allowed under binding owner rule"
+  },
+  "geometry_safety_validator": {
+    "file": "lab/snapmaker_spatial_gcode_validator.py",
+    "vendor_policy": "FILUNA/fabricantes/snapmaker/vendor.yaml",
+    "report": "FILUNA/qa/SNAPMAKER-U1-GCODE-IMUTAVEL-VALIDADOR-GEOMETRICO-20261107.md",
+    "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42345082502",
+    "synthetic_tests": "PASS_16_OF_16",
+    "source_contract_tests": "PASS_18_OF_18",
+    "original_official_mono_cube": "PASS_NO_FALSE_BLOCK",
+    "original_official_two_color": "BLOCK_CONFIRMED_OEM_FINAL_PURGE_LINE_38911_LAYER_14",
+    "original_two_color_gcode_sha256": "05f227dd12598bd99626dd60a29e3ecdc2a97ae65db803d6e4f9520587254f48",
+    "original_collision_position_mm": [
+      63.569,
+      147.185,
+      3.05
+    ],
+    "original_collision_printed_top_z_mm": 3.05,
+    "crossbrand_bambu_original_cube": "PASS_GEOMETRY_ONLY",
+    "crossbrand_creality_original_cube": "PASS_GEOMETRY_ONLY",
+    "four_color_oem_final_purge_safe": "NOT_PROVEN",
+    "real_firmware_macro_config": "NOT_RUN",
+    "filuna_native_slicing_parity": "NOT_RUN",
+    "native_devicebridge_integration": "NOT_RUN",
+    "automatic_hardware_activation": false,
+    "physical_beta": "NOT_RUN",
+    "owner_rule": "NEVER_MODIFY_VENDOR_GCODE_FOR_SAFETY"
   }
 }
