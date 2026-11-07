@@ -298,6 +298,68 @@ def build_minimal_core_3mf(out:Path)->dict:
             "oem_data_modified":False}
 
 
+def build_four_from_core_3mf(seed:Path,out:Path)->dict:
+    """Produce four independent cubes + OEM-style extruder metadata from a
+    successfully sliced standards-only 3MF. Vendor code/presets stay unchanged.
+    This is a *new synthetic QA 3MF*, never an authentic OEM 4-color project.
+    """
+    import copy
+    with zipfile.ZipFile(seed) as z:
+        payload={name:z.read(name) for name in z.namelist()}
+    root=ET.fromstring(payload["3D/3dmodel.model"])
+    ns=f"{{{CORE}}}"
+    resources=root.find(ns+"resources")
+    build=root.find(ns+"build")
+    if resources is None or build is None or len(resources)!=1:
+        raise ValueError("FOUR_CORE_SEED_NOT_SINGLE_MODEL")
+    template=resources.find(ns+"object")
+    if template is None or template.find(ns+"mesh") is None:
+        raise ValueError("FOUR_CORE_SEED_MESH_MISSING")
+    for element in list(resources):
+        resources.remove(element)
+    for element in list(build):
+        build.remove(element)
+    config=ET.Element("config")
+    plate=ET.SubElement(config,"plate")
+    ET.SubElement(plate,"metadata",{"key":"plater_id","value":"1"})
+    ET.SubElement(plate,"metadata",{"key":"filament_map_mode","value":"Auto For Flush"})
+    locations=[45,100,155,210]
+    for i,x in enumerate(locations):
+        identifier=str(i+1)
+        item=copy.deepcopy(template)
+        item.attrib["id"]=identifier
+        resources.append(item)
+        ET.SubElement(build,ns+"item",{
+            "objectid":identifier,
+            "transform":f"1 0 0 0 1 0 0 0 1 {x} 135 10",
+            "printable":"1"})
+        obj_config=ET.SubElement(config,"object",{"id":identifier})
+        ET.SubElement(obj_config,"metadata",{"key":"name","value":f"Core QA tool {i+1}"})
+        ET.SubElement(obj_config,"metadata",{"key":"extruder","value":str(i+1)})
+        instance=ET.SubElement(plate,"model_instance")
+        for key,value in (("object_id",identifier),("instance_id","0"),("identify_id",str(100+i))):
+            ET.SubElement(instance,"metadata",{"key":key,"value":value})
+    ET.register_namespace("",CORE)
+    payload["3D/3dmodel.model"]=xml(root)
+    payload["Metadata/model_settings.config"]=xml(config)
+    with zipfile.ZipFile(out,"w",compression=zipfile.ZIP_DEFLATED) as z:
+        for name,data in payload.items():
+            z.writestr(name,data)
+    with zipfile.ZipFile(out) as z:
+        model=ET.fromstring(z.read("3D/3dmodel.model"))
+        metadata=ET.fromstring(z.read("Metadata/model_settings.config"))
+    objects=model.findall("./"+ns+"resources/"+ns+"object")
+    items=model.findall("./"+ns+"build/"+ns+"item")
+    extruders=[int(o.find("./metadata[@key='extruder']").attrib["value"])
+               for o in metadata.findall("object")]
+    if len(objects)!=4 or len(items)!=4 or extruders!=[1,2,3,4]:
+        raise AssertionError("FOUR_CORE_EXTRUDER_CONTRACT_BROKEN")
+    return {"type":"QA_3MF_CORE_PLUS_BBS_METADATA_FOUR_CUBES",
+            "sha256":digest(out),"from_seed_sha256":digest(seed),
+            "object_count":4,"extruder_values":extruders,
+            "oem_code_or_presets_modified":False,"not_official_oem_project":True}
+
+
 def export_oem_profiled_3mf(executable:Path,profiles:dict,process:Path,cube:Path,out:Path)->dict:
     """Unmodified OEM executable exports its own 3MF from known-good STL.
 
@@ -373,6 +435,18 @@ def main()->int:
         report["minimal_core_3mf_slice_control"]=run_cli(
             executable,profiles["machine"],adjusted,profiles["filament"],
             minimal_3mf,out,"minimal-core-3mf-control",timeout=220)
+        four_core=out/"qa-core-four-distinct-tools.3mf"
+        report["four_core_3mf_fixture"]=build_four_from_core_3mf(minimal_3mf,four_core)
+        diagnostic=run_cli(executable,profiles["machine"],adjusted,
+            profiles["filament"],four_core,out,"four-core-3mf-control",timeout=220)
+        if diagnostic["gcodes"]:
+            path=out/diagnostic["gcodes"][0]["path"]
+            data=path.read_bytes()
+            diagnostic["tool_numbers"]=sorted({int(m.group(1)) for m in
+                re.finditer(rb"(?m)^\\s*T([0-3])(?:\\s|;|$)",data)})
+            diagnostic["toolchange_blocks"]=len(re.findall(
+                rb"(?m)^;\\s*CP TOOLCHANGE START",data))
+        report["four_core_3mf_slice_control"]=diagnostic
         exported=export_oem_profiled_3mf(executable,profiles,adjusted,cube,out)
         report["oem_exported_3mf_control"]=exported
         if exported["valid_3mf"]:
