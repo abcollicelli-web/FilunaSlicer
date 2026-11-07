@@ -133,5 +133,18 @@ class SpatialSafetyTests(unittest.TestCase):
             validate_gcode(f.read_bytes(),VENDOR,source="official")
             self.assertEqual(f.read_bytes(),original)
 
+
+    def test_14_prime_tower_travel_not_misread_as_part_collision(self):
+        raw=(b"G90\nM83\nG1 X80 Y80 Z1\n;TYPE:Outer wall\n"
+             b"G1 X90 Y80 E1\nG1 X90 Y90 E1\nG1 X80 Y90 E1\n"
+             b";TYPE:Prime tower\nG1 X100 Y220\nG1 X120 Y220 E1\n"
+             b"G1 X120 Y240 E1\nG1 X100 Y240 E1\nG1 X100 Y220 E1\n"
+             b"T1\nG1 X119 Y230 F30000\n")
+        result=validate_gcode(raw,VENDOR,source="official")
+        self.assertEqual(result["status"],"PASS",result)
+        self.assertGreater(result["prime_tower_deposition_segments"],0)
+        self.assertEqual(result["issues"],[])
+
+
 if __name__=="__main__":
     unittest.main()
