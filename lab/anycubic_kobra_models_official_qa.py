@@ -218,8 +218,14 @@ def main():
                 elif results[0]["path"]==results[1]["path"]:
                     add(target_id,"OFFICIAL_A_B","FAIL","GCODE_PATH_REUSED")
                 else:
-                    proof=compare_files(out/results[0]["path"],
-                                        out/results[1]["path"],
+                    # run() serializes paths relative to the PER-MODEL dest,
+                    # not the global QA root. A/B files are separate real OEM
+                    # outputs; fail closed on missing or reused files.
+                    input_a=(dest/results[0]["path"]).resolve()
+                    input_b=(dest/results[1]["path"]).resolve()
+                    if input_a==input_b or not input_a.is_relative_to(dest.resolve()) or not input_b.is_relative_to(dest.resolve()):
+                        raise ValueError("UNSAFE_OR_REUSED_OFFICIAL_AB_PATH")
+                    proof=compare_files(input_a,input_b,
                                         dest/"strict-original-ab-proof.json")
                     outcome=proof["status"]
                     passed=outcome.startswith("PASS_")
