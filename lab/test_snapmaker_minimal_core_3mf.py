@@ -24,7 +24,12 @@ class MinimalCore3MF(unittest.TestCase):
             self.assertEqual(set(z.namelist()),{
                 "[Content_Types].xml","_rels/.rels","3D/3dmodel.model"})
             self.assertIsNone(z.testzip())
-            links=ET.fromstring(z.read("_rels/.rels"))
+            raw_rels=z.read("_rels/.rels")
+            raw_types=z.read("[Content_Types].xml")
+            self.assertIn(b'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',raw_rels)
+            self.assertIn(b'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',raw_types)
+            self.assertNotIn(b"ns0:",raw_rels+raw_types)
+            links=ET.fromstring(raw_rels)
             self.assertEqual(len(links),1)
             self.assertEqual(list(links)[0].attrib["Target"],"/3D/3dmodel.model")
             content=ET.fromstring(z.read("[Content_Types].xml"))
