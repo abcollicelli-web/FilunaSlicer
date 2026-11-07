@@ -54,7 +54,7 @@ jobs:
         run: |
           python lab/flashforge_motion_parity_probe.py --official ".actual-flashforge-original/ad5x_04/run-A/plate_1.gcode" --filuna ".actual-filuna-previous/flashforge/Filuna-flat-User-run/plate_1.gcode" --output "qa-flashforge-source-port-reference/AD5X-gcode-motion-delta.json"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -c "import json; d=json.load(open('qa-flashforge-source-port-reference/AD5X-gcode-motion-delta.json')); assert d['status']=='FAIL_REAL_GCODE_PARITY' and d['geometry_changed_blocks']>0 and d['native_parity']=='NOT_PROVEN', d"
+          python -c "import json; d=json.load(open('qa-flashforge-source-port-reference/AD5X-gcode-motion-delta.json')); assert d['status']=='FAIL_REAL_GCODE_PARITY' and d['geometry_changed_blocks']>0 and d['native_parity']=='NOT_PROVEN' and d['embedded_runtime_config_differences']['wall_direction']=={'official':'auto','filuna':'ccw'}, d"
           exit $LASTEXITCODE
       - name: Export proof only (not G-code or executable)
         if: always()
