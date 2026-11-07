@@ -1,0 +1,31 @@
+name: Filuna Flashforge AD5X and Adventurer 5M LAN read-only simulator
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/flashforge_lan_readonly_contract.py"
+      - "lab/test_flashforge_lan_readonly_contract.py"
+      - ".github/workflows/filuna-flashforge-lan-readonly-sim.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-real-device:
+    name: Flashforge 5M / AD5X modern HTTP pairing status product contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax and strict read-only simulated network checks
+        run: |
+          python -m py_compile lab/flashforge_lan_readonly_contract.py lab/test_flashforge_lan_readonly_contract.py
+          python -m unittest discover -s lab -p test_flashforge_lan_readonly_contract.py -v
+      - name: State truthfully that no hardware/vendor native module was tested
+        run: |
+          echo 'PASS is contract-only in an isolated localhost HTTP server.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No real AD5X/5M was contacted, credentials stored, print started, video opened, LAN exposed, native C++ adapter linked or installer built.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Reference: https://github.com/Parallel-7/flashforge-api-docs (unofficial protocol docs, firmware-scoped)' >> "$GITHUB_STEP_SUMMARY"
