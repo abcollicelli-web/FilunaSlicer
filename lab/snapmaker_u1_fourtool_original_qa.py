@@ -270,10 +270,20 @@ def build_minimal_core_3mf(out:Path)->dict:
     ET.SubElement(types,f"{{{TYPES}}}Default",
                   {"Extension":"model",
                    "ContentType":"application/vnd.ms-package.3dmanufacturing-3dmodel+xml"})
+    # OPC relationships and content-type XML must use the same default
+    # namespace serialization as the manufacturer's working package.
+    # ElementTree otherwise writes ns0:Relationships/ns0:Types; XML-valid,
+    # but vendor parsers may incorrectly assume unprefixed root elements.
+    ET.register_namespace("",TYPES)
+    types_xml=xml(types)
+    ET.register_namespace("",REL)
+    relationships_xml=xml(relationships)
+    ET.register_namespace("",CORE)
+    model_xml=xml(root)
     with zipfile.ZipFile(out,"w",compression=zipfile.ZIP_DEFLATED) as package:
-        package.writestr("[Content_Types].xml",xml(types))
-        package.writestr("_rels/.rels",xml(relationships))
-        package.writestr("3D/3dmodel.model",xml(root))
+        package.writestr("[Content_Types].xml",types_xml)
+        package.writestr("_rels/.rels",relationships_xml)
+        package.writestr("3D/3dmodel.model",model_xml)
     with zipfile.ZipFile(out) as package:
         check=ET.fromstring(package.read("3D/3dmodel.model"))
         ns=f"{{{CORE}}}"
