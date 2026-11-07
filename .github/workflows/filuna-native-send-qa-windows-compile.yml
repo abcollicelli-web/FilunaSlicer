@@ -27,12 +27,12 @@ jobs:
           lfs: false
       - uses: lukka/get-cmake@latest
       - uses: microsoft/setup-msbuild@v2
-      - name: Restore exact native Windows clang dependencies
+      - name: Restore exact native Windows MSVC dependencies
         id: deps
         uses: actions/cache/restore@v4
         with:
           path: deps/build/OrcaSlicer_dep
-          key: windows-x64-msvc-cache-orcaslicer_deps-build-${{ hashFiles('deps/**') }}
+          key: windows-x64-msvc-deps-cad-v2-${{ hashFiles('deps/CMakeLists.txt', 'deps/*.cmake', 'deps/*/CMakeLists.txt', 'build_win.bat') }}
           fail-on-cache-miss: false
       - name: Build pinned Orca Windows deps on this QA branch when the cache is unavailable
         if: steps.deps.outputs.cache-hit != 'true'
@@ -44,12 +44,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "FILUNA_QA_WINDOWS_DEPENDENCIES_FAILED exit=$LASTEXITCODE"
           }
-      - name: Cache exact dependencies for repeatable QA
+      - name: Cache exact dependencies for repeatable QA (optional; never blocks compilation)
         if: steps.deps.outputs.cache-hit != 'true'
+        continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: deps/build/OrcaSlicer_dep
-          key: windows-x64-msvc-cache-orcaslicer_deps-build-${{ hashFiles('deps/**') }}
+          key: windows-x64-msvc-deps-cad-v2-${{ hashFiles('deps/CMakeLists.txt', 'deps/*.cmake', 'deps/*/CMakeLists.txt', 'build_win.bat') }}
       - name: Compile shared engine and GUI including PrintHost send path (no packaging)
         shell: pwsh
         run: |
