@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import zipfile
 from xml.etree import ElementTree as ET
@@ -229,6 +230,33 @@ def build_from_official_3mf(template:Path,out:Path)->dict:
             "payload_files":len(payload)}
 
 
+def export_oem_profiled_3mf(executable:Path,profiles:dict,process:Path,cube:Path,out:Path)->dict:
+    """Unmodified OEM executable exports its own 3MF from known-good STL.
+
+    This isolates a generic 3MF CLI import failure from a bundled handy
+    model's metadata. Never edits vendor code, process or generated G-code.
+    """
+    destination=out/"oem-cli-exported-cube-control.3mf"
+    log=out/"oem-cli-exported-cube-control.log"
+    command=[str(executable),"--debug","3",
+             "--load-settings",str(profiles["machine"])+";"+str(process),
+             "--load-filaments",";".join([str(profiles["filament"])]*4),
+             "--export-3mf",str(destination),str(cube.resolve())]
+    with log.open("w",encoding="utf-8",errors="replace") as fp:
+        fp.write("COMMAND_JSON="+json.dumps(command,ensure_ascii=False)+"\\n")
+        fp.flush()
+        try:
+            code=subprocess.run(command,cwd=executable.parent,stdout=fp,
+                                stderr=subprocess.STDOUT,timeout=220,
+                                check=False).returncode
+        except subprocess.TimeoutExpired:
+            code=124
+            fp.write("TIMEOUT\\n")
+    valid=destination.is_file() and zipfile.is_zipfile(destination)
+    return {"exit_code":code,"valid_3mf":valid,"sha256":digest(destination) if valid else None,
+            "output_path":str(destination) if valid else None,"log":log.name}
+
+
 def main()->int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--cache",type=Path,default=Path(".oem-portable-cache"))
@@ -261,6 +289,24 @@ def main()->int:
         original_control=run_cli(executable,profiles["machine"],adjusted,
             profiles["filament"],template,out,"official-unmodified-3mf-control",timeout=220)
         report["original_unmodified_oem_template_control"]=original_control
+        # Causality controls using the exact same official binary and settings:
+        # (1) prove raw STL can be sliced; (2) OEM-export a project 3MF from it;
+        # (3) try to slice that untouched OEM-produced 3MF. These do not
+        # promote a four-tool PASS and are preserved when the latter fails.
+        cube=(ROOT/"fixtures/cube20.stl").resolve()
+        if not cube.is_file():
+            raise ValueError("ORIGINAL_STL_CONTROL_MISSING")
+        report["raw_stl_control"]=run_cli(executable,profiles["machine"],adjusted,
+            profiles["filament"],cube,out,"oem-raw-stl-control",timeout=220)
+        exported=export_oem_profiled_3mf(executable,profiles,adjusted,cube,out)
+        report["oem_exported_3mf_control"]=exported
+        if exported["valid_3mf"]:
+            report["oem_exported_3mf_slice_control"]=run_cli(
+                executable,profiles["machine"],adjusted,profiles["filament"],
+                Path(exported["output_path"]),out,"oem-exported-3mf-slice-control",timeout=220)
+        else:
+            report["oem_exported_3mf_slice_control"]={"status":"NOT_RUN",
+                "reason":"OFFICIAL_OEM_EXPORT_3MF_FAILED"}
         report["vendor_original_zip_sha256"]=digest(package)
         report["vendor_url"]=source_url
         gcode_hashes=[]
