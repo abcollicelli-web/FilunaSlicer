@@ -155,3 +155,16 @@ Conferidos os arquivos efetivos **byte a byte**: perfis de máquina, processo e 
 **Gate adicional `CROSS_JOB_GCODE_REPRODUCIBILITY=FAIL`, não PASS.** O protocolo nativo Snapmaker também está pendente: fontes oficiais localizadas e contratos de gateway documentados em `FILUNA/qa/SNAPMAKER-U1-REDE-CONTROLE-FONTES-20261107.md`, sem compilar nem ativar rede.
 
 Manter `G4-I / HOMOLOGACAO_INTERNA_U1=BLOCKED` até verificar integração nativa do Filuna, acesso/controle em laboratório e explicar/solucionar a divergência de G-code. Não gerar compilação final, não imprimir no hardware nem promover PR #6.
+
+
+### Repetição exata do workflow de origem — PASS restrito à mesma configuração (07/11/2026)
+
+O job `#42316895543`, tentativa **2**, foi reexecutado sem alterar script, parâmetros nem commit do workflow inicial. Fonte: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42316895543
+
+- Tentativa 1: G-code 250.183 bytes; A/B na mesma sessão PASS.
+- Tentativa 2: G-code 250.183 bytes; A/B na mesma sessão PASS.
+- Comparando **os dois artefatos reais** e removendo **só** a linha explícita de timestamp do `HEADER_BLOCK`, ambos têm SHA-256 normalizado **`2774becee1246529474db12c7439cc1d46a501bfe797c31a5e53936db705db4a`**.
+- A execução independente **entre minutos** `#42317564346` também tem esse mesmo hash normalizado. Portanto, a afirmação genérica anterior `CROSS_JOB_REPRODUCIBILITY=FAIL` deve ser lida com a presente **retificação de escopo**: `SAME_WORKFLOW_CROSS_ATTEMPT=PASS`, `CROSS_MINUTE=PASS`.
+- O workflow **diferente** `#42317221768` manteve ZIP OEM e perfis byte-idênticos mas produziu outro G-code válido de 249.098 bytes, SHA normalizado `06687a6b84ee16d0d7ceb75f8c631272b649f452313ce4395864893e372247d7`, com diferenças de movimento/retração. Isso mantém `CROSS_WORKFLOW_TOOLPATH_VARIANCE=UNEXPLAINED/BLOCKED`, sem autorizar normalização de comandos e sem concluir que o mesmo job seja não determinístico.
+
+**Próxima verificação indicada:** comparar exatamente a invocação CLI, nomes/paths de perfis temporários e ambiente de runner dos dois workflows distintos, isolando um fator por vez. Enquanto não houver paridade do motor **Filuna** e implementação real de gateway/controle da U1, a homologação interna permanece **BLOQUEADA**. No PR só existe o patch de fonte **candidato**, não aplicado ao motor comum nem compilado.
