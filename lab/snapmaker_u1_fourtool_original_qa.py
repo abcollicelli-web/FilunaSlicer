@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""U1 four-extruder OEM 2.4.1 fixture and verified portable QA.
+
+Uses original pinned OEM slicer + actual 4 distinct extruder object assignments.
+No vendor binaries/profiles are changed. CLI runtime guard modifies *only* a
+temporary process copy's nozzle_diameter, sourced from the same OEM machine.
+A/B non-repeatability is reported, never concealed. No physical prints.
+"""
+from __future__ import annotations
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import sys
+import zipfile
+from xml.etree import ElementTree as ET
+
+from portable_first_qa import OFFICIAL, obtain, extract_executable, digest
+from snapmaker_u1_inherit import build_effective_original_presets
+from snapmaker_runtime_nozzle_guard_qa import guarded_runtime_process
+from snapmaker_u1_guard_probe import run_cli
+from snapmaker_spatial_gcode_validator import policy_from_yaml, validate_gcode
+
+ROOT=Path(__file__).resolve().parents[1]
+CORE="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
+PROD="http://schemas.microsoft.com/3dmanufacturing/production/2015/06"
+REL="http://schemas.openxmlformats.org/package/2006/relationships"
+TYPES="http://schemas.openxmlformats.org/package/2006/content-types"
+COLOR=("#E60012","#1565C0","#FFD600","#15B857")
+
+
+def xml(node)->bytes:
+    return b'<?xml version="1.0" encoding="UTF-8"?>\n'+ET.tostring(
+        node, encoding="UTF-8", xml_declaration=False)
+
+
+def build_four_colour_3mf(out:Path)->dict:
+    """Standard 3MF with 4 disjoint cubes; Orca object metadata extruder 1..4."""
+    ET.register_namespace("",CORE)
+    ET.register_namespace("p",PROD)
+    objroot=ET.Element(f"{{{CORE}}}model",{"unit":"millimeter"})
+    objects=ET.SubElement(objroot,f"{{{CORE}}}resources")
+    meshobj=ET.SubElement(objects,f"{{{CORE}}}object",{"id":"1","type":"model"})
+    mesh=ET.SubElement(meshobj,f"{{{CORE}}}mesh")
+    verts=ET.SubElement(mesh,f"{{{CORE}}}vertices")
+    # Closed manifold cube centered at origin, Z -10..10.
+    coords=[(-10,-10,-10),(10,10,-10),(10,-10,-10),(-10,10,-10),
+            (-10,-10,10),(10,-10,10),(10,10,10),(-10,10,10)]
+    for x,y,z in coords:
+        ET.SubElement(verts,f"{{{CORE}}}vertex",{"x":str(x),"y":str(y),"z":str(z)})
+    faces=[(0,1,2),(0,3,1),(4,5,6),(4,6,7),(0,2,5),(0,5,4),
+           (2,1,6),(2,6,5),(1,3,7),(1,7,6),(3,0,4),(3,4,7)]
+    tr=ET.SubElement(mesh,f"{{{CORE}}}triangles")
+    for a,b,c in faces:
+        ET.SubElement(tr,f"{{{CORE}}}triangle",{"v1":str(a),"v2":str(b),"v3":str(c)})
+    # Bambu/Orca extension: wrapper object (id >=2) references a model mesh
+    # in the same OPC 3MF archive; each has an independent extruder assignment.
+    main=ET.Element(f"{{{CORE}}}model",{"unit":"millimeter"})
+    ET.SubElement(main,f"{{{CORE}}}metadata",{"name":"Application"}).text="Filuna QA 4-extruder fixture"
+    rs=ET.SubElement(main,f"{{{CORE}}}resources")
+    build=ET.SubElement(main,f"{{{CORE}}}build")
+    settings=ET.Element("config")
+    plate=ET.SubElement(settings,"plate")
+    ET.SubElement(plate,"metadata",{"key":"plater_id","value":"1"})
+    ET.SubElement(plate,"metadata",{"key":"filament_map_mode","value":"Auto For Flush"})
+    origin=[45,100,155,210]
+    for i in range(4):
+        objid=i+2
+        obj=ET.SubElement(rs,f"{{{CORE}}}object",{"id":str(objid),"type":"model"})
+        components=ET.SubElement(obj,f"{{{CORE}}}components")
+        ET.SubElement(components,f"{{{CORE}}}component",{
+            "objectid":"1","transform":"1 0 0 0 1 0 0 0 1 0 0 10"})
+        ET.SubElement(build,f"{{{CORE}}}item",{
+            "objectid":str(objid),
+            "transform":f"1 0 0 0 1 0 0 0 1 {origin[i]} 135 0",
+            "printable":"1"})
+        item=ET.SubElement(settings,"object",{"id":str(objid)})
+        ET.SubElement(item,"metadata",{"key":"name","value":f"U1 QA extruder {i+1}"})
+        ET.SubElement(item,"metadata",{"key":"extruder","value":str(i+1)})
+        inst=ET.SubElement(plate,"model_instance")
+        ET.SubElement(inst,"metadata",{"key":"object_id","value":str(objid)})
+        ET.SubElement(inst,"metadata",{"key":"instance_id","value":"0"})
+        ET.SubElement(inst,"metadata",{"key":"identify_id","value":str(i+101)})
+    rel=ET.Element(f"{{{REL}}}Relationships")
+    ET.SubElement(rel,f"{{{REL}}}Relationship",{"Target":"/3D/3dmodel.model",
+       "Id":"rel-1","Type":"http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"})
+    content=ET.Element(f"{{{TYPES}}}Types")
+    ET.SubElement(content,f"{{{TYPES}}}Default",{"Extension":"rels",
+       "ContentType":"application/vnd.openxmlformats-package.relationships+xml"})
+    ET.SubElement(content,f"{{{TYPES}}}Default",{"Extension":"model",
+       "ContentType":"application/vnd.ms-package.3dmanufacturing-3dmodel+xml"})
+    with zipfile.ZipFile(out,"w",compression=zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml",xml(content))
+        z.writestr("_rels/.rels",xml(rel))
+        z.writestr("3D/3dmodel.model",xml(main))
+        z.writestr("3D/Objects/object_1.model",xml(objroot))
+        z.writestr("Metadata/model_settings.config",xml(settings))
+    # Check file structure, four separate instances, and distinct extruders.
+    with zipfile.ZipFile(out) as z:
+        a=ET.fromstring(z.read("Metadata/model_settings.config"))
+        ids=[(int(o.attrib["id"]),int(o.find("./metadata[@key='extruder']").attrib["value"]))
+             for o in a.findall("object")]
+        if ids != [(2,1),(3,2),(4,3),(5,4)]:
+            raise AssertionError("FOUR_OBJECT_EXTRUDER_ASSIGNMENT_NOT_PRESERVED")
+    return {"fixture_sha256":digest(out),"object_extruders":ids,
+            "origins_xyz":[[x,135,10] for x in origin],
+            "source":"generated 3MF test geometry, NOT OEM 3MF, OEM engine original"}
+
+
+def main()->int:
+    ap=argparse.ArgumentParser()
+    ap.add_argument("--cache",type=Path,default=Path(".oem-portable-cache"))
+    ap.add_argument("--out",type=Path,default=Path("qa-snapmaker-fourtool"))
+    a=ap.parse_args()
+    out=a.out.resolve();cache=a.cache.resolve()
+    out.mkdir(parents=True,exist_ok=True)
+    report={"status":"NOT_RUN","scope":"Snapmaker Orca 2.4.1 official CLI four tools only",
+            "filuna_native_parity":"NOT_RUN","device_network":"NOT_RUN",
+            "hardware_physical":"NOT_RUN","original_vendor_data_modified":False,
+            "qa_runtime_nozzle_guard_expected":True}
+    try:
+        package,source_url=obtain(OFFICIAL["snapmaker"],cache)
+        if digest(package)!="1f002e2168c576f800bcfd0509b5e164b5ad65a0963abc2bef8317d929d48c9d":
+            raise ValueError("OEM_PORTABLE_ZIP_SHA_MISMATCH")
+        executable=extract_executable(package,OFFICIAL["snapmaker"]["exe"],
+            cache/"snapmaker-portable-extracted").resolve()
+        profiles=build_effective_original_presets(out)
+        adjusted=out/"qa-process-runtime-guard.json"
+        report["temporary_process_guard"]=guarded_runtime_process(
+            profiles["machine"],profiles["process"],adjusted)
+        model=out/"four-extruder-object-fixture.3mf"
+        report["model"]=build_four_colour_3mf(model)
+        report["vendor_original_zip_sha256"]=digest(package)
+        report["vendor_url"]=source_url
+        gcode_hashes=[]
+        for idx in range(2):
+            label=f"four-tool-{idx+1}"
+            result=run_cli(executable,profiles["machine"],adjusted,
+                profiles["filament"],model,out,label,timeout=220)
+            report[label]=result
+            if result["exit_code"]!=0 or len(result["gcodes"])!=1:
+                report["status"]="FAIL_VENDOR_FOUR_TOOL_CLI"
+                return 2
+            path=out/result["gcodes"][0]["path"]
+            raw=path.read_bytes()
+            tools=sorted({int(m.group(1)) for m in re.finditer(
+                rb"(?m)^\s*T([0-3])(?:\s|;|$)",raw)})
+            # A command may be present as startup initialization as well.
+            changes=len(re.findall(rb"(?m)^;\s*CP TOOLCHANGE START",raw))
+            report[label]["tools_in_gcode"]=tools
+            report[label]["toolchange_blocks"]=changes
+            geometry=validate_gcode(raw,policy_from_yaml(
+                ROOT/"FILUNA/fabricantes/snapmaker/vendor.yaml"),source="official")
+            report[label]["spatial"]={
+                "status":geometry["status"],"issues":geometry["issues"][:4],
+                "warnings":geometry["warnings"][:4], "gcode_sha256":geometry["gcode_sha256"]}
+            gcode_hashes.append(digest(path))
+            if tools!=[0,1,2,3] or changes<3:
+                report["status"]="FAIL_FOUR_TOOL_ASSIGNMENTS_NOT_PROVED"
+                return 2
+        report["hashes_across_two_runs"]=gcode_hashes
+        report["status"]="OFFICIAL_FOUR_TOOL_CLI_PASS_SPATIAL_RECORDED"
+        return 0
+    except Exception as exc:
+        report["status"]="FAIL_"+type(exc).__name__
+        report["error"]=str(exc)
+        return 2
+    finally:
+        (out/"fourtool-proof.json").write_text(
+            json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+        print("U1_OFFICIAL_FOUR_TOOL",report["status"],flush=True)
+
+
+if __name__=="__main__":
+    raise SystemExit(main())
