@@ -1,0 +1,235 @@
+name: Filuna Snapmaker U1 read-only spatial safety QA
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - "lab/snapmaker_spatial_gcode_validator.py"
+      - "lab/test_snapmaker_spatial_gcode_validator.py"
+      - "lab/test_oem_native_source_contract.py"
+      - "FILUNA/fabricantes/snapmaker/vendor.yaml"
+      - "src/libslic3r/GCode.cpp"
+      - "src/libslic3r/PrintConfig.cpp"
+      - "src/libslic3r/PrintConfig.hpp"
+      - ".github/workflows/filuna-snapmaker-spatial-gcode-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: filuna-u1-spatial-qa-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-and-synthetic-geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate syntax and synthetic positive/negative cases
+        run: |
+          python -m py_compile lab/snapmaker_spatial_gcode_validator.py lab/test_snapmaker_spatial_gcode_validator.py
+          python -m unittest discover -s lab -p "test_snapmaker_spatial_gcode_validator.py" -v
+          python -m unittest discover -s lab -p "test_oem_native_source_contract.py" -v
+  official-u1-241-single-material-regression:
+    needs: source-and-synthetic-geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download pinned original manufacturer QA artifact (single-material, NOT 4-color)
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-40-original-cli-reproducibility
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42321783683
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-snapmaker-241
+      - name: Recheck pinned source SHA and run non-mutating geometry audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          path=Path(".oem-snapmaker-241/stress-00/plate_1.gcode")
+          assert path.is_file(), "PINNED_OEM_GCODE_NOT_DOWNLOADED"
+          sha=hashlib.sha256(path.read_bytes()).hexdigest()
+          assert sha=="18486931ede41c194209af31c1ef6894f451d47779e66aaf6c124d209e2c7d42", sha
+          print("PINNED_OFFICIAL_SNAPMAKER_241_SINGLE_MATERIAL",sha)
+          PY
+          mkdir -p qa-spatial
+          python lab/snapmaker_spatial_gcode_validator.py \
+            --origin official \
+            --gcode ".oem-snapmaker-241/stress-00/plate_1.gcode" \
+            --vendor "FILUNA/fabricantes/snapmaker/vendor.yaml" \
+            --report qa-spatial/u1-official-mono-cube.json
+      - name: Preserve read-only analysis and honest physical status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-241-spatial-geometry-evidence
+          path: qa-spatial/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Explicit no-promotion statement
+        if: always()
+        run: |
+          echo "Only original U1 2.4.1 *single-color* cube replay. Four-color final purge, matched Filuna native G-code, dynamic Klipper macros, and real printing remain NOT_RUN. No G-code rewrite." >> "$GITHUB_STEP_SUMMARY"
+
+  official-u1-241-two-color-final-purge:
+    needs: source-and-synthetic-geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Retrieve pinned independently published official 2.4.1 G-code (not Filuna)
+        run: |
+          set -euo pipefail
+          mkdir -p qa-two-color
+          curl -fL --retry 3 --max-time 45 \
+            "https://raw.githubusercontent.com/DesignMaster-Solutions/u1-dryrun/38ab8c7/examples/sign-orca-2.4.1-linux.gcode.gz" \
+            -o qa-two-color/original.gcode.gz
+          printf '%s  %s\n' \
+            "ee6943bcf5ed255736218fc4942b05217d8f607c" \
+            "qa-two-color/original.gcode.gz" > qa-two-color/blob-expected.txt
+          test "$(git hash-object qa-two-color/original.gcode.gz)" = "ee6943bcf5ed255736218fc4942b05217d8f607c"
+          python - <<'PY'
+          import gzip
+          from pathlib import Path
+          p=Path("qa-two-color/original.gcode.gz")
+          Path("qa-two-color/original.gcode").write_bytes(gzip.decompress(p.read_bytes()))
+          PY
+      - name: Scan actual final purge without altering original bytes
+        shell: bash
+        run: |
+          set +e
+          python lab/snapmaker_spatial_gcode_validator.py \
+            --origin official --scope critical \
+            --gcode qa-two-color/original.gcode \
+            --vendor FILUNA/fabricantes/snapmaker/vendor.yaml \
+            --report qa-two-color/verdict.json
+          rc=$?
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("qa-two-color/verdict.json").read_text())
+          print("OFFICIAL_TWO_COLOR_GCODE_SAFETY",x["status"],"events",len(x["issues"]))
+          print("FIRST_EVENTS",x["issues"][:4])
+          from pathlib import Path
+          lines=Path("qa-two-color/original.gcode").read_text(errors="replace").splitlines()
+          for number in (15695,38911):
+            lo=max(0,number-70)
+            markers=[(i+1,lines[i][:140]) for i in range(lo,number)
+                     if any(t in lines[i].upper() for t in
+                            ("TYPE:", "CP TOOLCHANGE", "EXCLUDE_OBJECT", "WIPE TOWER", "PRIME TOWER", "STOP PRINTING OBJECT"))]
+            print("ORIGINAL_CONTEXT",number,markers[-10:])
+            print("MOTION_CONTEXT",number,[(i+1,lines[i][:120])
+                    for i in range(max(0,number-5),min(number+4,len(lines)))])
+          assert x["status"]=="BLOCK" and x["issues"], "FINAL_PURGE_RISK_NOT_DETECTED"
+          # Fail if a future parser falsely blocks an unrelated ordinary
+          # tool change while missing the proved real final-purge collision.
+          final=[i for i in x["issues"] if i["line"]==38911
+                 and i["layer"]==14
+                 and i["context"]=="FINAL_PURGE_OR_END"]
+          assert len(final)==1, ("PROVEN_FINAL_PURGE_NOT_ISOLATED",x["issues"])
+          assert final[0]["xyz_mm"]==[63.569,147.185,3.05]
+          assert x["gcode_sha256"]=="05f227dd12598bd99626dd60a29e3ecdc2a97ae65db803d6e4f9520587254f48"
+          assert x["gcode_modified"] is False
+          PY
+          verified=$?
+          if [ "$rc" -ne 2 ] || [ "$verified" -ne 0 ]; then
+            echo "FAIL: original OEM collision evidence not detected reliably"
+            exit 1
+          fi
+      - name: Upload independent official 2-color QA result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-original-241-two-color-final-purge-geometry
+          path: qa-two-color/verdict.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Evidence provenance reminder
+        if: always()
+        run: |
+          echo "Source: DesignMaster-Solutions/u1-dryrun @38ab8c7, original Snapmaker Orca Linux AppImage 2.4.1. Firmware 2.0/2.1 dry-run by upstream contributor is independent; not a new Filuna native build, 4-color test, or physical homologation." >> "$GITHUB_STEP_SUMMARY"
+
+  cross-brand-original-cubes-regression:
+    needs: source-and-synthetic-geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download verified original Bambu A1 cube
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-portable-first-five-official-eight-brands
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42312894880
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-bambu
+      - name: Download verified original Creality cube
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-creality-7.3.1-official-portable-qa
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42310133259
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-creality
+      - name: Assert exact official G-code SHA and no false critical-risk blocks
+        run: |
+          mkdir -p qa-cross-brand
+          python - <<'PY'
+          import hashlib,json,sys
+          from pathlib import Path
+          sys.path.insert(0,"lab")
+          from snapmaker_spatial_gcode_validator import validate_gcode
+          cases=[
+            ("bambu",Path(".oem-bambu/bambu/run-A/plate_1.gcode"),
+             "ac7731e7653bd9a46531217307d745a1f1996d20bb14e065a50bf691d7db96d5",
+             [256,256,256],"Bambu A1"),
+            ("creality",Path(".oem-creality/run-A/plate_1.gcode"),
+             "3ed1de4e20a61f35c45b68a7cd21cdaa454200d1eeb449b3373b76e9a76142a3",
+             [350,350,350],"Creality K2 Plus")]
+          for vendor,p,sha,volume,model in cases:
+            raw=p.read_bytes()
+            assert hashlib.sha256(raw).hexdigest()==sha,(vendor,"ORIGINAL_GCODE_SHA_MISMATCH")
+            # These vendors have legitimate out-of-bed purge/parking paths:
+            # their mechanically permitted service envelopes are NOT
+            # established by the printable bed dimensions alone. Check
+            # collision false positives here, not uncertified machine bounds.
+            policy={"manufacturer":vendor,"printer_model":model,"volume_mm":volume,
+                    "safe_macros":[],"check_bounds":False}
+            result=validate_gcode(raw,policy,source="official")
+            Path("qa-cross-brand/"+vendor+".json").write_text(json.dumps(result,indent=2))
+            print("ORIGINAL_CUBE_REGRESSION",vendor,result["status"],
+                  "issues",result["issues"][:4],"warnings",result["warnings"][:4])
+            assert result["status"]=="PASS",(vendor,"FALSE_POSITIVE_OR_OUTSIDE_VOLUME")
+          PY
+      - name: Preserve actual official cross-brand QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-bambu-creality-gcode-validator-cross-brand
+          path: qa-cross-brand/
+          if-no-files-found: warn
+          retention-days: 30

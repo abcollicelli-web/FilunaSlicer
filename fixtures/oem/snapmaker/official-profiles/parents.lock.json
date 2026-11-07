@@ -1,0 +1,80 @@
+{
+  "schema": "filuna.snapmaker.u1.upstream-parents.v1",
+  "upstream_repository": "Snapmaker/OrcaSlicer",
+  "upstream_tag": "v2.4.1",
+  "rule": "Pin all original parents; derive effective CLI configs without altering source blobs.",
+  "parents": [
+    {
+      "type": "machine",
+      "name": "fdm_U1",
+      "inherits": "fdm_toolchanger",
+      "git_blob_sha": "f2a119b4a4e0d56f3d7e7428cc60be81f7c3bff3",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/machine/fdm_U1.json",
+      "official_path": "resources/profiles/Snapmaker/machine/fdm_U1.json"
+    },
+    {
+      "type": "machine",
+      "name": "fdm_toolchanger",
+      "inherits": "fdm_klipper",
+      "git_blob_sha": "d91f4bb610d520d64f03e6b6e5aa4c945d517227",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/machine/fdm_toolchanger.json",
+      "official_path": "resources/profiles/Snapmaker/machine/fdm_toolchanger.json"
+    },
+    {
+      "type": "machine",
+      "name": "fdm_klipper",
+      "inherits": null,
+      "git_blob_sha": "1d7ae66f6c55f84ba673d9789a81833f40eadce7",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/machine/fdm_klipper.json",
+      "official_path": "resources/profiles/Snapmaker/machine/fdm_klipper.json"
+    },
+    {
+      "type": "process",
+      "name": "fdm_process_U1_0.20",
+      "inherits": "fdm_process_U1_common",
+      "git_blob_sha": "2ac67be82053b7b6979905c8078cd485658ed936",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/process/fdm_process_U1_0.20.json",
+      "official_path": "resources/profiles/Snapmaker/process/fdm_process_U1_0.20.json"
+    },
+    {
+      "type": "process",
+      "name": "fdm_process_U1_common",
+      "inherits": "fdm_process_U1",
+      "git_blob_sha": "5b4f8bc05ee793445f943a222bb2e8f30632d658",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/process/fdm_process_U1_common.json",
+      "official_path": "resources/profiles/Snapmaker/process/fdm_process_U1_common.json"
+    },
+    {
+      "type": "process",
+      "name": "fdm_process_U1",
+      "inherits": null,
+      "git_blob_sha": "ee48fd03cb9b3678a72f8f4986e7060379646c9d",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/process/fdm_process_U1.json",
+      "official_path": "resources/profiles/Snapmaker/process/fdm_process_U1.json"
+    },
+    {
+      "type": "filament",
+      "name": "Snapmaker PLA Basic @U1 base",
+      "inherits": "fdm_filament_pla_category",
+      "git_blob_sha": "b8993047168acf961688f040307ad64803c9cac9",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/filament/Snapmaker PLA Basic @U1 base.json",
+      "official_path": "resources/profiles/Snapmaker/filament/Snapmaker PLA Basic @U1 base.json"
+    },
+    {
+      "type": "filament",
+      "name": "fdm_filament_pla_category",
+      "inherits": "fdm_filament_common",
+      "git_blob_sha": "68423df59669aa78a7c316569c60dada3aa6cd0f",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/filament/fdm_filament_pla_category.json",
+      "official_path": "resources/profiles/Snapmaker/filament/fdm_filament_pla_category.json"
+    },
+    {
+      "type": "filament",
+      "name": "fdm_filament_common",
+      "inherits": null,
+      "git_blob_sha": "91ee024de3410a5cd2cda7d43ce4e42798f430b4",
+      "fixture_path": "fixtures/oem/snapmaker/official-profiles/parents/filament/fdm_filament_common.json",
+      "official_path": "resources/profiles/Snapmaker/filament/fdm_filament_common.json"
+    }
+  ]
+}

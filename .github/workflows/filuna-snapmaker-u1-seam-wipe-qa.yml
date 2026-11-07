@@ -1,0 +1,48 @@
+name: Filuna Snapmaker U1 original portable 4x20 seam-wipe factor QA
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_seam_wipe_factors_qa.py"
+      - ".github/workflows/filuna-snapmaker-u1-seam-wipe-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-u1-seam-wipe-factors
+  cancel-in-progress: true
+jobs:
+  official-4-by-20:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate source only; no OEM compilations
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_seam_wipe_factors_qa.py
+      - name: Restore immutable original OEM Snapmaker Windows binary
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: 20 each baseline, wipe-off, nearest-seam, both, official native CLI
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_seam_wipe_factors_qa.py --cache .oem-portable-cache --out qa-snapmaker-u1-seam-wipe-factors --runs-per-group 20
+          $code = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-u1-seam-wipe-factors/RESUMO.md) {
+            Get-Content qa-snapmaker-u1-seam-wipe-factors/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Evidence all original G-code and experimental parameter exact provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-official-cli-seam-wipe-controlled-qa
+          path: qa-snapmaker-u1-seam-wipe-factors/
+          if-no-files-found: warn
+          retention-days: 30

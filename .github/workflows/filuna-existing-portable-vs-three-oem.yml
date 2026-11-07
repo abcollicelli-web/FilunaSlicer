@@ -1,0 +1,130 @@
+name: Filuna existing portable baseline versus three official OEM outputs
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/filuna_baseline_three_oem_qacheck.py"
+      - "lab/test_filuna_baseline_single_sample.py"
+      - "lab/oem_functional_gcode_diff.py"
+      - "lab/oem_exported_config_defaults_audit.py"
+      - "lab/test_oem_exported_config_defaults_audit.py"
+      - "lab/oem_model_scoped_manifest_probe.py"
+      - "lab/test_oem_model_scoped_manifest_probe.py"
+      - "lab/test_oem_functional_gcode_diff.py"
+      - "lab/flashforge_real_motion_triage.py"
+      - "lab/test_flashforge_real_motion_triage.py"
+      - ".github/workflows/filuna-existing-portable-vs-three-oem.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: filuna-existing-portable-three-oem-probe
+  cancel-in-progress: true
+jobs:
+  existing-windows-binary-comparison:
+    name: Existing Filuna portable vs actual OEM original G-code (no compilation)
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Retrieve unchanged preexisting Filuna portable, built Nov 5
+        uses: actions/download-artifact@v4
+        with:
+          name: Filuna_Windows_x64_portable
+          run-id: 42102469888
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .filuna-old-base
+      - name: Retrieve real Anycubic original Linux official CLI result and profiles
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-anycubic-kobra-s1-kobra3v2-original-cli-ab
+          run-id: 42323305372
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-anycubic
+      - name: Retrieve real Flashforge original AppImage official CLI result and profiles
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-flashforge-179-ad5x-ad5m-actual-oem-cli-ab
+          run-id: 42321095370
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-flashforge
+      - name: Retrieve real Snapmaker original portable stress result and profiles
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-40-original-cli-reproducibility
+          run-id: 42321783683
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-snapmaker
+      - name: Source syntax check (no Filuna/OEM compilation)
+        shell: pwsh
+        run: python -m py_compile lab/filuna_baseline_three_oem_qacheck.py lab/oem_functional_gcode_diff.py lab/oem_model_scoped_manifest_probe.py lab/flashforge_real_motion_triage.py
+      - name: Fail-closed single-sample classification unit tests
+        shell: pwsh
+        run: |
+          python -m unittest discover -s lab -p test_filuna_baseline_single_sample.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p test_oem_functional_gcode_diff.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p test_oem_model_scoped_manifest_probe.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p test_flashforge_real_motion_triage.py -v
+          exit $LASTEXITCODE
+      - name: Run prebuilt Filuna CLI and compare real G-code
+        shell: pwsh
+        run: |
+          python lab/filuna_baseline_three_oem_qacheck.py --base .filuna-old-base --anycubic .oem-anycubic --flashforge .oem-flashforge --snapmaker .oem-snapmaker --out qa-existing-filuna-vs-oem
+          $result = $LASTEXITCODE
+          if (Test-Path qa-existing-filuna-vs-oem/RESUMO.md) {
+            Get-Content qa-existing-filuna-vs-oem/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $result
+      - name: Classify actual G-code differences without promoting native parity
+        shell: pwsh
+        run: |
+          python lab/oem_functional_gcode_diff.py --vendor anycubic --official ".oem-anycubic/kobra_3_v2_04/run-A/plate_1.gcode" --candidate-dir "qa-existing-filuna-vs-oem/anycubic/Filuna-flat-User-run" --output "qa-existing-filuna-vs-oem/anycubic/functional-diagnostic.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python lab/oem_functional_gcode_diff.py --vendor flashforge --official ".oem-flashforge/ad5x_04/run-A/plate_1.gcode" --candidate-dir "qa-existing-filuna-vs-oem/flashforge/Filuna-flat-User-run" --output "qa-existing-filuna-vs-oem/flashforge/functional-diagnostic.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python lab/oem_functional_gcode_diff.py --vendor snapmaker --official ".oem-snapmaker/stress-00/plate_1.gcode" --candidate-dir "qa-existing-filuna-vs-oem/snapmaker/Filuna-flat-User-run" --output "qa-existing-filuna-vs-oem/snapmaker/functional-diagnostic.json"
+          exit $LASTEXITCODE
+      - name: Try official effective presets in a true model-scoped vendor source tree
+        shell: pwsh
+        run: |
+          python lab/oem_model_scoped_manifest_probe.py --base .filuna-old-base --anycubic .oem-anycubic --flashforge .oem-flashforge --snapmaker .oem-snapmaker --stl fixtures/cube20.stl --out qa-existing-filuna-vs-oem/model-manifest-probe
+          exit $LASTEXITCODE
+      - name: Flashforge AD5X spatial motion analysis by real layer
+        shell: pwsh
+        run: |
+          python lab/flashforge_real_motion_triage.py --official ".oem-flashforge/ad5x_04/run-A/plate_1.gcode" --filuna "qa-existing-filuna-vs-oem/flashforge/Filuna-flat-User-run/plate_1.gcode" --out "qa-existing-filuna-vs-oem/flashforge/flashforge-motion-triage.json"
+          exit $LASTEXITCODE
+      - name: Flag differences in fully resolved OEM vs Filuna G-code defaults
+        shell: pwsh
+        run: |
+          python -m unittest discover -s lab -p test_oem_exported_config_defaults_audit.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python lab/oem_exported_config_defaults_audit.py --oem ".oem-flashforge/ad5x_04/run-A/plate_1.gcode" --filuna "qa-existing-filuna-vs-oem/model-manifest-probe/flashforge/sliced/plate_1.gcode" --out "qa-existing-filuna-vs-oem/model-manifest-probe/flashforge/full-config-defaults-diagnostic.json"
+          exit $LASTEXITCODE
+      - name: Preserve actual native CLI logs and exact G-code diff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-existing-windows-base-versus-3-official-oem-gcodes
+          path: qa-existing-filuna-vs-oem/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Mark this as pre-OEM diagnostic only
+        if: always()
+        shell: pwsh
+        run: |
+          "No new installer, no new slicer build. PREEXISTING Filuna base only, not native OEM modules; no hardware/LAN/IFS/camera test." | Add-Content $env:GITHUB_STEP_SUMMARY

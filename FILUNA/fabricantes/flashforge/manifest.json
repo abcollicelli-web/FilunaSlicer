@@ -4,14 +4,8 @@
   "module_id": "filuna-oem-flashforge",
   "abi": 1,
   "engine": "ORCA_SINGLE_ENGINE",
-  "state": "CANDIDATE_NOT_VALIDATED",
-  "models": [
-    {
-      "id": "FLASHFORGE-AD5X",
-      "display": "AD5X",
-      "firmware_verified": false
-    }
-  ],
+  "state": "OFFICIAL_OEM_QA_IN_PROGRESS_NATIVE_NOT_INTEGRATED",
+  "models": [],
   "module_is_compatible_overlay_only": true,
   "shared_engine": "src/libslic3r",
   "source_license_and_shas": "REVIEW_REQUIRED",
@@ -21,11 +15,171 @@
     "PROTOCOLS_FIRST_AUTHENTICATED",
     "LAN_CODE_ONLY_IF_NEEDED_AND_SUPPORTED"
   ],
-  "components": [],
+  "components": [
+    {
+      "kind": "universal_source_and_profile_catalog",
+      "path": "FILUNA/tools/oem_universal_inventory.py",
+      "status": "INVENTORY_CI_PASS_NOT_NATIVE_INTEGRATION"
+    },
+    {
+      "kind": "all_oem_code_and_network_candidates",
+      "path": ".github/workflows/filuna-anycubic-flashforge-source-audit.yml",
+      "status": "SOURCE_CLONE_AND_DELTA_INVENTORY_ONLY"
+    },
+    {
+      "kind": "official_portable_qa",
+      "path": "lab/flashforge_original_ad5x_ad5m_cli_qa.py",
+      "status": "PASS_2_OEM_ORIGINAL_CLI_SAMPLES_NATIVE_NOT_INTEGRATED"
+    }
+  ],
   "checks": {
     "module_loaded_in_prepare": "NOT_RUN",
     "gcode_equivalence": "NOT_RUN",
     "hardware": "NOT_RUN"
   },
-  "automatic_hardware_activation": false
+  "automatic_hardware_activation": false,
+  "manufacturer_id": "flashforge",
+  "version": "0.1.0-source-audit-candidate",
+  "model_catalog": {
+    "discovery": "AUTO_ALL_MODELS_ALL_PRESETS_FROM_VERIFIED_OFFICIAL_TREE",
+    "fixed_models_whitelist": false,
+    "official_profile_root": "resources/profiles/Flashforge",
+    "qa_samples": [
+      "Flashforge AD5X 0.4 nozzle",
+      "Flashforge Adventurer 5M 0.4 Nozzle"
+    ],
+    "note": "QA sample names never limit supported catalog; compatibility and dynamic capability predicates must still be checked"
+  },
+  "upstream_provenance": {
+    "source_repo": "https://github.com/FlashForge/Orca-Flashforge",
+    "source_commit": "70f2359ba8b4bc8ff9e54818a4bb1d05e56e7856",
+    "source_tag": "1.7.9",
+    "original_official_linux_appimage_sha256": "96578656466416adc1ccd2e7ec656a0b217560edadeeb29642259e67922adf45",
+    "warning": "1.7.9 older Linux AppImage is different generation than latest 1.7.20 Windows installer; no parity inferred",
+    "source_audit": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42319915138",
+    "source_files": 2453,
+    "source_deltas_staged": 2267,
+    "review_blockers": 64,
+    "source_profiles": {
+      "machines": 26,
+      "processes": 60,
+      "filaments": 123,
+      "inheritance_issues": 0
+    }
+  },
+  "qa": {
+    "source_tree_inventory": "PASS_SOURCE_CANDIDATES_ONLY",
+    "all_source_profiles_inventory": "PASS_LIST_AND_INHERITANCE_ONLY",
+    "original_linux_appimage_integrity": "PASS_SHA256_AND_PORTABLE_EXTRACT",
+    "original_model_cli_ab": "PASS_2_SAMPLES_ONLY_AD5X_AD5M",
+    "filuna_native_slicing": "NOT_RUN",
+    "filuna_native_network": "NOT_RUN",
+    "full_oem_dependencies_review": "BLOCKED_64_AND_NETWORK_PLUGIN_LICENSE",
+    "internal_homologation": "BLOCKED",
+    "physical_beta": "NOT_RUN",
+    "sample_ad5x": {
+      "name": "Flashforge AD5X 0.4 nozzle",
+      "tested_release": "1.7.9",
+      "process": "0.20mm Standard @FF AD5X",
+      "material": "Flashforge HS PLA @FF AD5X",
+      "gcode_bytes": 209677,
+      "repeatability": "PASS_RAW_SHA_IDENTICAL",
+      "sha256": "68ed51e6e830ed7ad1d2159a26640b4d54d046f857851f3ad9054b3d045063d6"
+    },
+    "sample_adventurer_5m": {
+      "name": "Flashforge Adventurer 5M 0.4 Nozzle",
+      "tested_release": "1.7.9",
+      "process": "0.20mm Standard @Flashforge AD5M 0.4 Nozzle",
+      "material": "Flashforge Generic PLA",
+      "gcode_bytes": 185038,
+      "repeatability": "PASS_ONLY_ACTUAL_VERIFIED_GENERATED_AT_HEADER_LINE_2_NORMALIZED",
+      "normalized_sha256": "d1df7a1024d4e21722054e07d9f05644aeb3a2019c4d9f22e812eb176ce8ea66",
+      "normalized_diff_lines": [
+        2
+      ]
+    },
+    "official_ab_workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321095370",
+    "official_ab_scope_note": "Only two original vendor CLI samples; NOT Filuna parity, camera, IFS, LAN or internal homologation.",
+    "existing_pre_oem_filuna_windows_baseline": {
+      "source_binary_build": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42102469888",
+      "comparison_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324852127",
+      "status": "FAIL_PRE_OEM_FILUNA_MACHINE_PROFILE_NOT_IN_LOADED_BUNDLE",
+      "error": "can not resolve preset ... machine.json: Preset was not found in the loaded bundle",
+      "note": "Actual original OEM G-code and source profiles compared to pre-OEM Windows Filuna portable; new native OEM integration not yet linked, so this negative baseline is not a test of a completed OEM module.",
+      "native_homologation": "BLOCKED"
+    },
+    "original_cli_stress_20_per_model": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325288710",
+      "status": "PASS_OEM_ORIGINAL_ONLY",
+      "models": [
+        "Flashforge AD5X 0.4",
+        "Flashforge Adventurer 5M 0.4"
+      ],
+      "additional_independent_runs": 40,
+      "normalization": "ONLY_VENDOR_HEADER_GENERATED_AT_TIMESTAMP",
+      "functional_gcode_variances": 0
+    },
+    "pre_oem_filuna_baseline": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325032419",
+      "status": "FAIL_REAL_GCODE_PARITY",
+      "first_error": "OEM machine preset not in loaded bundle",
+      "diagnostic_temp_flattened_user_profile": {
+        "filuna_gcode_bytes": 214319,
+        "oem_gcode_bytes": 209677,
+        "filuna_lines": 9048,
+        "oem_lines": 8905
+      },
+      "not_oem_integration": true
+    },
+    "native_filuna_engine_parity": "BLOCKED_OR_NOT_RUN",
+    "native_printer_network_control": "NOT_RUN",
+    "physical_homologation": "BETA_LATER_NOT_RUN",
+    "overall_internal_homologation": "BLOCKED"
+  },
+  "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
+  "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_DOWNLOAD_NO_ALL_PRESETS_EMBEDDED",
+  "native_engine_deltas_candidate": {
+    "source_version": "FlashForge/Orca-Flashforge 1.7.9",
+    "source_commit": "70f2359ba8b4bc8ff9e54818a4bb1d05e56e7856",
+    "portability_warning": "Server Windows installer 1.7.15 and public Windows 1.7.20 are not proven equivalent to Linux 1.7.9; do not claim coverage from this port.",
+    "actual_source_port": [
+      {
+        "function": "FillRectilinear::fill_surface_by_lines",
+        "official_file": "src/libslic3r/Fill/FillRectilinear.cpp",
+        "official_blob_sha": "59c69a9d321042fef7a8a38a64df32a6006da8f9",
+        "filuna_file": "src/libslic3r/Fill/FillRectilinear.cpp",
+        "candidate_config": "filuna_oem_legacy_infill_anchor",
+        "default": false,
+        "state": "PORTED_OPT_IN_SOURCE_ONLY_NOT_ACTIVATED_AND_NOT_PARITY_TESTED"
+      },
+      {
+        "function": "WallDirection::Auto and explicit profile parse",
+        "official_file": "src/libslic3r/PerimeterGenerator.cpp",
+        "filuna_files": [
+          "src/libslic3r/PerimeterGenerator.cpp",
+          "src/libslic3r/PrintConfig.cpp"
+        ],
+        "default_global": "ccw",
+        "state": "SOURCE_PORT_CANDIDATE_STATIC_QA_PASS_RUNTIME_NOT_TESTED"
+      }
+    ],
+    "original_effective_defaults_differences_for_review": {
+      "wall_direction": "auto",
+      "filament_change_length": "0",
+      "wipe_tower_type": "type1",
+      "flush_volumes_matrix": "OEM_MATRIX_4X4_MUST_PRESERVE_ORIGINAL_VALUES",
+      "enable_arc_fitting": "1_OEM_VS_ENABLED_FILUNA_NEEDS_SEMANTIC_CHECK"
+    },
+    "activation": "NEVER_AUTO_ACTIVATE_BY_MODEL_NAME; requires signed OEM source+profile module, matching ABI, file-license review and G-code A/B proof",
+    "qa_ci": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42342575400",
+    "tested_native_gcode": "NOT_RUN",
+    "original_ad5x_movement_mismatches_at_old_binary": {
+      "g0_to_g3_vendor": 5759,
+      "g0_to_g3_filuna": 5753,
+      "geometry_edit_groups": 534,
+      "extrusion_differences": 182,
+      "feedrate_differences": 374
+    },
+    "overall_status": "CANDIDATE_SOURCE_ONLY_BETA_BLOCKED"
+  }
 }

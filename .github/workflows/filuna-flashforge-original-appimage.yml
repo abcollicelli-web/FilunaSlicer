@@ -1,0 +1,65 @@
+name: Filuna Flashforge official original Linux AppImage profile/CLI QA
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/flashforge_appimage_original_qa.py"
+      - ".github/workflows/filuna-flashforge-original-appimage.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-flashforge-original-appimage
+  cancel-in-progress: true
+jobs:
+  flashforge:
+    name: Official 1.7.9 Flash Studio Linux AppImage - no vendor compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Preflight runner's existing Linux runtime; never install OEM motor
+        run: |
+          command -v xvfb-run || echo 'XVFB_UNAVAILABLE: portable extract still valid; CLI will report failure'
+          command -v ldd
+          command -v file
+          echo 'Do not apt install heavy browsers/webkit before identifying precise missing ELF library'
+      - name: Syntax check
+        run: python -m py_compile lab/flashforge_appimage_original_qa.py
+      - name: Provide only libgstvideo original AppImage runtime requirement
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libgstreamer-plugins-base1.0-0
+          ldconfig -p | grep -F 'libgstvideo-1.0.so.0'
+      - name: Restore official immutable AppImage cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .flashforge-appimage-cache
+          key: filuna-flashforge-original-linux-179-96578656466416adc-20261107
+      - name: Verify official SHA, AppRun and all Flashforge printer profile branches
+        run: |
+          python lab/flashforge_appimage_original_qa.py \
+            --cache .flashforge-appimage-cache --out qa-flashforge-original-appimage
+          ret=$?
+          if test -e qa-flashforge-original-appimage/RESUMO.md; then
+            cat qa-flashforge-original-appimage/RESUMO.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$ret"
+      - name: Save portable verified AppImage only to CI cache
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .flashforge-appimage-cache
+          key: filuna-flashforge-original-linux-179-96578656466416adc-20261107
+      - name: Archive logs, hashes and inventory, not third-party binary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-flashforge-official-linux-179-original-profile-inventory
+          path: qa-flashforge-original-appimage/
+          if-no-files-found: warn
+          retention-days: 30

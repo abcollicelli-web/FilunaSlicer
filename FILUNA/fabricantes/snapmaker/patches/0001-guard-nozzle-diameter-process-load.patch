@@ -1,0 +1,21 @@
+# Snapmaker v2.4.1 OEM source-only crash guard candidate. NOT APPLIED/COMPILED.
+# Upstream commit: bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c
+# Source: src/libslic3r/PrintConfig.cpp DynamicPrintConfig::normalize_fdm
+# GitHub Actions: source-only conformance, never promotion to Filuna parity.
+diff --git a/src/libslic3r/PrintConfig.cpp b/src/libslic3r/PrintConfig.cpp
+--- a/src/libslic3r/PrintConfig.cpp
++++ b/src/libslic3r/PrintConfig.cpp
+@@ -7892,7 +7892,10 @@
+     if (this->has("wipe_tower_filament")) {
+         // If invalid, replace with 0.
+         int extruder      = this->opt<ConfigOptionInt>("wipe_tower_filament")->value;
+-        int num_extruders = this->opt<ConfigOptionFloats>("nozzle_diameter")->size();
+-        if (extruder < 0 || extruder > num_extruders)
+-            this->option("wipe_tower_filament")->setInt(0);
++        const auto* nozzles = this->opt<ConfigOptionFloats>("nozzle_diameter");
++        if (nozzles && nozzles->size() > 0) {
++            int num_extruders = int(nozzles->size());
++            if (extruder < 0 || extruder > num_extruders)
++                this->option("wipe_tower_filament")->setInt(0);
++        }
+     }

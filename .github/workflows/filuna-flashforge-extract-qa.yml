@@ -1,0 +1,57 @@
+name: Filuna Flashforge official 1.7.15 extraction QA (no build)
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/flashforge_official_extract_qa.py"
+      - ".github/workflows/filuna-flashforge-extract-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-flashforge-extract-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  flashforge-extraction:
+    name: Flashforge pinned official installer extraction probe
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Runtime extraction tool only (no compiler, no install of OEM)
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y innoextract 7zip
+      - name: Restore official package cache
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .flashforge-official-cache
+          key: filuna-flashforge-1.7.15-sha256-official-v1
+      - name: Verify script syntax
+        run: python -m py_compile lab/flashforge_official_extract_qa.py
+      - name: SHA256 verification and portable extraction inventory
+        run: |
+          set +e
+          python lab/flashforge_official_extract_qa.py --cache .flashforge-official-cache --out qa-flashforge-extract
+          status=$?
+          if [ -f qa-flashforge-extract/RESUMO.md ]; then cat qa-flashforge-extract/RESUMO.md >> "$GITHUB_STEP_SUMMARY"; fi
+          exit "$status"
+      - name: Save official package to avoid repeat downloads
+        if: always() && steps.cache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .flashforge-official-cache
+          key: filuna-flashforge-1.7.15-sha256-official-v1
+      - name: Preserve evidence on success or failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-flashforge-official-extract-report
+          path: qa-flashforge-extract/
+          retention-days: 30
+          if-no-files-found: warn

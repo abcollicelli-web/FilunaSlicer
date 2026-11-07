@@ -1,0 +1,29 @@
+name: Filuna OEM on-demand profile data-only universal QA
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "FILUNA/tools/oem_on_demand_profiles.py"
+      - "lab/test_oem_on_demand_profiles.py"
+      - ".github/workflows/filuna-oem-on-demand-profile-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  single-engine-no-total-profiles-bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python syntax and negative-first compatibility tests
+        run: |
+          python -m py_compile FILUNA/tools/oem_on_demand_profiles.py
+          python -m unittest discover -s lab -p test_oem_on_demand_profiles.py -v
+      - name: Keep final installer data-only contract explicit
+        run: |
+          echo 'PASS if all 7 unit tests pass; no OEM profiles have been installed or shipped.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No signature, backend API, Filuna C++ integration, printer connection or physical test is claimed.' >> "$GITHUB_STEP_SUMMARY"
