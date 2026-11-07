@@ -230,6 +230,64 @@ def build_from_official_3mf(template:Path,out:Path)->dict:
             "payload_files":len(payload)}
 
 
+def build_minimal_core_3mf(out:Path)->dict:
+    """Minimal 3MF Core 1.3 OPC cube, without BBS project metadata.
+
+    This tests whether Snapmaker's *unchanged* official Windows CLI can
+    slice any standards-only 3MF. It does not impersonate an OEM project,
+    nor test four extruders, nor alter official G-code or vendor files.
+    """
+    ET.register_namespace("",CORE)
+    root=ET.Element(f"{{{CORE}}}model",{"unit":"millimeter"})
+    ET.SubElement(root,f"{{{CORE}}}metadata",{"name":"Application"}).text="Filuna QA standards-only 3MF"
+    resources=ET.SubElement(root,f"{{{CORE}}}resources")
+    obj=ET.SubElement(resources,f"{{{CORE}}}object",{"id":"1","type":"model"})
+    mesh=ET.SubElement(obj,f"{{{CORE}}}mesh")
+    vertices=ET.SubElement(mesh,f"{{{CORE}}}vertices")
+    coords=[(-10,-10,-10),(10,-10,-10),(10,10,-10),(-10,10,-10),
+            (-10,-10,10),(10,-10,10),(10,10,10),(-10,10,10)]
+    for x,y,z in coords:
+        ET.SubElement(vertices,f"{{{CORE}}}vertex",
+                      {"x":str(x),"y":str(y),"z":str(z)})
+    faces=[(0,2,1),(0,3,2),(4,5,6),(4,6,7),
+           (0,1,5),(0,5,4),(1,2,6),(1,6,5),
+           (2,3,7),(2,7,6),(3,0,4),(3,4,7)]
+    triangles=ET.SubElement(mesh,f"{{{CORE}}}triangles")
+    for a,b,c in faces:
+        ET.SubElement(triangles,f"{{{CORE}}}triangle",
+                      {"v1":str(a),"v2":str(b),"v3":str(c)})
+    build=ET.SubElement(root,f"{{{CORE}}}build")
+    ET.SubElement(build,f"{{{CORE}}}item",
+                  {"objectid":"1","transform":"1 0 0 0 1 0 0 0 1 135 135 10"})
+    relationships=ET.Element(f"{{{REL}}}Relationships")
+    ET.SubElement(relationships,f"{{{REL}}}Relationship",
+                  {"Target":"/3D/3dmodel.model","Id":"rel-1",
+                   "Type":"http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"})
+    types=ET.Element(f"{{{TYPES}}}Types")
+    ET.SubElement(types,f"{{{TYPES}}}Default",
+                  {"Extension":"rels",
+                   "ContentType":"application/vnd.openxmlformats-package.relationships+xml"})
+    ET.SubElement(types,f"{{{TYPES}}}Default",
+                  {"Extension":"model",
+                   "ContentType":"application/vnd.ms-package.3dmanufacturing-3dmodel+xml"})
+    with zipfile.ZipFile(out,"w",compression=zipfile.ZIP_DEFLATED) as package:
+        package.writestr("[Content_Types].xml",xml(types))
+        package.writestr("_rels/.rels",xml(relationships))
+        package.writestr("3D/3dmodel.model",xml(root))
+    with zipfile.ZipFile(out) as package:
+        check=ET.fromstring(package.read("3D/3dmodel.model"))
+        ns=f"{{{CORE}}}"
+        if len(check.findall("./"+ns+"resources/"+ns+"object/"+ns+"mesh/"+ns+"vertices/"+ns+"vertex"))!=8:
+            raise AssertionError("STANDARD_3MF_8_VERTICES_MISSING")
+        if len(check.findall("./"+ns+"resources/"+ns+"object/"+ns+"mesh/"+ns+"triangles/"+ns+"triangle"))!=12:
+            raise AssertionError("STANDARD_3MF_12_TRIANGLES_MISSING")
+        if len(check.findall("./"+ns+"build/"+ns+"item"))!=1:
+            raise AssertionError("STANDARD_3MF_PLATE_BUILD_ITEM_MISSING")
+    return {"type":"STANDARD_3MF_CORE_SINGLE_CUBE","sha256":digest(out),
+            "filename":out.name,"plate_center":[135,135],"one_extruder_only":True,
+            "oem_data_modified":False}
+
+
 def export_oem_profiled_3mf(executable:Path,profiles:dict,process:Path,cube:Path,out:Path)->dict:
     """Unmodified OEM executable exports its own 3MF from known-good STL.
 
@@ -298,6 +356,13 @@ def main()->int:
             raise ValueError("ORIGINAL_STL_CONTROL_MISSING")
         report["raw_stl_control"]=run_cli(executable,profiles["machine"],adjusted,
             profiles["filament"],cube,out,"oem-raw-stl-control",timeout=220)
+        # Distinguish general 3MF CLI handling from proprietary bundled
+        # BBS project metadata: standards-only model with no plate metadata.
+        minimal_3mf=out/"qa-minimal-core-cube.3mf"
+        report["minimal_core_3mf_fixture"]=build_minimal_core_3mf(minimal_3mf)
+        report["minimal_core_3mf_slice_control"]=run_cli(
+            executable,profiles["machine"],adjusted,profiles["filament"],
+            minimal_3mf,out,"minimal-core-3mf-control",timeout=220)
         exported=export_oem_profiled_3mf(executable,profiles,adjusted,cube,out)
         report["oem_exported_3mf_control"]=exported
         if exported["valid_3mf"]:
