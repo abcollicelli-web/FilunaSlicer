@@ -221,7 +221,7 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
                       if any(q[i] < -0.001 or q[i]>maxdim[i]+0.001 for i in range(3))),None)
         spiral=(lineno-spiral_marker<=12 or
                 cmd in ("G2","G3") and b[2]>a[2]+1e-5)
-        if outside and len(warnings)<max_events:
+        if outside and vendor.get("check_bounds",True) and len(warnings)<max_events:
             t,q=outside
             warnings.append({"code":"AUTO_SPIRAL_OUT_OF_VOLUME" if spiral else "TRAVEL_OUT_OF_PRINT_VOLUME",
                              "line":lineno,"layer":layer,"xyz_mm":[round(v,3) for v in q],
@@ -282,6 +282,7 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
         "gcode_sha256":digest(raw),"gcode_bytes":len(raw),"gcode_lines":len(lines),
         "gcode_modified":False,"manufacturer":vendor["manufacturer"],
         "printer_model":vendor["printer_model"],"volume_mm":maxdim,
+        "bounds_validated":bool(vendor.get("check_bounds",True)),
         "geometry_method":"Object-only XY cell occupancy excluding documented prime/wipe tower extrusion; conservative critical-travel sampling",
         "geometry_resolution_mm":res,"clearance_mm":clearance,
         "scope":scan,"tested_travels":checked,"deposition_segments":deposition,
@@ -289,7 +290,9 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
         "issues":issues,"warnings":warnings,"unknowns":uncertain,
         "safe_macro_proof_scope":"Only macro-internal park; no blanket exemption for prior final purge",
         "firmware_macro_safety_for_final_purge":"NOT_PROVEN",
-        "limitations":["No firmware macro expansion or dynamic toolhead carriage envelope",
+        "limitations":[
+                       "Print volume alone is not the physical service/parking travel envelope; cross-brand bounds need certified OEM data",
+                       "No firmware macro expansion or dynamic toolhead carriage envelope",
                        "No physical nozzle 3D collision mesh; occupancy is XY/Z approximation",
                        "Critical mode excludes routine same-layer travels to reduce false positives",
                        "A PASS is a bounded QA finding, not physical printer homologation"]
