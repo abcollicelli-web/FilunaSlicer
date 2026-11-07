@@ -7,6 +7,8 @@ on:
       - "lab/filuna_baseline_three_oem_qacheck.py"
       - "lab/test_filuna_baseline_single_sample.py"
       - "lab/oem_functional_gcode_diff.py"
+      - "lab/oem_model_scoped_manifest_probe.py"
+      - "lab/test_oem_model_scoped_manifest_probe.py"
       - "lab/test_oem_functional_gcode_diff.py"
       - ".github/workflows/filuna-existing-portable-vs-three-oem.yml"
   workflow_dispatch:
@@ -62,13 +64,15 @@ jobs:
           path: .oem-snapmaker
       - name: Source syntax check (no Filuna/OEM compilation)
         shell: pwsh
-        run: python -m py_compile lab/filuna_baseline_three_oem_qacheck.py lab/oem_functional_gcode_diff.py
+        run: python -m py_compile lab/filuna_baseline_three_oem_qacheck.py lab/oem_functional_gcode_diff.py lab/oem_model_scoped_manifest_probe.py
       - name: Fail-closed single-sample classification unit tests
         shell: pwsh
         run: |
           python -m unittest discover -s lab -p test_filuna_baseline_single_sample.py -v
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m unittest discover -s lab -p test_oem_functional_gcode_diff.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p test_oem_model_scoped_manifest_probe.py -v
           exit $LASTEXITCODE
       - name: Run prebuilt Filuna CLI and compare real G-code
         shell: pwsh
@@ -87,6 +91,11 @@ jobs:
           python lab/oem_functional_gcode_diff.py --vendor flashforge --official ".oem-flashforge/ad5x_04/run-A/plate_1.gcode" --candidate-dir "qa-existing-filuna-vs-oem/flashforge/Filuna-flat-User-run" --output "qa-existing-filuna-vs-oem/flashforge/functional-diagnostic.json"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python lab/oem_functional_gcode_diff.py --vendor snapmaker --official ".oem-snapmaker/stress-00/plate_1.gcode" --candidate-dir "qa-existing-filuna-vs-oem/snapmaker/Filuna-flat-User-run" --output "qa-existing-filuna-vs-oem/snapmaker/functional-diagnostic.json"
+          exit $LASTEXITCODE
+      - name: Try official effective presets in a true model-scoped vendor source tree
+        shell: pwsh
+        run: |
+          python lab/oem_model_scoped_manifest_probe.py --base .filuna-old-base --anycubic .oem-anycubic --flashforge .oem-flashforge --snapmaker .oem-snapmaker --stl fixtures/cube20.stl --out qa-existing-filuna-vs-oem/model-manifest-probe
           exit $LASTEXITCODE
       - name: Preserve actual native CLI logs and exact G-code diff
         if: always()
