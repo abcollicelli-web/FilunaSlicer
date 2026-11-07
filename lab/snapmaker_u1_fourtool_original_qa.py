@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import zipfile
 from xml.etree import ElementTree as ET
 
@@ -23,6 +24,7 @@ from snapmaker_u1_inherit import build_effective_original_presets
 from snapmaker_runtime_nozzle_guard_qa import guarded_runtime_process
 from snapmaker_u1_guard_probe import run_cli
 from snapmaker_spatial_gcode_validator import policy_from_yaml, validate_gcode
+from snapmaker_u1_temporal_ab_qa import compare_temporally_separated
 
 ROOT=Path(__file__).resolve().parents[1]
 CORE="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
@@ -447,6 +449,39 @@ def main()->int:
             diagnostic["toolchange_blocks"]=len(re.findall(
                 rb"(?m)^;\s*CP TOOLCHANGE START",data))
         report["four_core_3mf_slice_control"]=diagnostic
+        if diagnostic["exit_code"]==0 and len(diagnostic["gcodes"])==1:
+            gcode_a=(out/diagnostic["gcodes"][0]["path"]).read_bytes()
+            # Run in different wall-clock seconds. Only a manufacturer-proven
+            # HEADER_BLOCK timestamp may be excluded from the comparison.
+            time.sleep(2.5)
+            second=run_cli(executable,profiles["machine"],adjusted,
+                profiles["filament"],four_core,out,"four-core-3mf-repeated-B",
+                timeout=220)
+            report["four_core_3mf_repeat_B"]=second
+            if second["exit_code"]==0 and len(second["gcodes"])==1:
+                gcode_b=(out/second["gcodes"][0]["path"]).read_bytes()
+                try:
+                    report["four_core_strict_A_B"]=compare_temporally_separated(
+                        gcode_a,gcode_b)
+                except ValueError as exc:
+                    report["four_core_strict_A_B"]={"status":"FAIL",
+                        "reason":str(exc),"both_gcodes_original":True,
+                        "manufacturer_toolpaths_unchanged":True}
+            else:
+                report["four_core_strict_A_B"]={"status":"NOT_PROVEN",
+                    "reason":"SECOND_OEM_CLI_NOT_SUCCESSFUL"}
+            geometry=validate_gcode(gcode_a,policy_from_yaml(
+                ROOT/"FILUNA/fabricantes/snapmaker/vendor.yaml"),source="official")
+            report["four_core_spatial"]={
+                "status":geometry["status"],"issues":geometry["issues"][:12],
+                "warnings":geometry["warnings"][:12],
+                "gcode_sha256":geometry["gcode_sha256"]}
+            if diagnostic.get("tool_numbers")==[0,1,2,3] and diagnostic.get("toolchange_blocks",0)>=3:
+                report["four_core_tool_motion_proof"]="PASS_SYNTHETIC_4_TOOL_OEM_CLI_ONLY"
+            else:
+                report["four_core_tool_motion_proof"]="FAIL_TOOL_ASSIGNMENTS"
+        else:
+            report["four_core_tool_motion_proof"]="NOT_PROVEN"
         exported=export_oem_profiled_3mf(executable,profiles,adjusted,cube,out)
         report["oem_exported_3mf_control"]=exported
         if exported["valid_3mf"]:
