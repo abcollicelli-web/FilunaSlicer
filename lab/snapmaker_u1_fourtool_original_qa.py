@@ -124,6 +124,11 @@ def build_from_official_3mf(template:Path,out:Path)->dict:
     """
     import copy
     import uuid
+    # Preserve the original 3MF *default* XML namespace. The Snapmaker BBS
+    # importer did not register any objects when ElementTree rewrote it as
+    # ns0:model/ns0:object; plate mappings then had no obj_map entries.
+    ET.register_namespace("",CORE)
+    ET.register_namespace("p",PROD)
     with zipfile.ZipFile(template) as zin:
         payload={name:zin.read(name) for name in zin.namelist()}
     model_name="3D/3dmodel.model"
