@@ -91,12 +91,19 @@
     "physical_beta": "NOT_RUN",
     "u1_spaced_second_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
     "u1_cross_minute_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
-    "u1_cross_actions_run_gcode_reproducibility": "FAIL_NON_TIMESTAMP_TOOLPATH_DIFFERENCES",
+    "u1_cross_actions_run_gcode_reproducibility": "PARTIAL_SAME_WORKFLOW_PASS_OTHER_WORKFLOW_NONHEADER_VARIANCE_UNEXPLAINED",
     "u1_cross_actions_run_size_bytes": [
       250183,
       249098,
       250183
-    ]
+    ],
+    "u1_same_workflow_rerun_attempt2": "PASS_NORMALIZED_HEADER_ONLY_MATCHES_ATTEMPT1",
+    "u1_cross_minute_vs_rerun": "PASS_NORMALIZED_HEADER_ONLY_MATCHES",
+    "u1_cross_workflow_variants": {
+      "first_and_rerun_sha256_normalized": "2774becee1246529474db12c7439cc1d46a501bfe797c31a5e53936db705db4a",
+      "other_temporal_workflow_sha256_normalized": "06687a6b84ee16d0d7ceb75f8c631272b649f452313ce4395864893e372247d7",
+      "note": "Exact original Windows workflow on two attempts is stable. Different workflow has changed toolpaths; not just timestamps. Need isolate CLI paths/runner/runtime."
+    }
   },
   "automatic_hardware_activation": false,
   "production_promotion": "BLOCKED_OWNER_APPROVAL_AND_QA_REQUIRED",
