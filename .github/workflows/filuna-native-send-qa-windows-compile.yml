@@ -6,6 +6,7 @@ on:
       - "src/slic3r/Utils/FilunaGCodeSafety.hpp"
       - "src/slic3r/Utils/PrintHost.cpp"
       - "src/slic3r/Utils/PrintHost.hpp"
+      - "src/slic3r/GUI/PrintHostDialogs.cpp"
       - "src/slic3r/CMakeLists.txt"
       - ".github/workflows/filuna-native-send-qa-windows-compile.yml"
   workflow_dispatch:
@@ -31,7 +32,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: deps/build/OrcaSlicer_dep
-          key: windows-x64-clang-cache-orcaslicer_deps-build-${{ hashFiles('deps/**') }}
+          key: windows-x64-msvc-cache-orcaslicer_deps-build-${{ hashFiles('deps/**') }}
           fail-on-cache-miss: false
       - name: Build pinned Orca Windows deps on this QA branch when the cache is unavailable
         if: steps.deps.outputs.cache-hit != 'true'
@@ -39,7 +40,7 @@ jobs:
         run: |
           $ErrorActionPreference="Stop"
           $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\","/")
-          .\build_win.bat -d --arch x64 --deps-dir $deps -l -x --jobs 4
+          .\build_win.bat -d --arch x64 --deps-dir $deps --msvc --msbuild --jobs 4
           if ($LASTEXITCODE -ne 0) {
             throw "FILUNA_QA_WINDOWS_DEPENDENCIES_FAILED exit=$LASTEXITCODE"
           }
@@ -48,14 +49,14 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: deps/build/OrcaSlicer_dep
-          key: windows-x64-clang-cache-orcaslicer_deps-build-${{ hashFiles('deps/**') }}
+          key: windows-x64-msvc-cache-orcaslicer_deps-build-${{ hashFiles('deps/**') }}
       - name: Compile shared engine and GUI including PrintHost send path (no packaging)
         shell: pwsh
         run: |
           $ErrorActionPreference="Stop"
           $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\","/")
           Write-Host "QA source=$env:GITHUB_SHA deps=$deps"
-          .\build_win.bat -s --slicer-target libslic3r_gui --arch x64 --deps-dir $deps -l -x --no-gettext --jobs 4
+          .\build_win.bat -s --slicer-target libslic3r_gui --arch x64 --deps-dir $deps --msvc --msbuild --no-gettext --jobs 4
           if ($LASTEXITCODE -ne 0) {
             throw "FILUNA_NATIVE_SEND_GUI_COMPILE_FAILED exit=$LASTEXITCODE"
           }
