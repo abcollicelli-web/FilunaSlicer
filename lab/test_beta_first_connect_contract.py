@@ -168,5 +168,21 @@ class AllManufacturersBetaContractTests(unittest.TestCase):
         c=sample_job(key,3);c["status"]="CANCELLED"
         self.assertEqual(beta_cohort_status(obj,[a,b,c],server_verified)["count"],1)
 
+    def test_verified_critical_incident_revokes_three_previous_passes(self):
+        obj=identity("AD5X","flashforge");key=model_key(obj)
+        jobs=[sample_job(key,n) for n in (1,2,3)]
+        self.assertEqual(beta_cohort_status(obj,jobs,server_verified)["status"],
+                         STATUS_BETA)
+        incident={"cohort":key,"environment":"PHYSICAL_BETA",
+                  "critical_incident":True,
+                  "verified_source":"FILUNA_BETA_SERVER",
+                  "verified_attestation":"signed-and-server-checked"}
+        revoked=beta_cohort_status(obj,jobs+[incident],server_verified)
+        self.assertEqual(revoked["count"],0)
+        self.assertEqual(revoked["status"],STATUS_PENDING)
+        incident["verified_attestation"]="client-can-lie"
+        self.assertEqual(beta_cohort_status(obj,jobs+[incident],server_verified)["status"],
+                         STATUS_BETA)
+
 if __name__=="__main__":
     unittest.main()
