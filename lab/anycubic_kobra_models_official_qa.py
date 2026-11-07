@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Anycubic original v2.0.0.6 CLI A/B, Kobra S1 / Kobra 3 V2 0.4 only.
+"""Anycubic original v2.0.0.6 CLI A/B, three independently selected OEM model fixtures; universal catalog for every model.
 
 Original vendor Linux .deb extracted in isolated GitHub Actions, no OEM build
 or system install. No Filuna parity, network, ACE authentication or physical test.
@@ -23,6 +23,7 @@ ROOT=Path(__file__).resolve().parents[1]
 TARGETS={
  "kobra_s1_04": "Anycubic Kobra S1 0.4 nozzle",
  "kobra_3_v2_04": "Anycubic Kobra 3 V2 0.4 nozzle",
+ "kobra_4_04": "Anycubic Kobra 4 0.4 nozzle",
 }
 FIELDS=("type","from","name","inherits","compatible_printers")
 
@@ -227,7 +228,7 @@ def main():
     except Exception as exc:
         add("common","RUNNER","FAIL",type(exc).__name__+": "+str(exc))
     (out/"results.json").write_text(json.dumps(rows,indent=2,ensure_ascii=False)+"\n")
-    (out/"RESUMO.md").write_text("# Anycubic original 2.0.0.6 — Kobra S1 and Kobra 3 V2 official CLI A/B\n\n"
+    (out/"RESUMO.md").write_text("# Anycubic original 2.0.0.6 — Kobra S1, Kobra 3 V2, Kobra 4 official CLI A/B\n\n"
       "Original verified .deb extraction on isolated Linux; not an official portable ZIP.\n"
       "No physical print, Filuna parity, ACE authentication, or vendor recompilation.\n\n"
       "| Model | Gate | Status | Detail |\n|---|---|---|---|\n"
