@@ -63,3 +63,20 @@ A regra universal permanece: todos os modelos/perfis por catálogo e deltas OEM 
 A revisão de `ANYCUBIC-3D/AnycubicSlicerNext` revelou **três linhas relevantes**: `main` commit `6103ed8b511609658d00d0538cc7f0609cdb57da` (02/02/2026, 08:32 UTC), `develop` e `WL_Master` **ambos** commit `987a3c2bf9ed13934137326bfd522896c70e5101` (02/02/2026, 10:20 UTC); `release/v2.3.1` contém ramo com versão diferente. O arquivo `version.inc` de `develop` declara `SoftFever_VERSION=2.3.1.0`, enquanto a versão do executável Debian pinado pelo laboratório é `2.0.0.6`. Os catálogos e revisões de código não têm relação de build verificada com esse executável.
 
 **Consequência:** não misturar o fonte de fevereiro com binário/presets oficiais atualizados em outra data e alegar paridade; não incorporar SDK/driver sem resolver a proveniência e a licença de dependências. `SOURCE_BINARY_BUILD_CORRESPONDENCE=BLOCKED`, apesar de `OFFICIAL_CLI_A_B` das amostras passar. Nenhum pacote final deve conter o catálogo inteiro; preservar entrega por perfil sob demanda conforme Plano Mestre §13.
+
+
+## Terceiro modelo e regressão de comparador — prova final do OEM original (07/11/2026)
+
+[GitHub Actions **#42323143169**](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323143169), original Anycubic Slicer Next Linux \`2.0.0.6\`, .deb original SHA \`fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678\`, executável não recompilado, cada G-code em pasta de saída própria.
+
+A rodada com terceira amostra reproduziu **PASS de A/B com SHA bruto idêntico** em todos os modelos:
+
+| Modelo/variante | G-code bytes cada corrida | SHA-256 A = B |
+|---|---:|---|
+| Kobra S1, 0,4 mm, PLA | 210094 | \`f2fbc6bd2df371e91d1999b8f107dd8cac65e70b7063ad868dd49b120bfb3f5a\` |
+| Kobra 3 V2, 0,4 mm, PLA | 325731 | \`dc1ed1656e3a3cf314f5b003d61b82840d031d9f0b8d6c2deab19f2026d3c62b\` |
+| Kobra 4, 0,4 mm, PLA | 215690 | \`5d397648d5eab5827cfdb7404b504f8cebff82ffa9b47b64cbeab4d89427e3b4\` |
+
+**Problema anterior #42321830613:** os seis arquivos G-code foram gerados, mas \`compare_files\` usava paths baseados em \`out\` quando a prova \`run()\` serializava paths relativos a \`dest\` (raiz de cada modelo). Isso causava FileNotFoundError e falsos FAIL de **infraestrutura de comparador**, não falhas de fatiamento. A correção \`1ac0e678\` resolve o path em \`dest\` e comprova A ≠ B por diretórios. Os 8 testes positivos/negativos do comparador estrito passaram: mudanças de trajetória e macros jamais podem ser ignoradas.
+
+**Catálogo automático preservado** de **40 presets máquina, 191 processos, 382 filamentos, zero heranças quebradas**; esses **3 modelos são amostras**, não hardcode, e não garantem todas as combinações/firmwares. Estado real: \`OFFICIAL_3_MODELS_OEM_AB=PASS\`, \`SOURCE_TO_DEB_VERSION_PARITY=BLOCKED\`, \`FILUNA_NATIVE_GCODE=NOT_RUN\`, \`ANYCUBIC_LAN_ACE_AUTH_ACK=NOT_RUN\`, \`HOMOLOGACAO_INTERNA=BLOCKED\`. Nenhuma impressão física foi executada.
