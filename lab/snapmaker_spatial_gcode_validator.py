@@ -110,6 +110,7 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
     layer = None
     recent_tool = -1000
     final_tail = False
+    in_short_retraction_wipe = False
     final_marker = -1000
     spiral_marker = -1000
     prior_extrusion = False
@@ -124,6 +125,13 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
         raise ValueError("GCODE_TOO_LARGE_FOR_QA")
     for lineno,line in enumerate(lines,1):
         comments = line.partition(";")[2]
+        # Intentional post-extrusion wipe retracts along a printed edge;
+        # it is not a nozzle transit to the wipe tower. Ignore only
+        # short XY retraction wipes, never a long unlifted travel.
+        if comments.strip().startswith("WIPE_START"):
+            in_short_retraction_wipe = True
+        if comments.strip().startswith("WIPE_END"):
+            in_short_retraction_wipe = False
         if START.search(comments):
             final_tail = False
         if STOP.search(comments) and lineno == final_object_close:
@@ -218,6 +226,8 @@ def validate_gcode(raw: bytes, vendor: dict, *, source: str = "official",
         focus=(scan=="all" or final_tail or lineno-final_marker<=25 or
                lineno-recent_tool<=20)
         if not focus or not prior_extrusion:
+            continue
+        if in_short_retraction_wipe and delta_e < 0 and xy <= 5.0:
             continue
         checked+=1
         hit=None
