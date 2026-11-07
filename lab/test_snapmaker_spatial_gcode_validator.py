@@ -59,7 +59,7 @@ class SpatialSafetyTests(unittest.TestCase):
 
     def test_04_auto_spiral_outside_volume_warns_not_rewrites(self):
         raw=(b"G90\nG1 X260 Y260 Z1\n;FILUNA_SPIRAL_HOP\n"
-             b"G3 X272 Y262 Z1.5 I5 J0 F3000\n")
+             b"G3 X272 Y262 Z1.5 I6 J1 F3000\n")
         report=validate_gcode(raw,VENDOR,source="official")
         self.assertEqual(report["status"],"WARN",report)
         self.assertIn("AUTO_SPIRAL_OUT_OF_VOLUME",
