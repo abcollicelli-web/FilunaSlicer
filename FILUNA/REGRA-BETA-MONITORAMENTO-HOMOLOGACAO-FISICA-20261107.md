@@ -5,6 +5,14 @@
 **Abrangência:** **todos os fabricantes, modelos, variantes, bicos, firmwares e módulos OEM** que estiverem com `HOMOLOGACAO_FISICA=PENDENTE`.  
 **Estado atual:** **REQUISITO APROVADO PARA PLANEJAMENTO; IMPLEMENTAÇÃO E ATIVAÇÃO NÃO INICIADAS**. Não criar coleta silenciosa nem executar testes físicos nesta fase.
 
+## Regra superior atualizada — assistente de conexão e três provas físicas
+
+Aplicar em conjunto a **seção 13 do [PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md §13](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md)**: instalar somente motor-base + deltas OEM, sem catálogos completos de perfis; fazer download assinado/validado **sob demanda** para modelo/firmware/bico/material conectado; **abrir automaticamente checklist guiado na primeira conexão** de cada impressora física e avaliar rede/portas/protocolo pelo sistema, câmera real com prévia **local** e confirmação visual do proprietário, multimaterial com detecção de slots pelo sistema e validação humana dos filamentos. Separar resultado automático de confirmação humana e `N/A` comprovado.
+
+**NOVA POLÍTICA DE PROMOÇÃO NO BETA:** após checklist local PASS → `LIBERADA_PARA_TESTE_DE_IMPRESSAO`; **1 impressão física válida completa** → `PARCIALMENTE_HOMOLOGADA` para a próxima unidade da mesma combinação modelo/variante/firmware/módulo; **3 impressões físicas distintas válidas com matriz inteira PASS** → `HOMOLOGADA_BETA_LIBERADA_IMPRESSAO` para aquele modelo e capacidades. Contador idempotente, sem contar testes repetidos/incompletos/simulados; erro crítico reabre gate. Teste local de cada nova unidade continua. Essa classificação automática **no beta** não é autorização para release estável sem aprovação do proprietário.
+
+A norma anterior que atribuía à revisão humana a promoção final `HOMOLOGADO_FISICO` deve ser lida com esta atualização mais recente: **promoção de status dentro do beta é automática por três provas completas**; a revisão/aceite formal do proprietário continua exigida para distribuição estável, inclusão irrestrita no catálogo público ou mudança de canal. Proteções de privacidade, consentimento e servidor somente observador permanecem obrigatórias.
+
 ## 1. Objetivo e momento de ativação
 
 Quando o **Filuna Slicer beta vigiado for aberto**, criar uma ferramenta própria de monitoramento técnico online, com **painel no servidor Filuna** e coletor integrado ao aplicativo/DeviceBridge, para acompanhar automaticamente as impressoras pendentes de homologação física durante o uso autorizado pelos participantes do beta.
