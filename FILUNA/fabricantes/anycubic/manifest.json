@@ -167,5 +167,28 @@
     "overall_internal_homologation": "BLOCKED"
   },
   "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
-  "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_PROFILE_DATA_NOT_FINAL_INSTALLER"
+  "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_PROFILE_DATA_NOT_FINAL_INSTALLER",
+  "native_engine_deltas_candidate": {
+    "core_source_pin": "ANYCUBIC-3D/AnycubicSlicerNext@6103ed8b511609658d00d0538cc7f0609cdb57da",
+    "original_linux_release": "2.0.0.6",
+    "exact_source_binary_provenance": "BLOCKED_UNVERIFIED_MATCH",
+    "source_port": [
+      {
+        "source": "disabled retraction_distances_when_cut 0 sentinel",
+        "target": "src/libslic3r/PrintConfig.cpp + Print.cpp",
+        "state": "SOURCE_PORT_STATIC_PASS_NATIVE_GCODE_NOT_RUN"
+      },
+      {
+        "source": "reject nonfinite retraction when long cut enabled",
+        "target": "src/libslic3r/Print.cpp",
+        "state": "CANDIDATE_ADDITIONAL_SAFETY_GUARD"
+      }
+    ],
+    "original_vendor_cli_stress": "PASS_60_OFFICIAL_SLICINGS_20_EACH_S1_KOBRA3V2_KOBRA4",
+    "zero_cut_is_not_forced_to_10": true,
+    "parity_qa": "NOT_RUN",
+    "hardware_activation": false,
+    "activation": "SIGNED_VERIFIED_OEM_MODULE_ONLY_AFTER_PASSED_RUNTIME_TESTS",
+    "overall_status": "CANDIDATE_SOURCE_ONLY_BETA_BLOCKED"
+  }
 }
