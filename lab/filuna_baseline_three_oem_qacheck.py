@@ -51,6 +51,12 @@ def run_one(vendor,model,artifact,exe,stl,out):
         data["official_gcode"]={"sha256":h(original),"bytes":original.stat().st_size}
         target=dest/"Filuna-CLI"
         target.mkdir()
+        # The original Github artifact is unpacked into a relative working
+        # directory. The Filuna binary is executed with cwd=exe.parent; all
+        # OEM profile paths MUST be made absolute first, otherwise it attempts
+        # to load paths relative to its own binary directory.
+        paths={kind:p.resolve(strict=True) for kind,p in paths.items()}
+        original=original.resolve(strict=True)
         filaments=[str(paths["filament"])]*(4 if vendor=="snapmaker" else 1)
         cmd=[str(exe),"--debug","3","--slice","0",
              "--load-settings",str(paths["machine"])+";"+str(paths["process"]),
