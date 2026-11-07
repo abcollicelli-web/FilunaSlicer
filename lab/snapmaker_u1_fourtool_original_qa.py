@@ -115,6 +115,100 @@ def build_four_colour_3mf(out:Path)->dict:
             "source":"generated 3MF test geometry, NOT OEM 3MF, OEM engine original"}
 
 
+
+def build_from_official_3mf(template:Path,out:Path)->dict:
+    """Clone an OEM-provided working 3MF's existing model/OPC structure.
+
+    Only changes the temporary QA model instances and extruder labels;
+    keeps the source archive byte-identical. No vendor engine/preset changes.
+    """
+    import copy
+    import uuid
+    with zipfile.ZipFile(template) as zin:
+        payload={name:zin.read(name) for name in zin.namelist()}
+    model_name="3D/3dmodel.model"
+    if model_name not in payload:
+        raise ValueError("OEM_TEMPLATE_MISSING_MASTER_MODEL")
+    master=ET.fromstring(payload[model_name])
+    ns=master.tag.partition("}")[0] + "}"
+    resources=master.find(ns+"resources")
+    build=master.find(ns+"build")
+    if resources is None or build is None or not list(build):
+        raise ValueError("OEM_TEMPLATE_MISSING_OBJECTS_OR_BUILD")
+    initial_item=list(build)[0]
+    original_id=initial_item.attrib.get("objectid")
+    original_object=next((obj for obj in resources
+                          if obj.attrib.get("id")==original_id),None)
+    if original_object is None:
+        raise ValueError("OEM_TEMPLATE_MODEL_ID_NOT_REFERENCED")
+    settings_name="Metadata/model_settings.config"
+    setting_root=ET.fromstring(payload[settings_name]) if settings_name in payload else ET.Element("config")
+    old_entry=next((e for e in setting_root.findall("object")
+                    if e.attrib.get("id")==original_id),None)
+    old_plate=setting_root.find("plate")
+    if old_plate is None:
+        old_plate=ET.SubElement(setting_root,"plate")
+    existing_ids=[int(x.attrib["id"]) for x in resources if x.attrib.get("id","").isdigit()]
+    base_id=max(existing_ids+[1])+1
+    for item in list(build):
+        build.remove(item)
+    for item in list(setting_root.findall("object")):
+        setting_root.remove(item)
+    for item in list(old_plate.findall("model_instance")):
+        old_plate.remove(item)
+    identifiers=[]
+    # Keep only original model resources as dependencies, but no original
+    # item is built: precisely four new copies will be on the build plate.
+    for idx in range(4):
+        object_id=str(base_id+idx)
+        clone=copy.deepcopy(original_object)
+        clone.attrib["id"]=object_id
+        for zidx,el in enumerate(clone.iter()):
+            for attr in list(el.attrib):
+                if attr.endswith("}UUID"):
+                    el.attrib[attr]=str(uuid.uuid5(uuid.NAMESPACE_URL,
+                        f"filuna-fourtool-{idx}-{zidx}-{el.tag}"))
+        resources.append(clone)
+        item=copy.deepcopy(initial_item)
+        item.attrib["objectid"]=object_id
+        item.attrib["transform"]=f"1 0 0 0 1 0 0 0 1 {45+idx*55} 135 0"
+        for attr in list(item.attrib):
+            if attr.endswith("}UUID"):
+                item.attrib[attr]=str(uuid.uuid5(uuid.NAMESPACE_URL,f"filuna-fourtool-build-{idx}"))
+        build.append(item)
+        setting=copy.deepcopy(old_entry) if old_entry is not None else ET.Element("object")
+        setting.attrib["id"]=object_id
+        for key,value in (("extruder",str(idx+1)),("name",f"U1 official QA tool {idx+1}")):
+            meta=setting.find(f"./metadata[@key='{key}']")
+            if meta is None:
+                meta=ET.SubElement(setting,"metadata",{"key":key})
+            meta.attrib["value"]=value
+        setting_root.append(setting)
+        instance=ET.SubElement(old_plate,"model_instance")
+        ET.SubElement(instance,"metadata",{"key":"object_id","value":object_id})
+        ET.SubElement(instance,"metadata",{"key":"instance_id","value":"0"})
+        ET.SubElement(instance,"metadata",{"key":"identify_id","value":str(100+idx)})
+        identifiers.append([int(object_id),idx+1])
+    payload[model_name]=xml(master)
+    payload[settings_name]=xml(setting_root)
+    with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED) as zout:
+        for name,data in payload.items():
+            zout.writestr(name,data)
+    with zipfile.ZipFile(out) as z:
+        check=ET.fromstring(z.read(settings_name))
+        actual=sorted((int(e.attrib["id"]),
+                       int(e.find("./metadata[@key='extruder']").attrib["value"]))
+                      for e in check.findall("object"))
+        if actual!=sorted(identifiers):
+            raise AssertionError("FOUR_INDEPENDENT_OBJECT_EXTRUDERS_LOST")
+    return {"model_source":"OFFICIAL_PORTABLE_HANDBOOK_3MF",
+            "official_template_path":str(template),"official_template_sha256":digest(template),
+            "qa_fourtool_sha256":digest(out),
+            "qa_assignments":identifiers,
+            "official_template_was_modified":False,
+            "payload_files":len(payload)}
+
+
 def main()->int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--cache",type=Path,default=Path(".oem-portable-cache"))
@@ -137,7 +231,10 @@ def main()->int:
         report["temporary_process_guard"]=guarded_runtime_process(
             profiles["machine"],profiles["process"],adjusted)
         model=out/"four-extruder-object-fixture.3mf"
-        report["model"]=build_four_colour_3mf(model)
+        template=executable.parent/"resources/handy_models/OrcaCube_v2.3mf"
+        if not template.is_file():
+            raise ValueError("OFFICIAL_OEM_3MF_TEMPLATE_NOT_PRESENT")
+        report["model"]=build_from_official_3mf(template,model)
         report["vendor_original_zip_sha256"]=digest(package)
         report["vendor_url"]=source_url
         gcode_hashes=[]
