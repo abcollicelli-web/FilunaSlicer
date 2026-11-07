@@ -146,5 +146,14 @@ class SpatialSafetyTests(unittest.TestCase):
         self.assertEqual(result["issues"],[])
 
 
+
+    def test_15_relative_z_before_homing_anchor_is_unknown_not_below_bed(self):
+        raw=(b"G90\nG28 X\nG91\nG1 Z5 F1200\nG1 Z-5 F1200\n"
+             b"G90\nG0 X10 Y10 Z1\nM83\nG1 X20 Y10 E1\n")
+        report=validate_gcode(raw,VENDOR,source="official")
+        self.assertEqual(report["status"],"PASS",report)
+        self.assertEqual(report["warnings"],[])
+
+
 if __name__=="__main__":
     unittest.main()
