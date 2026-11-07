@@ -3624,6 +3624,14 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionInts{0});
 
     // BBS
+    // Snapmaker open-source OEM profile field. Keep a default of false for
+    // existing Orca printers; the G-code start macro uses this only if asked.
+    def = this->add("filament_is_high_temperature", coBools);
+    def->label = L("Is high-temperature filament");
+    def->tooltip = L("Indicates whether this filament requires high-temperature handling.");
+    def->mode = comSimple;
+    def->set_default_value(new ConfigOptionBools{false});
+
     def = this->add("temperature_vitrification", coInts);
     def->label = L("Softening temperature");
     def->tooltip = L("The material softens at this temperature, so when the bed temperature is equal to or greater than this, it\'s highly recommended to open the front door and/or remove the upper glass to avoid clogs.");
@@ -6169,7 +6177,10 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Retraction distance when cut");
     def->tooltip = L("Experimental feature: Retraction length before cutting off during filament change.");
     def->mode = comDevelop;
-    def->min = 10;
+    // OEM profiles may legitimately store 0 for a DISABLED cut-retraction
+    // feature (e.g. Anycubic Kobra 3 V2). Preserve that input byte-for-byte;
+    // Print::validate rejects 0 or 1..9 if the feature is actually enabled.
+    def->min = 0;
     def->max = 18;
     def->set_default_value(new ConfigOptionFloats {18});
 
@@ -12378,7 +12389,7 @@ void compute_filament_override_value(const std::string& opt_key, const ConfigOpt
     if (opt_key == "retraction_distances_when_cut" && new_full_config.option<ConfigOptionInt>("enable_long_retraction_when_cut")->value != LongRectrationLevel::EnableFilament) {
         auto ptr = dynamic_cast<const ConfigOptionFloatsNullable*>(opt_new_filament);
         for (size_t idx = 0; idx < ptr->values.size(); ++idx)
-            opt_long_retraction_default.values.push_back(ptr->nil_value());
+            opt_retraction_distance_default.values.push_back(ptr->nil_value());
         opt_new_filament = &opt_retraction_distance_default;
     }
 
