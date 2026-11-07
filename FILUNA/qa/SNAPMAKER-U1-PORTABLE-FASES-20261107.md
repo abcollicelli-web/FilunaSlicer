@@ -132,3 +132,26 @@ Execução: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/423168
 - **Atenção:** ao comparar com a execução Windows anterior https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42316895543, o G-code foi de **250.183 bytes** no run anterior, embora o ZIP oficial, o perfil de máquina, o de processo, o de filamento e a cópia `nozzle_diameter` sejam byte-idênticos. Uma comparação direta dos artefatos encontrou diferenças efetivas em extrusão/retração, movimentos e posição de `M73`, **não só no cabeçalho**. Não é autorizado normalizar tais linhas; isso impede declarar repetibilidade entre sessões.
 - Para separar variação por horário/minuto de variação entre runners, criou-se `lab/snapmaker_u1_cross_minute_qa.py`, workflow `.github/workflows/filuna-snapmaker-u1-cross-minute.yml`; a comparação exige dois processos no mesmo Windows atravessando limite de minuto e falha se qualquer byte fora do timestamp explícito diferir.
 - **Estado:** `GUARDED_CLI_SHORT_INTERVAL_A_B=PASS`; `CROSS_SESSION_GCODE_REPRODUCIBILITY=BLOCKED` até explicação e teste demonstrado; `ORIGINAL_UNMODIFIED_AB`, `FILUNA_PARITY`, `DEVICE_NETWORK` e `INTERNAL_HOMOLOGATION` continuam pendentes. O aparente sucesso da cópia temporária não dispensa o restante.
+
+
+### Controle adicional entre minutos — run #42317564346
+
+- Duas execuções independentes do **mesmo** ZIP OEM original e dos mesmos três perfis efetivos, com o workaround temporário que preserva `wipe_tower_filament` e obtém bicos da máquina.
+- Horários de geração confirmados no `HEADER_BLOCK`: `2026-11-07T00:21:00Z` e `2026-11-07T00:22:02Z` (aproximadamente 61 s de intervalo).
+- Arquivos de saída separados: **250.183 bytes cada**; hashes brutos distintos pelo timestamp. **Tudo fora da linha de timestamp idêntico**, SHA-256 normalizado no critério estrito `2774becee1246529474db12c7439cc1d46a501bfe797c31a5e53936db705db4a`.
+- Execução Windows e artefatos: https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42317564346
+- **Conclusão delimitada:** mudou o minuto e a geração permaneceu idêntica, portanto **a mudança de minuto sozinha NÃO explica a divergência entre jobs**.
+
+### Comparação estrita entre três jobs oficiais (mesmos arquivos de entrada; ainda divergentes)
+
+| Windows job | G-code bytes | Observação |
+|---|---:|---|
+| #42316895543 | 250.183 | Variante A |
+| #42317221768 | 249.098 | Variante B, diferenças de movimento e retração |
+| #42317564346 | 250.183 | Variante A, idêntica ao primeiro fora do timestamp |
+
+Conferidos os arquivos efetivos **byte a byte**: perfis de máquina, processo e filamento, além da cópia temporária de processo com o bico, são idênticos nos artefatos dos três jobs. O ZIP/executável está pinado ao mesmo SHA. Uma comparação textual A×B revelou diferenças em pequenos segmentos de trajetória, `WIPE_START`/retrações e posicionamento de `M73`, além da data; **não podem ser normalizadas como ruído de timestamp**. A identidade de geometria/modelo é conservada, mas ainda não há causa comprovada da variação entre jobs (ambiente do runner, caminho da saída, concorrência ou outro fator requerem isolamento adicional).
+
+**Gate adicional `CROSS_JOB_GCODE_REPRODUCIBILITY=FAIL`, não PASS.** O protocolo nativo Snapmaker também está pendente: fontes oficiais localizadas e contratos de gateway documentados em `FILUNA/qa/SNAPMAKER-U1-REDE-CONTROLE-FONTES-20261107.md`, sem compilar nem ativar rede.
+
+Manter `G4-I / HOMOLOGACAO_INTERNA_U1=BLOCKED` até verificar integração nativa do Filuna, acesso/controle em laboratório e explicar/solucionar a divergência de G-code. Não gerar compilação final, não imprimir no hardware nem promover PR #6.
