@@ -443,9 +443,9 @@ def main()->int:
             path=out/diagnostic["gcodes"][0]["path"]
             data=path.read_bytes()
             diagnostic["tool_numbers"]=sorted({int(m.group(1)) for m in
-                re.finditer(rb"(?m)^\\s*T([0-3])(?:\\s|;|$)",data)})
+                re.finditer(rb"(?m)^\s*T([0-3])(?:\s|;|$)",data)})
             diagnostic["toolchange_blocks"]=len(re.findall(
-                rb"(?m)^;\\s*CP TOOLCHANGE START",data))
+                rb"(?m)^;\s*CP TOOLCHANGE START",data))
         report["four_core_3mf_slice_control"]=diagnostic
         exported=export_oem_profiled_3mf(executable,profiles,adjusted,cube,out)
         report["oem_exported_3mf_control"]=exported
