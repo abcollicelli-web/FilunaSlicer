@@ -239,5 +239,28 @@
     "No LAN credentials or access bypass",
     "No physical prints before supervised beta",
     "No success inferred from profile list, code clone, or guarded OEM CLI"
-  ]
+  ],
+  "native_engine_deltas_candidate": {
+    "core_source_pin": "Snapmaker/OrcaSlicer@bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c",
+    "portable_zip_sha256": "1f002e2168c576f800bcfd0509b5e164b5ad65a0963abc2bef8317d929d48c9d",
+    "source_port": [
+      {
+        "source": "Snapmaker start macro chamber_cooling_mode",
+        "target": "src/libslic3r/GCode.cpp + PrintConfig.{hpp,cpp}",
+        "state": "SOURCE_PORT_STATIC_PASS_NOT_COMPILED_OR_PROVED"
+      },
+      {
+        "source": "Snapmaker final purge Z-hop upstream #1149",
+        "candidate_patch": "FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch",
+        "target": "src/libslic3r/GCode.cpp",
+        "state": "FAIL_CLOSED_EXPORT_GUARD_ONLY; NO MOTION FIX PROVED"
+      }
+    ],
+    "original_oem_functional_variability": "FAIL_2_4_0_AND_2_4_1_MULTIPLE_OUTPUT_HASHES_WITH_SAME_INPUTS",
+    "server_qa_manifest_bug": "2026-11-06 server script expects Snapmaker Orca.exe, while verified portable contains snapmaker-orca.exe + Snapmaker_Orca.dll; server false missing flag is not genuine missing portable",
+    "parity_qa": "NOT_RUN",
+    "hardware_activation": false,
+    "activation": "SIGNED_VERIFIED_OEM_MODULE_ONLY_AFTER_PASSED_RUNTIME_TESTS",
+    "overall_status": "CANDIDATE_SOURCE_ONLY_BETA_BLOCKED"
+  }
 }
