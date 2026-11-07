@@ -57,3 +57,9 @@ A regra universal permanece: todos os modelos/perfis por catálogo e deltas OEM 
 - Entrega futura do Filuna segundo o Plano Mestre §13: **motor-base Orca e diferenças OEM de código**, sem catálogo completo de impressoras/processos/filamentos no instalador. Consulta dos presets por modelo e capacidades via dados assinados sob demanda. **Ainda não integrada nem homologada em binário Filuna**.
 
 **Até o resultado CI ampliado:** `OEM_S1_AB=PASS`; `OEM_KOBRA_3_V2_AB=PASS`; `OEM_KOBRA4_REAL_GCODE_IDENTICAL_EXCEPT_PROVEN_TIMESTAMP=PASS_MANUAL_BYTE_DIFF`; `OEM_KOBRA4_CI_GATE=PENDING`; `SOURCE_TO_BINARY_VERSION_MATCH=BLOCKED`; `FILUNA_NATIVE_PARITY=NOT_RUN`; `ACE_NETWORK_ACK=NOT_RUN`; `HOMOLOGACAO_INTERNA=BLOCKED`; `FISICA=NOT_RUN`.
+
+## Comparação de branches oficiais GitHub — código mais antigo que o binário (07/11/2026)
+
+A revisão de `ANYCUBIC-3D/AnycubicSlicerNext` revelou **três linhas relevantes**: `main` commit `6103ed8b511609658d00d0538cc7f0609cdb57da` (02/02/2026, 08:32 UTC), `develop` e `WL_Master` **ambos** commit `987a3c2bf9ed13934137326bfd522896c70e5101` (02/02/2026, 10:20 UTC); `release/v2.3.1` contém ramo com versão diferente. O arquivo `version.inc` de `develop` declara `SoftFever_VERSION=2.3.1.0`, enquanto a versão do executável Debian pinado pelo laboratório é `2.0.0.6`. Os catálogos e revisões de código não têm relação de build verificada com esse executável.
+
+**Consequência:** não misturar o fonte de fevereiro com binário/presets oficiais atualizados em outra data e alegar paridade; não incorporar SDK/driver sem resolver a proveniência e a licença de dependências. `SOURCE_BINARY_BUILD_CORRESPONDENCE=BLOCKED`, apesar de `OFFICIAL_CLI_A_B` das amostras passar. Nenhum pacote final deve conter o catálogo inteiro; preservar entrega por perfil sob demanda conforme Plano Mestre §13.
