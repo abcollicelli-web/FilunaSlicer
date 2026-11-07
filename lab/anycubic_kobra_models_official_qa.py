@@ -115,6 +115,7 @@ def main():
     parser.add_argument("--cache",type=Path,default=Path(".anycubic-vendor-cache"))
     parser.add_argument("--out",type=Path,default=Path("qa-anycubic-kobra-ab"))
     parser.add_argument("--timeout",type=int,default=180)
+    parser.add_argument("--stress-count",type=int,default=0,help="additional independent original CLI runs per model; 0 for regular A/B")
     args=parser.parse_args()
     cache=args.cache.resolve();out=args.out.resolve()
     cache.mkdir(parents=True,exist_ok=True);out.mkdir(parents=True,exist_ok=True)
@@ -244,6 +245,41 @@ def main():
                         outcome+" normalized_sha256="+proof.get("normalized_sha256","")+
                         " changed_lines="+str(proof.get("changed_lines",[])),
                         "strict-original-ab-proof.json")
+                if args.stress_count:
+                    if not 1<=args.stress_count<=50:
+                        raise ValueError("STRESS_COUNT_OUT_OF_ALLOWED_RANGE")
+                    if len(results)<2 or len(item["gcodes"])!=1:
+                        add(target_id,"STRESS_GCODE","PENDING","REFERENCE_A_B_NOT_READY")
+                    else:
+                        base=(dest/results[0]["path"]).resolve()
+                        stress_results=[]
+                        for n in range(args.stress_count):
+                            label="stress-"+str(n).zfill(2)
+                            result=run(exe,folder,paths,cube,dest,label,args.timeout)
+                            if result["exit_code"] or len(result["gcodes"])!=1:
+                                stress_results.append({"run":label,"status":"FAIL_OEM_CLI",
+                                                       "exit":result["exit_code"]})
+                                continue
+                            gc=(dest/result["gcodes"][0]["path"]).resolve()
+                            if gc==base or not gc.is_file():
+                                stress_results.append({"run":label,"status":"FAIL_INPUT_OUTPUT_PATH"})
+                                continue
+                            proof=compare_files(base,gc,dest/("strict-"+label+"-proof.json"))
+                            stress_results.append({
+                                "run":label,"status":proof["status"],"gcode_sha256":result["gcodes"][0]["sha256"],
+                                "bytes":result["gcodes"][0]["bytes"],
+                                "normalized_sha256":proof.get("normalized_sha256","")
+                            })
+                        (dest/"original-cli-stress-results.json").write_text(
+                            json.dumps(stress_results,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+                        allpass=(
+                            len(stress_results)==args.stress_count and
+                            all(q["status"].startswith("PASS_") for q in stress_results)
+                        )
+                        add(target_id,"STRESS_GCODE",
+                            "PASS" if allpass else "FAIL",
+                            "runs="+str(len(stress_results))+" all_equal_header_only="+str(allpass),
+                            "original-cli-stress-results.json")
             except Exception as exc:
                 add(target_id,"MODEL_RUNNER","FAIL",repr(exc))
             add(target_id,"FILUNA_PARITY","PENDING","NO_SEPARATE_FILUNA_NATIVE_CLI_OUTPUT")
