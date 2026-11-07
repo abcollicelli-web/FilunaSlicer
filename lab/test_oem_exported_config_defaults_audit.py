@@ -43,9 +43,15 @@ class ExportedConfigDefaultsAuditTests(unittest.TestCase):
         data = compare_gcode_config("G1 X1", gcode({"wall_direction": "ccw"}))
         self.assertEqual(data["status"], "BLOCKED_INVALID_OR_MISSING_CONFIG_BLOCK")
 
-    def test_duplicate_config_key_rejected(self):
-        with self.assertRaisesRegex(ValueError, "DUPLICATE_CONFIG_KEY"):
-            read_config("; CONFIG_BLOCK_START\n; foo = 1\n; foo = 2\n; CONFIG_BLOCK_END")
+    def test_duplicate_config_values_preserved_not_discarded(self):
+        config = read_config("; CONFIG_BLOCK_START\n; wipe_tower_x = 15.000\n; wipe_tower_x = 15\n; CONFIG_BLOCK_END")
+        self.assertEqual(config["wipe_tower_x"], ["15.000", "15"])
+        result = compare_gcode_config(
+            gcode({"wipe_tower_x": "15"}),
+            "; CONFIG_BLOCK_START\n; wipe_tower_x = 15.000\n; wipe_tower_x = 15\n; CONFIG_BLOCK_END\n")
+        self.assertEqual(result["status"], "BLOCKED_EFFECTIVE_DEFAULTS_CONFLICT")
+        self.assertEqual(result["conflicting_shared_values"]["wipe_tower_x"],
+                         {"oem": "15", "filuna": ["15.000", "15"]})
 
     def test_incomplete_config_rejected(self):
         with self.assertRaisesRegex(ValueError, "ONE_COMPLETE"):
