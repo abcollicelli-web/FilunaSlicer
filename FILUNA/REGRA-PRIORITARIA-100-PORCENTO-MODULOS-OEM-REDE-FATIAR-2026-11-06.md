@@ -37,3 +37,27 @@ Interface Filuna
 
 ## Atualização de fontes
 Bambu Studio/Orca/Anycubic/Flashforge/Elegoo e outros atualizados → comparar commits, blobs e dependências upstream com a versão pinada; portar todos os novos deltas necessários por fabricante, executar ambos conjuntos de testes e publicar somente módulos versionados/aprovados pelo proprietário. Preservar obrigações de licenças e avisos de fonte. Só usar update interno de código se o pacote for verificável, assinado, com rollback e estado de projeto preservado.
+
+
+## REGRA UNIVERSAL DE COBERTURA AUTOMÁTICA — REAFIRMAÇÃO EXPRESSA (07/11/2026)
+
+**Não se programa uma impressora por vez. Não se fixa somente um bico, um perfil ou um protocolo.** O compromisso é implementar o **adaptador e o mecanismo OEM da marca/versão** capaz de descobrir de forma automática **todos os seus modelos, variantes, bicos, perfis de máquina, processo, materiais, heranças e atualizações**. Validar inicialmente um modelo é teste amostral do mecanismo, **não** definição do limite funcional; em seguida executar dois/três modelos por fabricante com o **mesmo código, sem novos `if model==...` específicos para fatiamento ou rede**.
+
+A palavra **“tudo”** inclui a cadeia completa do fatiador/SDK oficial legalmente reutilizável em cada marca, quando necessária para reproduzir o comportamento:
+
+1. **REDE e ACESSO:** descoberta de serviços, identificação de modelo/firmware, associação/pareamento, métodos de autenticação compatíveis e permitidos, TLS/certificados, protocolos e mensagens, upload e confirmação, regras de estado e erros, token/credencial **fornecida e protegida pelo cliente**, sem coletar segredos OEM nem burlar login.
+2. **CONTROLE e IMPRESSÃO:** preparar sessão, capacidades, telemetria e câmera quando suportadas, spooler, envio e checksum/ACK, start/pause/resume/stop, cancelamento, falhas, fila, aquecimento, sensores e multimaterial (AMS/ACE/CFS/IFS etc., conforme modelo), com estados reais e safety interlock.
+3. **FATIAMENTO e PERFIS:** algoritmos/planner deltas, limites, macros, calibração, fatiamento, estimativas, limpeza/purga, suporte, estrutura 3MF/G-code; árvore completa de perfis OEM, dependências e heranças. O que já é byte-idêntico ao Orca-base é **referenciado por hash e reutilizado**, não clonado em duplicidade.
+4. **DEPENDÊNCIAS:** headers, implementações, CMake, bibliotecas, arquivos de protocolo e definições necessários **transitivamente**, mesmo quando o arquivo não contém o nome comercial do fabricante. Fonte fora das categorias conhecidas fica `REVIEW/BLOCKED` com path e SHA; jamais é ignorada silenciosamente.
+5. **ATUALIZAÇÃO:** o inventário e a seleção devem ser derivados automaticamente da árvore oficial imutável fixada por tag/commit + licenças/SHA, não de tabelas de dois modelos. Cada nova versão refaz o grafo de arquivos, deltas de código e catálogos de perfil, com QA por fabricante/versão/ABI.
+
+**Fronteira legal e técnica:** “clonar tudo” significa obter e auditar integralmente fontes oficiais abertas e recursos compatíveis e preservar suas dependências e atribuições, **não copiar binários fechados, bibliotecas sem redistribuição permitida, firmware, servidores/nuvens privados, chaves ou o aplicativo inteiro como um segundo slicer**. Qualquer dependência insubstituível indisponível bloqueia a capacidade até haver integração autorizada. O conjunto aprovado mantém a arquitetura Orca comum + delta OEM isolado e contrato versionado; o consumidor Filuna não chama classes internas de fabricantes diretamente.
+
+**Gates obrigatórios, separados:**
+- `FONTE_CLONADA_ORIGEM_VERIFICADA` ≠ `ARQUIVOS/DEPENDENCIAS_TODOS_INVENTARIADOS` ≠ `CATALOGO_TODOS_MODELOS_PERFIS_RESOLVIDO` ≠ `CODIGO_OEM_PORTADO_INTEGRADO`.
+- `A_B_OFICIAL` por modelo/combinação ≠ `PARIDADE_FILUNA` ≠ `REDE_SIMULADA` ≠ `HOMOLOGACAO_INTERNA` ≠ `HOMOLOGACAO_FISICA`.
+- Descoberta de 630 arquivos ou 184 referências de nomes **não equivale** a importar 630 perfis nem a suportar fabricante/rede.
+- **Dois ou três modelos de uma mesma marca devem exercitar automaticamente a mesma implementação**, escolhendo modelos, bicos, perfis e capacidades reais por metadados. Um `PASS` amostral não é homologação da marca inteira; combinações desconhecidas continuam bloqueadas com explicação.
+- Não compilar motor OEM nem instalador neste ciclo; usar fontes/tag e portáteis originais pinados em ensaios internos. Não imprimir nem ativar comandos em hardware real antes do beta físico vigiado. Bambu × Bambuddy autenticado permanece como **único adiamento voluntário**.
+
+**Correção de escopo:** scripts fixados em Kobra S1 / Kobra 3 V2, MK4S ou U1 são **fixtures de regressão**, não a arquitetura de importação. O contrato universal acima prevalece como condição de aprovação para todas as marcas.
