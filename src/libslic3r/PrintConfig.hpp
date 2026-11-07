@@ -1966,10 +1966,6 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     // Default false; enable only for verified OEM behavior.
     ((ConfigOptionBool,                filuna_oem_legacy_infill_anchor))
 
-    // Candidate OEM final-purge lift from Snapmaker upstream PR #1150.
-    // Disabled until native G-code and firmware-simulator proof is recorded.
-    ((ConfigOptionBool,                filuna_oem_final_purge_lift))
-
     // Build plate tilt for off-axis gravity support generation (printer-level setting).
     ((ConfigOptionFloat,               build_plate_tilt_x))
     ((ConfigOptionFloat,               build_plate_tilt_y))
