@@ -6,6 +6,8 @@ on:
     paths:
       - "lab/filuna_baseline_three_oem_qacheck.py"
       - "lab/test_filuna_baseline_single_sample.py"
+      - "lab/oem_functional_gcode_diff.py"
+      - "lab/test_oem_functional_gcode_diff.py"
       - ".github/workflows/filuna-existing-portable-vs-three-oem.yml"
   workflow_dispatch:
 permissions:
@@ -60,10 +62,14 @@ jobs:
           path: .oem-snapmaker
       - name: Source syntax check (no Filuna/OEM compilation)
         shell: pwsh
-        run: python -m py_compile lab/filuna_baseline_three_oem_qacheck.py
+        run: python -m py_compile lab/filuna_baseline_three_oem_qacheck.py lab/oem_functional_gcode_diff.py
       - name: Fail-closed single-sample classification unit tests
         shell: pwsh
-        run: python -m unittest discover -s lab -p test_filuna_baseline_single_sample.py -v
+        run: |
+          python -m unittest discover -s lab -p test_filuna_baseline_single_sample.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p test_oem_functional_gcode_diff.py -v
+          exit $LASTEXITCODE
       - name: Run prebuilt Filuna CLI and compare real G-code
         shell: pwsh
         run: |
@@ -73,6 +79,15 @@ jobs:
             Get-Content qa-existing-filuna-vs-oem/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
           }
           exit $result
+      - name: Classify actual G-code differences without promoting native parity
+        shell: pwsh
+        run: |
+          python lab/oem_functional_gcode_diff.py --vendor anycubic --official ".oem-anycubic/kobra_3_v2_04/run-A/plate_1.gcode" --candidate-dir "qa-existing-filuna-vs-oem/anycubic/Filuna-flat-User-run" --output "qa-existing-filuna-vs-oem/anycubic/functional-diagnostic.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python lab/oem_functional_gcode_diff.py --vendor flashforge --official ".oem-flashforge/ad5x_04/run-A/plate_1.gcode" --candidate-dir "qa-existing-filuna-vs-oem/flashforge/Filuna-flat-User-run" --output "qa-existing-filuna-vs-oem/flashforge/functional-diagnostic.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python lab/oem_functional_gcode_diff.py --vendor snapmaker --official ".oem-snapmaker/stress-00/plate_1.gcode" --candidate-dir "qa-existing-filuna-vs-oem/snapmaker/Filuna-flat-User-run" --output "qa-existing-filuna-vs-oem/snapmaker/functional-diagnostic.json"
+          exit $LASTEXITCODE
       - name: Preserve actual native CLI logs and exact G-code diff
         if: always()
         uses: actions/upload-artifact@v4
