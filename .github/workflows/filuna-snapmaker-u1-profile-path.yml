@@ -1,0 +1,49 @@
+name: Filuna Snapmaker U1 process/machine/filament profile-path differential
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_profile_path_sensitivity_qa.py"
+      - ".github/workflows/filuna-snapmaker-u1-profile-path.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-u1-profile-path
+  cancel-in-progress: true
+jobs:
+  path-controlled-oem:
+    name: Original Snapmaker 2.4.1 CLI, exact same profiles, one changed path each
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax check only; no vendor compilation
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_profile_path_sensitivity_qa.py
+      - name: Restore pinned original Snapmaker executable
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Compare three independently varied profile paths in official CLI
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_profile_path_sensitivity_qa.py --cache .oem-portable-cache --out qa-snapmaker-u1-profile-path
+          $code = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-u1-profile-path/RESUMO.md) {
+            Get-Content qa-snapmaker-u1-profile-path/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Save raw G-code, source SHA, each different profile path and exact diff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-profile-path-only-differential
+          path: qa-snapmaker-u1-profile-path/
+          if-no-files-found: warn
+          retention-days: 30
