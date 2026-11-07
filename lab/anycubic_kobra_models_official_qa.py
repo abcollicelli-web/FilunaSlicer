@@ -57,6 +57,17 @@ def profiles_for(root:Path, name:str):
     return paths,config
 
 
+def official_library_dirs(root: Path) -> list[Path]:
+    """Bundled shared libs from SHA-pinned original OEM .deb (not system installs)."""
+    if not root.is_dir():
+        raise ValueError("OFFICIAL_EXTRACT_ROOT_MISSING")
+    libs=sorted(p for p in root.rglob("*.so*") if p.is_file() and
+                (p.name.endswith(".so") or ".so." in p.name))
+    if not libs:
+        raise ValueError("OFFICIAL_VENDOR_SHARED_LIBRARIES_MISSING")
+    return sorted({p.parent for p in libs})
+
+
 def run(exe:Path, root:Path, paths:dict, cube:Path, out:Path, letter, timeout):
     directory=out/("run-"+letter)
     if directory.exists():shutil.rmtree(directory)
@@ -68,6 +79,9 @@ def run(exe:Path, root:Path, paths:dict, cube:Path, out:Path, letter, timeout):
     env=os.environ.copy()
     env["GDK_BACKEND"]="x11"
     env["LIBGL_ALWAYS_SOFTWARE"]="1"
+    vendor_dirs=official_library_dirs(root)
+    env["LD_LIBRARY_PATH"]=":".join(str(p) for p in vendor_dirs)+(
+        ":"+env["LD_LIBRARY_PATH"] if env.get("LD_LIBRARY_PATH") else "")
     command=["xvfb-run","-a",str(exe),*args]
     log=out/("official-"+letter+".log")
     with log.open("w",encoding="utf-8",errors="replace") as fp:
@@ -140,6 +154,17 @@ def main():
         with (out/"official-runtime-dependencies.log").open("w") as fp:
             subprocess.run(["ldd",str(exe)],stdout=fp,stderr=subprocess.STDOUT,
                            timeout=40,check=False)
+        vendor_dirs=official_library_dirs(folder)
+        (out/"vendor-libraries.lock.json").write_text(
+            json.dumps({"trusted_archive_sha256":SHA256,
+                        "library_dirs":[str(p.relative_to(folder)) for p in vendor_dirs],
+                        "library_count":sum(1 for p in folder.rglob("*.so*") if p.is_file()),
+                        "scope":"original verified OEM package, no network activation"},
+                       ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+        add("common","OFFICIAL_BUNDLED_LIBRARIES","PASS",
+            "count_dirs="+str(len(vendor_dirs))+" libcloud_mqtt="+
+            str(any((p/"libcloud_mqtt.so").is_file() for p in vendor_dirs)),
+            "vendor-libraries.lock.json")
         cube=ROOT/"fixtures/cube20.stl"
         if not cube.is_file():raise ValueError("CUBE_FIXTURE_MISSING")
         for target_id,name in TARGETS.items():
