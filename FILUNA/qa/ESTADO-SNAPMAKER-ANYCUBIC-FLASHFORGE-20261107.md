@@ -34,3 +34,18 @@
 **Flashforge:** permanece [**#42321095370**](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321095370) **PASS OEM original** nas duas amostras AD5X (hash bruto igual) e Adventurer 5M (somente timestamp de cabeçalho diferente), com 6 testes negativos do comparador; **sem** integração nativa LAN/câmera/IFS/ACK ou paridade Filuna. Flash Studio 1.7.9 Linux não substitui verificação da linha atual 1.7.20.
 
 **Implantação leve/assistente beta:** protótipo de dados por impressora sob demanda [7/7 testes #42321919685](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321919685) PASS apenas para integridade/filtro de dados, ainda não plugin Windows assinado/baixado. O simulador do **contrato de assistente/3 testes físicos** [15/15 testes #42323736471](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323736471) PASS **sintético apenas** (zero hardware). Nenhum registro simulado conta no contador físico. \`HOMOLOGAÇÃO_INTERNA_DE_TODAS_AS_3=BLOCKED\`; testes nativos e de rede não substituíveis por CI da CLI oficial, nem por documentação. Beta e prints físicos somente após gates e build final.
+
+
+## Gate negativo real da aplicação Filuna e proteção antiaprovação indevida (07/11/2026)
+
+O [CI #42324852127](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324852127) executou o **portátil Windows pré-OEM Filuna existente** de [#42102469888](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42102469888), sem compilar novas versões, com **perfis/G-code oficiais já verificados** para Kobra 3 V2, AD5X e Snapmaker U1. Caminhos foram convertidos em absolutos antes do teste. **Nenhum G-code Filuna foi gerado**, por bloqueios reais:
+
+- **Anycubic:** \`can not resolve preset ... process.json: Preset was not found in the loaded bundle\`.
+- **Flashforge:** \`can not resolve preset ... machine.json: Preset was not found in the loaded bundle\`.
+- **Snapmaker:** \`machine_start_gcode Parsing error at line 10: Not a variable name {if chamber_cooling_mode==0}\`.
+
+Esses erros pertencem ao **Filuna pré-integração**, não aos executáveis OEM oficiais; demonstram lacunas de carregamento sob demanda de presets e compatibilidade de macros que precisam de código nativo. O job foi marcado SUCCESS por **coletar os diagnósticos**, não porque o Filuna tenha aprovado os 3 modelos. **\`FILUNA_GCODE_PARITY_3=FAIL/NOT_READY\`**.
+
+Foi criado o bloqueio preventivo \`FILUNA/tools/oem_three_brand_promotion_guard.py\`, executado no [CI #42324838562](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324838562), **9/9 controles positivos/negativos PASS**. Ele fiscaliza os manifests e arquivos reais dos adaptadores C++ para impedir declarar homologação interna enquanto ainda instanciam \`PendingVendorAdapter\`, sem provas de G-code Filuna, rede/ACK e segurança, incluindo o bug U1 #1149. **PASS do verificador significa que as marcas continuam corretamente bloqueadas, NÃO homologadas**.
+
+**Contagem atual:** Anycubic 3 amostras OEM original A/B PASS, Flashforge 2 amostras OEM original A/B PASS, Snapmaker U1 G-code variável tanto 2.4.0 quanto 2.4.1 e risco de Z-hop #1149. **Homologação interna Filuna completa: 0/3**. **Homologação física: 0/3** (somente beta futuro). Não publicar release, não liberar impressão nem promover PR #6 por causa do resultado do verificador.
