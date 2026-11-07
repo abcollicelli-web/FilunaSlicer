@@ -2071,8 +2071,11 @@ StringObjectException Print::validate(std::vector<StringObjectException> *warnin
         if (!m_config.long_retractions_when_cut.get_at(extruder))
             continue;
         const double distance = m_config.retraction_distances_when_cut.get_at(extruder);
-        if (distance < 10.0 || distance > 18.0)
-            return { L("Enabled filament cut retraction requires a distance from 10 to 18 mm.") };
+        // Do not allow a non-finite distance to bypass range checks (NaN
+        // compares false to both bounds). Disabled OEM sentinel zero is still
+        // accepted above; an active cut always requires a finite 10..18 mm.
+        if (!std::isfinite(distance) || distance < 10.0 || distance > 18.0)
+            return { L("Enabled filament cut retraction requires a finite distance from 10 to 18 mm.") };
     }
 
     // A flow ratio of 0 would extrude nothing, and a nil one would write NaN extrusion lengths.
