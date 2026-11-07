@@ -87,11 +87,11 @@
     "u1_official_cli_temporary_guard_ab": "PASS_DIAGNOSTIC_ONLY",
     "u1_filuna_native_gcode_parity": "NOT_RUN",
     "u1_network_protocol": "NOT_RUN",
-    "internal_homologation": "BLOCKED_BY_CROSS_CI_GCODE_NATIVE_PARITY_NETWORK",
+    "internal_homologation": "BLOCKED_INTERMITTENT_TOOLPATH_VARIANTS_AND_NATIVE_GCODE_NETWORK",
     "physical_beta": "NOT_RUN",
     "u1_spaced_second_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
     "u1_cross_minute_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
-    "u1_cross_actions_run_gcode_reproducibility": "PARTIAL_SAME_WORKFLOW_PASS_OTHER_WORKFLOW_NONHEADER_VARIANCE_UNEXPLAINED",
+    "u1_cross_actions_run_gcode_reproducibility": "FAIL_SAME_RUNNER_SAME_INPUTS_MULTIPLE_FUNCTIONAL_GCODE_VARIANTS_PROVEN",
     "u1_cross_actions_run_size_bytes": [
       250183,
       249098,
@@ -103,7 +103,19 @@
       "first_and_rerun_sha256_normalized": "2774becee1246529474db12c7439cc1d46a501bfe797c31a5e53936db705db4a",
       "other_temporal_workflow_sha256_normalized": "06687a6b84ee16d0d7ceb75f8c631272b649f452313ce4395864893e372247d7",
       "note": "Exact original Windows workflow on two attempts is stable. Different workflow has changed toolpaths; not just timestamps. Need isolate CLI paths/runner/runtime."
-    }
+    },
+    "u1_original_cli_10_repeat": "FAIL_SAME_EXACT_INPUT_FILES_NON_TIMESTAMP_GCODE_VARIANTS",
+    "u1_original_cli_40_run_stress": "FAIL_INTERMITTENT_REAL_TOOLPATH_VARIANTS",
+    "u1_known_normalized_gcode_sha256": [
+      "2774becee1246529474db12c7439cc1d46a501bfe797c31a5e53936db705db4a",
+      "06687a6b84ee16d0d7ceb75f8c631272b649f452313ce4395864893e372247d7",
+      "c122c77d994d157b7d7fd8e9f1e3282775c351627ab4ee595349ee8c05d00f4d",
+      "9bf76f58cb59d678c3f2630d71ade1df77f94dfff4b07b8b33b9541b97b6a8fb",
+      "3ad124ed6bbb02f6a8d89f9daf08f1787f1e2c45b7c77cf5ecbf63206316a7f0"
+    ],
+    "u1_path_is_cause": "REFUTED_NOT_SUFFICIENT_SAME_PATH_CAN_PRODUCE_DIFFERENT_GCODE",
+    "stress_run_link": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321783683",
+    "stress_scope": "40 independent official Snapmaker 2.4.1 CLI fatiamentos; no Filuna-native engine; guard only process load"
   },
   "automatic_hardware_activation": false,
   "production_promotion": "BLOCKED_OWNER_APPROVAL_AND_QA_REQUIRED",
