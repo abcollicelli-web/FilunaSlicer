@@ -8,7 +8,10 @@
 #include <initializer_list>
 #include <limits>
 #include <utility>
-#define SLIC3R_APP_FULL_NAME "Orca Slicer"
+// Filuna: nome exibido ao usuário. SLIC3R_APP_NAME/SLIC3R_APP_KEY continuam "OrcaSlicer"
+// (cabeçalho do G-code, 3MF, traduções e identificação junto às impressoras).
+#define SLIC3R_APP_FULL_NAME "Filuna Slicer"
+#define FILUNA_DATA_DIR_NAME "Filuna"
 #define GCODEVIEWER_APP_NAME "OrcaSlicer G-code Viewer"
 #define GCODEVIEWER_APP_KEY  "OrcaSlicerGcodeViewer"
 #define GCODEVIEWER_BUILD_ID std::string("OrcaSlicer G-code Viewer-") + std::string(SLIC3R_VERSION) + std::string("-RC")
