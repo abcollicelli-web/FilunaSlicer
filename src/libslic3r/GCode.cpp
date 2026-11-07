@@ -1710,7 +1710,12 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
                                                              || tool_change_on_wipe_tower);
 
         const Point start_wipe_pos     = wipe_tower_point_to_object_point(gcodegen, start_pos + plate_origin_2d);
-        const bool travel_to_tower_now = should_travel_to_tower || gcodegen.m_need_change_layer_lift_z;
+        // Preserve a safe clearance for the final multi-tool wipe-tower return.
+        // In the final tower pass there may be no actual tool switch, yet the
+        // XY path can cross already printed geometry. Never rely on a toolchange
+        // alone to request the retract/lift/travel sequence.
+        const bool final_tower_return = !tcr.priming && !needs_toolchange && gcodegen.config().enable_prime_tower;
+        const bool travel_to_tower_now = should_travel_to_tower || final_tower_return || gcodegen.m_need_change_layer_lift_z;
         if (travel_to_tower_now) {
             // FIXME: It would be better if the wipe tower set the force_travel flag for all toolchanges,
             // then we could simplify the condition and make it more readable.
