@@ -1,6 +1,6 @@
 """Negative and positive (diagnostic-only) cases for official Flashforge motion probe."""
 import unittest
-from flashforge_motion_parity_probe import first_motion_delta, movements
+from flashforge_motion_parity_probe import first_motion_delta, movements, runtime_config
 
 
 class FlashforgeMotionRegression(unittest.TestCase):
@@ -55,6 +55,27 @@ class FlashforgeMotionRegression(unittest.TestCase):
         self.assertGreater(r["geometry_changed_blocks"], 0)
         self.assertEqual(r["status"], "FAIL_REAL_GCODE_PARITY")
 
+
+    def test_runtime_config_original_default_exposed_without_rewrite(self):
+        official = (b"; CONFIG_BLOCK_START\n; wall_direction = auto\n"
+                    b"; wipe_tower_type = type1\n; CONFIG_BLOCK_END\n"
+                    b"G1 X1 Y1 E.5\n")
+        filuna = (b"; CONFIG_BLOCK_START\n; wall_direction = ccw\n"
+                  b"; wipe_tower_type = type2\n; CONFIG_BLOCK_END\n"
+                  b"G1 X1 Y1 E.5\n")
+        d = first_motion_delta(official, filuna)
+        self.assertEqual(d["embedded_runtime_config_differences"]["wall_direction"],
+                         {"official": "auto", "filuna": "ccw"})
+        self.assertEqual(d["embedded_runtime_config_differences"]["wipe_tower_type"],
+                         {"official": "type1", "filuna": "type2"})
+        self.assertEqual(d["status"], "FAIL_REAL_GCODE_PARITY")
+        self.assertEqual(d["native_parity"], "NOT_PROVEN")
+
+    def test_runtime_config_outside_block_is_not_evidence(self):
+        self.assertEqual(runtime_config(b"; wall_direction = auto\nG1 X1\n"), {})
+        self.assertEqual(runtime_config(
+            b"; CONFIG_BLOCK_START\n; wall_direction = auto\n; CONFIG_BLOCK_END\n"),
+            {"wall_direction": "auto"})
 
 if __name__ == "__main__":
     unittest.main()
