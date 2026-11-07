@@ -4377,6 +4377,29 @@ void GCode::_do_export(Print& print, GCodeOutputStream &file, ThumbnailsGenerato
         file.write(m_writer.set_additional_fan(0));
     }
 
+    // Snapmaker OEM start G-code references chamber_cooling_mode, which is
+    // calculated from the used filaments rather than being a profile setting.
+    // Evaluate only when a start macro requests it; ordinary Orca printers
+    // retain their existing G-code and placeholder behavior unchanged.
+    if (print.config().machine_start_gcode.value.find("chamber_cooling_mode") != std::string::npos) {
+        constexpr int kStrongCoolingVitrification = 50;
+        constexpr int kWeakCoolingVitrification   = 70;
+        int chamber_cooling_mode = 0; // keep warm
+        for (unsigned int extruder : tool_ordering.all_extruders()) {
+            const size_t fi = get_filament_config_index(extruder);
+            if (m_config.filament_is_high_temperature.get_at(fi))
+                continue;
+            const int vitrification = m_config.temperature_vitrification.get_at(fi);
+            if (vitrification <= kStrongCoolingVitrification) {
+                chamber_cooling_mode = 2; // strong cooling
+                break;
+            }
+            if (vitrification <= kWeakCoolingVitrification)
+                chamber_cooling_mode = 1; // weak cooling
+        }
+        this->placeholder_parser().set("chamber_cooling_mode", new ConfigOptionInt(chamber_cooling_mode));
+    }
+
     std::string machine_start_gcode = this->placeholder_parser_process("machine_start_gcode", print.config().machine_start_gcode.value, initial_extruder_id);
     if (print.config().gcode_flavor != gcfKlipper) {
         // Set bed temperature if the start G-code does not contain any bed temp control G-codes.
