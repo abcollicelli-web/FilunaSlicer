@@ -71,5 +71,7 @@
     "geometry validator checks risk; no change to OEM travel path",
     "manufacturer attribution needs same risk in pinned official reference",
     "explicit user consent recorded per exact G-code SHA and operator"
-  ]
+  ],
+  "check_bounds": true,
+  "note_mechanical_limits": "This 270x270x270 gate applies to explicit slicer G0/G1/G2/G3; firmware-only park macros have separate proof and may use a larger service envelope. No blanket exemption."
 }
