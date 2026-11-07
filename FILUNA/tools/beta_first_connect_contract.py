@@ -112,6 +112,15 @@ def beta_cohort_status(identity:dict,tests:list[dict],
             continue
         if test.get("cohort")!=key or test.get("environment")!="PHYSICAL_BETA":
             continue
+        # A confirmed critical incident automatically revokes the beta model
+        # status. Client-submitted allegations cannot trigger this gate alone.
+        if (test.get("critical_incident") is True and
+                test.get("verified_source")=="FILUNA_BETA_SERVER" and
+                verify_server_attestation(test) is True):
+            return {"cohort":key,"count":0,"status":STATUS_PENDING,
+                    "reason":"VERIFIED_CRITICAL_INCIDENT_REOPENS_BETA_GATES",
+                    "requires_fresh_per_printer_first_connect":True,
+                    "not_authorization_for_stable_release":True}
         if (test.get("verified_source")!="FILUNA_BETA_SERVER" or
                 test.get("status")!="FINISHED_CONFIRMED" or
                 test.get("all_mandatory_checks_pass") is not True or
