@@ -218,8 +218,8 @@ def main():
                 elif results[0]["path"]==results[1]["path"]:
                     add(target_id,"OFFICIAL_A_B","FAIL","GCODE_PATH_REUSED")
                 else:
-                    proof=compare_files(dest/results[0]["path"],
-                                        dest/results[1]["path"],
+                    proof=compare_files(out/results[0]["path"],
+                                        out/results[1]["path"],
                                         dest/"strict-original-ab-proof.json")
                     outcome=proof["status"]
                     passed=outcome.startswith("PASS_")
