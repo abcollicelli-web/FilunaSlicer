@@ -1,0 +1,48 @@
+name: Filuna Snapmaker U1 official CLI nonempty-vector diagnosis
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_nonempty_guard_probe.py"
+      - ".github/workflows/filuna-snapmaker-u1-nonempty-guard.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-u1-nonempty-guard
+  cancel-in-progress: true
+jobs:
+  source-immutable-diagnostic:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python syntax; no OEM builds
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_nonempty_guard_probe.py
+      - name: Download original SHA-pinned portable cache if needed
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Test original process and nonempty single-field copy
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_nonempty_guard_probe.py --cache .oem-portable-cache --out qa-snapmaker-u1-nonempty-vector
+          $result = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-u1-nonempty-vector/RESUMO.md) {
+            Get-Content qa-snapmaker-u1-nonempty-vector/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $result
+      - name: Always preserve complete source hash, crash logs, CLI G-code and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-nonempty-vector-diagnostic-only
+          path: qa-snapmaker-u1-nonempty-vector/
+          retention-days: 30
+          if-no-files-found: warn
