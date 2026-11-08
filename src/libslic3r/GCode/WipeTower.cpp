@@ -1556,6 +1556,7 @@ private:
     unsigned int              m_last_acceleration{0};
     bool                      m_accel_to_decel_enable;
     float                     m_accel_to_decel_factor;
+    bool                      m_klipper_emit_minimum_cruise_ratio = true;
     const MultiNozzleUtils::LayeredNozzleGroupResult *m_multi_nozzle_group_result{nullptr};
     int                       m_layer_id = -1;
     std::vector<int>          m_physical_extruder_map;
