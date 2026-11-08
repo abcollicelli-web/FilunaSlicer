@@ -159,3 +159,7 @@ Antes de evoluir web, ler [FILUNA/WEB-FASE-02-EVIDENCIAS-20261108.md](FILUNA/WEB
 
 ### Marco storage e revisão visual t34 (08/11/2026)
 Ler [evidências fase03](FILUNA/WEB-FASE-03-EVIDENCIAS-20261108.md), [contrato](FILUNA/WEB-SERVICOS-ESCOPO-20261108.md#storage-restore-bytes-20261108) e [ordem visual t34](FILUNA/approvals/WEB-VISUAL-REVISAO-T34-20261108.json). 111 testes PASS no backend privado novo; 004 já aplicada, não repetir cegamente. Provedor/signer ausentes, privado negado; não produção/DR. T34 exige revisão DESIGN: não homologar home/central nem mudar CSS/markup neste workstream backend. Nenhum segundo backend, cofre/legado/deploy/Slicer/hardware.
+
+
+## Continuidade web Fase04 — dual login
+Escolha literal t33s249,08/11/2026 15:52 Europe/Rome: «Quero login com e-mail e senha e também com conta Google.» Backend BFF+Argon2id+GoogleOIDC/RS256 implementado/testado148 PASS, auth/trust semconfig e privado fechado, zero dados operacionais. [Evidências/contratos/ativação e limites](FILUNA/WEB-FASE-04-EVIDENCIAS-20261108.md). Front/deploy t35 coordenado separadamente pelo pai; não sobrescrever backend/migrações/dependências nem confundir aceite visual com login/provider operacional. Nada de gates desktop/hardware.

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "scope": "app_dual_login_choice_not_external_provisioning",
+  "source": "owner response widget t33s249",
+  "date_local": "2026-11-08 15:52 Europe/Rome",
+  "literal": "Quero login com e-mail e senha e também com conta Google.",
+  "selected": [
+    "first_party_email_password",
+    "google_oidc"
+  ],
+  "implemented_checkpoint": "FASE04",
+  "operationally_enabled": false,
+  "does_not_authorize": [
+    "new Google Project or external OAuth app creation",
+    "real SMTP messages by executor",
+    "payments",
+    "automatic privilege/premium grants",
+    "desktop or hardware gates"
+  ],
+  "visual_followup": {
+    "source": "t35u",
+    "date_local": "2026-11-08 16:19 Europe/Rome",
+    "literal": "aprove e publique",
+    "scope": "approved visual candidate and domain publication by separate coordinated executor; not login activation"
+  }
+}
