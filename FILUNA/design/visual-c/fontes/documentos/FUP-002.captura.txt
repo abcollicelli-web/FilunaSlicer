@@ -1,0 +1,24 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# FUP-002 — Telemetria de erros por instalação + alertas ao proprietário (Telegram)
+
+Fonte: issue #3 do GitHub (FUP-002) + adendo "telemetria global de telas + alertas com o robô Telegram já existente".
+
+**Fluxo:** cada Filuna Windows → (fila local cifrada, DPAPI) → `POST /v1/diagnostics/events` → Hub grava em **banco separado** (`telemetry.db`) → agrupa em **incidentes** (instalação + assinatura) → alerta o dono pelo **relay do Telegram dedicado a incidentes** → painel *Admin › Erros dos clientes*.
+
+**Regras duras (todas com teste):** identidade (tenant/device/role) só da sessão · só Windows · esquema rígido (campo desconhecido = recusado) · 8 KiB/evento, lote ≤ 20, 30 lotes/min por instalação · redação no cliente **e** no servidor (IP, token, senha, caminho, e-mail, serial, MAC, URL) · mensagem livre **nunca** sai (só categoria fixa) · idempotência por `event_id` · retenção 30 dias · exclusão sob demanda · cliente vê/apaga o seu · desligável pelo cliente (cartão *Diagnóstico*).
+
+**Alertas:** só erro **novo/volta (regressão) alto ou crítico**, ou **recorrência** (5, 20, 100, 500) de gravidade ≥ média; cooldown de 15 min por incidente; no máximo 12 alertas/hora; baixo nunca alerta (fica pesquisável). Situações: `new → acknowledged → investigating → resolved → regressed`.
+
+**Telegram:** `ops/telegram_relay.py` (root, socket Unix, **somente leitura** do token no cofre do site antigo). Só `sendMessage`; **nunca** `setWebhook/getUpdates`; um chat escolhido pelo dono (nunca todos os atendentes); precisa de mensagem de **teste** e de **ativar**; token nunca é impresso nem devolvido. Não mistura com os chamados humanos. O site antigo não foi alterado.
+
+**Para ligar o relay (uma vez, como root):**
+```bash
+sudo cp /srv/filuna-slicer-windows-new/ops/filuna-telegram-relay.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now filuna-telegram-relay
+```
+Depois: Admin › Erros dos clientes › *Escolher chat* → enviar teste → *Ativar alertas*. O destino precisa ter mandado `/start` ao robô.
+
+**Não implementado (fases posteriores do próprio FUP-002):** D5 agente de propostas de correção; correção direcionada por instalação (updates segmentados/canary); mDNS não se aplica.
+
+
+</cursor_untrusted_data_1337>

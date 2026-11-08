@@ -477,3 +477,10 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - O **G-code oficial Snapmaker 2.4.1** com fixture sintética 3MF Core+BBS de quatro objetos/extrusoras foi gerado em duas execuções, T0–T3, 301 trocas e 2.638.447 bytes; SHA funcional (somente data do cabeçalho normalizada) **`1fffba21d2cce0e0456f69836e3e8b5f22aaa35e955ddcb8305627457aca12d1`**, [#42396105609](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42396105609). **PASS restrito ao A/B desta fixture**.
 - Segurança **BLOCK**: purga final cruza peça na linha 106623, camada 99, X132.044/Y141.691/Z20.05. Python e C++ nativo fazem o mesmo bloqueio, [#42396347068](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42396347068) **PASS de DETECÇÃO, NÃO de impressão segura**. `G4-I BLOCKED`, `0/3` homologados; ainda falta paridade Filuna, risco/firmware real e ACK.
 - Estresse de 20 processos OEM e compilação GUI MSVC continuam sendo avaliados; consultar [checkpoint §6](qa/HOMOLOGACAO-CHECKPOINT-CONTINUO-20261107.md) antes de qualquer classificação. Nenhum merge, deploy, release ou impressão.
+
+
+## Direção visual C — referência aprovada em 08/11/2026
+
+Antes de criar ou alterar qualquer tela Filuna, consultar `FILUNA/design/visual-c/documentacao/DESIGN-SYSTEM-C.md`, a aprovação literal em `FILUNA/design/visual-c/documentacao/APROVACAO-VISUAL-C.json`, os dois modelos C aprovados e a galeria/matriz em `FILUNA/design/visual-c/README.md` e `FILUNA/design/visual-c/MATRIZ-COBERTURA.md`. O proprietário aprovou a direção visual; as demais telas e detalhamentos são propostas em revisão. O inventário consolidado contém 123 pranchas e 208 itens rastreados, sem equivaler à homologação de software.
+
+Preparação permanece sem painel direito de informações de arquivo; Orca é o motor único. A regra vigente de G-code imutável e a distinção entre risco OEM e divergência de motor permanecem intactas. Esta aprovação não retoma implementação, CI, hardware, distribuição, servidor ou website. No escopo pausado pelo proprietário, G2/G3 permanecem BLOCKED, G4 NOT RUN e G5/G6 BLOCKED. Nenhum requisito funcional ou registro histórico foi revogado.

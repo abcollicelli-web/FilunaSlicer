@@ -1,0 +1,25 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Home Windows — correção fiel ao Grok (03/11/2026)
+
+**Especificação aplicada:** [2026-11-03-ESTRUTURA-HOME-PREPARAR-CALIBRACAO.md](GROK-GITHUB/ATUALIZACOES/2026-11-03-ESTRUTURA-HOME-PREPARAR-CALIBRACAO.md), somente seção 2 e estrutura de shell.
+
+**[Abrir o print real da Home corrigida](REFERENCIAS/HOME-WINDOWS-GROK-CORRIGIDA-2026-11-03.png)**. Captura Chromium do HTML implementado, 1536×960, não do executável instalado em Windows. Home visual aprovada pelo proprietário em 2026-11-03; publicação beta privada 0.1.1 realizada na sequência.
+
+**Alterado apenas no código novo, isolado:** `/srv/filuna-slicer-windows-new/clients/windows/Filuna.Desktop/ui/`. Código Git local commit `8ebbc51`.
+
+- Appbar vinho 56px e lateral vinho 208px com seis itens, sem menu de categorias inventadas e sem login na lateral.
+- Hero: imagem ilustrativa própria de gato vazado rosa sobre mesa escura PEI; painel direito 380px, seleções imprim./material/perfil, botão Imprimir com aviso (não envia G-code de um arquivo fictício).
+- Faixas exatas Recentes → Modelos → Ferramentas, com 5/5/4 cards e fotografias disponíveis da referência Grok.
+- Tema inicial original, esferas para azul e dark, preservação de opção no armazenamento local. Preparação e Calibração **não foram reconstruídas**.
+- O asset `cat-BPhVOMoe.jpg` no Grok retornava HTTP 404, por isso foi substituído por SVG próprio `gato-vazado-filuna.svg` para impedir card quebrado.
+- Teste Chromium em 1536, 1100 e 960px: 11/11 imagens carregam, zero exceção JS, zero rolagem horizontal; menu 208px, barra 56px, print panel e viewport mesma altura.
+- Compilação C# Windows .NET 10 Release: exit 0, 0 errors (1 warning antigo `WindowsBase`). Testes unitários Hub: 9/9 PASS. Login/sync e updater beta anteriormente existentes preservados. Nenhuma instalação, deploy ou lançamento de cliente feita nesta tarefa.
+- **Próximo passo:** o proprietário inspecionar o print e aprovar ou apontar diferenças específicas; depois tratar somente a próxima tela solicitada.
+
+
+## PUBLICAÇÃO DO PROPRIETÁRIO — 2026-11-03
+O proprietário aprovou a Home e autorizou a publicação. Esta UI está no instalador beta privado Windows 0.1.1, liberado **somente após login próprio** em https://filuna3d.com/filuna-slicer-dev/. O canal beta assinado informa Windows 0.1.1 e notas de versão. **Não houve distribuição pública nem alteração da Home antiga do Filuna.** A instalação Windows física e o fatiamento real ainda não foram homologados. Referência completa: [19-PUBLICACAO-PRIVADA-HOME-0.1.1.md](19-PUBLICACAO-PRIVADA-HOME-0.1.1.md).
+
+
+</cursor_untrusted_data_1337>

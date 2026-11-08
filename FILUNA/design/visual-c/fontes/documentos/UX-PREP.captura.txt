@@ -1,0 +1,314 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Documento mestre — Página Preparar
+
+- **ID único:** `filuna.mestre-preparar`
+- **Data / revisão:** 2026-11-03 / v1
+- **Status:** PROPOSTO. Contrato visual do esboço. Não fatia e não está no programa novo.
+- **Autor da documentação:** Grok
+- **Este arquivo manda** na página Preparar. Notas anteriores de preparação e `2026-11-03-PREPARAR-AUTOAJUDA.md` ficam como histórico. Se discordarem deste, vale este.
+- **Menu de entrada:** aba `prepare`, rótulo «Preparação». A ordem da barra não muda.
+- **Plataformas:** Windows primeiro. A janela cabe na tela. A lateral esquerda rola. A mesa não cresce a página.
+- **Motor:** os campos de processo, impressora e filamento existem no OrcaSlicer. O Prusa tem o equivalente de qualidade, parede, preenchimento, velocidade e suporte, com outros nomes. A casca, a IA Filuna, a sugestão de venda e a autoajuda animada são do Filuna. O esboço não chama o motor.
+
+## 0. Árvore da página
+
+```
+shell.prepare                      altura da janela, fundo berry
+├─ app-bar active=prepare
+│  ├─ abas                        ordem fixa
+│  ├─ extra.fatiar                «Fatiar mesa»
+│  ├─ extra.exportar              «Exportar»
+│  ├─ temas
+│  └─ conta
+└─ folha.cream                     margem 12 px, raio 16 px, coluna, sem estourar a janela
+   ├─ linha
+   │  ├─ painel.esquerdo            384 px no desktop, rola
+   │  │  ├─ bloco.impressora
+   │  │  ├─ bloco.filamento
+   │  │  ├─ bloco.processo
+   │  │  └─ bloco.ia                «IA Filuna»
+   │  ├─ viewport                  fundo #e4e4e4
+   │  │  ├─ barra.flutuante        vidro, topo, centralizada
+   │  │  ├─ mesas                   placa PEI em perspectiva
+   │  │  └─ mesa.acoes             direita: adicionar, duplicar, remover
+   │  └─ painel.arquivo           288 px
+   └─ rodape
+      ├─ sugestao                   peso, custo, tempo, preço
+      └─ autoajuda                  chave, à direita do preço
+```
+
+No estreito, os três blocos empilham. No desktop, ficam lado a lado.
+
+Proibido nesta página: busca da home, gato, cards de recentes, ícone de calculadora no rodapé, coordenadas ou zoom por cima da mesa, e esconder o botão Objetos.
+
+## 1. Barra superior da preparação
+
+À direita das abas, antes das esferas de tema:
+
+| Controle | Itens | O que faz no esboço | O que o programa novo faz |
+|---|---|---|---|
+| Fatiar mesa | Fatiar mesa, Fatiar tudo | Avisa que não fatia. | Fatiar mesa fatia a placa ativa. Fatiar tudo fatia as placas. Motor Orca. |
+| Exportar | Imprimir, Exportar G-code | Avisa que não gera arquivo. | Imprimir envia à máquina escolhida. Exportar G-code grava o arquivo. |
+
+Fatiar mesa é botão rosa. Exportar é botão claro. Os dois abrem menu para baixo.
+
+## 2. Bloco impressora
+
+Título «Impressora». O mais abre o nome e o botão «Criar». Nome vazio não cria.
+
+| id | Nome inicial | Foto |
+|---|---|---|
+| `m1` | Filuna Prime | prime |
+| `m2` | Filuna Core | core |
+
+No cartão: seletor da máquina, bico `0,2 / 0,4 / 0,6 / 0,8 mm`, material do bico `Aço endurecido / Latão / Aço inox`. O lápis abre o editor. A máquina inicial é `m1`. O bico inicial é 0,4 mm. O material inicial é aço endurecido.
+
+Editor, título «Impressora». Fecha no ×, no fundo escuro ou em Pronto.
+
+| Grupo | id | Rótulo | Nível | Tipo | Padrão |
+|---|---|---|---|---|---|
+| A máquina | `pname` | Nome | simples | texto | nome do cartão |
+| A máquina | `pnoz` | Diâmetro do bico | simples | lista | bico do cartão |
+| A máquina | `pbed` | Mesa | simples | lista | PEI texturizada |
+| A máquina | `pvol` | Área útil | simples | texto | 256 × 256 × 256 mm |
+| Movimento | `pkin` | Mecanismo | avançado | lista | CoreXY |
+| Movimento | `pfw` | Firmware | avançado | lista | Klipper |
+| Movimento | `pmax` | Velocidade máxima | avançado | texto | 500 mm/s |
+| Movimento | `pacc` | Aceleração máxima | avançado | texto | 20000 mm/s² |
+| Movimento | `pext` | Extrusoras | avançado | texto | 1 |
+| Avançado | `pstart` | G-code de início | especialista | texto | aquecer, limpar, malha |
+| Avançado | `pend` | G-code de fim | especialista | texto | apresentar a mesa |
+| Avançado | `pmesh` | Malha só onde imprime | especialista | liga | sim |
+| Avançado | `paux` | Ventoinha auxiliar | especialista | liga | não |
+
+Mesa: PEI texturizada, PEI lisa, Vidro. Mecanismo: CoreXY, Cartesiana, Delta. Firmware: Klipper, Marlin, RepRapFirmware. Bico: 0,2 / 0,4 / 0,6 / 0,8 mm.
+
+## 3. Bloco filamento
+
+Título «Filamento». À direita: «Volumes de purga» e o mais, que cria «Novo PLA».
+
+| id | Nome | Tipo | Cor |
+|---|---|---|---|
+| `f1` | Magenta | PLA | magenta |
+| `f2` | Laranja | PLA | laranja |
+| `f3` | Roxo | PETG | roxo |
+| `f4` | Branco | PLA | claro |
+
+Cada linha: número do slot, bolinha de cor, nome, menu `Editar / Mesclar / Excluir`. O slot ativo tem o número rosa. O primeiro ativo é o 1. Não dá para excluir o último filamento. Mesclar junta o nome do ativo com o outro e apaga o outro.
+
+Editor usa o nome do filamento aberto.
+
+| Grupo | id | Rótulo | Nível | Tipo | Padrão |
+|---|---|---|---|---|---|
+| O filamento | `fname` | Nome | simples | texto | nome do slot |
+| O filamento | `ftype` | Material | simples | lista | tipo do slot |
+| O filamento | `fdia` | Diâmetro | simples | texto | 1,75 mm |
+| O filamento | `fnozzle` | Temperatura do bico | simples | texto | 220 °C |
+| O filamento | `fbed` | Temperatura da mesa | simples | texto | 60 °C |
+| O filamento | `fflow` | Quanto sai de plástico | simples | texto | 0,98 |
+| O filamento | `fvmax` | Fluxo máximo | simples | texto | 15 mm³/s |
+| Fluxo | `fpa` | Avanço de pressão | avançado | texto | 0,02 |
+| Fluxo | `fret` | Retração deste filamento | avançado | texto | 0,8 mm |
+| Fluxo | `ffan` | Ventoinha | avançado | texto | 30–100 % |
+| Fluxo | `ffirst` | Sem vento no começo | avançado | texto | 3 camadas |
+| Fluxo | `fprice` | Preço do quilo | avançado | texto | R$ 90 |
+| Especialista | `fadapt` | Avanço que muda com a velocidade | especialista | liga | não |
+| Especialista | `fsoft` | Temperatura em que amolece | especialista | texto | 45 °C |
+| Especialista | `fram` | Compactar na troca | especialista | texto | 10 mm³ |
+| Especialista | `fgcode` | G-code ao carregar | especialista | texto | vazio |
+
+Material: PLA, PETG, ABS, ASA, TPU, PA, PC.
+
+### Volumes de purga
+
+Diálogo «Purga na troca de cor». Tabela dos quatro primeiros slots. A diagonal é 0. O resto é volume em mm³, entre 26 e 900. Multiplicador de 0 a 3, inicial 0,3. «Recalcular» só muda o exemplo. «Usar estes volumes» fecha. No programa novo, o número entra no flush do Orca.
+
+## 4. Bloco processo
+
+Duas linhas, para Objetos não sumir.
+
+Linha 1: título «Processo» à esquerda. À direita, sempre visíveis, `global` «Global» e `objetos` «Objetos». O inicial é Global.
+
+Linha 2, só no Global: `simples` Simples, `avancado` Avançado, `especialista` Especialista. O inicial é Avançado. Este nível é o mesmo da impressora e do filamento. Clicar num deles, em qualquer um dos três lugares, troca os três.
+
+Simples mostra só campos simples. Avançado mostra simples e avançado. Especialista mostra os três.
+
+### Global
+
+Seletor de perfil. O texto é `camada + nome + @ + máquina`. O inicial é o índice 2, «0,20 mm Padrão @ Filuna Prime». O ícone de lupa ao lado é visual.
+
+| Índice | Nome | Camada | Peso | Custo | Tempo | Venda |
+|---|---|---|---|---|---|---|
+| 0 | Ultra fino | 0,08 mm | 210 g | R$ 28 | 4 h 10 | R$ 89 |
+| 1 | Fino | 0,12 mm | 198 g | R$ 24 | 3 h 20 | R$ 79 |
+| 2 | Padrão | 0,20 mm | 186 g | R$ 18 | 2 h 05 | R$ 59 |
+| 3 | Rápido | 0,28 mm | 180 g | R$ 14 | 1 h 20 | R$ 49 |
+| 4 | Rascunho | 0,32 mm | 172 g | R$ 12 | 55 min | R$ 39 |
+| 5 | Rascunho máximo | 0,40 mm | 168 g | R$ 10 | 40 min | R$ 35 |
+
+Abas, nesta ordem. A inicial é `resistencia`, não Qualidade. A aba ativa tem risco magenta.
+
+| id | Rótulo |
+|---|---|
+| `qualidade` | Qualidade |
+| `resistencia` | Resistência |
+| `velocidade` | Velocidade |
+| `suporte` | Suporte |
+| `multi` | Multimaterial |
+| `outros` | Outros |
+
+Em Multimaterial há também o botão «Abrir a matriz de purga».
+
+Os campos ficam embaixo da aba ativa, agrupados. Cada campo é uma linha: nome à esquerda, valor à direita. Texto, lista ou chave liga/desliga.
+
+Qualidade · Camada: `lh` Altura da camada 0,20 mm, chave `layer_height`. `flh` Primeira camada 0,20 mm, `initial_layer_height`. `lw` Largura da linha 0,42 mm, `line_width`. `seam` Onde fica a emenda, Alinhada / Atrás / Aleatória, `seam_position`.
+
+Qualidade · Larguras, avançado: `ow` Parede de fora 0,42 mm. `iw` Parede de dentro 0,45 mm. `infw` Preenchimento 0,45 mm. `hole` Ajuste de furos 0 mm. `contour` Ajuste do contorno 0 mm. `foot` Pé de elefante 0,15 mm. `iron` Passar ferro no topo, Desligado / Topo / Todas as superfícies.
+
+Qualidade · Precisão, especialista: `gen` Modo das paredes, Clássico / Arachne. `res` Resolução 0,012 mm. `gap` Fechar vãos pequenos 0,049 mm. `arc` Usar arcos, sim. `precise` Parede precisa, não. `bridge` Ponte mais grossa, não. `one` Uma parede no topo, não.
+
+Resistência · Paredes: `loops` Voltas da parede 2, `wall_loops`. `alt` Parede extra alternada, não, avançado. `thin` Achar paredes finas, não, avançado.
+
+Resistência · Casca: `topn` Camadas de cima 5. `botn` Camadas de baixo 3. Avançado: `topt` Espessura de cima 1 mm, `bott` Espessura de baixo 0,6 mm, `topd` Quanto fecha o topo 100 %, `topp` Desenho do topo Linha monótona / Concêntrico / Hilbert, `botd` Quanto fecha a base 100 %. Especialista: `shell` Casca vertical contínua, sim.
+
+Resistência · Preenchimento: `dens` Densidade 15 %, `sparse_infill_density`. `pat` Desenho Cúbico / Giroide / Grade / Raio / Lightning, `sparse_infill_pattern`. Especialista: `anchor` Prender na parede 600 %.
+
+Velocidade · Quanto anda: `sp-out` Parede de fora 50 mm/s, `outer_wall_speed`. `sp-inf` Preenchimento 150 mm/s. `sp-first` Primeira camada 30 mm/s. `sp-travel` Deslocamento 300 mm/s. Avançado: `sp-in` Parede de dentro 120 mm/s, `sp-top` Topo 50 mm/s, `sp-bridge` Ponte 25 mm/s, `cool` Frear para esfriar, sim.
+
+Velocidade · Arranque: `acc` Aceleração 5000 mm/s², avançado. Especialista: `acc-out` Aceleração da parede de fora 2000 mm/s², `jerk` Curva na quina 9 mm/s, `ers` Suavizar a vazão, não.
+
+Suporte · Apoio: `sup-on` Usar suporte, sim, `enable_support`. `sup-type` Tipo Árvore / Normal / Híbrido. `sup-ang` Ângulo 45 °. Avançado: `sup-bed` Só a partir da mesa, não. `sup-style` Estilo da árvore Orgânico / Fino / Forte. `sup-z` Folga em cima 0,2 mm. `sup-if` Camadas de contato 2. Especialista: `sup-br` Densidade dos galhos 15 %. `sup-dia` Diâmetro do galho 2 mm.
+
+Multimaterial · Troca de cor: `tower` Torre de limpeza, sim. `tw` Largura da torre 35 mm. Avançado: `txy` Posição X 10 · Y 10, `sparse` Torre sem miolo vazio, não. Especialista: `ttype` Tipo 2 / Tipo 1, `ram` Compactar antes da troca, sim.
+
+Outros · Borda e saia: `brim` Aba na base Automática / Sem aba / Por fora / Orelhas / Pintada. `skirt` Saia, sim. `vase` Modo vaso, não. Avançado: `brimw` Largura da aba 5 mm, `zhop` Levantar o bico Automático / Normal / Rampa / Espiral / Desligado, `byobj` Uma peça por vez, não. Especialista: `verbose` G-code comentado, não. `thumb` Miniatura no arquivo, sim.
+
+### Objetos
+
+Some o nível, o perfil e as abas. Fica a lista.
+
+| id | Nome | Onde | Cópias | Cor | Imprime |
+|---|---|---|---|---|---|
+| `o1` | Macaco | Placa 1 | 1 | slot 1 | sim |
+| `o2` | Cubo | Fora da mesa | 1 | slot 3 | sim |
+
+Há busca pelo nome. O menu da peça tem a cor dos filamentos e os grupos:
+
+- Cópias: Mais uma cópia, Encher a mesa.
+- Arrumar: Centralizar, Deitar, Espelhar.
+- Imprimir: Pode imprimir, Não imprimir, Voltar para a placa.
+- Excluir tira a peça da lista.
+
+No esboço isso só muda o texto e o número. Não move a malha na mesa.
+
+## 5. IA Filuna
+
+Botão «Abrir menu da IA». Fechado, mostra a frase do item ativo. Aberto, a lista:
+
+| Título | Frase |
+|---|---|
+| Orientar na mesa | Deitar a maior face reduz o tempo e a altura. |
+| Suportes | Só nos vãos acima de 50°. O restante imprime sem apoio. |
+| Perfil | Padrão equilibra detalhe e prazo para esta peça. |
+| Venda | O rodapé mostra peso, custo, tempo e o preço sugerido. |
+
+O item inicial é Orientar na mesa. É texto. Não chama modelo de IA e não mexe na peça.
+
+## 6. Mesa
+
+Fundo `#e4e4e4`. Barra de vidro no topo, com divisória antes de `face`, de `paint` e de `ai`. A ferramenta inicial é `rotate`. O botão ativo fica rosa. Clicar em `ai` também abre o menu da IA.
+
+| id | Rótulo |
+|---|---|
+| `select` | Selecionar |
+| `move` | Mover |
+| `rotate` | Girar |
+| `scale` | Escalar |
+| `face` | Apoiar na face |
+| `bed` | Alinhar na mesa |
+| `arrange` | Organizar |
+| `cut` | Cortar |
+| `measure` | Medir |
+| `paint` | Pintar suporte |
+| `seam` | Costura |
+| `mirror` | Espelhar |
+| `clone` | Clonar |
+| `ai` | IA Filuna |
+
+No esboço a ferramenta só fica selecionada. Não arrasta a peça.
+
+A mesa começa com a placa `1`, rótulo `01`, palavra FILUNA e o macaco low poly. A placa ativa tem borda laranja. À direita, em vidro: Adicionar mesa, Duplicar mesa, Remover mesa. Remover não apaga a última. A peça só aparece na primeira placa.
+
+Não desenhar régua, eixo XYZ nem camada de referência por cima da mesa.
+
+## 7. Painel do arquivo
+
+Título «Informações do arquivo». Nome `Macaco_LowPoly.stl`. Exemplo visual, STL. Dimensões X 120,45 mm, Y 86,32 mm, Z 98,76 mm. Volume 153,27 cm³. Massa igual ao peso do perfil. Triângulos 24.532. Aviso: «Referência visual · peça na mesa, sem fatiar».
+
+## 8. Rodapé e autoajuda
+
+«Sugestão de venda», depois Peso, Custo, Tempo e, à direita, o preço do perfil na pílula rosa. No Padrão: 186 g, R$ 18, 2 h 05, R$ 59. Trocar o perfil troca esses quatro números. São exemplo, não cálculo.
+
+No lugar da calculadora: chave «Autoajuda», desligada. Desligada, o campo mostra nome e valor. Ligada, o mouse sobre um campo do processo abre um cartão roxo ao lado, sem aumentar a janela. O cartão tem:
+
+1. Animação curta da peça recebendo a opção. Camada sobe. Parede fecha. Miolo preenche. Suporte cresce. Velocidade e o restante depositam o fio. O bico se move.
+2. Nome da função.
+3. Tarja Simples, Avançado ou Especialista.
+4. A frase do que ela faz.
+5. Padrão do perfil.
+6. A chave técnica, quando existe, senão o id.
+
+O cartão some quando o mouse sai. Não altera o valor.
+
+## 9. Programação do esboço
+
+Uma janela. A aba Preparação troca o estado `screen` para `prepare`. Não há outra rota.
+
+Estados que importam:
+
+| Estado | Onde vive | Inicial | Efeito |
+|---|---|---|---|
+| `profile` | página | 2 | Perfil e rodapé. |
+| `tool` | página | `rotate` | Botão ativo da barra da mesa. |
+| `plates` | página | `[1]` | Placas desenhadas. |
+| `activePlate` | página | 1 | Borda laranja. |
+| `aiOpen` / `aiPick` | página | fechado / 0 | Menu da IA. |
+| `help` | página | falso | Autoajuda. Desce para os campos. |
+| `level` | painel | `avancado` | Um só valor para processo, impressora e filamento. |
+| `scope` | painel | `global` | Global ou Objetos. |
+| `tab` | painel | `resistencia` | Aba do processo. |
+| `values` | painel | vazio | Só o que o cliente mudou. O resto usa o padrão do campo. |
+| `editor` | painel | fechado | `printer` ou `filament`. |
+| `purge` | painel | fechado | Matriz de purga. |
+
+Campo visível quando o nível do campo é menor ou igual ao nível escolhido. Liga/desliga guarda `sim` ou `não`.
+
+No programa novo, estes estados viram o perfil real do Orca: impressora, filamento e processo. A autoajuda e a sugestão de venda não entram no G-code. O preço usa o peso fatiado e o preço do quilo do filamento, não a tabela fixa do esboço.
+
+## 10. Manual de implementação
+
+1. Abrir esta página pela aba Preparação, sem criar outro projeto.
+2. Montar a árvore da seção 0. Painel, mesa, arquivo, rodapé.
+3. Processo em duas linhas: Global e Objetos na primeira, nível na segunda. Os dois botões sempre visíveis.
+4. Um nível só. Mudou na impressora, no filamento ou no processo, os três acompanham.
+5. Aba inicial Resistência. Perfil inicial Padrão. Ferramenta inicial Girar. Autoajuda desligada.
+6. Fatiar e exportar chamam o Orca. O esboço não é o motor.
+7. Não alterar o aplicativo antigo nem o site.
+
+## 11. Teste de fidelidade
+
+A página está fiel se a mesa PEI ficar no centro, a barra de ferramentas flutuar em cima, o painel começar em Impressora e o rodapé mostrar a sugestão de venda com a chave Autoajuda.
+
+Global e Objetos aparecem juntos. Embaixo, Simples, Avançado e Especialista. A aba Resistência mostra Paredes, com Voltas da parede.
+
+Clicar Simples na impressora deixa Simples também no processo. Autoajuda ligada, o mouse em Densidade abre o cartão com a animação do miolo e a chave `sparse_infill_density`.
+
+Fatiar mesa não gera G-code neste esboço.
+
+## 12. Registro de revisão
+
+- v1 2026-11-03 — mapa visual, ferramentas e programação da página Preparar como está no esboço aprovado.
+
+
+</cursor_untrusted_data_1337>

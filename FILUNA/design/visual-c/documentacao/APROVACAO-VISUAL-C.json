@@ -1,0 +1,32 @@
+{
+  "status": "DIRECAO_VISUAL_APROVADA_PELO_PROPRIETARIO",
+  "owner": "DTM Serviços",
+  "date": "2026-11-08T13:40:00+01:00",
+  "timezone": "Europe/Rome",
+  "quote_exact": "Agora sim você vai documentar esse modelo perfeito e refazer todas as páginas do projeto documentando em referência remodelando criando e modernizando mantendo essa direção perfeita",
+  "provenance": "Declaração textual expressa do proprietário em 08/11/2026; registro documental, não assinatura criptográfica",
+  "scope": "Direção visual e modelos C; não aprovação individual de todas as derivadas nem G1 de release",
+  "derivatives": "PROPOSTO_EM_REVISAO",
+  "files": [
+    {
+      "original_path": "/workspace/filuna-direcao-visual-20261108/filuna-preparacao-C.png",
+      "preserved_copy": "preparacao/filuna-preparacao-C.png",
+      "sha256": "9e0faadedf2e4dd89cc7e62ed26becc807d2e26e86288cae8b1ec59ed19d0fd6"
+    },
+    {
+      "original_path": "/workspace/filuna-direcao-visual-20261108/filuna-preparacao-C.svg",
+      "preserved_copy": "preparacao/filuna-preparacao-C.svg",
+      "sha256": "98040a285ed17e4144397d8dc1e6f9b7823594111dc13cc7bda435bf4bc5e74f"
+    },
+    {
+      "original_path": "/workspace/filuna-direcao-visual-20261108/filuna-dispositivo-C.png",
+      "preserved_copy": "dispositivo/filuna-dispositivo-C.png",
+      "sha256": "4113989f7162c02fad16f56dccf49bec78b22b70bf97de1f721ce5df37893b3f"
+    },
+    {
+      "original_path": "/workspace/filuna-direcao-visual-20261108/filuna-dispositivo-C.svg",
+      "preserved_copy": "dispositivo/filuna-dispositivo-C.svg",
+      "sha256": "52114cfb26faa9d4c04b9ab5a9fac47af6176c241624ce298bf7bfd2567e478d"
+    }
+  ]
+}

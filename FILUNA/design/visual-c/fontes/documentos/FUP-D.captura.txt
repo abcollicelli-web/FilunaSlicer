@@ -1,0 +1,28 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# FUP — descoberta multimarca (fase 1 integrada)
+
+Origem: PR #2 (`feature/fup-multicamada-20261105`) do repositório privado, escrito conforme o **Dossiê técnico de 05/11/2026**. Aqui está integrado ao app (Windows) **só como leitura**.
+
+**O que entrou**
+- `Printers/FupEvidence.cs` — modelo de evidências (identidade e capacidade são dimensões separadas; identidade = fabricante + série, nunca só o IP).
+- `Printers/FupLanDiscovery.cs` — leitores de **Bambu SSDP** (1900/1990/2021), **Elegoo SDCP** (UDP 3000, `M99999`) e **Flashforge** (multicast 225.0.0.9:19000/8899 e broadcast 48899; respostas de 140/276/280 bytes). Conferido com a documentação pública do protocolo Flashforge (flashforge-api-docs, *Discovery Protocol*).
+- `DiscoveryService.ScanAsync` roda a FUP **em paralelo** à busca antiga; resultados de Elegoo SDCP e Flashforge viram **"Identificada"** (`IdentifiedOnly`): aparecem na lista, **não são cadastradas** e **não liberam impressão** (não há adaptador homologado). Bambu segue o fluxo de antes.
+- Interruptor: variável de ambiente `FILUNA_FUP_DISCOVERY=0` (ou `off`) desliga a FUP sem mexer no resto.
+
+**Sondagens ativas (0.2.36, só leitura, por RESPOSTA e não só por porta)** — `Printers/FupActiveProbes.cs`:
+- **Creality série K:** TCP 9999 + WebSocket com subprotocolo `wsslicer` + pedido `get ReqPrinterPara`; identifica por `model`/`hostname` (fonte: código da integração `ha_creality_ws`). Só roda quando nada mais identificou o host (K2 com Moonraker segue como Moonraker).
+- **PrusaLink:** `GET /api/version` (resposta contém "PrusaLink") + `GET /api/v1/info` (nome, série).
+- **Duet:** `GET /rr_model?key=boards[0]` (resposta com `key` e `result.name`).
+- **Correção:** antes, qualquer `/api/version` com `server` e `api` virava **OctoPrint** — uma Prusa era classificada errado. Agora PrusaLink nunca vira OctoPrint.
+- Todas aparecem como **"Identificada"** (sem adaptador, não cadastram, não liberam impressão). Mesmo interruptor `FILUNA_FUP_DISCOVERY=0`.
+- Os testes usam **respostas montadas a partir da documentação/código público** (não capturas de impressoras reais).
+
+**Filamento (mesma entrega):** `OrcaProfileCatalog.FilamentFor` agora segue a regra do dossiê — 1) mesmo material (e marca) compatível; 2) Generic do **mesmo** material compatível; 3) nada → o Filuna avisa e pede escolha manual. **Nunca** ASA→ABS, PLA-CF→PLA, PA-CF→PA, PETG-CF→PETG.
+
+**Testes:** `tests/fup-core` (14), `tests/printer-adapters` (+4 de integração), `tests/filament-match` (perfis reais do Orca do Windows).
+
+**Não entrou / pendente (do dossiê):** mDNS (os tipos de serviço por marca **não foram verificados** em fonte; fica para quando houver), conta/cloud, adaptadores de conexão de Elegoo SDCP e Flashforge, Orca 2.5 Printer Agents (classe D), QA em impressoras reais, sincronização do Git local com o GitHub.
+
+
+</cursor_untrusted_data_1337>

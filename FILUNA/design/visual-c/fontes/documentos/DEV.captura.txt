@@ -1,0 +1,268 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# FILUNA DEVICEBRIDGE — ARQUITETURA NATIVA PARA DEZ FABRICANTES
+
+**Contrato** FLN-DEVICE-2026-11-05.1 · **Status:** especificação de engenharia, NÃO implementação validada.  
+**Decisão do proprietário:** OrcaSlicer é o único motor de fatiamento do produto; o Filuna integra comunicação e capacidades de fabricantes de impressoras com código aberto comprovadamente reutilizável ou SDK/interface autorizada. Nenhuma dependência de outro fatiador instalado, nenhum “slicer do fabricante dentro do slicer”.
+
+## 1. Desenho geral
+
+\`\`\`text
+     Home/Preparar/Dispositivos/Ateliê FILUNA
+                 |        |       |
+        FilunaDeviceController (UI) ----> StateStore (estados reais, rev/ttl)
+                 |
+        Filuna DeviceBridge  (C++17; interfaces versionadas)
+    +------------+--------------+----------------+------------------+
+    |            |              |                |                  |
+Discovery     Identity       Capabilities      Telemetry/Video      Commands
+    |            |              |                |                  |
+    +------------+--------------+----------------+------------------+
+                 |
+         VendorAdapterRegistry (factory + signed module provenance)
+         | Elegoo | Anycubic | Bambu | Creality | Flashforge |
+         | QIDI   | Snapmaker | Prusa | UltiMaker | Raise3D  |
+                 |
+           Protocol drivers (somente auth autorizado)
+        Moonraker, OctoPrint, PrusaLink, SDCP/ElegooLink,
+        Flashforge LAN, Bambu oficial/LAN permitido,
+        UltiMaker autorizado, demais endpoints documentados.
+                 |
+          Impressora / câmera / sistema de filamento
+
+  OrcaSlicer native: src/libslic3r => PREPARAR/FATIAR/GERAR G-code.
+  A DeviceBridge só consome um PrintJob validado antes de ENVIAR;
+  o envio/início/cancelamento nunca altera algoritmos do Orca.
+\`\`\`
+
+**Reuso primeiro:** o fork já contém \`src/slic3r/Utils/ElegooLink.cpp\`, \`Flashforge.cpp\`, \`PrintHost.cpp\`, \`BBLNetworkPlugin.cpp\`, \`IPrinterAgent.hpp\`, \`NetworkAgentFactory.hpp\` e hosts Moonraker/OctoPrint/PrusaLink. Primeiro enumerar capabilities e integração real; não duplicar stack, criar ponte sobre interfaces internas existentes ou wrappers auditados.
+
+**Bloqueador P0:** \`src/slic3r/Utils/OrcaPrinterAgent.cpp\` inclui métodos não implementados que retornam \`BAMBU_NETWORK_SUCCESS\`; o contrato \`IPrinterAgent.hpp\` os identifica como stub. **É proibido habilitar tais métodos como conexão/impressão real.** Implementação ausente → \`UNSUPPORTED\`; timeout → \`TIMEOUT\`; confirmação apenas com ACK real do equipamento. Métodos de exemplo de \`IPrinterAgent\` que formam JSON com dialeto Bambu NÃO devem ser usados por fabricantes sem adaptação explícita.
+
+## 2. Relação exata com os softwares dos fabricantes
+
+**O que se aproveita:** fonte de descoberta, autenticador permitido, transporte, eventos, parsing, mapeamento de recursos e, se autorizado, SDK/protocolo; os perfis oficiais Orca têm prioridade quando adequados.  
+**O que NÃO se copia:** interface inteira do fatiador, algoritmos duplicados de slicing, executáveis OEM, chamadas de cloud privada, segredos, DLLs proprietárias ou firmware. Importação de C++ só após prova de licença por arquivo, commit SHA de origem, avisos e testes.
+
+**Fontes OEM verificadas em 05/11/2026 (SHAs são pontos de auditoria, NÃO licenças gerais de todos os arquivos):**
+
+| Fabricante | Repositório oficial verificado | SHA de referência | Achado / restrição |
+|---|---|---|---|
+| Elegoo | [elegooofficial/ElegooSlicer](https://github.com/elegooofficial/ElegooSlicer) | \`2d507e39a96ab9562b35d06b23ef5df8fe613297\` | AGPL; \`src/slic3r/Utils/Elegoo/\` tem \`PrinterNetwork\`, \`PrinterManager\`, \`PrinterMmsManager\`, \`PrinterUploadManager\` |
+| Bambu Lab | [bambulab/BambuStudio](https://github.com/bambulab/BambuStudio) | \`8f588cdb6893bb88415a62f5520b1a8e27a4c8ec\` | Código GUI AGPL; networking plugin NÃO LIVRE. Algumas APIs/comandos restringidos por versão e autorização oficial |
+| QIDI Tech | [QIDITECH/QIDIStudio](https://github.com/QIDITECH/QIDIStudio) e [QIDISlicer](https://github.com/QIDITECH/QIDISlicer) | Studio \`21d47457919212b8af3f97705716c261b97be559\`; Slicer \`988f4198021ce0b5907636a146f83481aa7daf89\` | AGPL, Qt/Prusa/Orca genealogias distintas. QIDI firmware Plus4 se apoia em Klipper/Moonraker; não assumir todos os modelos iguais |
+| Snapmaker | [Snapmaker/OrcaSlicer](https://github.com/Snapmaker/OrcaSlicer) | \`6dd88c98f9cbc4954e4d58b02caf26d2acc7a18c\` | AGPL; destaque para U1. \`Snapmaker/u1-moonraker\` separado; outros modelos não recebem a mesma promessa |
+| Creality | [CrealityOfficial/CrealityPrint](https://github.com/CrealityOfficial/CrealityPrint) | \`254250c015a5f8c5b9bf3742e89066c8a7095565\` | AGPL em projeto; protocolos e CFS variam por modelo/firmware, deve auditar por arquivo |
+| Flashforge | [FlashForge/Orca-Flashforge](https://github.com/FlashForge/Orca-Flashforge) | \`c45cc8216c184574c36873314ae7caea67c7a1ad\` | GUI AGPL, **network plugin baseado em bibliotecas não livres**; fork Orca já possui LAN \`Flashforge.cpp\` |
+| Anycubic | [ANYCUBIC-3D/AnycubicSlicerNext](https://github.com/ANYCUBIC-3D/AnycubicSlicerNext) | \`6103ed8b511609658d00d0538cc7f0609cdb57da\` | AGPL; repositório público não prova que controles ACE/cloud/Kobra estejam implementados em fonte aberta |
+| Prusa | [prusa3d/PrusaSlicer](https://github.com/prusa3d/PrusaSlicer) | \`ff3d6677cfccfc7fbad72acc63f01c9abec6f5d9\` | AGPL; priorizar APIs PrusaLink documentadas, sem confundir com serviços Prusa Connect |
+| UltiMaker | [Ultimaker/Cura](https://github.com/Ultimaker/Cura) + [Cloud API](https://docs.api.ultimaker.com/connect/index.html) | \`42dbd9316aef0c496b395caf00b5c13b9f122f45\` | Cura GUI LGPL-3.0 no repo; licenças dos demais componentes diversas; API cloud exige contrato/autorização e testes |
+| Raise3D | [Raise3D/ideaMaker](https://github.com/Raise3D/ideaMaker) | \`97af4c437b7e8945fda085b62f7ca2d85513a81e\` | Repositório existe, **licença/reuso de networking não confirmado**; até evidência, construir apenas fallback de host autorizado sem controles nativos alegados |
+
+**As dez marcas são as prioridades definidas para o escopo; não representam um ranking auditado das dez maiores por vendas.** Uma 11ª marca pode entrar depois por adaptador genérico, sem mentir que esteja homologada.
+
+**Correção do legado:** \`FILUNA/MODULES.md\` apontava \`ELEGOO-3D/ElegooSlicer\`, mas a fonte oficial conferida é \`elegooofficial/ElegooSlicer\`. Em qualquer port, usar a fonte oficial validada e registrar SHA. **Referência de repositório público não basta para presumir direito de distribuir SDK/plugin fechado**.
+
+## 3. Mapa inicial de marcas, modelo piloto e capacidades
+
+**Legenda:** \`S\` = há componente/protocolo inicial no fork atual ou evidência documental de fonte; **não significa teste físico**. \`V\` = verificar no modelo/firmware; \`A\` = depende de autorização oficial/documentação; \`N\` = não assumir; \`P\` = piloto selecionado, ainda não homologado. Os campos de câmera e multi-filamento são propositalmente conservadores.
+
+| Marca e piloto proposto | Descoberta LAN | Estado/temperaturas | Arquivo + iniciar | Pausar/retomar/cancelar | Câmera | Filamento/sistema | Status |
+|---|---|---|---|---|---|---|---|
+| Elegoo **Centauri Carbon 2** | S: SDCP/ElegooLink | V | S para envio, ACK/início V | V | V | Canvas/MMS: V | **P** |
+| Anycubic **Kobra 3 V2** | V | V | \`octoprint\` no perfil ≠ LAN completa: V | V | V | ACE: V | **P** |
+| Bambu **A1** | V/A | V/A | A (modo/firmware) | A | A | AMS Lite/AMS: A | **P** |
+| Creality **K1/K2 compatível** | V | V | V | V | V | CFS: V por firmware | **P** |
+| Flashforge **Adventurer 5M/AD5X** | S: UDP 48899/HTTP 8898 no fork | V | S: upload no código; iniciar V | V | V | spool/multimaterial V | **P** |
+| QIDI **Plus4** | S por protocolo Klipper/Moonraker documentado | V | V | V | V | QIDI Box: V | **P** |
+| Snapmaker **U1** | S por Moonraker em firmware U1 | V | V | V | V | ferramenta/cor U1: V | **P** |
+| Prusa **MK4S / CORE One** | S por PrusaLink no fork | V | V | V | V via API autorizada | sensores de material V | **P** |
+| UltiMaker **S-series** | V / A | V / A | V / A | V / A | V / A | material station V / A | **P** |
+| Raise3D **Pro3 / E2** | N até API/SDK documentado | V | V | V | V | V | **P, pesquisa obrigatória** |
+
+**Nunca apresentar coluna V/A/P como suportada ao cliente.** Matriz operacional completa será por \`manufacturer, model, hw_revision, firmware_range, protocol_id, adapter_version, capability, status, evidence\`. Cada modelo pode ter parte das capacidades PASS e outras UNSUPPORTED. Filuna deve mostrar motivo real.
+
+## 4. Contratos de software (propostos, sujeito a revisão de implementabilidade)
+
+\`\`\`cpp
+enum class OperationResult {
+    OkConfirmed, Unsupported, NotAuthorized, NotPaired,
+    Offline, AmbiguousIdentity, FirmwareIncompatible,
+    Timeout, TransportFailure, DeviceRejected, InvalidJob, Unknown
+};
+enum class Capability {
+    Discover, Pair, Status, Temperatures, JobProgress,
+    SendFile, StartPrint, Pause, Resume, Cancel,
+    CameraSnapshot, CameraLive, FilamentRead, FilamentWrite,
+    MultiMaterialSlots, FilamentLoad, FilamentUnload,
+    QueueRead, SkipObject, LightControl
+};
+struct PrinterIdentity {
+    std::string manufacturer_id, model_id, serial_fingerprint;
+    std::string firmware_version, protocol_id, adapter_version;
+    std::string stable_device_id;  // não é o IP
+};
+struct CapabilityEvidence {
+    Capability cap;
+    bool supported;
+    std::string source;        // protocolo, capability handshake, teste
+    std::string validated_firmware;
+    std::string reason_if_unsupported;
+};
+struct DeviceObservation {
+    PrinterIdentity identity;
+    std::vector<CapabilityEvidence> capabilities;
+    std::chrono::system_clock::time_point observed_at;
+    bool fresh;                // stale ≠ online
+};
+struct CommandRequest {
+    std::string request_id, stable_device_id, actor_id;
+    std::string job_id, expected_firmware;
+    bool user_confirmed;      // obrigatório para StartPrint e demais operações sensíveis
+};
+struct CommandReceipt {
+    OperationResult status;
+    std::string request_id, device_receipt_id;
+    std::string error_code, safe_message;
+    bool device_acknowledged;  // retorno local de socket NÃO prova ação executada
+};
+class IFilunaVendorAdapter {
+public:
+    virtual ~IFilunaVendorAdapter() = default;
+    virtual std::string id() const = 0;
+    virtual DiscoveryResult probe(const NetworkObservation&) = 0;
+    virtual DeviceObservation inspect(const PrinterIdentity&) = 0;
+    virtual CommandReceipt execute(Capability, const CommandRequest&) = 0;
+    virtual CameraSession open_camera(const PrinterIdentity&,
+                                      const CameraConsent&) = 0;
+};
+\`\`\`
+
+Esse contrato é **desenho**, não código pronto. Integrar com APIs existentes Orca de forma mínima e testável; revisar ownership, threading (wxWidgets/UI), assinaturas, permissões, lifetime, concorrência e serialização antes de codificar. O resultado \`OkConfirmed\` exige ACK semântico; \`Unknown\` nunca significa sucesso.
+
+## 5. Descoberta e pareamento
+
+**D0** Abrir Dispositivos → detectar interfaces ativas permitidas, pedir autorização para varredura local quando necessária.  
+**D1** Usar sinais passivos mDNS/Bonjour, SSDP/UPnP, anúncios OEM, Moonraker/OctoPrint; usar UDP dirigido e ranges LAN privados SOMENTE conforme necessidade e consentimento. Evitar varredura indiscriminada, endpoints públicos e uso de credenciais fora do equipamento escolhido.  
+**D2** Coletar resposta em timeout limitado e com limites de tamanho. Validar cabeçalhos/JSON, IP privado, hostname, port e protocolo; não confiar em banner isolado.  
+**D3** Deduplicar por identidade estável + modelo/assinatura, e não apenas IP. Duas respostas conflitantes → \`AmbiguousIdentity\`, exigir confirmação manual.  
+**D4** Descoberta **não** concede autorização; parear via método oficial (código do equipamento, token local, credencial, OAuth oficial quando suportado). Segredos cifrados no Windows e jamais enviados a telemetria.  
+**D5** Fazer handshake de capacidades com versão de firmware; cache com TTL curto e revisão, invalidado em firmware/reconexão.  
+**D6** Mostrar cartão real com nome da impressora, modelo, estado e capacidades confirmadas; status desconhecido deve dizer “Aguardando confirmação”, não “Online”.  
+**D7** Modo manual por IP/host, impressora genérica Moonraker/OctoPrint/PrusaLink ou exportar arquivo, caso descoberta automática seja impossível; **sem prometer recursos nativos nesse modo**.
+
+**Casos negativos mínimos:** beacon falso, dispositivo duplicado, hostname enganoso, IP público, HTML/JSON malformado, rota indisponível, troca de DHCP, impressora dormindo, firmware sem suporte, PIN errado, expiração de token, LAN/VPN dupla, wifi convidado, host impróprio, rede desconectada e reconexão simultânea.
+
+## 6. Controles e segurança de impressão
+
+| Ação | Pré-condições | Confirmação e resultado |
+|---|---|---|
+| Mostrar status/temperaturas | autenticado quando exigido, amostra recente, capability | indicar origem e idade da leitura; \`UNKNOWN\` em timeout |
+| Upload G-code | \`PrintJob\` não vazio e validado, checksum, mesa/perfil compatíveis, usuário autorizado | ID real de arquivo/recibo; upload parcial não vira sucesso |
+| **Iniciar impressão** | file_id verdadeiro, dispositivo livre, modelo/firmware compatível, mapeamento de material, confirmação explícita | ACK de início + job_id/status confirmado, senão \`UNKNOWN\` com reconciliação; nunca repetir a cegas |
+| Pausar/retomar | impressão ativa real, capability declarada, permissões e estado permitido | command id único + ACK, reconciliar estado; bloquear repetição insegura |
+| Cancelar | confirmação forte, job em curso, capability | ACK explícito e estado final confirmado; idempotência |
+| Alterar temperatura/velocidade | permissões, faixa segura validada por firmware e perfil | pedir ação explícita; não mandar G-code genérico de outra marca |
+| Pular objeto | protocolo/capability suportado, nomes provenientes do equipamento, nunca pular último | confirmação específica e impossibilidade de desfazer informada |
+| Carregar/descarregar filamento | equipamento compatível, estado seguro, proteção térmica/temperatura | confirmação e verificação de status; nunca operar em desconhecido |
+| Firmware update | **não automático**; escopo separado e autorização específica | fora de V1 até produto e fabricante suportarem com ensaio dedicado |
+
+**Ordem de verificação por comando:** sessão → dispositivo pareado → identidade/firmware → capabilities → estado atual → validação de job → consentimento → execução → ACK → reconciliação → auditoria. Erro em qualquer etapa impede comando.
+
+## 7. Câmeras, vídeo e privacidade
+
+- \`CameraSource\` independente dos comandos e com proveniência (API câmera fabricante, URL local autenticada, câmera externa do cliente). Não inferir que câmera existe só porque o modelo costuma oferecer uma.
+- Protocolos candidatos: JPEG snapshot, MJPEG, RTSP/RTSPS, WebRTC, HLS quando houver fonte/autorização real; suporte exige decodificador legalmente distribuível, CORS/headers quando aplicável, segurança e testes Windows.
+- Vídeo **somente após ação do usuário**, sem gravar ou enviar à nuvem por padrão, sem vazamento de IP/URL/tokens; fechar sessão/desalocar decodificador ao sair.
+- Feed travado não mantém selo “Ao vivo”; mostrar tempo da última imagem e reconectar sem loop infinito. Sem suporte oficial: mensagem precisa e alternativa de abrir UI do fabricante, sem capturar credenciais.
+- Testes: câmera desligada, credencial errada, sem rede, codec não disponível, mudança de IP, stop/start 100 vezes, 30 minutos contínuos, CPU/RAM e GPU, vários streams, tela protegida e perda de foco. Limites exatos de latência e consumo definidos após baseline G0/G1.
+
+## 8. Filamentos e multimaterial nativos
+
+- \`MaterialSlotState\` contém \`slot_id, material_kind, compound, color_rgb, brand, spool_id, remaining_estimate, confidence, observed_at\`; \`UNKNOWN\` é valor válido.
+- \`filament\`, \`spool\`, \`stock_event\` e \`printer_slot\` são entidades distintas. O valor do equipamento pode ser desatualizado, estimado ou não fornecido. Não inventar gramas nem preço.
+- Mapear família exata antes de usar preset Orca. **ASA ≠ ABS; PETG-CF ≠ PETG; PLA-Silk ≠ PLA comum**. Sem perfil exato, sugerir Generic DA MESMA FAMÍLIA com aviso e confirmação, nunca substituição silenciosa.
+- Sistemas: Bambu AMS/AMS Lite, Anycubic ACE, Creality CFS, Elegoo Canvas/MMS, QIDI Box, Flashforge multimaterial e Snapmaker U1 exigem protocolo/firmware por equipamento. **Ler slots não significa direito/capacidade de carregar, descarregar ou editar slots.**
+- Cor e número de extrusoras no Orca devem corresponder ao mapeamento de placas/filamentos real. Em fatiamento multi-material, provar comando troca correto (ex. \`T1\` quando aplicável), tempos de purga, perfil e preview; não exportar 3MF com dois materiais que fatia como um.
+- Sem dados do equipamento, usar mapeamento manual explícito sem afirmar sincronização automática.
+
+## 9. Estrutura sugerida de arquivos
+
+\`\`\`text
+FILUNA/
+  modules/
+    elegoo/       bambu/       anycubic/    creality/     flashforge/
+    qidi/         snapmaker/   prusa/       ultimaker/    raise3d/
+    <vendor>/
+      MODULE.md                 # licença, upstream, SHA, mantenedor, matriz firmware
+      protocol/                 # código auditado ou implementação própria
+      translations/             # mensagens sem perder créditos
+      fixtures/                 # frames sanitizados, negativos e firmware
+      tests/                    # unitários, falsos ACK, E2E, câmera, multimaterial
+  devicebridge/
+    IFilunaVendorAdapter.hpp
+    DeviceRegistry.hpp
+    DeviceDiscoveryService.hpp
+    DeviceCommandQueue.hpp
+    DeviceCameraService.hpp
+    FilamentCapabilityMapper.hpp
+    DeviceTelemetry.hpp
+  qa/
+    vendor-capability-matrix.json
+    evidence/
+\`\`\`
+
+Nomes dos arquivos são **propostos**, não existentes. Artefatos pesados e segredos não entram no Git. Cada driver deve ter \`MODULE.md\` antes de conter código operacional. Revisões de protocolo são independentes de versões do Orca.
+
+## 10. Qualidade por modelo/capacidade: critérios 100%
+
+**Para CADA modelo/firmware homologado**, validar pelo menos:
+- descoberta sem configuração manual quando o protocolo permite, e fallback manual seguro;
+- conexão e reconexão sem falso estado;
+- leitura de estado/temperaturas/progresso com TTL e validação negativa;
+- envio e início de arquivo real, controle de duplicidade e falhas, **somente após confirmar**;
+- pausar, retomar e cancelar **quando declarados SUPPORTED**;
+- câmera snapshot/live **quando declarada SUPPORTED**, inclusive encerrar sem consumir recursos;
+- filamento/multimaterial **quando declarado SUPPORTED**, incluindo estados vazios/erros, coerência com perfil Orca;
+- isolamento entre duas impressoras de marcas diferentes na mesma rede;
+- reiniciar o Filuna durante impressão existente e reconciliar sem duplicar job;
+- imprimir peça de validação em hardware real e comparar qualidade/dimensões com um baseline Orca+OEM quando disponível.
+
+A marca fica **DEMONSTRAÇÃO/EM TESTE** até pelo menos um modelo real homologado; modelos sem hardware não são marcados PASS. Capacidade não suportada deve ser desabilitada com motivo e ter teste de que nenhum comando é enviado.
+
+## 11. Segurança, licenciamento, manutenção e risco operacional
+
+- Não fazer engenharia de contorno de autenticação ou fingir identificação como cliente oficial. O projeto Bambu Studio AGPL não torna seu serviço cloud privado nem seu plugin proprietário automaticamente utilizáveis. Em firmware novo certas APIs podem exigir Bambu Connect/SDK autorizado.
+- Flashforge igualmente possui plugin de rede não livre no repositório OEM; usar somente capacidades LAN abertas/permitidas, como \`Flashforge.cpp\` já presente no Orca, com validação.
+- Caminho de importação: **source URL + arquivo específico + upstream SHA + licença + NOTICE + diferenças relevantes + patch isolado + testes + owner QA**. Sem fonte admissível: implementar com protocolo documentado e autorização, ou desabilitar.
+- Plugins/script de terceiros não têm autorização implícita para filesystem, rede externa ou câmera; sandbox CPython não é proteção integral. Assinatura e isolamento de processo quando aplicável.
+- Dados LAN, identificadores e imagens de câmera são potencialmente privados; mascarar em logs, minimizar retenção, criptografar credenciais, não expor rede/serial no servidor e permitir exclusão.
+- Atualizações de drivers individualizadas (classe compatível) requerem assinatura, matriz ABI/Orca/firmware e rollback; se a troca requer DLL/EXE nativo, aplica-se classe C/D e testes em Windows.
+- Manter compatibilidade de projetos quando firmware/protocolo muda; rollback do adaptador sem quebrar o core. Upstream watch é pesquisa e aviso, não merge autônomo.
+
+## 12. Registro de decisões e bloqueios conhecidos
+
+| ID | Situação em 05/11/2026 | Tratamento |
+|---|---|---|
+| DEV-00 | **OrcaPrinterAgent retorna falso sucesso nos stubs** | P0 antes de habilitar agent; não confiar no tipo de retorno |
+| DEV-01 | ElegooLink no fork e componentes ricos no ElegooSlicer | Examinar reuso mínimo, testar Centauri Carbon 2 real |
+| DEV-02 | Anycubic Kobra 3 V2 tem preset mas protocolo nativo/ACE não comprovado | Buscar fonte oficial, especificar e validar antes de iniciar |
+| DEV-03 | Bambu plugin e nuvem têm restrições próprias | SDK autorizado ou LAN permitida por firmware; nunca burlar |
+| DEV-04 | Flashforge já tem descoberta e HTTP LAN; plugin avançado é não livre | Não incorporar binário fechado sem licença |
+| DEV-05 | QIDI/Snapmaker compartilham tecnologias Klipper em modelos específicos | Confirmar versões e segurança em firmware real |
+| DEV-06 | Câmeras e multimaterial variam por modelo | Tabela de capabilities, fallback explícito |
+| DEV-07 | UltiMaker e Raise3D podem exigir API comercial/SDK | Instrução clara de integração manual se autorização não disponível |
+| DEV-08 | Componentes existentes Orca não devem ser duplicados | Criar adapters leves, com source provenance |
+| DEV-09 | Protocolo público não prova suporte integral | Hardware real obrigatório para anúncio de “nativo” |
+
+## 13. Fontes principais e testes comparativos
+
+- [OrcaSlicer PrintHost](../src/slic3r/Utils/PrintHost.cpp), [ElegooLink](../src/slic3r/Utils/ElegooLink.cpp), [Flashforge](../src/slic3r/Utils/Flashforge.cpp), [IPrinterAgent](../src/slic3r/Utils/IPrinterAgent.hpp), [OrcaPrinterAgent](../src/slic3r/Utils/OrcaPrinterAgent.cpp), [NetworkAgentFactory](../src/slic3r/Utils/NetworkAgentFactory.hpp).
+- Legado \`abcollicelli-web/filuna-slicer\`: \`docs/PROTOCOLOS-IMPRESSORAS.md\`, \`INTEGRACOES-IMPRESSORAS.md\`, \`FUP-003-DIAGNOSTICO-DISPOSITIVOS.md\`, \`QA-0.1.9-IMPRESSORAS-NATIVAS-2026-11-03.md\`, \`tests/printer-adapters/\` e \`clients/windows/Filuna.Desktop/Printers/\`; **usar como referência e fixtures sanitizados, não copiar/colar drivers cegamente**.
+- [Bambu firmware access control](https://blog.bambulab.com/firmware-update-introducing-new-authorization-control-system-2/), [Cloud Access and Community](https://blog.bambulab.com/setting-the-record-straight-on-cloud-access-and-community/), [Snapmaker Orca](https://www.snapmaker.com/snapmaker-orca), [UltiMaker API](https://docs.api.ultimaker.com/connect/index.html), [QIDI Plus4 firmware](https://github.com/QIDITECH/QIDI_PLUS4).
+- Revisar as fontes em cada implementação para confirmar licença/protocolo/versionamento vigente; esta revisão de 05/11 não equivale a testes de fabricante.
+
+**Ponto de liberação:** todas as capacidades *anunciadas* de cada modelo homologado precisam estar em PASS com firmware, hash de executável, prints/logs e peça física quando pertinente. Nenhum fabricante passa por "marca detectada" apenas.
+
+
+</cursor_untrusted_data_1337>

@@ -1,0 +1,145 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Protocolos de impressoras — como o Filuna torna qualquer impressora nativa
+
+Levantamento de 05/11/2026. Fontes no fim. Onde a fonte **não confirma**, está escrito "não verificado".
+
+## 1. A regra (do dono)
+
+Cada impressora cadastrada tem **dois protocolos**, escondidos do cliente:
+
+| | Protocolo do **Filuna** | Protocolo do **Orca** |
+|---|---|---|
+| Serve para | **LER**: filamento, cor, câmera, status, progresso, o que está imprimindo, pausa | **IMPRIMIR** (enviar o G-code e iniciar) |
+| Quem define | Filuna (camada de personalização) | Orca (`host_type` + IP + credencial) |
+| Usa para o estoque | sim (consumo vem do G-code fatiado) | — |
+
+**O elo entre os dois é o filamento:** o Filuna lê "PLA Bambu" na impressora → procura esse perfil no Orca → se existe, usa; se não existe, usa o **Generic** do material.
+(Isso já está feito e provado com os 11.779 perfis reais do Orca — `tests/filament-match`.)
+
+## 2. Como o Filuna identifica a impressora na rede (sem o cliente digitar nada)
+
+Hoje o Filuna varre as portas `8883, 80, 5000, 322, 990, 1883, 6000, 7125, 8000, 8080, 18910` + UDP `52700` (Elegoo CC2) + SSDP `1990/2021` (Bambu).
+**Falta** para cobrir o resto do mundo (todas documentadas abaixo):
+
+| Sinal na rede | Identifica | Fonte |
+|---|---|---|
+| UDP **2021**/**1990** SSDP (multicast) | Bambu Lab (todas) | wiki Bambu + gist da comunidade |
+| UDP **3000** broadcast `M99999` → JSON (`Name`, `MachineName`, `MainboardID`) | Elegoo SDCP (Centauri Carbon 1, Saturn…) | SDCP v3 oficial |
+| UDP **52700** `{"id":0,"method":7000}` | Elegoo Centauri Carbon 2 | já no Filuna |
+| TCP **8898** (HTTP) + **8899** | Flashforge (Adventurer 5M/Pro, **AD5X**) | Parallel-7 flashforge-api-docs |
+| TCP **9999** (WebSocket) | Creality série K (K1/K2/Hi/Ender-3 V3) | k2dash, ha_creality_ws |
+| TCP **7125** `/printer/info` | Qualquer Klipper/Moonraker (Creality, Qidi, Snapmaker U1, Voron, Sovol…) | Moonraker docs |
+| TCP **80** `/api/version` + `/api/v1/info` | PrusaLink (Prusa) | OpenAPI da Prusa |
+| TCP **80** `/rr_model?key=boards[0]` | Duet / RepRapFirmware | wiki Duet |
+| TCP **5000** `/api/version` | OctoPrint | OctoPrint |
+| TCP **18910** `/info` | Anycubic Kobra 3 / S1 | kobra-connect |
+| mDNS (UDP 5353) | Creality (ha_creality_ws usa Zeroconf); outros por tipo de serviço — **tipos não verificados** | HA |
+
+Algoritmo: varrer a rede local (só IPv4 privado) → para cada host, testar essas assinaturas → o que responder define **qual protocolo do Filuna** usar e **qual host_type do Orca** gravar.
+
+## 2B. Quantas marcas existem e qual fatiador cada uma usa (pergunta do dono)
+
+**No Orca 2.4.2 (o mesmo que o Filuna leva): 71 marcas e 1.631 perfis de impressora.** Maiores: Creality 177 · Snapmaker 96 · Elegoo 91 · Ratrig 88 · Prusa 87 · Voron 72 · Bambu (BBL) 70 · **Flashforge 60** · Geeetech 59 · Anycubic 53 · Qidi 51 · Volumic 50 · Sovol 44 · …
+
+Cada fabricante grande já tem o **próprio fatiador**, e quase todos são **cópias do Orca com a tela de "Dispositivo"** (descobrir impressora, câmera, filamento, pausar/continuar):
+
+| Marca | Fatiador próprio | Base | Código aberto? | O que o fatiador mostra |
+|---|---|---|---|---|
+| **Flashforge** | **Orca-Flashforge** (hoje *Flash Studio Desktop*) | Orca | sim, mas o **plugin de rede usa bibliotecas fechadas** da Flashforge | gerenciar dispositivo, monitorar à distância, **vídeo ao vivo** (nas com câmera), envio sem fio; AD5X no menu de dispositivos pelo código de acesso |
+| **Creality** | **Creality Print** (v6/v7) | Orca | sim (AGPL) — GitHub `CrealityOfficial/CrealityPrint` | dispositivo, câmera, CFS — *detalhes não verificados* |
+| **Elegoo** | **ElegooSlicer** | Orca | sim — GitHub `ELEGOO-3D/ElegooSlicer`; `ElegooLink` aparece como componente fechado | CC2 e **CANVAS** (mapeamento de filamento), controle e impressão |
+| **Anycubic** | **Anycubic Slicer Next** | Orca | *não verificado* | LAN, vídeo local |
+| **Snapmaker** | **Snapmaker Orca** | Orca | *não verificado* | U1 via Moonraker |
+| **Bambu Lab** | **Bambu Studio** / Handy | origem (fork do PrusaSlicer) | sim (AGPL), **plugin de rede fechado** | tudo (AMS, câmera, pausa) |
+| **QIDI** | **QIDI Studio** | fork do Bambu Studio | sim | Moonraker/Box |
+| **Prusa** | **PrusaSlicer** + PrusaLink/Connect | origem | sim | câmera, status, controle |
+| Klipper (Voron, Ratrig, Sovol…) | Orca / Prusa + Mainsail/Fluidd | — | sim | Moonraker |
+
+**Consequência prática:** o código-fonte desses fatiadores **mostra como cada empresa descobre e controla a impressora**. É a fonte mais confiável (melhor que engenharia reversa da comunidade) para Flashforge, Creality, Elegoo, Anycubic e Snapmaker. Onde o protocolo está num **plugin fechado** (Bambu, ElegooLink, rede da Flashforge), vale a documentação da comunidade (seção 3) e o **modo LAN**.
+
+**Resposta à dúvida "existe no Flashforge?":** sim — tem protocolo documentado (HTTP 8898, serviço de status, controle e envio), tem fatiador próprio com câmera e tem 60 perfis no Orca.
+
+*Ressalva:* a lista de "fork do Orca" vem de blogs de comparação (SimplyPrint, Printago); confirmar cada repositório antes de copiar qualquer coisa (AGPL: dá para estudar o protocolo; copiar código exige cumprir a licença).
+
+## 3. Tabela por marca/plataforma
+
+Legenda **Filuna hoje**: ✅ já tem · ⚠️ parcial · ❌ não tem.
+
+| Marca / plataforma | Protocolo (leitura) | Porta / auth | Filamento / cor | Câmera | Controle | Filuna hoje | `host_type` do Orca (imprimir) |
+|---|---|---|---|---|---|---|---|
+| **Bambu Lab** (A1/A1 mini/P1/X1/P2S/H2) | MQTT/TLS | 8883, user `bblp`, senha = **código de acesso** | `print.ams.ams[].tray[]`: `tray_type`, `tray_color` (RRGGBBAA), `tray_sub_brands`, `remain`; `tray_now`; externo `vt_tray` | **X1/P2S/H2:** RTSPS `322` `/streaming/live/1`; **A1/P1:** TCP JPEG `6000` (pacote de 80 bytes, frames 1280x720); H2: ligar "LAN Only Liveview" na tela | `print.command` `pause`/`resume`/`stop`; luzes `system.ledctrl` | ✅ | plugin próprio (`bbl_use_printhost`/`printer_agent`) |
+| **Elegoo CC2** | MQTT **aberto** + HTTP | 1883, user `elegoo`; HTTP 80 | Canvas (método 2005) | MJPEG `8080` | pausar 1021, parar 1022, iniciar 1020 (**sem** ElegooLink; provado no hardware do dono: câmera e pausa) | ✅ | `elegoolink` = só o **nome do plugin do Orca**; a impressora não precisa dele |
+| **Elegoo CC1 / Saturn** (SDCP v3) | WebSocket | `ws://IP:3030/websocket`, descoberta UDP 3000 | **não documentado** | `Cmd 386` → RTSP | `Cmd 128/129/130/131` (iniciar/pausar/parar/continuar) | ❌ | `elegoolink` (nome do plugin do Orca) |
+| **Flashforge** 5M / 5M Pro / **AD5X** | HTTP REST (POST) + TCP | **8898**; corpo `{serialNumber, checkCode}` | AD5X: `detail.matlStationInfo.slotInfos[]` (`slotId`, `hasFilament`, `materialName`, `materialColor`), 4 slots | `cameraStreamUrl` (MJPEG, ex. porta 8080); **AD5X não tem câmera embutida** (conflito entre fontes: acessório) | `/control` → `jobCtl_cmd` (`pause`/`continue`/`cancel`), `lightControl_cmd`, ventoinhas; `/printGcode`, `/uploadGcode` | ❌ | `flashforge` |
+| **Creality série K** (K1/K1C/K2/Hi/Ender-3 V3) | WebSocket nativo + Moonraker | WS **9999** (k2dash); Moonraker **7125** (K2/Printago) | CFS por slot: `vendor`, `type`, `name`, `color` (7 hex, últimos 6), `rfid`, `box_id`, `slot_id`, temperaturas | K1/K1 Max/Ender V3: **MJPEG**; K2/K1C 2025/Hi: **WebRTC** (sinalização 8000 segundo k2dash; porta **não confirmada** pela ha_creality_ws) | pausar/retomar/parar/luz via WS (formato exato **não verificado**) | ⚠️ (tem SPARKX por WS `/ws` + Moonraker; falta a série K por 9999) | `crealityprint` (26 perfis) ou `octoprint` (35) |
+| **Anycubic Kobra 3 / S1** | HTTP + MQTT mútuo TLS | `18910` (assinado) → credenciais+certificado; MQTT **9883** | **ACE: não documentado** na fonte; (o Filuna lê cores do ACE por conta própria) | **não documentado** | `slicer/printer/{model}/{id}/print` (`pause`/`resume`/`cancel`/`start`) | ✅ (leitura); impressão não inicia | sem `host_type` na maioria dos perfis |
+| **Snapmaker U1** | Moonraker | 7125 | `print_task_config` (4 cabeças) | MJPEG/snapshot (já no Filuna) | `/printer/print/*` | ✅ | `octoprint` (4 perfis) |
+| **Klipper / Moonraker** (Voron, Sovol, Qidi, Artillery, Ratrig, Creality…) | HTTP/WS | 7125 | AFC / Happy Hare (objetos `afc`/`mmu` — **não verificado**) | `GET /server/webcams/list` (entradas com `stream_url`/`snapshot_url`) | `/printer/print/*` | ✅ (Moonraker genérico) | `octoprint` (134 perfis) |
+| **Prusa** (PrusaLink) | HTTP v1 | 80, digest | `status`; filamento via MMU **não verificado** | `GET /api/v1/cameras`, `/cameras/snap` (PNG) | `PUT /api/v1/job/{id}/pause\|resume`, `DELETE /job/{id}`; upload `PUT /files/...` + `Print-After-Upload` | ❌ | `prusalink` (62 perfis) |
+| **Duet / RepRapFirmware** | HTTP | 80, `rr_connect?password=` (padrão `reprap`) | `rr_model` (campos exatos **não verificados**) | webcam **não verificado** | `rr_gcode?gcode=` (inclui `M32` para iniciar, **não verificado**), `rr_upload?name=` | ❌ | `duet` (42 perfis) |
+| **OctoPrint** | REST | 5000, API key | — | webcam do OctoPrint | `/api/job`, `/api/files/local` | ✅ | `octoprint` |
+
+Perfis do Orca por `host_type` (1.631 perfis reais): octoprint 134 · elegoolink 73 · prusalink 62 · duet 42 · crealityprint 26 · esp3d 8 · simplyprint 8 · flashforge 7 · mks 2 · **sem tipo no perfil: 1.269** (o usuário escolhe ao cadastrar no Orca).
+
+## 3C. Como cada impressora RECEBE e INICIA um trabalho (o "jeito que ela imprime")
+
+É o protocolo de **impressão** de cada uma — separado da leitura (câmera/filamento). Todos abertos e documentados; nenhum depende de plugin do Orca.
+
+| Impressora | 1) Enviar o arquivo | 2) Iniciar | Fonte | Filuna hoje |
+|---|---|---|---|---|
+| **Elegoo CC2** | `PUT http://IP:80/upload`, pedaços de 1 MB, cabeçalhos `Content-Range: bytes a-b/total`, `X-File-Name`, `X-File-MD5` (do arquivo todo), `X-Token` (código de acesso); resposta `{"error_code":0}` (1000 = token ruim) | MQTT `elegoo/<sn>/<clientId>/api_request`, método **1020**, `params`: `storage_media:"local"`, `filename` (**igual** ao `X-File-Name`), `config` (`print_layout`, `slot_map`…). Pausar 1021, parar 1022; **retomar pela rede local não existe** segundo a fonte | printer-protocol-orchard (lido do SDK da Elegoo; autor não validou em hardware) | ✅ igual (nome do arquivo conferido) |
+| **Bambu Lab** | **FTPS implícito**, porta **990**, user `bblp`, senha = código de acesso (pasta/limites **não documentados** na fonte lida) | MQTT 8883 `device/<serial>/request`: **`print.project_file`** (arquivo `.3mf` + `param: Metadata/plate_1.gcode`, `ams_mapping`, `use_ams`, `timelapse`, `bed_levelling`, `flow_cali`…) **ou** `print.gcode_file` (`param` = caminho absoluto de um `.gcode`) | OpenBambuAPI (ftp.md, mqtt.md) | ⚠️ usa `gcode_file` com G-code puro (sem teste em hardware); o Bambu Studio/Orca enviam o **`.gcode.3mf` pelo `project_file`** — **é a diferença a verificar** |
+| **Flashforge** 5M/AD5X | `POST :8898/uploadGcode` (multipart; cabeçalhos `serialNumber`, `checkCode`; opção `printNow`) | `POST :8898/printGcode` (arquivo já na impressora) ou `printNow` no envio; `/control` pausa/continua/cancela | flashforge-api-docs | ❌ |
+| **Creality (Klipper/Moonraker)** | Moonraker `POST :7125/server/files/upload` (multipart) | `POST :7125/printer/print/start?filename=` | Moonraker; Printago (K2) | ✅ (SPARKX e Moonraker) |
+| **Snapmaker U1 / Klipper** | idem Moonraker | idem | Moonraker | ✅ |
+| **Anycubic Kobra 3** | upload do Filuna (a fonte lida **não documenta** o envio) | MQTT 9883 `slicer/printer/{model}/{id}/print` com `action: start` e caminho do arquivo | kobra-connect | ⚠️ envia, **não inicia** (CanStart = não) |
+| **Prusa (PrusaLink)** | `PUT /api/v1/files/{storage}/{caminho}` com `Print-After-Upload` | `POST` no mesmo caminho (ou o cabeçalho acima); pausar/retomar `PUT /api/v1/job/{id}/pause\|resume` | OpenAPI da Prusa | ❌ |
+| **Duet / RepRapFirmware** | `POST /rr_upload?name=/gcodes/arq.gcode` (corpo = arquivo) | `rr_gcode?gcode=M32 "arq.gcode"` (**M32 não confirmado** na fonte) | wiki Duet | ❌ |
+| **OctoPrint** | `POST /api/files/local` (multipart) | `{"command":"select","print":true}` | OctoPrint | ✅ |
+| **Elegoo CC1 / Saturn (SDCP)** | **não verificado** | WebSocket 3030, `Cmd 128` (nome do arquivo + camada inicial) | SDCP v3 | ❌ |
+
+**Dois achados concretos desta tabela:**
+1. **Bambu:** o Filuna imprime G-code puro por `gcode_file`; a Bambu (Studio e Orca) usa o `.gcode.3mf` por `project_file`, com o mapa de AMS. Se o dono vê erro ao imprimir numa Bambu, este é o primeiro suspeito — **não provado**.
+2. **CC2:** envio e início estão como a fonte documenta. A falha que o dono vê **não aparece lendo o código**; precisa do texto real do erro (ou de um teste na impressora).
+
+## 4. Quando NÃO existe protocolo documentado/homologado → Modo LAN + tutorial
+
+Regra do dono: usamos o modo LAN da própria impressora e mostramos um **tutorial dentro do Filuna** (curto, com foto). Rascunhos (marcados quando ainda precisam de teste na impressora):
+
+- **Bambu Lab** — na tela da impressora: *Configurações → Rede → Modo LAN (Somente LAN)* → ligar também *Modo Desenvolvedor* (A1/A1 mini: Configurações, página 3). Anotar **IP** e **Código de acesso** (8 dígitos) e digitar no Filuna uma única vez. *(Alternativa sem código: entrar na conta Bambu no Filuna.)* H2: ligar *LAN Only Liveview* para a câmera.
+- **Flashforge** — ligar **Modo LAN** na tela da impressora (a integração da comunidade exige); anotar **número de série** e **código de verificação (checkCode)**.
+- **Anycubic** — a impressora precisa estar em **Modo LAN** (desliga app/nuvem/IA de falha).
+- **Elegoo CC2** — *Rede → LAN Only* (aparece **IP** e **Access Code**; com o código desligado conecta direto).
+- **Creality / Klipper** — em geral **sem passo**: Moonraker já escuta em 7125 (K2/K1 com Klipper). Se não responder: tutorial a validar por modelo.
+
+## 5. Ordem sugerida de implementação (por quantas impressoras cobre)
+
+0. **Antes de tudo: ler o código dos fatiadores dos fabricantes** (Creality Print, ElegooSlicer, Orca-Flashforge, Anycubic Slicer Next) para fechar descoberta/câmera/filamento/pausa de cada marca com a fonte oficial.
+1. **Descoberta unificada** (uma varredura que testa todas as assinaturas da seção 2) + gravar `orca_host_type` no cadastro (campo novo, só acrescenta).
+2. **Moonraker/OctoPrint/PrusaLink/Duet** — são abertos, documentados e cobrem a maioria dos 1.631 perfis; leitura + câmera.
+3. **Flashforge** (AD5X etc.) — bem documentado.
+4. **Creality série K (WS 9999)** — precisa ler o código-fonte de `ha_creality_ws`/`k2dash` para fechar o formato.
+5. **Elegoo SDCP**.
+6. **Impressão:** protocolo do Orca por `host_type` (a decidir: abrir o Orca real já configurado, ou enviar com as chamadas HTTP iguais às do Orca para os tipos abertos).
+
+## 6. Não verificado (precisa de teste ou leitura de código)
+
+Formato dos comandos do WS 9999 da Creality · porta exata do WebRTC da Creality · filamento ACE da Anycubic · campos de filamento do `rr_model` (Duet) · filamento MMU da Prusa · objetos AFC/Happy Hare · tipos mDNS por marca · M-codes/campos de progresso e de pausa por modelo da Flashforge em hardware.
+
+## Fontes
+
+- Flashforge: [flashforge-api-docs — AD5X](https://github.com/Parallel-7/flashforge-api-docs/wiki/AD5X) · [HTTP REST API](https://github.com/Parallel-7/flashforge-api-docs/wiki/HTTP-REST-API)
+- Bambu Lab: [OpenBambuAPI — mqtt.md](https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md) · [video.md](https://github.com/Doridian/OpenBambuAPI/blob/main/video.md) · [portas oficiais](https://wiki.bambulab.com/en/general/printer-network-ports)
+- Creality: [ha_creality_ws](https://github.com/3dg1luk43/ha_creality_ws) · [k2dash](https://github.com/pdromnt/k2dash) · [Printago — Creality](https://docs.printago.io/docs/connecting-printers/creality)
+- Anycubic: [kobra-connect](https://github.com/rvanderp3/kobra-connect)
+- Elegoo: [SDCP v3](https://github.com/cbd-tech/SDCP-Smart-Device-Control-Protocol-V3.0.0) · [OpenCentauri](https://suchmememanyskill.github.io/OpenCentauri/software/api) · [Orca #13212](https://github.com/OrcaSlicer/OrcaSlicer/pull/13212) · [Orca #13934](https://github.com/OrcaSlicer/OrcaSlicer/issues/13934)
+- Klipper/Moonraker: [webcams](https://moonraker.readthedocs.io/en/latest/external_api/webcams/)
+- Prusa: [PrusaLink OpenAPI](https://raw.githubusercontent.com/prusa3d/Prusa-Link-Web/master/spec/openapi.yaml)
+- Duet: [RepRapFirmware HTTP requests](https://github.com/Duet3D/RepRapFirmware/wiki/HTTP-requests)
+- Impressão: [printer-protocol-orchard](https://github.com/ChestnutLabs/printer-protocol-orchard) (Elegoo CC2) · [OpenBambuAPI ftp.md](https://raw.githubusercontent.com/Doridian/OpenBambuAPI/main/ftp.md)
+- Fatiadores: [SimplyPrint — Orca forks](https://simplyprint.io/articles/orcaslicer-forks-compared) · [Printago — Orca forks](https://printago.io/blog/orca-slicer-forks-compared) · [Orca-Flashforge](https://github.com/jordanhubbard/Orca-Flashforge) · [Flashforge — slicers compatíveis](https://www.flashforge.com/blogs/news/what-slicers-are-compatible-with-flashforge) · [ElegooSlicer releases](https://github.com/elegoo-repo/ElegooSlicer/releases) · [Creality Print (mirror)](https://github.com/Vector-Robotics/CrealityPrint)
+- Orca: formato de impressora física em [Preset.cpp](https://raw.githubusercontent.com/OrcaSlicer/OrcaSlicer/main/src/libslic3r/Preset.cpp)
+
+
+</cursor_untrusted_data_1337>

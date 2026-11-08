@@ -1,0 +1,328 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Estrutura de blocos — Home, Preparação e Calibração
+
+- **ID único:** `filuna.estrutura-home-preparar-calibracao`
+- **Data / revisão:** 2026-11-03 / v1
+- **Status:** PROPOSTO. É o mapa do esboço aprovado. Não é o programa novo e não fatia.
+- **Autor da documentação:** Grok
+- **Referência visual:** protótipo único. Uma página, três telas trocadas pela barra.
+- **Plataformas:** Windows primeiro. Este arquivo descreve a montagem da interface, não a exportação.
+- **Menu/rota de destino:** `home`, `prepare`, `calib`
+
+Leia este arquivo antes de recriar a home. Não invente busca, botão Fatiar na home, cabeçalho creme, login na lateral nem três grades iguais no lugar do destaque.
+
+## 0. Como o esboço é um só
+
+Uma rota. Um estado `screen`. A barra não muda de ordem.
+
+| id da aba | Rótulo | O que abre |
+|---|---|---|
+| `home` | Início | Home descrita na seção 2. É o padrão. |
+| `prepare` | Preparação | Mesa descrita na seção 3. |
+| `preview` | Visualização | Sem tela própria. Continua na home. Não criar página vazia. |
+| `device` | Dispositivo | Existe no esboço, fora deste mapa. Não misturar com a home. |
+| `project` | Projeto | Sem tela própria. Continua na home. |
+| `calib` | Calibração | Lista descrita na seção 4. |
+
+A aba ativa é pílula branca, texto `#3a2a32`, ícone rosa. As outras são texto branco sobre a barra vinho.
+
+À direita da barra, nesta ordem: ação extra da tela, duas esferas de tema, ícone de conta. Na home a ação extra é só o sino `Avisos`. Na preparação são `Fatiar mesa` e `Exportar`. Na calibração não há ação extra.
+
+Tema `original` é o aprovado. Azul e dark são alternativos e estão em `2026-11-02-TEMAS.md`. Para replicar a home aprovada, use o original.
+
+### Cores do tema original
+
+| Token | Hex | Onde |
+|---|---|---|
+| `berry` | `#64184a` | Fundo da janela, atrás do miolo. |
+| `berry-bar` | `#7a215c` | Barra superior. |
+| `berry-active` | `#c43b78` | Item ativo da lateral da home. |
+| `magenta` | `#c2185b` | Botão Imprimir, ação, item ativo da calibração. |
+| `orange` | `#ff6b1a` | Estrela, borda da mesa ativa, esfera do tema original. |
+| `cream` | `#f7f2f4` | Miolo claro, o retângulo arredondado. |
+| `panel` | `#ffffff` | Cartão. |
+| `charcoal` | `#3a2a32` | Texto. |
+
+## 1. O que não desenhar na home
+
+- Não há campo «Buscar modelos, ferramentas e paramétricos».
+- Não há «Abrir projeto» nem «Novo projeto».
+- O botão grande não se chama Fatiar. Chama-se **Imprimir**.
+- A peça em destaque já está fatiada. Não é um card de catálogo.
+- Recentes, Modelos e Ferramentas são três faixas, uma embaixo da outra, não a página inteira.
+- A lateral não é a barra de cima. São dois menus diferentes.
+- Conta fica na barra, não na lateral.
+
+## 2. Home — árvore de blocos
+
+```
+shell.home                         coluna, altura da janela, fundo berry
+├─ app-bar                         56 px, berry-bar
+│  ├─ marca                       ícone 32 px + texto «Filuna Slicer»
+│  ├─ abas                        home prepare preview device project calib
+│  ├─ extra.avisos                sino, só na home
+│  ├─ temas                       duas esferas do que não está ativo
+│  └─ conta                       ícone de pessoa, não abre sessão
+└─ corpo                           linha: lateral + miolo
+   ├─ nav.lateral                   208 px, some abaixo de md, texto branco
+   │  ├─ recent                     «Recentes»        ativo no início
+   │  ├─ models                     «Modelos 3D»
+   │  ├─ parametric                 «Paramétricos»
+   │  ├─ tools                      «Ferramentas»
+   │  ├─ stock                      «Estoque»
+   │  └─ atelier                    «Ateliê»
+   └─ miolo.cream                   retângulo #f7f2f4, raio 16 px, padding 12 px
+      ├─ hero                         grade: vista | painel 380 px
+      │  ├─ viewport.gato            bloco #1b121c, altura mínima 320 px
+      │  │  ├─ placa.pei             faixa no rodapé, borda laranja, grade
+      │  │  ├─ peca.gato             imagem do gato vazado, por cima da placa
+      │  │  ├─ ferramentas.esquerda  Orbitar, Girar
+      │  │  ├─ ferramentas.direita   Sólido, Enquadrar
+      │  │  └─ selo                   «Gato vazado · já fatiado»
+      │  └─ painel.imprimir          cartão branco
+      │     ├─ titulo                 «Preparação de impressão»
+      │     ├─ field.printer          Filuna Core X1 | Filuna Prime 0.4
+      │     ├─ field.material         PLA Premium – Rosa | PLA Magenta | PETG Branco
+      │     ├─ field.profile          Qualidade (0,20 mm) | Fino (0,12 mm) | Rascunho (0,28 mm)
+      │     ├─ action.imprimir       botão rosa, texto Imprimir
+      │     └─ stats                  Tempo 3 h 42 min | Material 58,6 g | Custo R$ 7,38
+      ├─ aviso                         só aparece depois de um clique
+      ├─ faixa.recentes               uma linha horizontal, rolagem
+      ├─ faixa.modelos                uma linha horizontal, rolagem
+      ├─ faixa.ferramentas            grade 2 ou 4 colunas, não é linha de foto
+      └─ nota                          só se a lateral for parametric, stock ou atelier
+```
+
+O item ativo da lateral usa `berry-active`. Os outros ficam só com o texto branco.
+
+### Faixa Recentes
+
+Título «Recentes» e link «Ver todos», que marca a lateral `recent`. Cada cartão tem 144 px, foto escura de 112 px e o nome embaixo. Estrela laranja só nestes: Luminária de tule, Engrenagens, Castelo.
+
+| Ordem | Nome |
+|---|---|
+| 1 | Luminária de tule |
+| 2 | Caixa divisória |
+| 3 | Engrenagens |
+| 4 | Vaso torcido |
+| 5 | Castelo |
+
+### Faixa Modelos
+
+Título «Modelos». «Ver todos» marca a lateral `models`. Sem estrela.
+
+| Ordem | Nome |
+|---|---|
+| 1 | Lua litofania |
+| 2 | Chaveiro botton |
+| 3 | Troféu |
+| 4 | Caixa de sombra |
+| 5 | Gato vazado |
+
+### Faixa Ferramentas
+
+Título «Ferramentas». «Ver todos» marca a lateral `tools`. Cartão branco com ícone rosa à esquerda, não é miniatura.
+
+| id visual | Título | Linha de baixo |
+|---|---|---|
+| `tool-3mf` | Imagem para 3MF | Peças coloridas |
+| `tool-svg` | Imagem para SVG | Vetor suave |
+| `tool-preco-simples` | Preço simples | Peso e tempo |
+| `tool-preco-completo` | Preço completo | A partir do G-code |
+
+### Notas da lateral
+
+Paramétricos, Estoque e Ateliê não trocam as três faixas. Acrescentam um cartão no fim. O texto é exemplo. Não gera arquivo, não dá baixa no estoque e não envia pedido.
+
+Camada da vista do gato, de trás para a frente: sala escura, placa com grade, imagem do gato, botões e o selo.
+
+## 3. Preparação — árvore de blocos
+
+Abre só quando `screen` é `prepare`. Não é a home.
+
+```
+shell.prepare
+├─ app-bar active=prepare
+│  └─ extra
+│     ├─ menu.fatiar      rótulo «Fatiar mesa», rosa
+│     │                    itens: Fatiar mesa, Fatiar tudo
+│     └─ menu.exportar    rótulo «Exportar», cartão claro
+│                          itens: Imprimir, Exportar G-code
+└─ folha.cream                 margem 12 px, raio 16 px, coluna
+   ├─ linha
+   │  ├─ painel.esquerdo          384 px no desktop
+   │  │  ├─ bloco.impressora
+   │  │  ├─ bloco.filamento
+   │  │  ├─ bloco.processo
+   │  │  └─ bloco.ia              «IA Filuna»
+   │  ├─ viewport
+   │  │  ├─ barra.flutuante      vidro, centralizada no topo
+   │  │  ├─ mesas                 placa PEI em perspectiva
+   │  │  └─ mesa.acoes           à direita: adicionar, duplicar, remover
+   │  └─ painel.arquivo         288 px
+   └─ rodape.venda
+```
+
+### Bloco impressora
+
+Título «Impressora». Botão mais abre o nome e o botão «Criar».
+
+| id | Nome | Foto |
+|---|---|---|
+| `m1` | Filuna Prime | prime |
+| `m2` | Filuna Core | core |
+
+No cartão: seletor da máquina, bico `0,2 / 0,4 / 0,6 / 0,8 mm`, material do bico `Aço endurecido / Latão / Aço inox`, lápis abre o editor. O editor tem os campos `pname`, `pnoz`, `pbed`, `pvol`, `pkin`, `pfw`, `pmax`, `pacc`, `pext`, `pstart`, `pend`, `pmesh`, `paux`.
+
+### Bloco filamento
+
+Título «Filamento». À direita: «Volumes de purga» e o mais, que cria «Novo PLA».
+
+| id | Nome | Tipo |
+|---|---|---|
+| `f1` | Magenta | PLA |
+| `f2` | Laranja | PLA |
+| `f3` | Roxo | PETG |
+| `f4` | Branco | PLA |
+
+Cada linha: número do slot, cor, nome, menu `Editar / Mesclar / Excluir`. O slot ativo fica com o número rosa. Mesclar pede o outro filamento. O editor do filamento usa `fname`, `ftype`, `fdia`, `fnozzle`, `fbed`, `fflow`, `fvmax`, `fpa`, `fret`, `ffan`, `ffirst`, `fprice`, `fadapt`, `fsoft`, `fram`, `fgcode`.
+
+### Bloco processo
+
+Título «Processo». Três níveis, nesta ordem: `simples` Simples, `avancado` Avançado, `especialista` Especialista. O nível inicial é **Avançado**. Não usar os nomes básico, médio e avançado.
+
+À direita: `global` Global e `objetos` Objetos. O inicial é Global.
+
+No Global, o perfil inicial é o índice 2, «0,20 mm Padrão». A lista inteira:
+
+| Índice | Nome | Camada | Peso | Custo | Tempo | Venda |
+|---|---|---|---|---|---|---|
+| 0 | Ultra fino | 0,08 mm | 210 g | R$ 28 | 4 h 10 | R$ 89 |
+| 1 | Fino | 0,12 mm | 198 g | R$ 24 | 3 h 20 | R$ 79 |
+| 2 | Padrão | 0,20 mm | 186 g | R$ 18 | 2 h 05 | R$ 59 |
+| 3 | Rápido | 0,28 mm | 180 g | R$ 14 | 1 h 20 | R$ 49 |
+| 4 | Rascunho | 0,32 mm | 172 g | R$ 12 | 55 min | R$ 39 |
+| 5 | Rascunho máximo | 0,40 mm | 168 g | R$ 10 | 40 min | R$ 35 |
+
+Abas do processo. A aba inicial é `resistencia`, não Qualidade.
+
+| id | Rótulo | Grupos e campos |
+|---|---|---|
+| `qualidade` | Qualidade | Camada `lh flh lw seam`. Larguras `ow iw infw hole contour foot iron`. Precisão `gen res gap arc precise bridge one`. |
+| `resistencia` | Resistência | Paredes `loops alt thin`. Casca `topn botn topt bott topd topp botd shell`. Preenchimento `dens pat anchor`. |
+| `velocidade` | Velocidade | Andando `sp-out sp-inf sp-first sp-travel sp-in sp-top sp-bridge cool`. Arranque `acc acc-out jerk ers`. |
+| `suporte` | Suporte | Apoio `sup-on sup-type sup-ang sup-bed sup-style sup-z sup-if sup-br sup-dia`. |
+| `multi` | Multimaterial | Troca `tower tw txy sparse ttype ram`. Também abre a matriz de purga. |
+| `outros` | Outros | Borda `brim skirt vase brimw zhop byobj verbose thumb`. |
+
+Campo de nível maior que o nível escolhido fica escondido. Simples mostra só `simples`. Avançado mostra simples e avançado. Especialista mostra os três.
+
+Em Objetos não aparecem as abas. Aparece a lista: grupo `placa` «Placa 1» com a peça `o1` Macaco, e grupo `fora` «Fora da mesa» com a peça `o2` Cubo.
+
+### Bloco IA Filuna
+
+Botão «Abrir menu da IA». Itens: Orientar na mesa, Suportes, Perfil, Venda. É texto de exemplo. Não chama motor.
+
+### Barra flutuante da mesa
+
+Vidro claro, no topo, com divisória antes de `face`, de `paint` e de `ai`. A ferramenta inicial é `rotate`.
+
+| id | Rótulo |
+|---|---|
+| `select` | Selecionar |
+| `move` | Mover |
+| `rotate` | Girar |
+| `scale` | Escalar |
+| `face` | Apoiar na face |
+| `bed` | Alinhar na mesa |
+| `arrange` | Organizar |
+| `cut` | Cortar |
+| `measure` | Medir |
+| `paint` | Pintar suporte |
+| `seam` | Costura |
+| `mirror` | Espelhar |
+| `clone` | Clonar |
+| `ai` | IA Filuna |
+
+A mesa começa com uma placa, id numérico `1`, rótulo `01`, palavra FILUNA e o macaco low poly. A placa ativa tem borda laranja. À direita: Adicionar mesa, Duplicar mesa, Remover mesa. Remover não apaga a última.
+
+Não desenhar coordenadas, zoom nem camada de referência por cima da mesa.
+
+### Painel do arquivo
+
+Título «Informações do arquivo». Nome `Macaco_LowPoly.stl`. Dimensões X 120,45 mm, Y 86,32 mm, Z 98,76 mm. Volume 153,27 cm³. Massa igual ao peso do perfil. Triângulos 24.532. Aviso: «Referência visual · peça na mesa, sem fatiar».
+
+### Rodapé
+
+«Sugestão de venda», depois Peso, Custo, Tempo e, à direita, o preço do perfil dentro da pílula rosa. No Padrão: 186 g, R$ 18, 2 h 05, R$ 59.
+
+## 4. Calibração — árvore de blocos
+
+Abre só quando `screen` é `calib`. É o menu do Orca, não do Prusa. O Prusa não gera estes testes.
+
+```
+shell.calib
+├─ app-bar active=calib
+└─ folha.cream
+   ├─ lista                      288 px
+   │  ├─ rótulo «Calibração»
+   │  └─ itens, o ativo em magenta
+   └─ detalhe
+      ├─ selo «Tutorial para o cliente»
+      ├─ título do item
+      ├─ coluna.modelo            foto quadrada + botão Baixar
+      ├─ coluna.textos            quatro cartões
+      ├─ passos                   lista numerada
+      ├─ leitura                  «Como saber se deu certo»
+      └─ submenu                  só no item input
+```
+
+O item inicial é `temp`. A ordem da lista é fixa:
+
+| id | Título | Arquivo demo | Onde gravar |
+|---|---|---|---|
+| `temp` | Temperatura | `torre-temperatura.3mf` | Filamento · temperatura do bico |
+| `vmax` | Fluxo máximo | `fluxo-maximo.3mf` | Filamento · mm³/s |
+| `pa` | Avanço de pressão | `avanco-pressao.3mf` | Filamento · pressure advance |
+| `flow` | Taxa de fluxo | `taxa-de-fluxo.3mf` | Filamento · razão de fluxo |
+| `retract` | Retração | `retracao.3mf` | Impressora · distância e velocidade |
+| `corner` | Quinas | `quinas.3mf` | Impressora · jerk ou quina |
+| `input` | Modelagem de entrada | `modelagem-entrada.3mf` | Firmware ou G-code inicial |
+| `vfa` | VFA | `vfa.3mf` | Impressora · velocidades a evitar |
+| `tol` | Tolerância | `tolerancia.3mf` | Processo · furo e contorno |
+| `guide` | Guia de calibração | sem arquivo | Só a ordem |
+
+Os quatro cartões, nesta ordem: «Para que serve», «O que você vai ver na peça», «O que a impressora faz», «Onde gravar o resultado».
+
+O botão de download não baixa. No guia o rótulo é «Sem arquivo».
+
+Só `input` mostra o submenu: Ringing tower, Fast tower, modeladores ZV, MZV, ZVD e EI. O item `input` também mostra a seta `›` na lista.
+
+A ordem do guia é a ordem da lista, e o último passo manda sair do modo de calibração antes de fatiar uma peça comum.
+
+## 5. Manual para quem for recriar
+
+1. Uma janela só. A barra troca `home`, `prepare` e `calib`. Não criar três projetos.
+2. Montar a home pela árvore da seção 2, de cima para baixo: barra, lateral, destaque, três faixas.
+3. O destaque é o gato já fatiado e o botão Imprimir. Não substituir por busca nem por grade de cards.
+4. A preparação é a árvore da seção 3. Painel, mesa, arquivo, rodapé.
+5. A calibração é a lista da seção 4, naquela ordem, com tutorial à direita.
+6. Usar os ids deste arquivo. Não traduzir `resistencia` para outra aba inicial nem `rotate` para outra ferramenta inicial.
+7. Números, nomes e arquivos daqui são exemplo visual. Não gravar G-code, não baixar 3MF e não falar com impressora.
+8. Não alterar o aplicativo antigo nem o site.
+
+## 6. Teste de fidelidade
+
+A home está fiel se, sem rolagem no desktop, aparecerem a barra vinho, a lateral vinho, o gato, o botão Imprimir e o começo da faixa Recentes. Modelos vêm depois de Recentes. Ferramentas vêm depois de Modelos. Não há busca.
+
+A preparação está fiel se a mesa PEI ficar no centro, a barra de ferramentas flutuar em cima, o painel esquerdo começar em Impressora e o rodapé mostrar a sugestão de venda.
+
+A calibração está fiel se o primeiro item for Temperatura e o último for Guia de calibração, com foto e passos à direita.
+
+## 7. Registro de revisão
+
+- v1 2026-11-03 — mapa de blocos e ids do esboço aprovado, para a home não ser recriada de outro jeito.
+
+
+</cursor_untrusted_data_1337>

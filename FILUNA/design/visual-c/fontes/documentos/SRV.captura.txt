@@ -1,0 +1,182 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# FILUNA — ARQUITETURA MESTRE DO SERVIDOR, DADOS E CONTROLE REMOTO FUTURO
+
+**Contrato:** FLN-SERVER-2026-11-05.1 · **Origem:** decisão expressa do proprietário em 05/11/2026 · **Estado:** ESPECIFICAÇÃO; ainda não homologada nem implantada no novo fork.
+**Regra de segurança inegociável:** o Filuna poderá observar, com controles de privacidade, incidentes e saúde técnica dos clientes; **o administrador Filuna NÃO terá capacidade de acessar, comandar, imprimir, pausar, cancelar, aquecer ou abrir câmeras das impressoras dos clientes**. O controle remoto futuro pertence ao **próprio titular da impressora** e a pessoas que ele autorizar expressamente, segundo política granular auditável.
+
+## 1. Fronteira: programas, servidores e dados
+
+\`\`\`text
+                     [Aplicativo Windows Filuna Slicer]
+                   Orca core + GUI Filuna + DeviceBridge
+               * slicing local, perfis e projetos no cliente
+               * dispositivos e LAN pareados pelo próprio cliente
+               * store offline cifrado + fila de eventos transacional
+                                  |
+                          HTTPS/TLS saída (443)
+                     tokens e escopos por dispositivo
+                                  |
+             [API Gateway Filuna / autenticação / políticas]
+                   1) Filuna ID / planos / tenants
+                   2) Sync API / ledger / histórico / backups
+                   3) Diagnósticos SANITIZADOS de software
+                   4) Estado técnico agregado de dispositivos (opt-in)
+                   5) Fila/broker de comandos remotos FUTURO - OFF
+                                  |
+              [Banco privado + objeto cifrado + logs separados]
+              serviços só por rede privada, sem SQL no cliente
+                                  |
+             [Portal/mobile autenticado do próprio cliente]
+               * histórico e status - fase futura de leitura
+               * futura impressão remota - habilitação individual
+               * nenhuma ação permitida ao administrador Filuna
+
+             [Admin Filuna - observação e suporte]
+               somente métricas/erros permitidos e minimizados
+               sem canal de comando nem conexão LAN à impressora
+\`\`\`
+
+O servidor é **serviço crítico de sincronização, diagnóstico e crescimento**, mas **não é necessário para executar o motor Orca offline**. O Hub não fatia projetos do cliente e não atua como gateway irrestrito para sua LAN.
+
+### Estado real verificado no legado
+
+- O antigo \`abcollicelli-web/filuna-slicer\` documenta um Hub em \`/srv/filuna-slicer-windows-new\`, SQLite de **desenvolvimento** e listener privado **127.0.0.1** no bootstrap, com proxy HTTPS isolado em etapas posteriores. Arquivos: \`docs/ARCHITECTURE.md\`, \`docs/SYSTEMS_MAP.md\`, \`docs/FUP-003-DIAGNOSTICO-DISPOSITIVOS.md\`. **Não presume que a atual topologia de produção, IP e DB comercial estejam homologados.**
+- Diagnósticos FUP-003 e telemetria v1/v2 do aplicativo anterior possuem eventos, pseudonimização e rotas de leitura; foram historicamente publicados em beta, mas **não estão migrados/homologados no fork C++**.
+- Servidor Ubuntu acessado por SentinelX é diferente do Windows do proprietário e de seus clientes. **Nenhum servidor, banco, nginx ou segredo foi modificado nesta fase**.
+
+## 2. Endereços, IPs, DNS, TLS e banco — NÃO hardcode
+
+1. Criar \`FILUNA-SERVER-ENVIRONMENT-MANIFEST\` versionado **sem segredos**, por canal \`owner-beta\`, \`staging\`, \`production\`: \`api_base_url\`, \`allowed_origins\`, \`api_version\`, \`certificate_pin_policy\`, \`region\`, \`data_retention_policy_id\`, \`min_client_version\`, \`release_channel\`, \`status\`. O endereço **preferido é domínio HTTPS**, porque o IP pode mudar; não fixar IP público em DLL, JS, builds ou QR.
+2. IP/hostname real do servidor, IP privado do banco, roteamento interno e portas ficam em inventário de infraestrutura de acesso restrito e no deployment, não embutidos como “constantes” do instalador. Publicar ao cliente somente hostname DNS e API pública autorizada; nenhum IP do cliente/impressora é transmitido por padrão.
+3. Entrada \`443/TCP\` no gateway HTTPS, autenticação com OAuth2/OIDC + PKCE para pessoa, credenciais vinculadas ao dispositivo e tokens rotativos curtos; mTLS **quando viável** entre agentes/servidor; TLS moderno e validação de identidade/certificado. Proibir credenciais estáticas em pacote ou no Git.
+4. DB de produção ainda **a selecionar e homologar** (candidato PostgreSQL gerenciado ou self-hosted com replicação/PITR; não assumir que SQLite DEV é DB comercial). Proibir acesso SQL direto pelo Windows/mobile e proibir expor porta do banco à Internet. \`api → service\` usa conta DB de privilégio mínimo, rede interna, conexões TLS quando configuradas.
+5. Segredos no secret manager do host e vault (usuários/serviço em contas separadas) com rota de rotação, auditoria de leitura e teste de revogação. Nunca expor DSN, senha, token OEM ou chave LAN em ticket, repo, IA ou telemetria.
+6. Separar serviços e ambientes: banco por ambiente, chaves por ambiente, storage por ambiente, tenants com controle lógico e, se necessário, isolamento adicional. Não reutilizar \`nucleo.db\` ou a pasta \`/srv/site\` sem plano de migração aprovado, backup testado e consentimento explícito.
+7. O contrato de API deve suportar versionamento (\`/v1\`/futuras \`/v2\`), esquemas rejeitando campos desconhecidos onde necessário, compatibilidade retroativa, limites de payload, rate limit, idempotência e autenticação independente do cliente.
+
+## 3. Modelo de dados de referência (lógico, NÃO migração SQL pronta)
+
+| Entidade | Chave e relações | Responsabilidade e segregação |
+|---|---|---|
+| \`accounts\`, \`identities\`, \`sessions\` | \`account_id\`, OIDC sub, devices vinculados | identidade real, revogação e MFA para funções sensíveis |
+| \`tenants\`, \`memberships\` | \`tenant_id\`, \`account_id\`, role | separação por cliente e permissões no servidor |
+| \`device_installations\` | instalação Filuna, public_key/fingerprint | identifica o aplicativo, não concede controle da impressora |
+| \`printer_registry\` | \`printer_id\`, \`tenant_id\`, identificação pseudônima/modelo | registro privado de máquinas visíveis **ao cliente** |
+| \`printer_capabilities\` | \`printer_id\`, firmware, protocol, allowed operations, validated_at | flags do protocolo por impressora/firmware |
+| \`printer_observations\` | \`printer_id\`, estado agregado, updated_at, TTL | **só com opt-in**; separar ONLINE de stale/UNKNOWN |
+| \`jobs\`, \`job_events\` | \`job_id\`, \`tenant_id\`, \`printer_id\`, seq e idempotency | ledger de estados, jamais auto-imprimir por receber evento |
+| \`filament_spools\`, \`stock_ledger\` | \`spool_id\`, \`tenant_id\`, \`job_id\`, revisions | estoque/histórico verdadeiro, sem estimativa fabricada |
+| \`user_projects\`, \`project_objects\` | \`project_id\`, \`tenant_id\`, encrypted object ref/hash | **upload opt-in** e políticas de exclusão; preferir processamento local |
+| \`sync_events\`, \`sync_cursors\` | \`event_id\`, \`device_id\`, \`sequence\`, \`entity_revision\` | event sourcing/idempotência/CAS/conflitos auditados |
+| \`app_incidents\`, \`app_diagnostics\` | \`incident_id\`, \`tenant_id\`, \`install_ref\`, \`error_code\` | técnico sanitizado, retenção limitada e acesso admin segregado |
+| \`consents\`, \`sharing_grants\` | \`tenant_id\`, subject, scope, expiry, revoked_at | base de permissão granular para status e remoto |
+| \`remote_intents\`, \`remote_receipts\` | \`command_id\`, \`tenant_id\`, \`actor_id\`, \`printer_id\`, expiry | **FUTURO / tabelas sem operadores habilitados** |
+| \`security_audit\`, \`backup_catalog\` | origem, hash, timestamp, retention, restore_case | auditoria de segurança, backup e restauração |
+
+**Regras transversais:** cada row de usuário com \`tenant_id\`, relação de permissão; autorização **sempre no servidor**, não confiar em \`tenant_id\` fornecido pelo cliente. Invariantes do ledger e migrações transacionais com \`schema_version\`, rollback/forward fix. Apagamento por solicitação legítima/GDPR precisa ser possível — "não apagar nunca" não substitui direitos legais e políticas de retenção. Uma operação de delete deve ser autorizada, auditada e coerente com backup e restauração.
+
+## 4. Proteção real contra perda de dados — compromissos testáveis
+
+**Princípio:** cliente deve conhecer exatamente o que foi salvo localmente, o que teve ACK persistente no servidor e o que ainda espera sincronização. Sem falsas promessas de “100% dados imortais”.
+
+- **Local:** SQLite transacional (ou storage equivalente) com integridade, migração reversível, cópia de segurança cifrada, gravações atômicas, WAL quando apropriado, restauração de projetos, configuração e fila offline persistente. A escrita de G-code/3MF não depende de Internet.
+- **Sync:** eventos imutavelmente identificados \`event_id\`, \`device_id\`, sequência monotônica, revision/CAS, idempotency, hash de conteúdo; retries com backoff sem duplicação, DLQ e reconciliação. **Não confirmar “salvo na nuvem” antes do ACK de durabilidade servidor**.
+- **Servidor:** DB com backups cifrados, **PITR**, retenção e rotação, verificações de integridade, réplicas conforme RPO, pelo menos uma cópia isolada fora do ambiente principal, controle anti-ransomware (imutabilidade/object lock quando possível), verificação 3-2-1 e testes frequentes de RESTORE em ambiente isolado.
+- **RPO/RTO:** não prometer números antes da escolha do DB e ensaios. Estabelecer metas por classe (dados de conta/estoque/jobs críticos vs caches) e publicar RPO/RTO reais após medições e aprovação; perda de dados **já confirmados** pelo servidor é incidente crítico P0.
+- **Reconciliação:** 2 dispositivos editando mesma bobina/arquivo, concorrência, clock drift, usuário troca PC, queda 1/50/95% de upload, disco cheio e upgrade interrupted; conflito pede escolha ou resolução por regra explícita, nunca sobrescrever silenciosamente.
+- **Restores:** mensal automatizado de restore de subconjunto sanitizado e trimestral de desastre completo em staging; simular corrupção, expiração, revogação, backup incompleto e recuperação do último ACK. Cada ensaio produz duração observada, bytes recuperados, hashes, RPO/RTO e aprovação. Calendário é meta de processo, não resultados já executados.
+- **Direitos do cliente:** export de dados, cópia de projetos e perfil, exclusão legal, acesso ao histórico e aviso de status de sincronização \`Local\` / \`Na fila\` / \`Salvo na nuvem\` / \`Falhou\`. Não dizer que nada será apagado se houver exclusão pedida, política de retenção ou ação do próprio usuário; garantir integridade e restauração verificáveis.
+
+## 5. Monitoramento Filuna do software — sem controle de impressoras
+
+**Dois canais distintos:**
+- **A. Diagnóstico de aplicação:** erro de software, falha de atualização, crash classificado, versão/build, stack sanitizada, OS, etapa, módulo, causa observada, severidade, id de incidente; sem STL/3MF/G-code, modelos privados, caminhos, tokens, e-mails, IP/MAC/serial ou imagem de câmera. Usar regras do FUP-003 anterior como ponto de partida e adicionar scrubber C++ e teste de vazamento antes de enviar.
+- **B. Saúde opcional de dispositivo:** cliente habilita “Compartilhar estado técnico com o suporte Filuna”; coleta minimizada: fabricante/modelo/firmware **apenas se necessário**, adaptador e versão, estado de conexão, categoria da falha e momento de última leitura. Nunca presumir consentimento pelo simples uso do app. Sem câmera, sem fila nominativa, sem nome de trabalho, sem leitura de sensor não necessária ao diagnóstico.
+
+**Perfil de autorização:**
+| Ator | Ver incidentes sanitizados | Estado técnico compartilhado | Ver job/projeto privados | Comando de impressão |
+|---|---|---|---|---|
+| Admin Filuna suporte | conforme função, necessidade e auditoria | **somente opt-in/abstraído** | **NÃO** | **NUNCA** |
+| Dono de tenant/usuário da impressora | próprios incidentes e controles de privacidade | impressoras próprias | próprios dados | somente **após gate remoto futuro** |
+| Membro convidado pelo dono | conforme escopo e duração | conforme escopo | conforme escopo | opcional, dependente de política explícita futura |
+| Serviços de alerta | contagem/código de incidente | categoria agregada | NÃO | NUNCA |
+| IA suporte técnico | diagnóstico sanitizado e necessário, acesso aprovado | dados mínimos | NÃO por padrão | NUNCA |
+
+Administradores não recebem escopo \`printer.command\`, \`printer.camera\`, \`printer.lan\` nem podem solicitá-los por painel administrativo; **não existe “modo proprietário Filuna” para ver/manipular impressoras alheias**. Conta de suporte com acesso a dados identificáveis deve ser separada, MFA, aprovação por necessidade, trilha de auditoria e tempo limitado; cliente pode revogar observação.
+
+Eventos **INFO** (impressora deliberadamente desligada) não acionam incidente P0. \`FIL-DEV-FAILED\` e \`FIL-APP-UNHANDLED\` podem ser agrupados por instalação/versão/erro e ter severidade por impacto, sem 233 alertas repetidos. FUP-003 W é fonte de testes, não implementação a copiar.
+
+## 6. Programa de etapas do servidor — ligações exatas com o produto
+
+| Fase | Depende de | Entrega concreta | Gate |
+|---|---|---|---|
+| **SRV-00 Topologia e inventário** | Governança/G0, LEGAL | inventário privado de servidores/ambientes, domínio, IP e DNS real, riscos, configuração sem segredo, diagrama e proprietário técnico | G0 |
+| **SRV-01 Gateway/DB base** | SRV-00 + CI e segurança | HTTPS, API versionada, controle de acesso, DB privado escolhido, isolamento staging/prod, migrations, audit logs | G2/G3 |
+| **SRV-02 Filuna ID e autorização** | SRV-01 + contrato de dados | OIDC/PKCE, sessões, MFA sensível, tenancy, RBAC/ABAC, revogação, API de perfil | G3 |
+| **SRV-03 Sync/backup confiável** | SRV-02 + cliente storage local | fila/outbox, ledger, backup offsite cifrado, PITR, teste restore, status real no app | G3/G4 |
+| **SRV-04 Diagnósticos seguros** | SRV-02 + logging local | v1/v2 compatível, scrubber duplo, alertas agrupados, painel admin **read-only**, privacy controls | G3/G4 |
+| **SRV-05 Observações de impressoras** | DeviceBridge local homologado + SRV-04 | opt-in, status agregado/TTL/UNKNOWN, cliente revoga, admin não comanda | G4 |
+| **SRV-06 Portal cliente somente leitura** | SRV-03 + SRV-05 | próprias impressoras, histórico, estoque, job e câmeras **apenas se houver autorização específica e privacidade** | G4/G5 |
+| **SRV-07 Base remota desativada** | SRV-06 + segurança/ameaças | schema de intent/receipt, isolamento actor/tenant, envelopes assinados, fila com TTL, flags OFF | G1/G3; nenhuma execução real |
+| **SRV-08 Pilot remote print (cliente)** | **DeviceBridge + impressão local homologados em hardware**, SRV-07, MFA, consentimento e autorização do dono | comando remoto para a impressora PRÓPRIA, sessão ativa, assinatura, revogação e ACK real | **G4 remoto obrigatório** |
+| **SRV-09 Mobile/web com comando** | SRV-08 PASS, política de emergência e fraude | visualizar, enviar/iniciar/pausar/cancelar **conforme firmware**, controles do cliente, histórico e rollback | G4/G5 |
+| **SRV-10 Lançamento remoto** | SRV-09 + segurança, DR e owner sign-off | rollout canário, contrato de suporte, verificação jurídica/seguro, documentação e kill switch | G6 específico remoto |
+| **SRV-11 Operação contínua** | SRV-10 | alertas, patches, firmware changes, auditoria de permissão e ensaios de DR | permanente |
+
+**Regra de prioridade:** \`SRV-01..05\` é fundação útil desde o início, mesmo se nunca ocorrer remoto. \`SRV-07\` pode reservar nomes de API/schema e UI atrás de feature flag, mas não oferecer “comando” funcional até \`SRV-08\` PASS. O cronograma principal pode ter fases paralelas de pesquisa, mas **nenhuma liberação do remoto antes da impressão LAN local ser física e integralmente homologada**.
+
+## 7. Segurança específica de impressão remota — futura
+
+**Arquitetura autorizada:** app móvel/web do cliente autenticado → servidor valida \`tenant/actor/scope\` e política da máquina → registra \`RemoteIntent\` com expiração e nonce → Filuna Agent do cliente, que estabeleceu canal **de saída** autenticado, busca mensagem → verifica assinatura, usuário/permission/firmware, job, estado, confirmação e nonce → opera pelo DeviceBridge **local** → recebe ACK físico e retorna \`RemoteReceipt\`. **O servidor não abre conexão direta à LAN privada do cliente.**
+
+- **Pré-condição:** cliente que é dono da máquina fez pareamento local e **habilitou individualmente** acesso remoto. Controles podem ser desligados sem login no painel técnico local. \`deny_by_default\`; admins Filuna não têm token/role de controle.
+- **Autenticação:** OIDC/PKCE, sessões de curta duração, MFA/step-up antes de imprimir/cancelar/alterar calor, confiança no dispositivo e autorização de membro por impressora com prazo/escopo. Credenciais LAN nunca saem do agente local.
+- **Comando:** assinado, autenticado, expirado (TTL curto), vinculado a \`tenant_id, actor_id, printer_id, job_id, expected_firmware, operation, policy_version, request_id\`, proteção a replay e numeração monotônica; **idempotência forte**, ACK semântico, reconciliação. Sucesso de API enqueue ≠ sucesso de impressão.
+- **Consentimento:** confirmação explícita do cliente no app ou web para cada início; mensagens de autorização só são permitidas do titular/delegado autorizado, nunca do suporte. Sem material/mesa prontos ou proteção física desconhecida, bloquear e orientar inspeção local.
+- **Estados offline:** com Windows/agent desligado **não há canal de impressão**. Futuro gateway local dedicado do cliente (p.ex. Raspberry Pi) só é nova etapa com produto/licença/testes; jamais prometer “imprime com PC desligado” sem isso.
+- **Ações:** começar com **consulta remota**, depois **pausar/cancelar** e somente em seguida **enviar/iniciar trabalho** após teste de segurança. Aquecer, mover e firmware ficam **fora do MVP remoto**, por risco físico.
+- **Câmera:** consentimento separado, sem gravação/nuvem por padrão, codec real, sinalização de streaming, acesso restrito e revogação instantânea. Permitir ao cliente ver sua câmera não dá direito ao suporte Filuna.
+- **Incidentes:** kill switch por release/marca/firmware, revogação de sessão/grant, detectar anomalia, limites de frequência, auditoria sem dados privados. Nunca “replay” remoto após timeout.
+- **Teste remoto real:** usuário A vs B, cross-tenant, role support, token roubado/revogado, TTL expirado, sessão offline, comando duplicado, estado stale, duas redes, alteração firmware, câmera sem permissão, conflito de jobs, print iniciado sem consentimento; **100% PASS** e peça real quando anunciar impressão.
+
+## 8. Testes e níveis de evidência obrigatórios
+
+| Case ID | Caso | Gate de aprovação |
+|---|---|---|
+| SRV-QA-001 | DB sem porta pública e API com TLS/host correto | G2 |
+| SRV-QA-002 | clientes não podem executar SQL/ler segredos do servidor | G2/G3 |
+| SRV-QA-003 | isolamento tenant A/B nas entidades, logs e arquivos | G3 |
+| SRV-QA-004 | sync offline/online com retries idempotentes e conflitos CAS | G3 |
+| SRV-QA-005 | backup cifrado offsite e RESTORE completo comprovado por hash | G3/G4 |
+| SRV-QA-006 | cliente vê Local/Na fila/Salvo na nuvem/Falhou sem falso ACK | G4 |
+| SRV-QA-007 | diagnóstico sem nomes de modelos, e-mail, IP, serial, token ou câmera | G3/G4 |
+| SRV-QA-008 | suporte Filuna tem apenas incidentes sanitizados; **nenhuma permissão de comando** | G3/G4 |
+| SRV-QA-009 | cliente opt-in/out das observações, revogação imediata e TTL | G3/G4 |
+| SRV-QA-010 | leitura do painel cliente não permite controle remoto | G4 |
+| SRV-QA-011 | com feature OFF, **ZERO remote intents** são executados | G2/G3 |
+| SRV-QA-012 | usuário não autorizado/tenant B/support não consegue criar comando | G3/G4 |
+| SRV-QA-013 | comando vencido/replay/duplicado não chega à impressora | G3/G4 |
+| SRV-QA-014 | app local/desligado ⇒ intent não provoca impressão inesperada ao voltar | G4 |
+| SRV-QA-015 | sem confirmação expressa e capability real ⇒ ZERO \`StartPrint\` | G4 |
+| SRV-QA-016 | ACK de broker não se passa por ACK da impressora | G3/G4 |
+| SRV-QA-017 | cliente revoga remoto/câmera; servidor/agent respeitam imediatamente | G4 |
+| SRV-QA-018 | atualização/reinício/queda de LAN durante impressão remota não duplica job | G4 |
+| SRV-QA-019 | prova de restauração parcial com dispositivo sem sync e dados não confirmados | G4 |
+| SRV-QA-020 | rollback remoto com flags OFF e core Orca livre preservado | G5/G6 |
+
+**Não declarar nenhum PASS sem execução real.** Testes de \`SRV-08..10\` dependem de PC Windows, LAN/impressora física, duas contas isoladas e cliente remoto autenticado. A avaliação legal inclui GDPR, CRA, AI Act para diagnósticos com IA quando houver e direito do consumidor aplicáveis.
+
+## 9. Decisões pendentes e riscos abertos
+
+- **Produção:** definir região UE, fornecedor/DB, domínio e gateway real, retenção e orçamento; IP não se torna fonte de verdade se DNS/rotas podem mudar. Verificar servidor em modo leitura antes da configuração.
+- **Dados:** classificar projetos/modelos e uploads opcionais, privacidade e termos, RPO/RTO mensurados, restore e backup offsite, direito de exclusão.
+- **Dispositivos:** prioridade de fabricantes e hardware real; capacidade de status agregada sem expor detalhes do dono; opt-in e logs.
+- **Remoto:** definir modelo de autorização doméstica/atelier e possibilidade de colaboradores, seguro/responsabilidade por controle físico, resposta a incidentes e opção de gateway quando PC desligado.
+- **Implementação:** fork C++ não contém o Hub W automaticamente. Reutilizar contratos, não copiar serviços/dados de produção cegamente. Atualizações de protocolo/firmware requerem reteste.
+- **Conformidade:** avaliar CRA comercial, GDPR, retenção de vídeo e, quando aplicável, avaliações externas de segurança. **Esta documentação não é homologação legal**.
+
+**Regra final:** Filuna pode prestar suporte técnico lendo **erros e estados autorizados minimizados**; não terá controle remoto das impressoras dos clientes. A **impressão à distância do cliente** só existirá depois do **controle local aprovado + servidor, privacidade, segurança e hardware remoto 100% testados**, com opt-in, revogação, dossiê e aprovação por versão.
+
+
+</cursor_untrusted_data_1337>

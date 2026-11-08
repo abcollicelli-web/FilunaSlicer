@@ -1,0 +1,121 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# FILUNA SLICER — REGRA MESTRE PERMANENTE: TRÊS CAMADAS E CONTRATO OEM
+
+**Data da decisão:** 2026-11-06. **Autoridade:** determinação expressa do proprietário.  
+**Estado:** regra normativa de arquitetura e de aceitação. **Não** comprova que os módulos já estejam implementados.  
+**Prioridade:** prevalece sobre soluções pontuais, overlays em `PrintConfig.cpp`, alterações diretas em `Plater.cpp` e qualquer interpretação anterior que permita operar apenas com presets.
+
+## 1. Três camadas obrigatórias
+
+**Camada 1 — OrcaSlicer oficial (raiz imutável):** núcleo compartilhado, acompanhado por tags oficiais. **Não editar diretamente para atender um fabricante.** O que for idêntico por hash/proveniência é armazenado uma única vez. Diferenças de namespace `Slic3r` exigem isolamento entre versões e marcas, não ligação indiscriminada no mesmo espaço de símbolos.
+
+**Camada 2 — Filuna:** UI, usuário/dispositivos, seleção e carregador de módulos, descoberta agregada, migração entre marcas, atualização, conformidade, segurança e integração. Filuna comunica-se com cada fabricante **somente pelo contrato versionado**. Nunca chama APIs/classes internas OEM diretamente.
+
+**Camada 3 — módulos OEM nativos isolados:** cada marca/versão oferece, mediante **código e recursos oficiais fixados e preservados**, identificação e rede, pareamento, capacidades, perfis, 3MF, Preparar, fatiamento/G-code, envio e impressão, monitoramento/câmera, multimaterial, erros. Cada capacidade só pode ser anunciada/habilitada se realmente implementada e aprovada na conformidade exigida. Sem reescrever o fabricante como presets sobre Orca.
+
+## 2. FilunaOemContract v1
+
+Uma única interface estável, versionada e retrocompatível; incluir handshake de versão/ABI, identificador fabricante/versão, capacidades anunciadas, erros estruturados e identificadores de correlação.
+
+| Domínio | Operações do contrato |
+|---|---|
+| Descoberta | `discovery_signatures()`, `discover(callback)`, `pair(device, credentials)`, `device_capabilities(device)` |
+| Preparar/perfis | `list_printers()`, `list_profiles(printer)`, `open_project(3mf)`, `save_project(3mf)`, `printer_switch_plan(project, target)`, `config_definition()` |
+| Fatiar/estimativa | `slice(project, plate)` → G-code ou G-code.3mf oficial; `estimate(project)` → tempo/filamento por material |
+| Imprimir/monitorar | `send(device, file, options)`, `start/pause/resume/stop`, `status_stream(device)`, `camera(device)`, `materials(device)`, `errors(device)` |
+
+- **C1:** Filuna nunca chama diretamente classe interna da marca; usa só contrato.
+- **C2:** código escrito pelo Filuna específico de marca deve ficar no **adaptador fino**, isolando interfaces oficiais.
+- **C3:** extensões do contrato entram como capacidades opcionais, preservando compatibilidade v1.
+- **C4:** o motor de fabricante deve rodar em processo isolado ou biblioteca com ocultação real dos símbolos; por padrão preferir processo quando o conflito de namespace, ABI, versão de dependências ou isolamento de falhas exigir.
+- **C5 (segurança):** credenciais não são gravadas em G-code/logs/manifesto; chamadas de rede e impressão requerem validação do estado do dispositivo; operações são identificadas, auditadas e não devem iniciar impressão automaticamente durante testes.
+
+**Importante:** este documento define a interface; não confundir especificação com implementação de processo, ABI, câmera ou MQTT funcional.
+
+## 3. Estrutura canônica versionada
+
+```text
+fabricantes/<marca>/<versao-oficial>/
+  upstream.lock
+  manifest.json
+  engine/
+  profiles/
+  printers/
+  prepare/
+  network/
+  web/
+  adapter/
+  patches/
+  conformance/
+  LICENSES/
+```
+
+`upstream.lock`: URL oficial, tag imutável, commit, commit/árvore do Orca-raiz usada, data de captura, hash de árvore, origem dos binários oficiais, toolchain e dependências.  
+`manifest.json`: caminho original, categoria, status idêntico/modificado/novo/revisar, hash Git e SHA-256, licença/proveniência, relações com build e capabilities com status de teste.  
+`patches/`: somente alterações inevitáveis nos fontes OEM, um patch por alteração com justificativa, upstream/base SHA, responsável e testes; meta **zero patches**.  
+`conformance/`: hash/versão do executável testado, fixture, comandos, logs saneados, evidência numérica e PASS/FAIL por modelo/capacidade. Versões múltiplas da mesma marca podem coexistir.
+
+Arquivos de outra marca, localization, imagens gerais de UI, telemetria, IA e telas fora de Preparar/Dispositivos não entram no módulo, salvo dependência obrigatória comprovada e licenciada, documentada em `revisar`.
+
+## 4. Mapas automáticos M1–M5 (NUNCA manuais)
+
+**M1 — arquivos:** usar regras por caminho do COMANDO_GPT_FILUNA_MODULOS_OEM e grafo CMake/includes para classificar novos arquivos; os não classificáveis ficam em **revisar**, jamais descartados silenciosamente. Categorias Motor, Perfis **só da marca**, Preparar, Rede, Web de dispositivo e Revisar.
+
+**M2 — deltas:** comparar hash Git byte-exato da versão oficial com o Orca-raiz fixado; compartilhados armazenados uma vez, novos/modificados isolados. Recalcular quando mudar Orca ou OEM. A deduplicação não pode romper dependências, execução, ABI ou licença. Considerar motor de marca **compartilhado** apenas quando o conjunto comprovado de arquivos/versão realmente coincidir.
+
+**M3 — configuração:** gerar via `config_definition()` JSON com chave, tipo, valores válidos, default, unidade e categoria. Migração entre marcas por compatibilidade de tipo/enum: iguais migram, compatíveis parcialmente migram só valores válidos, incompatíveis adotam padrão destino com explicação no diálogo de comparação.
+
+**M4 — impressoras:** mapear automaticamente `printer_model`, códigos internos, perfis, bicos/variantes e versão/módulo. O 3MF identifica origem por metadados `Application`, `printer_model` e `filuna_module` quando arquivo Filuna; seleção não pode trocar motor silenciosamente.
+
+**M5 — descoberta:** módulos anunciam assinaturas de SSDP/UDP/mDNS/portas; serviço agregador Filuna identifica a marca e despacha descoberta e vínculo ao módulo correspondente. Assinaturas sobrepostas exigem resolução segura, não vincular marca errada.
+
+## 5. Workflow universal de atualização U1–U8
+
+1. **U1:** agendamento detecta tags novas do Orca e dos forks oficiais; cria branch e PR `Atualizar <marca> <anterior> → <nova>`.
+2. **U2:** fixa a tag/commit/árvore oficial em `upstream.lock`.
+3. **U3:** gera M1–M5 e manifestos sem intervenção manual.
+4. **U4:** reaplica patches versionados; conflito aponta arquivo/função, bloqueia aprovação; **nunca** faz merge silencioso.
+5. **U5:** compila motor/adaptador isolados; falha de API deve apontar função do adaptador; não alterar raiz Orca/OEM para mascarar erro.
+6. **U6:** baixa release oficial da mesma versão (origem verificada), executa conformidade no Windows **real** e compara saída semântica/byte-a-byte exigida.
+7. **U7:** só publica módulo aprovado; falha mantém PR e versão anterior ativos.
+8. **U8:** ao atualizar Orca-raiz, regenera todos os mapas/deltas de todas as marcas e testa conformidade novamente, com rollback.
+
+Automação só é considerada implementada quando workflows, ferramentas de geração, testes e gates de publicação existirem e passarem. A regra aqui **não cria por si só** tal automação.
+
+## 6. Conformidade por marca, versão, modelo e capacidade
+
+Corpus: cubo, ponte, overhang, parede fina, várias peças, multimaterial, suporte, vaso e peça grande. Verificar com o fatiador OEM oficial da MESMA versão no mesmo Windows e mesmas entradas/perfis:
+- SHA-256 **bruto** do G-code e SHA-256 normalizado removendo **somente linha explícita de data/hora de geração no HEADER_BLOCK**, registrando número/conteúdo removido. Nenhuma outra diferença conta como igual.
+- `.gcode.3mf`: comparar **`Metadata/plate_1.gcode` extraído**; comparar `slice_info.config`, `plate_1.json`, imagens e outros membros separadamente por SHA-256; não usar hash do invólucro ZIP, cujas datas podem variar.
+- Leitura/escrita 3MF e reabertura no oficial sem alterações indevidas; dados de impressora, bico, filamentos, placas, estimativas e comandos.
+- Rede em impressora de laboratório ou emulador gravado: descoberta, vínculo, upload, início, pausa, retomar, parar, status, câmera, multimaterial, erros; distinguir emulação de prova em hardware real.
+- Registrar em `conformance/` e `manifest.json`. **Se uma capacidade não passou, permanece desabilitada para aquele modelo.** Aprovação final de lançamento é decisão do proprietário com base em evidências.
+
+## 7. Uso, instalação e atualização
+
+Dispositivo vinculado armazena marca, modelo, serial, módulo e versão; credenciais separadas em armazenamento seguro. Projetos Filuna gravam `filuna_module=<marca>@<versao>`, sem destruir metadados oficiais necessários ao fatiador. Migração de versão mostra diffs e solicita decisão, sem alternância silenciosa. Baixar sob demanda apenas módulos das marcas usadas; mecanismo assinado/integridade, reinício controlado, rollback, manutenção da versão anterior e preservação do projeto.
+
+## 8. R1–R8 — invariantes
+
+- **R1:** Orca não se edita para uma marca.
+- **R2:** código OEM oficial da marca não se edita; patches inevitáveis versionados e justificados, meta zero.
+- **R3:** Filuna por marca escreve apenas adaptador fino, e patches documentados se estritamente necessários.
+- **R4:** mapas M1–M5 gerados por ferramenta, nunca manutenção manual.
+- **R5:** mesmo procedimento U1–U8 para Orca e cada marca.
+- **R6:** publicação apenas depois de conformance PASS; falha mantém versão anterior.
+- **R7:** contrato versionado retrocompatível.
+- **R8:** nada marcado `pronto` sem prova em `conformance/`.
+
+## 9. Débito técnico explícito da PR #5 — NÃO confundir com arquitetura aprovada
+
+As tentativas anteriores incluíram alterações diretamente em `src/libslic3r/PrintConfig.cpp`, `src/slic3r/GUI/Plater.cpp` e `src/slic3r/GUI/DeviceCore/DevManager.cpp`, além de `BambuA1ConfigOverlay.hpp`. **Essas modificações não atendem R1/C1/C2 como solução permanente.** Necessário migrá-las para módulo/adapter versionado e remover as alterações OEM específicas da raiz em PR próprio, preservando comportamento comum do Orca. Não desfazer o código de produção destrutivamente nem afirmar que a migração já ocorreu.
+
+O branch de QA contém clones/overlays de fornecedores e scripts de teste, mas não é implementação dos cinco mapas/contrato/auto-update nem fatiamento completo OEM. **Gate B Windows oficial compilado × oficial está pendente, gate C Filuna integrado pendente**, PR #5 mantém-se **draft**; sem publicação.
+
+## 10. Continuidade obrigatória
+
+Ler primeiro este documento; depois `FILUNA/HANDOFF-MESTRE-BAMBU-A1-ORCA-OEM-2026-11-06.md`, `FILUNA/qa/BAMBU-A1MINI-E5-E8-REPRODUTIBILIDADE-WINDOWS-2026-11-06.md`, `FILUNA/REGRA-PRIORITARIA-100-PORCENTO-MODULOS-OEM-REDE-FATIAR-2026-11-06.md`. Ao atualizar docs, reportar status reais de GitHub Actions e não inventar SHA Windows. Não lançar atualização sem build/testes e autorização de release.
+
+
+</cursor_untrusted_data_1337>

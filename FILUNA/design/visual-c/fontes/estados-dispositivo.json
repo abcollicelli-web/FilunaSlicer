@@ -1,0 +1,314 @@
+[
+  {
+    "id": 1,
+    "slug": "vazio",
+    "title": "Sua primeira impressora",
+    "file": "01-vazio",
+    "sources": "UX-D; H01; P13",
+    "feedback": [
+      "Estado vazio",
+      "Entrada no assistente",
+      "Sem registro automático"
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "lista",
+    "title": "Lista de unidades",
+    "file": "02-lista",
+    "sources": "UX-D; DEV §5; H01",
+    "feedback": [
+      "Filtros e busca",
+      "Cartão de impressora",
+      "Estados sem falso online"
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "descoberta",
+    "title": "Descoberta segura",
+    "file": "03-descoberta",
+    "sources": "DEV D0–D3; FUP-D; H01",
+    "feedback": [
+      "Permissão e rede",
+      "Busca verificável",
+      "Descoberta ≠ cadastro"
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "identidade",
+    "title": "Identificação e conflito",
+    "file": "04-identidade",
+    "sources": "DEV D3–D6; FUP-D; H01",
+    "feedback": [
+      "Candidato não pareado",
+      "Identidade ambígua",
+      "Sem suporte presumido"
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "cadastro-pareamento",
+    "title": "Cadastro e pareamento",
+    "file": "05-cadastro-pareamento",
+    "sources": "H01; P13; OEM-UPD; QA-W",
+    "feedback": [
+      "Perfil versus dispositivo",
+      "Manual e autenticação",
+      "Sem credencial inventada"
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "assistente-perfis",
+    "title": "Assistente e perfis",
+    "file": "06-assistente-perfis",
+    "sources": "P13 §13.1–13.2; OEM-3C",
+    "feedback": [
+      "Etapas retomáveis",
+      "Download seletivo",
+      "Cache e falha segura"
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "camera",
+    "title": "Câmera e privacidade",
+    "file": "07-camera",
+    "sources": "P13 §13.2; DEV §7; SRV §7",
+    "feedback": [
+      "Consentimento local",
+      "Prévia ilustrativa",
+      "Sem frame ≠ PASS"
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "multimaterial",
+    "title": "Slots e materiais",
+    "file": "08-multimaterial",
+    "sources": "P13; DEV §8; FUP-D; PROTO",
+    "feedback": [
+      "Slots e bobinas",
+      "Confirmação humana",
+      "Mesma família de material"
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "resultado-assistente",
+    "title": "Prontidão e pendências",
+    "file": "09-resultado-assistente",
+    "sources": "P13 §13.2–13.3; BETA",
+    "feedback": [
+      "Resumo por responsável",
+      "Bloqueio com causa",
+      "Frase de liberação condicional"
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "painel-pronta",
+    "title": "Painel local pronto",
+    "file": "10-painel-pronta",
+    "sources": "UX-D; DEV §§4–7; H01",
+    "feedback": [
+      "Identidade persistente",
+      "Monitorar antes de agir",
+      "Capacidades e atualidade"
+    ]
+  },
+  {
+    "id": 11,
+    "slug": "imprimindo",
+    "title": "Impressão e aquecimento",
+    "file": "11-imprimindo",
+    "sources": "UX-D; DEV §6; PROD; BETA",
+    "feedback": [
+      "Status e progresso",
+      "Ações locais confirmadas",
+      "Sensores sem telemetria real"
+    ]
+  },
+  {
+    "id": 12,
+    "slug": "pausa-retomada",
+    "title": "Pausa e retomada",
+    "file": "12-pausa-retomada",
+    "sources": "DEV §6; UX-D; PROD",
+    "feedback": [
+      "Pausa reconciliada",
+      "Retomar só se suportado",
+      "Cancelar com confirmação forte"
+    ]
+  },
+  {
+    "id": 13,
+    "slug": "revisao-envio",
+    "title": "Revisão do trabalho",
+    "file": "13-revisao-envio",
+    "sources": "H01; DEV §6; PRINT; PROD",
+    "feedback": [
+      "Arquivo e direitos",
+      "Apenas registrados",
+      "Enviar não é iniciar"
+    ]
+  },
+  {
+    "id": 14,
+    "slug": "transferencia",
+    "title": "Upload e integridade",
+    "file": "14-transferencia",
+    "sources": "DEV §6; PROTO; BETA",
+    "feedback": [
+      "Progresso ilustrativo",
+      "Falha e reconciliação",
+      "Recibo não aciona start"
+    ]
+  },
+  {
+    "id": 15,
+    "slug": "confirmacao-inicio",
+    "title": "Confirmação de início",
+    "file": "15-confirmacao-inicio",
+    "sources": "DEV §6; P13; H01; PROD",
+    "feedback": [
+      "Trabalho e identidade",
+      "Autorização específica",
+      "ACK antes de sucesso"
+    ]
+  },
+  {
+    "id": 16,
+    "slug": "fila-agenda",
+    "title": "Fila e agenda",
+    "file": "16-fila-agenda",
+    "sources": "PROD; SRV; UX-D",
+    "feedback": [
+      "Prioridade e quantidade",
+      "Agenda só avisa",
+      "Produzir abre revisão"
+    ]
+  },
+  {
+    "id": 17,
+    "slug": "filamentos",
+    "title": "Bobinas e slots",
+    "file": "17-filamentos",
+    "sources": "UX-D §3; DEV §8; PROD",
+    "feedback": [
+      "Estoque sem números falsos",
+      "Vínculo com slot",
+      "Perfis separados de bobinas"
+    ]
+  },
+  {
+    "id": 18,
+    "slug": "historico-resultados",
+    "title": "Histórico e resultado físico",
+    "file": "18-historico-resultados",
+    "sources": "PROD; P13 §13.3; BETA",
+    "feedback": [
+      "Estados finais distintos",
+      "Revisão humana da peça",
+      "Sem promoção por evento"
+    ]
+  },
+  {
+    "id": 19,
+    "slug": "controle-saude",
+    "title": "Controles, saúde e manutenção",
+    "file": "19-controle-saude",
+    "sources": "UX-D; DEV §6; PROD; P13",
+    "feedback": [
+      "Controles confirmados",
+      "Sensores suportados",
+      "Manutenção sem ações automáticas"
+    ]
+  },
+  {
+    "id": 20,
+    "slug": "pular-objeto",
+    "title": "Pular objeto",
+    "file": "20-pular-objeto",
+    "sources": "PROD; DEV §6",
+    "feedback": [
+      "Lista de origem OEM",
+      "Irreversível e confirmado",
+      "Último objeto protegido"
+    ]
+  },
+  {
+    "id": 21,
+    "slug": "falhas-recuperacao",
+    "title": "Falhas e recuperação",
+    "file": "21-falhas-recuperacao",
+    "sources": "DEV §5; FUP-003; SRV TTL",
+    "feedback": [
+      "Sem estado falso",
+      "Identidade revalidada",
+      "Causas sem diagnóstico inventado"
+    ]
+  },
+  {
+    "id": 22,
+    "slug": "diagnostico-privacidade",
+    "title": "Diagnóstico e privacidade",
+    "file": "22-diagnostico-privacidade",
+    "sources": "FUP-002/003; AUD-W; SRV; BETA",
+    "feedback": [
+      "Fatos e hipóteses",
+      "Opt-in e revogação",
+      "Servidor sem controle"
+    ]
+  },
+  {
+    "id": 23,
+    "slug": "configuracao-oem",
+    "title": "Configuração e atualizações",
+    "file": "23-configuracao-oem",
+    "sources": "OEM-3C; OEM-UPD; P13; UPD-W",
+    "feedback": [
+      "Identidade e perfil",
+      "Capacidades por versão",
+      "Integridade e rollback"
+    ]
+  },
+  {
+    "id": 24,
+    "slug": "beta-classificacao",
+    "title": "Beta e três provas",
+    "file": "24-beta-classificacao",
+    "sources": "P13 §13.3; BETA; FASES",
+    "feedback": [
+      "Estado da unidade ≠ modelo",
+      "Três provas independentes",
+      "Sem liberação estável automática"
+    ]
+  },
+  {
+    "id": 25,
+    "slug": "remoto-futuro",
+    "title": "Remoto futuro",
+    "file": "25-remoto-futuro",
+    "sources": "SRV §§5–7; P13; BETA",
+    "feedback": [
+      "Titular e autorização granular",
+      "Administrador observador",
+      "Desligado por padrão"
+    ]
+  },
+  {
+    "id": 26,
+    "slug": "ajuda-lan",
+    "title": "Ajuda de conexão LAN",
+    "file": "26-ajuda-lan",
+    "sources": "H01 adendo; OEM-UPD; PROTO §4",
+    "feedback": [
+      "Protocolos primeiro",
+      "Tutorial por modelo",
+      "Código local, não nuvem"
+    ]
+  }
+]

@@ -1,0 +1,223 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Documento mestre — Galeria de paramétricos e página do item
+
+- **ID único:** `filuna.mestre-parametricos`
+- **Data / revisão:** 2026-11-03 / v1
+- **Status:** PROPOSTO. É o contrato visual do esboço. Não gera malha e não está no programa novo.
+- **Autor da documentação:** Grok
+- **Este arquivo manda.** `2026-11-03-PARAMETRICOS.md` e `2026-11-03-PARAMETRICOS-EDITOR.md` ficam como histórico. Se discordarem deste, vale este.
+- **Fonte dos nomes:** `site/app/parametric_catalog.py`. Só entra item com `published: True`.
+- **Fora do catálogo:** `arvore-porta-bottons`. O catálogo marca `published: False` e `em_validacao`. Não desenhar.
+- **Plataformas:** Windows. A janela inteira cabe na tela do cliente. Nada da página rola por fora.
+- **Menu de entrada:** na home, item lateral `parametric`, rótulo «Paramétricos». Não é aba nova da barra.
+
+OrcaSlicer e PrusaSlicer não criam estes paramétricos. O gerador é do Filuna, o mesmo do site. O fatiador só recebe o 3MF ou o STL depois. Não desenhar esta tela como ferramenta do motor.
+
+## 0. As duas páginas
+
+São duas páginas da mesma janela. Não são dois projetos.
+
+| Página | Quando abre | O que a esquerda é | O que o miolo é |
+|---|---|---|---|
+| Galeria | Clique em Paramétricos na home, ou em «Voltar para galeria» | Não há menu de nomes. | Catálogo em cards. |
+| Item | Clique num card da galeria | Ferramentas daquele paramétrico. A primeira linha é «Voltar para galeria». | Render da peça, preso na janela. |
+
+A barra de cima não muda: marca, abas Início, Preparação, Visualização, Dispositivo, Projeto, Calibração, esferas de tema e conta. Início volta para a home. A aba ativa continua Início, porque paramétrico não é etapa do fatiador.
+
+### O que é proibido
+
+- Não listar os nomes dos paramétricos na lateral do item.
+- Não colocar busca, Fatiar, gato, Recentes, Modelos ou Ferramentas nestas duas páginas.
+- Não deixar a janela maior que a tela. Não rolar o documento.
+- Não mostrar o render da peça antes da imagem, quando o item começa por imagem.
+- Não tratar o esboço como gerador. O botão Gerar não baixa arquivo.
+
+### Trava da janela
+
+A casca é a altura da tela (`100dvh`) e `overflow: hidden`.
+
+- Galeria: só a grade de cards rola, dentro do miolo claro.
+- Item: só a lateral rola, se as ferramentas forem longas. O render não rola e não passa da área que sobrou ao lado.
+- O botão Gerar fica preso embaixo do render, dentro da mesma altura. Um aviso de clique aparece por cima do render, não empurra a página.
+
+## 1. Página galeria
+
+### Árvore
+
+```
+shell.parametricos                altura da janela, fundo berry #64184a, sem rolagem
+├─ app-bar                         56 px, berry-bar #7a215c, aba Início ativa
+└─ miolo.cream                     margem 12 px, raio 16 px, fundo #f7f2f4, sem rolagem
+   ├─ titulo                        «Paramétricos»
+   ├─ legenda                      «Escolha um. O ajuste fica na ferramenta, não nesta galeria.»
+   └─ grade.rolagem                só esta área rola
+      └─ card                        um por slug publicado
+         ├─ arte                      foto 112 px, ou bloco da cor do item
+         ├─ nome
+         └─ frase
+```
+
+Não há lateral nesta página. O catálogo ocupa a largura do miolo.
+
+A grade é 2 colunas no estreito, 3 a partir de 640 px e 4 a partir de 1280 px. Vão de 12 px. Card branco, raio 16 px, texto à esquerda. O card inteiro é o botão que abre o item.
+
+### Cards, nesta ordem
+
+A ordem é a do catálogo do site, pulando o não publicado. `imagem` = o primeiro campo do item é Anexar imagem.
+
+| # | slug | Nome no card | Frase no card | Começa com imagem |
+|---|---|---|---|---|
+| 1 | `lua-litofania` | Lua Litofania LED | Foto na lua oca, com base para LED. | sim |
+| 2 | `pote-doces-imagem` | Pote para Doces com Imagem | A silhueta da imagem vira o pote. | sim |
+| 3 | `chaveiro-botton` | Chaveiro Botton | Imagem, silhueta e rebaixo para botton. | sim |
+| 4 | `envelope-renda` | Envelope de Renda em Tule | Renda, nomes e silhueta do casal. | sim |
+| 5 | `criador-trofeu` | Criador de Troféu | Modalidade, base e placa com encaixe. | não |
+| 6 | `caixa-sombra` | Caixa de Sombra | A imagem vira camadas e moldura. | sim |
+| 7 | `flexi-articulado` | Brinquedo Flexível | Desenho com dobras que saem montadas. | sim |
+| 8 | `ejetor-docinhos` | Ejetor de Docinhos | Cortador e ejetor a partir do desenho. | sim |
+| 9 | `letra-grande` | Letra Grande com Textura | Letra, textura e nome em partes. | não |
+| 10 | `quadro-relevo` | Quadro em Relevo com IA | A foto vira baixo-relevo. | sim |
+| 11 | `topo-bolo` | Topo de Bolo com Nome | Desenho, nome e palitos. | sim |
+| 12 | `chaveiro-tracos` | Chaveiro com Traços | Desenho em duas cores e argola. | sim |
+| 13 | `placa-pintura` | Placa para Pintura | Fundo branco e traço preto em relevo. | sim |
+| 14 | `arvore-natal` | Árvore de Natal com Enfeites | Camadas, pinos e enfeites. | não |
+| 15 | `luminaria-placa` | Luminária Placa com Palavras | Palavra na frente e luz vazada. | não |
+| 16 | `porta-chaveiros-rotatorio` | Porta-Chaveiros Rotatório | Níveis, braços e rolamento 608. | não |
+| 17 | `chaveiro-alto-relevo` | Chaveiro em Alto-Relevo | Foto vira relevo, verso plano. | sim |
+| 18 | `termoformagem` | Gerador de Termoformagem | A imagem vira molde fêmea e macho. | sim |
+| 19 | `presente-termoformado` | Presente Quadrado Termoformado | Caixa, fitas e laço. | não |
+| 20 | `foto-linear-3d` | Foto Linear 3D | A foto vira linhas vazadas e base. | sim |
+| 21 | `letra-grande-nome` | Letra Grande com Nome | Letra vazada e nome encaixado. | não |
+| 22 | `imagem-multipartes` | Imagem Multipartes | Cada área da imagem vira uma peça. | sim |
+
+No esboço, só lua, chaveiro botton, troféu, caixa de sombra, quadro, chaveiro com traços, chaveiro alto-relevo e luminária têm foto no card. Os outros usam um bloco colorido com o nome. No programa novo, a foto é a capa real de `site/app/parametric_catalog.py`, não um desenho substituto.
+
+### O que o clique faz
+
+Abre a página do item daquele slug. Não abre o site. Não baixa arquivo. Não muda a barra.
+
+## 2. Página do item — casca, igual para todos
+
+### Árvore
+
+```
+shell.item                         altura da janela, sem rolagem
+├─ app-bar
+└─ linha                           ocupa o resto, sem rolagem
+   ├─ lateral                      288 px, texto branco, só ela rola
+   │  ├─ voltar                   «Voltar para galeria», primeira linha, sempre
+   │  ├─ nome                     título do slug aberto
+   │  ├─ frase                    a frase do card
+   │  ├─ anexar                   só se o item começa com imagem
+   │  ├─ miniatura               só depois de anexar, 96 px de altura
+   │  └─ ferramentas             só as deste slug
+   └─ miolo.cream                  margem 12 px, coluna, sem rolagem
+      ├─ render                     ocupa o que sobra, fundo #1b121c, recortado
+      │  ├─ placa.pei              faixa no rodapé, borda laranja, não sai da área
+      │  ├─ peca                    só depois da imagem, ou o nome se o item não usa imagem
+      │  └─ aviso                   por cima, só depois de Gerar
+      └─ barra                      nome à esquerda, botão «Gerar» à direita
+```
+
+«Voltar para galeria» fecha o item e volta para a grade, com a rolagem da galeria no topo. Não volta para a home. A home é a aba Início.
+
+### Anexar imagem
+
+Botão rosa, texto «Anexar imagem», aceita arquivo de imagem. Ao carregar:
+
+1. A miniatura entra na lateral, logo abaixo do botão.
+2. O render troca o texto vazio pela peça. Não pede outro clique.
+3. Trocar a imagem substitui a miniatura e a peça.
+
+Antes da imagem, o render do chaveiro diz «Anexe uma imagem para ver o chaveiro.» Os outros que começam com imagem dizem «Anexe uma imagem para ver a prévia.»
+
+Item que não começa com imagem não tem o botão Anexar. O render mostra o nome até existir a malha real daquele gerador.
+
+### Gerar
+
+No esboço, Gerar escreve por cima do render: «Gerar fica no gerador do Filuna. Neste modelo o arquivo não sai.»
+
+No programa novo, Gerar chama o gerador que já existe no site para aquele slug e entrega o formato que o catálogo declara, em geral 3MF ou STL. Mudou um ajuste, o arquivo anterior deixa de valer.
+
+## 3. Página do item — Chaveiro Botton, o modelo desenhado
+
+Slug `chaveiro-botton`. É o único item com as ferramentas desenhadas no esboço. Os outros usam a mesma casca e, no lugar das ferramentas, a frase «Os ajustes deste item seguem o gerador do site. Aqui a vista não gera arquivo.»
+
+### Ferramentas, nesta ordem, valores iniciais
+
+| id | Rótulo | Tipo | Inicial | O que faz na vista |
+|---|---|---|---|---|
+| `anexar` | Anexar imagem | arquivo de imagem | vazio | Libera miniatura e render. |
+| `formato` | Formato | Silhueta, Oval, Quadrado | Silhueta | Recorta a foto: silhueta arredondada, elipse ou canto quase reto. |
+| `fundo` | Recortar o fundo | liga / desliga | ligado | Na vista, a foto multiplica sobre a cor do corpo. Não é o recorte real do gerador. |
+| `tamanho` | Tamanho | texto | 70 | Escala o chaveiro dentro do render, entre 0,72 e 1,15. Não aumenta a janela. |
+| `altura` | Altura | texto | 4 | Só a sombra de espessura, no máximo 16 px. |
+| `medida` | Medida | texto | 32 | Campo visível. No esboço ainda não muda a argola. |
+| `cor` | Cor | cor | `#f4f4f4` | Cor do corpo e da argola. |
+| `tom` | Imagem | Cor real, Preto e branco | Cor real | Preto e branco tira a cor da foto. A cor do corpo fica. |
+
+### Render do chaveiro
+
+Só existe depois da imagem. Cabe inteiro na área escura, centralizado, sem corte pela borda da janela.
+
+De cima para baixo: argola redonda na cor escolhida, corpo de 176 por 208 px antes da escala, foto preenchendo o corpo. A placa PEI fica atrás, no rodapé do render, com borda laranja.
+
+Silhueta usa cantos `42% 42% 46% 46%`. Oval usa `50%`. Quadrado usa `10%`.
+
+## 4. O que o site já faz, para não inventar ferramenta
+
+Isto vem de `site/app/parametric_catalog.py`. É o contrato do gerador real. O esboço não desenha estes campos, fora o chaveiro da seção 3.
+
+| slug | O gerador do site faz | Arquivo |
+|---|---|---|
+| `lua-litofania` | Diâmetro, abertura, espessura, relevo, folga do LED USB 60 × 8 mm, base. | 3MF em duas mesas ou STL |
+| `pote-doces-imagem` | Silhueta, tampa até 8 cores, tamanho, altura, paredes, folga. | 3MF ou STL |
+| `chaveiro-botton` | Silhueta ou formatos prontos, rebaixo, argola, fundo e traço ou cores da imagem. | 3MF ou STL |
+| `envelope-renda` | Textura de renda, pausa para o tule, nomes, data, lacre. | 3MF com pausa ou STL |
+| `criador-trofeu` | Emblema, formato, base, placa, nomes, cores. Aceita imagem. | 3MF ou STL |
+| `caixa-sombra` | Até 10 camadas, vãos, moldura, cor de cada peça. | 3MF ou STL |
+| `flexi-articulado` | Dobras desenhadas, pino com folga, duas cores, sai montado. | 3MF ou STL |
+| `ejetor-docinhos` | Tamanho, relevo, folga, parede. Cortador e ejetor separados. Não é certificado para alimento. | 3MF ou STL |
+| `letra-grande` | Letra, textura, nome, espessuras, rebaixo, tolerância. | 3MF ou STL |
+| `quadro-relevo` | Estilo, tamanho, altura, detalhe, moldura. Cada geração gasta 1 crédito de IA. Falha não cobra. | 3MF ou STL |
+| `topo-bolo` | Nome, fonte manuscrita, cores, tamanho, palitos. Peça única. | 3MF ou STL |
+| `chaveiro-tracos` | Cores, tamanho, furo, posição da argola. | 3MF ou STL |
+| `placa-pintura` | Limiar, suavização, espessura. 12 camadas brancas e 3 pretas. | 3MF ou STL |
+| `arvore-natal` | Altura, camadas, ondas, enfeites. Sem suporte. | 3MF ou STL |
+| `luminaria-placa` | Forma, palavras, cores, LED de 59 mm. | 3MF ou STL |
+| `porta-chaveiros-rotatorio` | Níveis, braços, dois rolamentos 608, eixo M8. Beta, sem prova física. | ZIP |
+| `chaveiro-alto-relevo` | Medida e profundidade. Uma cor, verso plano. | 3MF ou STL |
+| `termoformagem` | Molde fêmea e macho em PETG, placas em PLA, aro e fechamento. | 3MF ou STL |
+| `presente-termoformado` | Caixa quadrada, duas fitas, laço, nome. | 3MF ou STL |
+| `foto-linear-3d` | Linhas vazadas, arte e base com encaixe. | 3MF ou STL |
+| `letra-grande-nome` | Letra, nome, parede, fundo, material, tolerância, gabarito. | 3MF, STL e SVG |
+| `imagem-multipartes` | Tamanho, espessuras, tolerância. Áreas viram peças. | 3MF ou STL |
+
+No programa novo, a lateral de cada slug usa os campos do gerador daquele slug. Não copiar os campos do chaveiro para os outros.
+
+## 5. Manual de implementação
+
+1. Uma janela. Paramétricos da home abre a galeria. O card abre o item. Voltar para galeria volta a grade.
+2. Ler o catálogo publicado. Não incluir `arvore-porta-bottons` enquanto `published` for falso.
+3. Galeria sem lateral de nomes. Item com lateral só das ferramentas daquele slug.
+4. Travar a altura na tela do Windows. Rolagem só na grade ou na lateral.
+5. Item com imagem: Anexar primeiro, miniatura na lateral, render automático.
+6. Chaveiro: a ordem e os rótulos da seção 3. O recorte de fundo e a malha vêm do gerador do site, não de um filtro da vista.
+7. Gerar chama o gerador existente. Não criar outro motor. Orca e Prusa entram só para fatiar o arquivo pronto.
+8. Não alterar o site antigo nem o aplicativo Windows antigo.
+
+## 6. Teste de fidelidade
+
+A galeria está fiel se não houver lista de nomes na esquerda, o título for Paramétricos e o primeiro card for Lua Litofania LED.
+
+O chaveiro está fiel se a primeira linha da esquerda for «Voltar para galeria», o campo seguinte for «Anexar imagem» e, sem imagem, o render não mostrar um chaveiro. Com imagem, a miniatura fica na esquerda e o corpo aparece no render, sem a página crescer.
+
+Os outros itens estão fiéis à casca se também começarem por «Voltar para galeria» e não listarem o catálogo. As ferramentas deles ainda não estão desenhadas, fora a frase que aponta o gerador do site.
+
+## 7. Registro de revisão
+
+- v1 2026-11-03 — documento mestre da galeria e da página do item. O chaveiro é o único editor de ferramentas desenhado.
+
+
+</cursor_untrusted_data_1337>

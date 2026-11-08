@@ -1,0 +1,64 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Modelos 3D do catálogo Filuna — licença de impressão protegida
+Data da decisão: 2026-11-03.
+Estado: REGRA DE PRODUTO APROVADA; IMPLEMENTAÇÃO PENDENTE. Não declarar como funcional.
+
+## 1. Intenção e classificação
+O objetivo é impedir que alguém assine por um único mês, copie os arquivos digitais dos modelos autorais do proprietário e depois cancele. O serviço concede acesso para imprimir, não propriedade nem redistribuição da geometria.
+
+- FILUNA_CATALOG_PROTECTED: modelo 3D publicado no catálogo do site Filuna, especialmente arquivo original do proprietário; somente visualizar, abrir em sessão protegida do Filuna Slicer, preparar/fatiar, imprimir e salvar trabalho protegido. PROIBIDO fornecer ao cliente download/exportação STL, 3MF, ZIP ou projeto com geometria recuperável.
+- USER_IMPORTED: STL/3MF/OBJ próprio do cliente importado de outro lugar. Mantém salvar, exportar, compartilhar e funções normais de fatiamento conforme direitos do arquivo.
+- USER_GENERATED_PARAMETRIC: peça criada pelo próprio cliente num gerador paramétrico. Mantém exportação STL, 3MF colorido, ZIP e projeto, conforme funcionalidades e licenças.
+- FILUNA_ADMIN_SOURCE: mestre do catálogo controlado pelo proprietário/admin; só o cofre administrativo pode exportar, fazer backup, atualizar e recuperar esse original.
+
+A classificação é atribuída no servidor a partir da origem verificada e licença de cada item; não pode mudar por renomear um arquivo nem copiar um modelo para outra categoria. Um arquivo externo do usuário não deve ser bloqueado por parecido com um item do catálogo. Conteúdos de terceiros respeitam os direitos e licenças dos titulares.
+
+## 2. Experiência exigida
+1. No site, em Modelos 3D, o cliente escolhe o item e vê uma opção de Abrir no Filuna Slicer ou Imprimir. Não mostrar Baixar STL, Baixar 3MF, Baixar ZIP ou exportar geometria.
+2. O site cria uma sessão de impressão autenticada, temporária e vinculada a conta, plano, modelo e dispositivo. “Túnel” significa conexão HTTPS autenticada site–serviço Filuna–slicer; não é necessário instalar VPN nem abrir portas no computador.
+3. O Filuna Slicer abre a representação compatível com a peça: malha monocromática equivalente a STL, ou projeto multicolorido equivalente a 3MF com cores/peças/perfis preservados. Interface deve mostrar impressora, material, mesa, perfil e ação Imprimir.
+4. O usuário pode Imprimir e Salvar trabalho, mas “Salvar” guarda somente identificação do modelo, configurações de impressão, vínculo com a conta, referência protegida, histórico/status e parâmetros permitidos — NÃO cria STL/3MF do modelo ou projeto reutilizável contendo a malha original.
+5. Para o mesmo item protegido, não oferecer Salvar como, Exportar, Compartilhar malha, Copiar arquivo, Download original ou caminho de arquivo temporário. Enforçar autorização no servidor e no adaptador protegido; ocultar botões sozinho não basta.
+6. Após cancelamento/vencimento, cessar novas autorizações e revogar sessões/tokens/caches gerenciados pelo Filuna. Conservar histórico e acesso às funcionalidades livres do Orca e aos arquivos externos e paramétricos já legitimamente criados.
+
+## 3. Segurança e arquitetura proposta — não implementada
+- Mestres originais somente em armazenamento privado do servidor, fora de diretório estático, CDN e rotas públicas; ausência de links diretos que entreguem o original.
+- Política e autorização de acesso no servidor, nunca apenas no navegador. Cada impressão exige autorização curta para account_id, device_id, model_id, print_session_id, expiry e entitlement vigente, com rate limit, auditoria e revogação.
+- Canal TLS, assinatura/integridade, ausência de segredos em URLs, logs ou código do cliente. Remover caches de trabalho sob nosso controle quando a sessão terminar, sem alegar que isso apaga toda cópia em máquinas externas.
+- O serviço autoriza a visualização e o trabalho, não expõe o arquivo mestre em formato de exportação. A futura implementação precisa provar isso com testes de abuso.
+- Não alterar nem tentar bloquear operações gerais do OrcaSlicer licenciado como software livre. A regra se aplica à licença de conteúdo proprietário do catálogo e ao módulo de acesso Filuna; importações e paramétricos continuam exportáveis.
+- No admin, os arquivos originais continuam recuperáveis apenas para o titular do conteúdo ou funcionários autorizados.
+
+## 4. Limitação de engenharia obrigatória no documento
+Se um computador controlado pelo cliente recebe e abre um STL/3MF comum com a geometria completa num motor local genérico, NÃO É POSSÍVEL garantir de forma absoluta que ele não salve, copie ou reconstrua a malha. Qualquer Orca que consiga processar o original pode potencialmente exportá-lo; mesmo G-code pode permitir reconstrução aproximada. Remover o botão Exportar cria uma restrição de interface, não uma proteção inviolável.
+
+A decisão de negócio é “uso para imprimir sem entrega digital do original”, mas a arquitetura concreta do túnel/ambiente protegido precisa ser validada antes de prometer essa proteção. Investigar adapter isolado/fluxo não exportável, cache controlado, possível transmissão de dados derivados, limites reais e licenças. Se só for viável transmitindo STL/3MF bruto ao Orca normal, registrar risco NÃO RESOLVIDO e não publicar como DRM seguro. Não existe solução de DRM infalível num PC do usuário.
+
+## 5. Matriz de direitos
+| Operação | Modelo do catálogo Filuna | Arquivo importado | Paramétrico gerado |
+|---|---|---|---|
+| Visualizar | Sim, licenciado | Sim | Sim |
+| Abrir no fatiador | Sessão protegida (a implementar) | Livre | Livre |
+| Fatiar e imprimir | Sim, autorizado | Sim | Sim |
+| Salvar histórico e ajustes | Sim, sem geometria original | Sim | Sim |
+| Baixar STL/3MF/ZIP | NÃO | Sim | Sim, se gerado |
+| Exportar geometria | NÃO | Sim | Sim |
+| Uso offline do motor Orca | Não requer conta para importados | Sim | Sim |
+| Recuperar original como dono/admin | Sim, cofre segregado | N/A | Conforme propriedade |
+
+## 6. Critérios de aceitação e bloqueadores
+- Cliente mesmo pagando não obtém URL ou API de arquivo original do catálogo nem opção exportar 3MF/STL/ZIP; logo após cancelar, uma nova sessão protegida é negada.
+- Reabrir histórico protegido não recria arquivo reutilizável ou exportável; histórico metadata continua acessível.
+- Sessão obtida por A não funciona para B, outro dispositivo ou após expirar.
+- Arquivos do usuário e saídas paramétricas permanecem exportáveis após vencimento de assinatura, respeitando a licença do gerador.
+- Preservar cores, componentes separados, alinhamento/Z, materiais e perfis da impressão original. Homologar print real e procurar vazamentos em caminhos, memória, cache, plugins, API e armazenamento.
+- Não alterar a Home aprovada do Windows nem disponibilizar este fluxo ainda.
+- A nova regra prevalece especificamente sobre previsões anteriores de baixar modelos do catálogo nas REGRAS §§13 e 17 e nos botões STL/3MF/ZIP da ficha de Modelos 3D. Rastreio continua aplicável a artefatos legalmente distribuíveis e às sessões de impressão.
+- O Grok precisa ler esta regra antes de desenhar telas Modelos 3D, detalhes, impressão, histórico e exportação.
+
+## 7. Estado de entrega desta solicitação
+SOMENTE DOCUMENTAÇÃO. Nenhuma rota, arquivo protegido, sistema de impressão, login, conta, site público, release beta ou função Windows foi implementada ou modificada neste passo.
+
+
+</cursor_untrusted_data_1337>

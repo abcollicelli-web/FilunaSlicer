@@ -1,0 +1,58 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Correções da auditoria independente (GitHub + SentinelX) — 05/11/2026
+
+Origem: auditoria do proprietário sobre os commits `786c418` e `8c6c09f` (confirmados no GitHub; Hub reiniciado). Não foi publicada versão, nenhuma atualização individual foi ativada, nenhum serviço foi reiniciado e o Orca não foi tocado.
+
+## Achado 1 — Privacidade: `POST /v1/diagnostics` (rota antiga) gravava o relatório bruto do Orca
+**Causa:** a rota gravava o corpo recebido sem validar: argumentos do Orca (caminhos de pastas do usuário), nomes de arquivos (modelos de clientes), trechos de log e `result.json`. A proteção de G-code do FUP-002 só cobria `/v1/diagnostics/events`.
+**Correção** (`services/hub/filuna_hub/slice_report.py`, ligado à rota):
+- **Contrato restrito:** só `app, when, message, input, inputBytes, printer, process, filaments, args, tried, files, result, logs`. Campos desconhecidos são descartados e contados (`ignored_fields`), então cliente antigo e novo seguem funcionando (resposta continua `{"ok":true,...}`). Corpo ≤120 KB.
+- **Sanitização antes de gravar** (e-mail, URL, token, senha, Bearer, IP, MAC, número de série, caminhos do Windows/Linux — inclusive com espaços até a extensão —, linhas de G-code):
+  - `message`/`tried`: limpeza de texto livre;
+  - `input`: vira `[modelo].ext` (o nome do arquivo do cliente não é guardado); `inputBytes` numérico;
+  - `printer/process/filaments`: guardados **só** se parecem perfil de **sistema** do Orca (`@`, `0.4 nozzle`, `0.20mm`, `Generic…`); perfil criado pelo usuário vira `[perfil-do-usuario]`;
+  - `args`: flags e códigos mantidos (`--slice 0`, `--arrange 0`, `[plain]`…); caminhos viram `[caminho]`/`[modelo].3mf`/nome do perfil de sistema; valor depois de `--password/--token/--key/--user…` vira `[x]`;
+  - `files`: nomes dos arquivos gerados viram `[arquivo].ext (N B)`; só `result.json` e `orca-native-*.log` mantêm o nome;
+  - `result` e `logs`: limpos **preservando as quebras de linha** (o texto técnico do Orca continua legível); só logs com nome `orca-native-*.log`.
+- **Gravação:** pasta `0700`, arquivo `0600` (antes: 0644), retenção de 30 dias e no máximo 50 relatórios.
+- **Testes** (`tests/test_slice_report.py`, 8): payload sujo realista sem nenhum dado sensível sobrevivente; diagnóstico útil preservado; entradas ruins; cliente antigo; permissões/retenção; **as duas rotas** (`/v1/diagnostics` e `/v1/diagnostics/events`) por HTTP com login; recusa de corpo enorme; garantia de que os testes não gravam em `runtime/diagnostics` de produção.
+- **Efeito colateral corrigido:** `tests/test_admin.py` gravava um arquivo de teste em `runtime/diagnostics` real a cada execução (havia 12 de 45 bytes, só texto "falha de teste", sem dado privado — mantidos como estão). Agora os testes usam pasta temporária (`FILUNA_DIAG_DIR`).
+- **Limpeza também na rota nova:** o padrão de caminho do Windows com espaços (`C:\Users\Ana Silva\Meus Documentos\x.3mf`) agora é removido por inteiro no servidor (`telemetry.py`) e no cliente (`ErrorSanitizer.cs`, vale a partir da próxima versão do cliente).
+- **Limite honesto:** clientes até a 0.2.37 ainda **enviam** o relatório bruto (por HTTPS) — o servidor agora **não o armazena bruto**. A minimização no próprio cliente (não enviar caminhos) é pendência para a próxima versão; não foi alterado o C# do relatório de fatiamento para não mexer no fluxo do Orca.
+
+## Achado 2 — Segurança do D5/D6 (`targeted_updates.py`)
+**Causa:** `allowed()` aceitava `Filuna.Slicer.exe`, `deps.json` e `runtimeconfig.json`, e a classe D passava com um campo textual `qa_approved_by` — em contradição com `docs/UPDATE-RELEASE-POLICY.md`.
+**Correção:** (detalhes em `docs/D5-D6-CORRECAO-INDIVIDUAL.md`)
+- só **classe C**; A/B recusadas (canal próprio); **D sempre recusada**; fim da aprovação por texto;
+- pacote só com `Filuna.Slicer.dll` + `ui/` de tipos inertes; **nenhum `.exe`**, script, DLL de terceiros, instalador, `deps/runtimeconfig`, Orca; sem links, entradas cifradas, diretórios ou nomes duplicados;
+- envelope com canal `targeted` e campos obrigatórios da oferta oficial; envelope do feed geral é recusado;
+- exige arquivo de aprovação do proprietário para o SHA256 exato (`runtime/owner-approvals/targeted/<versão>.json`, `approved_by_owner` booleano, canal e classe corretos);
+- **continua desligado**: sem rota, `FILUNA_TARGETED_UPDATES` ≠ `1`.
+- **Testes** (`tests/test_targeted_updates.py`, 28; antes 18): 27 tipos de arquivo proibidos, só-o-permitido passa, duplicados por caixa e symlink, classes A/B/C/D/inválida, D mesmo com aprovação registrada, campos obrigatórios, canais, replay do feed geral real, aprovação ausente/SHA errado/canal errado/classe errada/texto.
+
+## Commit local `582b4e5`
+É o commit local adicional (docs: "Hub reiniciado e push concluído") **à frente** de `origin/main` (`8c6c09f`). Conferido: altera só `docs/PENDENCIAS.md` (2 linhas), é descendente direto de `8c6c09f`, **não foi enviado ao GitHub** (aguarda sua autorização, fast-forward sem force).
+
+## Evidências de regressão (05/11/2026, ensaio `build-patch.sh 0.2.38`, nada publicado)
+| Verificação | Resultado |
+|---|---|
+| Python (`unittest discover tests`) | **309 testes OK** (11 ignorados por depender de ambiente); antes desta etapa: 250 |
+| Node (todos os `tests/*.test.cjs`) | todos `PASSED`/`OK` (inclui `telemetry-contract`, `fup003-contract`, `updates contract`) |
+| C# `tests/telemetry` | ALL PASS · `tests/fup-core` ALL PASS · `tests/printer-adapters` ALL PASS · `tests/diag-core` ALL PASS |
+| Contrato C# → Hub | `tests/test_device_diag_client_contract.py`: 196 eventos reais gerados pelo cliente C# aceitos pela validação rígida do Hub |
+| Compilação Windows (`dotnet publish win-x64`) | sem erros; pacote cumulativo 0.2.38 montado em pasta temporária, "política do Hub: OK · assinatura: OK" |
+| Feed oferecido | continua **0.2.37** (nada publicado); `releases/beta.json` inalterado; `releases/beta-free.json` com a mesma modificação antiga, não tocado |
+| Serviços | Hub ativo desde 04:51:07 UTC e relay desde 04:31:45 UTC (**sem novo reinício**); o código novo só vale após o próximo reinício do Hub |
+| Orca / perfis / projetos | nenhum arquivo do Orca alterado (`git status` sem Orca/engines); nenhum adaptador de conexão/envio reescrito |
+| Git | `main` = `origin/main` + commits locais (ver abaixo); nenhum push, nenhum force |
+
+Observação: duas listas de ferramentas esperadas em testes do MCP (`test_owner_chatgpt_gateway`, `test_multi_ai_gateways`) foram atualizadas para incluir a ferramenta somente leitura nova `filuna_incidente_ver` (mudança intencional do FUP-003).
+
+## Risco residual / não provado
+- Nada foi testado em Windows real nem em impressora real.
+- O relatório bruto de fatiamento ainda trafega do cliente (até 0.2.37) — não é mais guardado bruto no servidor.
+- D5/D6 só protege o que passa por `register_package`; quando as rotas forem ligadas (decisão sua), repetir a revisão de segurança.
+
+
+</cursor_untrusted_data_1337>

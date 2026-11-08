@@ -1,0 +1,1129 @@
+{
+  "scope": "Somente arquivos visuais/documentais; não testes de software",
+  "boards": 123,
+  "matrix_states": 208,
+  "missing_image_rows": 0,
+  "anchor_hashes": "4/4 IGUAIS",
+  "xml_dimensions_assets": [
+    {
+      "id": "PAR-02",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "VIS-01",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PROJ-01",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DS-01",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-APROVADO",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-APROVADO",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-01",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-02",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-03",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-04",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-05",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-06",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-07",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-08",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-09",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-10",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-12",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-13",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-14",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-15",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-16",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-18",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-19",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-20",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-21",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-22",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-23",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-24",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-25",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-26",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-11-AQUECIMENTO",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-03",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-04",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-05",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-06",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-07",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-08",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-09",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-02",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-10",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-11",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-12",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-13",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-14",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-15",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-16",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-17",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-18",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-19",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-20",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "VIS-02",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "VIS-03",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "VIS-04",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "VIS-05",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "VIS-06",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "VIS-07",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-lua-litofania",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-pote-doces-imagem",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-chaveiro-botton",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-envelope-renda",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-criador-trofeu",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-caixa-sombra",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-flexi-articulado",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-ejetor-docinhos",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-letra-grande",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-quadro-relevo",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-topo-bolo",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-chaveiro-tracos",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-placa-pintura",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-arvore-natal",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-luminaria-placa",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-porta-chaveiros-rotatorio",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-chaveiro-alto-relevo",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-termoformagem",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-presente-termoformado",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-foto-linear-3d",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-letra-grande-nome",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-imagem-multipartes",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-GAL-1",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-GAL-2",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PAR-GAL-3",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "HOME-02",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "HOME-03",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "HOME-04",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "HOME-05",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "HOME-06",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "TOOL-1",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "TOOL-2",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "TOOL-3",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "TOOL-4",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PROJ-AUX-1",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PROJ-AUX-2",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PROJ-AUX-3",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PROJ-AUX-4",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "AUX-1",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "AUX-2",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "AUX-3",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "AUX-5",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "WEB-FUT-1",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "WEB-FUT-2",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "WEB-FUT-3",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "WEB-FUT-4",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "HOME-01",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-01",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-02",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-03",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-04",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-05",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-06",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-07",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-08",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-09",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-10",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-INPUT-1",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-INPUT-2",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-INPUT-3",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-INPUT-4",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-INPUT-5",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "CAL-INPUT-6",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-10-CONT",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "PREP-11-CONT",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "DEV-17",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    },
+    {
+      "id": "AUX-4",
+      "png_size": [
+        2880,
+        1920
+      ],
+      "svg_xml": "VALIDO",
+      "remote_asset_refs": 0
+    }
+  ],
+  "visual_review": "Inspeção visual dos 11 mosaicos completos; seis folhas de recortes incluem todos os subestados dos 22 geradores; PNGs individuais significativos de cada família e ajustes de Dispositivo, Preparação, Calibração e riscos examinados. Sem certificação funcional.",
+  "gates": {
+    "G2": "BLOCKED",
+    "G3": "BLOCKED",
+    "G4": "NOT RUN",
+    "G5": "BLOCKED",
+    "G6": "BLOCKED"
+  },
+  "remote_publication": "NAO_EXECUTADA",
+  "review_artifacts": [
+    "mosaicos/",
+    "revisao-final/variantes-parametricos-1.jpg … variantes-parametricos-6.jpg"
+  ]
+}

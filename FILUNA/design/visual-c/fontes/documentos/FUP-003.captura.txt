@@ -1,0 +1,233 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# FUP-003 — Diagnóstico técnico avançado de impressoras, câmeras e conexões
+
+Estado: **PUBLICADO na 0.2.38 em 05/11/2026** (SHA256 `0a70f57b4f52d12ef43971d3c06476154c7957df47ea6dec1f9d0809e0daf7d8`, 39.430.703 bytes, classe C) com autorização explícita do dono. **Não homologado**: testado só em simuladores. Nada foi testado em Windows real nem em impressora real — ver §12.
+
+Objetivo: cada falha de impressora/câmera/conexão enviada ao servidor passa a dizer **onde** (etapa), **como** (categoria técnica estável), **com o quê** (adaptador, protocolo, porta) e **o que já se sabe/não se sabe**, separando fato de hipótese, para você pedir "investigue o INC-00042" a uma IA com acesso somente leitura.
+
+## 1. Arquitetura
+
+```
+Windows (0.2.38)                                               Hub (Ubuntu)                                   Você
+DeviceService (wrappers finos, só observam e relançam)
+   └─ Traced(): erro ─► DiagnosticCollector ─► FailureClassifier
+        ▲ Offline(msg, causa)                       │ pseudônimo (HMAC+sal), matriz protocolo/porta,
+        │ (adaptadores só ACRESCENTAM a causa)      │ interface de rede, DHCP observado, verificação de leitura
+                                                    ▼
+                                      ErrorReporter.Report(evento v1 + Diag)  ── fila local cifrada (DPAPI) ──┐
+                                                                                                              ▼
+                                    POST /v1/diagnostics/context  (contrato v2)  ─► tabela diag_context ┐
+                                    POST /v1/diagnostics/events   (evento v1, SEM o campo diag) ─► tel_event/tel_incident
+                                                                                            │ alerta curto (usa o contexto, se já chegou)
+                                                                                            ▼
+                                                                             relay ─► Filuna3D_bot (só sendMessage)  ─► Telegram
+   Admin → Erros dos clientes → "Detalhes técnicos"  ◄── GET /v1/admin/telemetry/incident/report?id=INC-xxxxx
+   IA (MCP existente) → ferramenta filuna_incidente_ver (somente leitura, só o proprietário)
+```
+
+Princípios: (1) o **evento v1 da 0.2.37 não mudou** (nem o esquema, nem o endpoint); o contexto é um segundo evento, ligado por `event_id`; (2) nada de conexão/envio dos adaptadores foi reescrito: os wrappers só medem, classificam e **relançam a mesma exceção**; (3) tudo desligável pelo cartão *Diagnóstico* (desligar também apaga a fila).
+
+## 2. Contratos de eventos
+
+| Contrato | Arquivo | Endpoint | Situação |
+|---|---|---|---|
+| Evento v1 (0.2.37) | `docs/schemas/telemetry-event-v1.schema.json` | `POST /v1/diagnostics/events` | **inalterado**; cliente 0.2.38 envia o mesmo JSON de antes (`ToV1()` remove `diag`) |
+| Contexto técnico v2 | `docs/schemas/telemetry-diagnostic-v2.schema.json` | `POST /v1/diagnostics/context` | **novo**, complementar |
+
+Contexto v2 (campos): `context_id`, `event_id` (liga ao v1), `correlation_id`, `schema_version=2`, `timestamp_utc`, `step`, `last_ok_step`, `failure_category`, `result`, `adapter`, `adapter_version`, `protocol`, `port`, `connection_type`, `net_interface`, `response_ms`, `printer_ref`, `vendor`, `model`, `firmware`, `attempts`, `ip_changed`, `evidence[≤8]{k,v,src,conf}`, `probes[≤4]{name,ok,ms}`.
+Rígido (`additionalProperties:false`), ≤4 KiB, lote ≤20, mesma limitação de taxa do v1 (30 lotes/min/instalação), só Windows, **identidade (tenant/device/role) sempre da sessão autenticada, nunca do corpo**. Valor não observado = ausente ("não identificado"). Um teste garante que o arquivo de esquema bate com as constantes do código.
+
+Compatibilidade: cliente antigo (sem contexto) continua gerando incidente v1; o relatório diz "contexto técnico não enviado por este cliente". Hub novo aceita cliente antigo; cliente novo com Hub antigo envia só o v1 (depois de 5 tentativas do contexto).
+Origem/confiabilidade da evidência: cada item de `evidence` traz `src` (`observed`, `adapter`, `state`, `local_log`, `probe`) e `conf` (`confirmed`, `probable`, `unknown`).
+
+## 3. Arquivos
+
+Novos: `Telemetry/DiagnosticContext.cs`, `FailureClassifier.cs`, `DiagnosticCollector.cs`, `DiagSanitizer.cs` · `services/hub/filuna_hub/device_diag.py` · `docs/schemas/telemetry-diagnostic-v2.schema.json` · `docs/FUP-003-DIAGNOSTICO-DISPOSITIVOS.md` · testes `tests/diag-core/`, `tests/test_device_diag.py`, `tests/test_device_diag_client_contract.py`, `tests/fup003-contract.test.cjs`.
+Alterados (aditivos): `Telemetry/ErrorEvent.cs` (campo `diag` + `ToV1`), `ErrorQueue.cs` (teto 512 KB; dedupe preserva o contexto mais recente), `ErrorReporter.cs` (parâmetros opcionais `diag`, `fingerprintSeed`), `BetaClient.cs` (envia contexto antes do v1), `DeviceService.cs` (wrappers `Traced`; corpos originais renomeados para `*Core` sem alteração), `Printers/PrinterModels.cs` (`Cause` opcional no snapshot offline), `Printers/{Bambu,Cc2,Creality,Anycubic,Snapmaker}Adapter.cs` (uma linha cada: `Offline(e.Message, e)` — mesma mensagem, mais a exceção original), `Program.cs` (criação do coletor; o ponto central de erros não repete o que o diagnóstico já registrou), `ui/admin.js` (Detalhes técnicos), `ui/diagnostico.js` (texto de transparência), `services/hub/filuna_hub/telemetry.py` (alerta, exclusão, retenção), `beta_server.py` (4 rotas), `services/chatgpt_mcp/owner_gateway.py` (1 ferramenta), `Filuna.Desktop.csproj` (0.2.38).
+**Não alterados:** Orca 2.4.2, `MqttLite.cs`, `BambuFtps.cs`, `CameraRelay.cs`, lógica de conexão/envio/início de qualquer adaptador, o bot/webhook/cofre do Telegram, `ops/telegram_relay.py`, o feed de atualização.
+
+## 4. Protocolos e portas realmente utilizados (extraídos do código dos adaptadores)
+
+| Adaptador | Etapa | Protocolo | Porta | Fonte |
+|---|---|---|---|---|
+| Bambu Lab | status, pausa, retomar, cancelar, iniciar, filamento (AMS) | MQTT/TLS (`mqtts`) | 8883 | `BambuAdapter.cs` |
+| Bambu Lab | envio de G-code | FTPS | 990 (dados: porta PASV dinâmica) | `BambuFtps.cs` |
+| Bambu Lab | câmera (URL) / quadro JPEG | RTSPS / TCP | 322 / 6000 | `BambuAdapter.cs` |
+| Elegoo CC2 | status, comandos, filamento | MQTT (sem TLS) | 1883 | `Cc2Adapter.cs` |
+| Elegoo CC2 | envio de G-code | HTTP | 80 | `Cc2Adapter.cs` |
+| Elegoo CC2 | câmera | HTTP (MJPEG) | 8080 | `Cc2Adapter.cs` |
+| Anycubic | pareamento, info, envio | HTTP | 18910 | `AnycubicAdapter.cs` |
+| Anycubic | status/comandos | MQTT/TLS | 9883 (porta ambígua na etapa → registrada como "não identificada" + candidatas 18910\|9883) | `AnycubicAdapter.cs` |
+| Anycubic | câmera | HTTP (FLV) | 18088 | `AnycubicAdapter.cs` |
+| Creality (K) | status | WebSocket | 80 (`/ws`) | `CrealityAdapter.cs` |
+| Creality (K) | pausa/retomar/cancelar/iniciar/envio | HTTP (Moonraker) | 7125 | `CrealityAdapter.cs` |
+| Creality (K) | câmera (sinalização) | HTTP (WebRTC) | 8000 | `CrealityAdapter.cs` |
+| Snapmaker U1 | tudo | HTTP / WebSocket (Moonraker) | 7125; câmera: candidatas 7125\|8080 (não identificada) | `SnapmakerAdapter.cs` |
+| Klipper/Moonraker e OctoPrint (genéricos) | tudo | HTTP | porta cadastrada pelo usuário; câmera 80 | `DeviceService.cs` |
+| Descoberta (somente identificar) | — | Elegoo CC1/CC2 UDP 3000 · Bambu SSDP 1990/2021 · Flashforge UDP 8899/19000/48899 · Creality K WS 9999 · PrusaLink e Duet HTTP 80 | | `Fup*.cs` |
+
+Quando o adaptador usa mais de uma porta na mesma etapa (Anycubic MQTT, Snapmaker câmera), o Filuna **não escolhe**: grava porta ausente e as candidatas como evidência `unknown`.
+
+## 5. Matriz de capacidades por fabricante
+
+| Fabricante | Descoberta | Adaptador de conexão | Diagnóstico FUP-003 por etapa | Observação |
+|---|---|---|---|---|
+| Bambu Lab | sim (SSDP) | sim | status, câmera, envio, início, pausa/retomar/cancelar, pareamento | LAN: código de acesso; sem firmware lido |
+| Elegoo CC2 | sim | sim | idem (câmera/envio/status) | |
+| Elegoo CC1 | sim (SDCP) | **não** | só descoberta | sem adaptador → sem diagnóstico de conexão |
+| Flashforge | sim (UDP) | **não** | só descoberta | |
+| Creality K | sim | sim | status, envio, câmera WebRTC, comandos | |
+| Klipper / Snapmaker U1 | — | sim (Moonraker) | idem | |
+| PrusaLink | sim (HTTP 80) | **não** | só descoberta | |
+| Duet | sim (HTTP 80) | **não** | só descoberta | |
+| Anycubic | — | sim | status, envio, câmera | |
+| OctoPrint | — | sim (genérico) | idem | fabricante NÃO é inferido |
+
+Firmware: **nenhum adaptador lê a versão do firmware hoje** → o campo fica "não identificado" e `firmware_incompatible` nunca é deduzido (só existe com prova explícita futura).
+
+## 6. Categorias de falha (códigos estáveis `FIL-<MÓDULO>-<CÓDIGO>`)
+
+| Categoria | Código | Como é identificada (evidência) |
+|---|---|---|
+| device_not_found | NOTFOUND | descoberta falhou (sem causa específica) |
+| printer_offline | OFFLINE | **interpretação por estado** (v2.1): falha de alcance (timeout/sem resposta/inalcançável/DNS) de impressora que não respondia; a causa bruta fica em `underlying_category` |
+| device_unreachable | UNREACH | `HostDown`, conexão resetada/abortada; "sem conexão" aberta |
+| port_no_response | NORESP | `SocketError.TimedOut` na conexão |
+| connection_refused | REFUSED | `SocketError.ConnectionRefused` |
+| timeout | TIMEOUT | cancelamento/`TimeoutException`; adaptador sem relatório recente |
+| dns_routing | DNS | `HostNotFound/NoData/TryAgain`, rede/host inalcançável, `NameResolutionError`, "não encontrada na rede local" |
+| auth_failed | AUTH | HTTP 401/403, `UserAuthenticationError`; registro recusado (provável) |
+| invalid_access_code | ACCODE | CONNACK de credencial ruim (MQTT 4/5) |
+| tls_certificate | TLS | `AuthenticationException`, `SecureConnectionError` |
+| protocol_incompatible | PROTO | HTTP 404/405/501, WebSocket que não é WebSocket, versão de protocolo |
+| invalid_response | BADRESP | JSON/formato inválido, HTTP 5xx, resposta vazia/inesperada |
+| firmware_incompatible | FWINC | **só com prova explícita** (nunca deduzido) |
+| camera_unavailable | STREAM | etapa de câmera sem causa de rede específica |
+| filament_system_comm | AMS | etapa de leitura de filamento sem causa específica |
+| gcode_upload_failed | UPLOAD | etapa de envio sem causa específica; "impressora não está pronta" |
+| print_start_failed | START | etapa de início sem causa específica |
+| adapter_internal | ADAPTER | NullReference/InvalidOperation/etc. (erro do Filuna) |
+| unknown | UNKNOWN | sem evidência |
+
+A causa específica (rede/autenticação/TLS) vence a categoria da etapa. A classificação diz **onde** a falha aparece, não de quem é a culpa: o relatório sempre lista também causas de rede/PC/adaptador.
+
+## 7. Diagnóstico seguro por camadas
+1. Estado conhecido (último estado da impressora no Filuna) → evidência `last_known_state`.
+2. Última etapa concluída com sucesso → `last_ok_step`.
+3. Resultado da operação que falhou → categoria + fatos (`socket_error`, `http_status`, `websocket_error`, tipo da exceção).
+4. Registros locais já disponíveis → tentativas (`attempts`) e `ip_changed` (só se a descoberta **viu** a troca).
+5. Verificações extras **somente leitura aprovadas**: `tcp_connect` (abre e fecha a conexão, **nenhum byte enviado**) e `dns_resolve`. Só para falhas de rede, só na porta conhecida do adaptador, **nunca** se a impressora estiver imprimindo/pausada/aquecendo, **nunca** em envio/início/pausa/retomar/cancelar, nunca em UDP, no máximo 1 por impressora a cada 60 s, em segundo plano, 3 s de limite.
+6. Fatos e hipóteses ficam separados no relatório.
+**Nunca é executado automaticamente:** impressão, aquecimento, homing, movimento, firmware, reinício, troca de credencial, comandos desconhecidos.
+Ruído: impressora que **nunca respondeu** no uso atual (desligada) vira severidade `low` (visível no painel, sem Telegram) e no máximo 1 registro a cada 30 min.
+
+## 8. Banco de dados (`runtime/telemetry.db`, separado do negócio)
+`diag_context(context_id PK, event_id, tenant_id, device_id, received_at, occurred_at, correlation_id, step, last_ok_step, failure_category, result, adapter, adapter_version, protocol, port, connection_type, net_interface, response_ms, printer_ref, vendor, model, firmware, attempts, ip_changed, evidence JSON, probes JSON)` · índices por `event_id`, `(tenant,device,received_at)`, `(adapter,step,category,received_at)`.
+`tel_investigation(id, incident_id, at, actor, kind[note|hypothesis|fix_proposed|validation], text≤500)`.
+Tabelas v1 (`tel_event`, `tel_incident`, `tel_alertlog`, `tel_meta`) **inalteradas**. O contexto liga ao incidente por `event_id` **e** mesma instalação/cliente (um cliente não consegue "grudar" contexto em evento de outro).
+
+## 9. Segurança e privacidade
+- **Nunca enviado:** IP, número de série, MAC, nome do PC, caminhos, e-mail, tokens, senhas, código de acesso, G-code, modelos, imagens. Limpeza no cliente (`ErrorSanitizer`, `DiagSanitizer`) **e** no servidor (`scrub`); a mensagem da exceção nunca sai do computador; G-code removido do texto livre.
+- Impressora identificada por **pseudônimo HMAC-SHA256** com sal aleatório por instalação (guardado cifrado, DPAPI): não correlaciona impressoras entre clientes, nem revela IP/série.
+- **Dados profundos (IP local, série) não são enviados em nenhum caso nesta versão.** Se um dia forem necessários, exigirão autorização explícita por incidente, acesso restrito e retenção mínima — **pendente de decisão e de implementação** (não existe hoje).
+- Retenção 30 dias (a mesma do v1), exclusão pelo cliente (`Apagar meus dados` remove eventos **e** contextos do servidor), transparência (`GET /v1/diagnostics/context/mine`; "Ver o que seria enviado" mostra também o contexto).
+- Controle de acesso: rotas admin só do proprietário; cliente nunca acessa incidente (nem o próprio) pelo painel; MCP somente leitura e só para a conta proprietária.
+- **Telegram:** só o robô Filuna3D_bot via relay existente (`sendMessage`); mensagem curta sem IP, série, caminho nem pseudônimo; teste sintético marcado `[TESTE SINTÉTICO]`; limites/cooldown/agrupamento do FUP-002 mantidos. Cofre e webhook intocados.
+
+- **Rota antiga de diagnóstico de fatiamento (`POST /v1/diagnostics`)**: passou a ter contrato restrito e limpeza antes de gravar (arquivos 0600, 30 dias). Ver `docs/AUDITORIA-SEGURANCA-2026-11-05.md`.
+
+## 9-B. Monitoramento inteligente por estado (v2.1, candidata 0.2.39)
+Origem: auditoria com os primeiros alertas reais da 0.2.38, **com as impressoras desligadas de propósito**. Resultado dos dados reais: INC-4 (`FIL-APP-UNHANDLED`, 247 ocorrências, `unobserved_task` sem origem), INC-2/3 (`deviceoffline` vindo da tela, duplicando o coletor), CC2 em MQTT/1883 e Kobra em 18088 sem resposta, e `last_ok_step=camera_open` falso (abrir a câmera só monta um endereço).
+
+**Máquina de estados por impressora** (`Telemetry/PrinterTracker.cs`):
+| Situação | Condição (`condition`) | Gravidade | Telegram |
+|---|---|---|---|
+| Nunca respondeu neste uso (desligada) | `never_online` → `FIL-DEV-OFFLINE` | low | **nunca**; no máximo 1 registro/30 min |
+| Continua offline | `still_offline` | low | nunca |
+| Estava online e caiu | `went_offline` (**transição**) | medium | só se recorrente (5/20/100/500) = instabilidade real |
+| Caiu **durante impressão** (estado `imprimindo/pausada/aquecendo` visto há ≤5 min) | `went_offline_during_print` → `FIL-PRT-OFFLINE` (componente print) | **high** | **sim**, com "a impressora saiu da rede DURANTE uma impressão" |
+| Voltou | `recovered` → `FIL-DEV-RECOVERED` | low | nunca (1 vez por reconexão) |
+| Câmera com impressora offline | `camera_printer_offline` → `FIL-CAM-OFFLINE` | low | nunca |
+| Câmera com a impressora **comprovadamente online** | `real_failure` | **high** | sim |
+| Câmera sem saber o estado | `real_failure` + `reachability=unknown` | medium | só recorrente (não conclui defeito nem "desligada") |
+| Recusa, autenticação, código de acesso, TLS, protocolo, resposta inválida | `real_failure` | medium/high | conforme política |
+| Exceção interna do adaptador | `adapter_fault` | **high**, mesmo com impressora desligada | sim |
+
+Princípios: só uma **resposta real** da impressora conta como "online" (status, comandos, envio, quadro de câmera); recusa de conexão **não** é offline (o equipamento está vivo); a causa bruta nunca é apagada (`underlying_category`, `socket_error`, tipo da exceção). Estados esperados ficam no **histórico completo do servidor** (contagem somada) mas **não** vão ao Telegram; o servidor aplica o mesmo filtro (`condition` informativa, `FIL-DEV-RECOVERED`, e o aviso de tela legado `deviceoffline` de clientes ≤0.2.38).
+
+**Exceções assíncronas** (`Telemetry/AsyncFailure.cs`): `UnobservedTaskException`/`UnhandledException` são abertas (`AggregateException`, `TargetInvocationException`) e cada causa vira seu incidente, com assinatura por **tipo + método de origem** (nunca mensagem):
+| Origem | Código | Gravidade |
+|---|---|---|
+| NullReference, InvalidOperation, índice, chave, cast, argumento, NotSupported/NotImplemented, aritmética | `FIL-APP-UNOBSERVED` (+detalhe `NULLREF`…) | **critical** (preservado) |
+| Tipo desconhecido | `FIL-APP-UNOBSERVED` `OTHER` | **high** (nunca presumido inofensivo) |
+| OutOfMemory, violação de acesso, programa inválido | `FIL-APP-FATAL` | critical |
+| Rede/impressora em tarefa de fundo | `FIL-DEV-<categoria>` | low se há impressora offline (esperado), senão medium |
+| Dados inválidos (JSON/formato) · arquivo (IO) | `FIL-APP-BADDATA` · `FIL-APP-IO` | medium |
+| Cancelamento · objeto descartado | `FIL-APP-CANCELED` · `FIL-APP-DISPOSED` | low |
+Se a exceção é **fatal** (`UnhandledException`), tudo é critical.
+
+**Duplicação:** `ui/telemetry.js` deixou de registrar `deviceOffline` (a mensagem visual ao cliente continua); a falha da impressora é registrada **uma vez**, pelo coletor, com protocolo, porta e estado.
+
+## 10. Painel administrativo
+Admin → Erros dos clientes → **Detalhes técnicos** (por incidente): *Identificação* (cliente, instalação, versão, impressora) · *Operação* (tela, tarefa, etapa, código, horário) · *Conexão* (adaptador, protocolo, porta, tipo, interface, tempo) · *Diagnóstico* (rótulos **CONFIRMADO / PROVÁVEL / SEM CONFIRMAÇÃO**, **DESCONHECIDO** e **HIPÓTESE · confiança**, frequência, primeira/última ocorrência, tentativas anteriores, mesma falha em outras instalações) · *Investigação* (situação, histórico, e formulário para registrar nota, hipótese, correção proposta e resultado da validação) · procedimento recomendado e arquivos de código a examinar. Só `textContent` (sem HTML injetado).
+
+## 11. Consulta para IA (MCP existente — sem plugin novo)
+Ferramenta **`filuna_incidente_ver`** acrescentada ao gateway existente (`owner_gateway.py`), `readOnlyHint=true`, escopo de leitura, só a conta proprietária. Entrada: `incidente` = `INC-00042` (ou `42`). Saída estruturada: identificação, evidências coletadas (fatos), dispositivo/adaptador, operação e etapa, histórico, versão do código, causas possíveis **com nível de confiança**, procedimento de diagnóstico, arquivos a examinar, limites. A IA não recebe credenciais, não executa nada nos dispositivos e não instala correções (correção individual segue o D5/D6, desligado, e exige sua autorização).
+Uso: *"Investigue o INC-00042"* → a IA chama `filuna_incidente_ver`, lê o relatório e o código no GitHub/SentinelX.
+
+## 12. Testes e resultados (05/11/2026)
+Resultados finais na seção "Execução" no fim deste arquivo. Cobertura da Etapa 9:
+
+| Pedido | Como foi testado | Onde |
+|---|---|---|
+| Bambu, Elegoo CC1/CC2, Flashforge, Creality, Klipper, PrusaLink, Duet | matriz protocolo/porta por adaptador (23 combinações) e simulação de falha por adaptador com eventos reais; CC1/Flashforge/PrusaLink/Duet só descoberta (documentado) | `tests/diag-core` |
+| Câmera indisponível | etapa de câmera + causa; Anycubic porta 18088; alerta "FALHA DE CÂMERA" | diag-core, test_device_diag |
+| Timeout / conexão recusada | falhas **reais** em soquetes locais (porta fechada, servidor mudo) | diag-core |
+| Erro de autenticação / código inválido | servidor HTTP real 401; CONNACK do adaptador | diag-core |
+| DNS, TLS, protocolo, resposta inválida | DNS `.invalid`, servidor que não fala TLS, HTTP 404/503, corpo não-JSON, WebSocket falso | diag-core |
+| Impressoras diferentes no mesmo PC | 2 incidentes distintos, pseudônimos distintos | diag-core, test_device_diag |
+| Clientes diferentes, impressoras iguais | sal por instalação ⇒ pseudônimos não correlacionam; causa comum detectada por contagem de instalações | idem |
+| Troca de IP (DHCP) | `ip_changed` só quando a descoberta observa; hipótese alta | idem |
+| Rede offline / impressora desligada | severidade `low`, 1 registro/30 min | diag-core |
+| Falha no Hub | cliente mantém fila e reenvia; Hub reiniciado aceita | test_device_diag (Http) |
+| Incidentes duplicados | 1 evento, contagem somada, contexto mais recente | diag-core, test_device_diag |
+| Dados confidenciais | IP/série/token/caminho/G-code removidos no cliente e no servidor; alerta e relatório sem segredos | diag-core, test_device_diag, fup003-contract |
+| Cliente acessando incidente de outro | 403 em todas as rotas admin; `/mine` isolado; contexto não liga a evento de outro cliente | test_device_diag (Http) |
+| Compatibilidade v1 × v2 | v1 igual ao da 0.2.37; v1 com `diag` continua recusado; cliente antigo sem contexto alerta normalmente; JSON real do C# aceito pelo Hub | test_device_diag, test_device_diag_client_contract |
+| Telegram indisponível | falha do notificador não quebra a coleta | test_device_diag |
+| Rollback e preservação de dados | ver §14 (reversível por desligar/voltar versão; nenhuma migração destrutiva) | docs + contrato estático |
+
+**Depende de Windows e equipamentos físicos (NÃO provado):** abrir o app 0.2.38; atualização com confirmação e rollback no PC; falha real de cada marca (mensagens/portas reais); DPAPI real; interface Wi-Fi/Ethernet reais (`NetworkInterface`); Telegram com incidente real de cliente.
+
+## 13. Limitações
+- Nenhuma marca foi homologada por este trabalho; os testes usam simuladores e soquetes locais.
+- Firmware não é lido por nenhum adaptador; `firmware_incompatible` nunca é deduzido.
+- CC1, Flashforge, PrusaLink e Duet não têm adaptador de conexão → só descoberta.
+- Campos de chave/portas ambíguas ficam "não identificado" de propósito.
+- Dados de rede profundos (IP/série) e coleta sob autorização por incidente: **não implementados**.
+- A tabela de hipóteses é por regras (explicável), não uma conclusão; confiança é indicativa.
+- A mensagem de erro do Windows é localizada; por isso o classificador usa o tipo/código da exceção e só textos fixos do próprio Filuna.
+- Falhas de descoberta "sem exceção" (varredura que simplesmente não encontra nada) não geram incidente (evita ruído); só varredura que falha.
+
+## 14. Plano de rollback
+- **Cliente:** o cartão *Diagnóstico* desliga e apaga tudo (inclusive contexto). Voltar para a 0.2.37 = publicar versão cumulativa anterior (política de atualização); a 0.2.37 ignora o campo extra da fila (descarta arquivo corrompido e começa vazia).
+- **Hub:** as tabelas novas são aditivas; o código v1 não depende delas. Reverter `git revert` dos commits do FUP-003 e reiniciar o serviço; `diag_context`/`tel_investigation` podem ficar sem uso ou ser apagadas (`DROP TABLE`) sem afetar nada.
+- **Telegram/MCP:** reverter só `telemetry.py` (formato do alerta) e `owner_gateway.py` (ferramenta). O bot, o cofre e o webhook não foram tocados.
+- **Dados:** nenhum dado existente é migrado, apagado ou reescrito.
+
+## 15. Etapas
+Concluídas: 1 auditoria · 2 identificação técnica · 3 classificação (18 categorias) · 4 camadas e verificações de leitura · 5 contrato v2 complementar · 6 painel · 7 Telegram · 8 consulta para IA (MCP) · 9 testes em simuladores · 10 documentação.
+Pendentes (dependem de você/hardware): aprovar e publicar a 0.2.38; teste em Windows real e em impressoras reais; leitura de firmware por adaptador (futuro); coleta profunda sob autorização por incidente (decisão de produto); homologação por marca.
+
+## Execução (05/11/2026, ensaio da 0.2.38 — nada publicado)
+- Python **309 OK** (11 ignorados), Node todos OK, C# (`telemetry`, `fup-core`, `printer-adapters`, `diag-core`) ALL PASS, compilação `win-x64` sem erros, pacote cumulativo assinado em pasta temporária (política do Hub OK, assinatura OK, 3 novidades).
+- Novos testes do FUP-003: `tests/diag-core` (C#: ~60 verificações, falhas de rede reais), `tests/test_device_diag.py` (36), `tests/test_device_diag_client_contract.py` (4), `tests/fup003-contract.test.cjs`.
+- Mais evidências e correções da auditoria independente: `docs/AUDITORIA-SEGURANCA-2026-11-05.md`.
+
+## Execução — monitoramento inteligente (candidata 0.2.39, nada publicado)
+Testes novos: `tests/diag-core` (+~40 verificações: tracker, impressora desligada, 50 sondagens seguidas = 1 registro, reconexão, queda em impressão, estado antigo, câmera offline × falha real, MQTT real, exceções internas distintas, AggregateException misto), `tests/test_device_diag.py` (+9: Relevância), `tests/fup003-contract.test.cjs` (+7). Resultados finais no relatório da entrega e em `docs/AUDITORIA-SEGURANCA-2026-11-05.md`.
+Limites: o tracker é **em memória** (reiniciar o app zera o estado: a primeira falha depois de abrir é `never_online`); "nunca respondeu" vale para a sessão atual do app; a detecção de impressão usa o último estado lido (≤5 min); nada foi provado em Windows real nem em impressoras reais.
+
+
+</cursor_untrusted_data_1337>

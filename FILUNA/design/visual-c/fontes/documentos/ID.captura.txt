@@ -1,0 +1,71 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Filuna — Identidade visual oficial, iconografia e mascote
+
+**Registro:** 2026-11-05 · **Origem:** referências visuais fornecidas diretamente pelo proprietário nesta conversa.  
+**Estado documental:** REFERÊNCIA APROVADA para orientar a identidade, sem equivaler a assets binários incorporados ou interface já homologada.  
+**Escopo:** marca Filuna 3D, produto Filuna Slicer, Windows, futuras aplicações, portal e comunicação, respeitando o objetivo de cada canal.
+
+## Identidade-mãe e hierarquia
+
+- **Marca principal:** **Filuna 3D**. Logotipo arredondado, volumétrico e amigável: “Filuna” rosa, “3D” laranja, contorno claro/creme e relevo visual suave. Não mudar desenho, proporções, grafia nem substituir a marca por um “F” improvisado.
+- **Produto:** **Filuna Slicer**. Exibir o nome correto nas janelas, setup, atalhos e atualizador. Identidade da empresa é Filuna 3D, sem alterar chaves técnicas internas do OrcaSlicer/G-code/perfis sem testes.
+- **Ícone de aplicativo:** letra **F** estilizada em rosa, sobre tile creme com cantos arredondados, como na referência de ícone no telefone. Deve permanecer legível em 16/24/32/48/64/128/256 px; ICO, PNG transparente ou fundos compatíveis são derivados validados, não novos logotipos.
+- **Mascote oficial:** personagem feminina ilustrada em 3D, sorriso alegre, olhos castanhos grandes, cabelo castanho-escuro ondulado, tiara rosa, adorno de ferramenta de impressão em laranja/roxo, moletom roxo com símbolo de cubo branco e texto “3D”. Preservar características distintivas; não recriar com aparência genérica, não trocar roupa, proporções, cores ou acessórios sem aprovação.
+- **Duas composições da mascote:** (a) circular com fundo rosa–lilás, destinada a avatar, apresentação e comunicação; (b) personagem recortada com canal alfa, destinada a onboarding, ajuda, estado vazio e comunicação contextual. **Não substituir o ícone F do aplicativo pela mascote sem decisão explícita**.
+- **Peso visual maior:** aumentar presença de marca nos locais apropriados (abertura, Sobre, primeiro acesso, identidade do instalador e módulos Filuna) com hierarquia, contraste e margens consistentes. Não poluir a mesa 3D, as ferramentas de medição nem o preview de impressão; o trabalho do usuário permanece prioritário.
+
+## Paleta apresentada e suas fontes
+
+A imagem da paleta tem cinco blocos com cantos arredondados: creme, vinho/berry escuro, rosa, laranja e cinza-claro quente. Há fundo geral off-white/creme e aspecto tátil/fosco com sombras suaves. As amostras abaixo são **amostragens aproximadas do CENTRO dos blocos JPEG**, não tokens oficiais finalizados: a imagem possui textura, luz e variação tonal.
+
+| Amostra visual | Hex aproximado da fotografia | Uso semântico proposto |
+|---|---|---|
+| Creme principal | `#F6E4D6` | Base suave, telas de marca |
+| Vinho escuro | `#633536` | Navegação/contraste premium |
+| Rosa Filuna | `#EF6289` | Ações, ênfase e identidade |
+| Laranja Filuna | `#F27F43` | Destaque, identificação “3D” |
+| Cinza quente | `#DBD0C6` | Superfícies auxiliares e divisórias |
+| Fundo da imagem | `#FBF3E8` | Plano neutro de apresentação |
+
+**Atenção ao conflito de versões:** a Home Grok aprovada em 03/11 usa tokens como `berry #64184a`, `berry-bar #7a215c`, `magenta #c2185b`, `orange #ff6b1a`, `cream #f7f2f4`. A paleta enviada hoje é uma **nova referência cromática direta do proprietário**, mas não há valores HEX oficiais explícitos e equivalências finais. Registrar ambas; **antes de alterar estilos do Slicer, comparar os tokens atuais e aprovar uma tabela definitiva por papel/estado, sem substituir cores cegamente**. A nova paleta orienta a identidade, enquanto o contrato da Home de 03/11 conserva a estrutura, disposição e interações previamente aprovadas. Nunca fingir que amostras JPEG são especificações colorimétricas absolutas.
+
+## Fontes originais anexadas pelo proprietário
+
+Os arquivos abaixo foram fornecidos na conversa de 05/11/2026. O SHA-256 identifica cada original; **os binários ainda não estão versionados na branch GitHub**. Esta documentação preserva referência, nomes, formato, dimensões e integridade, mas não substitui o upload dos arquivos originais. A ausência dos binários impede G1 visual definitivo e G5 de recursos visuais.
+
+| ID | Arquivo fornecido | Resolução | SHA-256 | Finalidade |
+|---|---|---|---|---|
+| `FLN-BRAND-LOGO-01` | `105207.jpg` | 1536×1031, JPEG | `4533476b9725e50d3f0fe2d5cf0be94419d392c34d0cd563052038ac1fc80639` | Logo “Filuna 3D” principal |
+| `FLN-BRAND-PALETTE-01` | `105206.jpg` | 1536×1031, JPEG | `2f35535f444b560ff4f84ead6660e5eb247335c52729b8240be675fa2ba2c33e` | Paleta e tratamento de superfície |
+| `FLN-BRAND-ICON-01` | `105208.jpg` | 1536×1031, JPEG | `770810b28114c6099b4d10379a3fe038325259315a75c952f1b25ec759a8c245` | Ícone F no contexto de app |
+| `FLN-MASCOT-CIRCLE-01` | `99422.jpg` | 1536×1536, JPEG | `f5474437ef6efb4143a61b3892ad0eaaff2918aa633d7aa0dd175fed16cc0d11` | Mascote circular com fundo |
+| `FLN-MASCOT-CUTOUT-01` | `99421.webp` | 360×443, WebP RGBA | `6ed33f99aaa8444987985202c9cdce14db5d39856f7c5b9a3bcb1d4dd167f8a5` | Mascote recortada transparente |
+
+**Rastreabilidade:** estes nomes são arquivos de conversa, não caminhos publicados no GitHub. Antes de integrar no produto, versionar os bytes originais de forma comprovada e conferir `SHA-256`; organizar arquivos em `FILUNA/brand/assets/original/` com nomenclatura estável, sem sobrescrever a origem. Os arquivos gerados (SVG vetorial verdadeiro, ICO, PNG, WebP otimizados) recebem hashes independentes e testam dimensões, transparência e legibilidade. O JPEG do logotipo NÃO é substituto automático de logo vetorial nem prova de fundo transparente.
+
+## Matriz de uso
+
+| Contexto | Recurso | Regra |
+|---|---|---|
+| Instalador, tela de abertura e Sobre | Nome Filuna Slicer + logo/ícone oficiais | Marca proporcional, créditos Orca e AGPL preservados |
+| Atalho Windows, taskbar e associação de arquivo | Ícone F | ICO em múltiplas resoluções, legível, sem arte arbitrária |
+| Home Filuna | Marca na barra e identidade cromática | Manter estrutura homologada, sem sobrepor modelos/viewport |
+| Boas-vindas, onboarding, dicas e ajuda | Mascote recortada | Contextual, sem atrapalhar navegação ou layout de impressão |
+| Avatar e materiais de apresentação Filuna | Mascote circular | Manter composição e contraste |
+| Controles técnicos do motor Orca | Ícones funcionais discretos | Não usar mascote como botão técnico sem semântica |
+| Página do dispositivo/segurança | Estados reais e dados de máquina | Identidade não oculta avisos de falha, offline ou bloqueio |
+
+## Critérios de qualidade e bloqueios
+
+1. Preservar os originais com hashes válidos antes de usar versões derivadas.
+2. Conferir e aprovar mapa de tokens definitivos por função, incluindo claro/escuro, contraste, foco e estados de erro.
+3. Testar logo e ícone em todos os tamanhos do Windows; ausência de brilho artificial ou pixelização indevida; fundo transparente somente quando houver alfa real.
+4. Testar mascote em fundo claro/escuro e escalas desktop sem recorte, distorção ou sobreposição de informações técnicas.
+5. Comparar screenshots de Home, instalador, Sobre, atalhos e ajuda contra as referências e registrar aprovação do proprietário.
+6. Não promover imagem gerada, mockup ou tela apresentada como render 3D real / funcionalidade efetiva.
+7. Registrar cada mudança de identidade, fonte, motivo e aprovação no diário do projeto, respeitando o [portão obrigatório](REGRA-MESTRE-QUALIDADE.md).
+8. Até a integração de binários originais, status **REFERÊNCIA REGISTRADA — ARQUIVOS BINÁRIOS PENDENTES**. Nenhuma atualização de marca considera G1 aprovado apenas com este documento.
+
+
+</cursor_untrusted_data_1337>

@@ -1,0 +1,1398 @@
+[
+  {
+    "id": "PAR-02",
+    "family": "parametricos",
+    "title": "Chaveiro Botton / antes da imagem",
+    "source": "UX-P §§2–3; t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-02.png",
+    "svg": "parametricos/PAR-02.svg"
+  },
+  {
+    "id": "VIS-01",
+    "family": "visualizacao",
+    "title": "Visualização / camadas — composição proposta",
+    "source": "t26u; Orca único / QUAL; contrato detalhado pendente",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "visualizacao/VIS-01.png",
+    "svg": "visualizacao/VIS-01.svg"
+  },
+  {
+    "id": "PROJ-01",
+    "family": "projeto",
+    "title": "Projeto / arquivo local — composição proposta",
+    "source": "t26u; QUAL compatibilidade 3MF / print-only; SHELL §0",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "projeto/PROJ-01.png",
+    "svg": "projeto/PROJ-01.svg"
+  },
+  {
+    "id": "DS-01",
+    "family": "sistema",
+    "title": "Sistema visual / ações e estados de interface",
+    "source": "t26u; direção C; estados derivados PROPOSTOS",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "sistema/DS-01.png",
+    "svg": "sistema/DS-01.svg"
+  },
+  {
+    "id": "PREP-APROVADO",
+    "family": "preparacao",
+    "title": "filuna-preparacao-C",
+    "source": "t26u; aprovação visual explícita dos dois modelos C",
+    "status": "MODELO_VISUAL_APROVADO",
+    "png": "preparacao/filuna-preparacao-C.png",
+    "svg": "preparacao/filuna-preparacao-C.svg"
+  },
+  {
+    "id": "DEV-APROVADO",
+    "family": "dispositivo",
+    "title": "filuna-dispositivo-C",
+    "source": "t26u; aprovação visual explícita dos dois modelos C",
+    "status": "MODELO_VISUAL_APROVADO",
+    "png": "dispositivo/filuna-dispositivo-C.png",
+    "svg": "dispositivo/filuna-dispositivo-C.svg"
+  },
+  {
+    "id": "DEV-01",
+    "family": "dispositivo",
+    "title": "Sua primeira impressora",
+    "source": "UX-D; H01; P13",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-01.png",
+    "svg": "dispositivo/DEV-01.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-02",
+    "family": "dispositivo",
+    "title": "Lista de unidades",
+    "source": "UX-D; DEV §5; H01",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-02.png",
+    "svg": "dispositivo/DEV-02.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-03",
+    "family": "dispositivo",
+    "title": "Descoberta segura",
+    "source": "DEV D0–D3; FUP-D; H01",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-03.png",
+    "svg": "dispositivo/DEV-03.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-04",
+    "family": "dispositivo",
+    "title": "Identificação e conflito",
+    "source": "DEV D3–D6; FUP-D; H01",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-04.png",
+    "svg": "dispositivo/DEV-04.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-05",
+    "family": "dispositivo",
+    "title": "Cadastro e pareamento",
+    "source": "H01; P13; OEM-UPD; QA-W",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-05.png",
+    "svg": "dispositivo/DEV-05.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-06",
+    "family": "dispositivo",
+    "title": "Assistente e perfis",
+    "source": "P13 §13.1–13.2; OEM-3C",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-06.png",
+    "svg": "dispositivo/DEV-06.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-07",
+    "family": "dispositivo",
+    "title": "Câmera e privacidade",
+    "source": "P13 §13.2; DEV §7; SRV §7",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-07.png",
+    "svg": "dispositivo/DEV-07.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-08",
+    "family": "dispositivo",
+    "title": "Slots e materiais",
+    "source": "P13; DEV §8; FUP-D; PROTO",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-08.png",
+    "svg": "dispositivo/DEV-08.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-09",
+    "family": "dispositivo",
+    "title": "Prontidão e pendências",
+    "source": "P13 §13.2–13.3; BETA",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-09.png",
+    "svg": "dispositivo/DEV-09.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-10",
+    "family": "dispositivo",
+    "title": "Painel local pronto",
+    "source": "UX-D; DEV §§4–7; H01",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-10.png",
+    "svg": "dispositivo/DEV-10.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-12",
+    "family": "dispositivo",
+    "title": "Pausa e retomada",
+    "source": "DEV §6; UX-D; PROD",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-12.png",
+    "svg": "dispositivo/DEV-12.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-13",
+    "family": "dispositivo",
+    "title": "Revisão do trabalho",
+    "source": "H01; DEV §6; PRINT; PROD",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-13.png",
+    "svg": "dispositivo/DEV-13.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-14",
+    "family": "dispositivo",
+    "title": "Upload e integridade",
+    "source": "DEV §6; PROTO; BETA",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-14.png",
+    "svg": "dispositivo/DEV-14.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-15",
+    "family": "dispositivo",
+    "title": "Confirmação de início",
+    "source": "DEV §6; P13; H01; PROD",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-15.png",
+    "svg": "dispositivo/DEV-15.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-16",
+    "family": "dispositivo",
+    "title": "Fila e agenda",
+    "source": "PROD; SRV; UX-D",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-16.png",
+    "svg": "dispositivo/DEV-16.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-18",
+    "family": "dispositivo",
+    "title": "Histórico e resultado físico",
+    "source": "PROD; P13 §13.3; BETA",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-18.png",
+    "svg": "dispositivo/DEV-18.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-19",
+    "family": "dispositivo",
+    "title": "Controles, saúde e manutenção",
+    "source": "UX-D; DEV §6; PROD; P13",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-19.png",
+    "svg": "dispositivo/DEV-19.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-20",
+    "family": "dispositivo",
+    "title": "Pular objeto",
+    "source": "PROD; DEV §6",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-20.png",
+    "svg": "dispositivo/DEV-20.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-21",
+    "family": "dispositivo",
+    "title": "Falhas e recuperação",
+    "source": "DEV §5; FUP-003; SRV TTL",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-21.png",
+    "svg": "dispositivo/DEV-21.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-22",
+    "family": "dispositivo",
+    "title": "Diagnóstico e privacidade",
+    "source": "FUP-002/003; AUD-W; SRV; BETA",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-22.png",
+    "svg": "dispositivo/DEV-22.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-23",
+    "family": "dispositivo",
+    "title": "Configuração e atualizações",
+    "source": "OEM-3C; OEM-UPD; P13; UPD-W",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-23.png",
+    "svg": "dispositivo/DEV-23.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-24",
+    "family": "dispositivo",
+    "title": "Beta e três provas",
+    "source": "P13 §13.3; BETA; FASES",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-24.png",
+    "svg": "dispositivo/DEV-24.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-25",
+    "family": "dispositivo",
+    "title": "Remoto futuro",
+    "source": "SRV §§5–7; P13; BETA",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-25.png",
+    "svg": "dispositivo/DEV-25.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-26",
+    "family": "dispositivo",
+    "title": "Ajuda de conexão LAN",
+    "source": "H01 adendo; OEM-UPD; PROTO §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-26.png",
+    "svg": "dispositivo/DEV-26.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-11-AQUECIMENTO",
+    "family": "dispositivo",
+    "title": "Aquecimento",
+    "source": "DEV §6",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-11-AQUECIMENTO.png",
+    "svg": "dispositivo/DEV-11-AQUECIMENTO.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-03",
+    "family": "preparacao",
+    "title": "Qualidade / processo",
+    "source": "UX-PREP §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-03.png",
+    "svg": "preparacao/PREP-03.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-04",
+    "family": "preparacao",
+    "title": "Velocidade / processo",
+    "source": "UX-PREP §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-04.png",
+    "svg": "preparacao/PREP-04.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-05",
+    "family": "preparacao",
+    "title": "Suporte / processo",
+    "source": "UX-PREP §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-05.png",
+    "svg": "preparacao/PREP-05.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-06",
+    "family": "preparacao",
+    "title": "Multimaterial / processo",
+    "source": "UX-PREP §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-06.png",
+    "svg": "preparacao/PREP-06.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-07",
+    "family": "preparacao",
+    "title": "Outros / processo",
+    "source": "UX-PREP §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-07.png",
+    "svg": "preparacao/PREP-07.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-08",
+    "family": "preparacao",
+    "title": "Simples / processo",
+    "source": "UX-PREP §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-08.png",
+    "svg": "preparacao/PREP-08.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-09",
+    "family": "preparacao",
+    "title": "Especialista / processo",
+    "source": "UX-PREP §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-09.png",
+    "svg": "preparacao/PREP-09.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-02",
+    "family": "preparacao",
+    "title": "Objetos e menu contextual",
+    "source": "UX-PREP §4 Objetos",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-02.png",
+    "svg": "preparacao/PREP-02.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-10",
+    "family": "preparacao",
+    "title": "Editor Impressora",
+    "source": "UX-PREP §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-10.png",
+    "svg": "preparacao/PREP-10.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-11",
+    "family": "preparacao",
+    "title": "Editor Filamento",
+    "source": "UX-PREP §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-11.png",
+    "svg": "preparacao/PREP-11.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-12",
+    "family": "preparacao",
+    "title": "Matriz de purga",
+    "source": "UX-PREP §3",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-12.png",
+    "svg": "preparacao/PREP-12.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-13",
+    "family": "preparacao",
+    "title": "Criar impressora",
+    "source": "UX-PREP §§1–9; t23u/t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-13.png",
+    "svg": "preparacao/PREP-13.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-14",
+    "family": "preparacao",
+    "title": "Filamento / ações",
+    "source": "UX-PREP §§1–9; t23u/t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-14.png",
+    "svg": "preparacao/PREP-14.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-15",
+    "family": "preparacao",
+    "title": "Gestão de mesas",
+    "source": "UX-PREP §§1–9; t23u/t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-15.png",
+    "svg": "preparacao/PREP-15.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-16",
+    "family": "preparacao",
+    "title": "IA Filuna",
+    "source": "UX-PREP §§1–9; t23u/t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-16.png",
+    "svg": "preparacao/PREP-16.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-17",
+    "family": "preparacao",
+    "title": "Autoajuda",
+    "source": "UX-PREP §§1–9; t23u/t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-17.png",
+    "svg": "preparacao/PREP-17.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-18",
+    "family": "preparacao",
+    "title": "Fatiar mesa ou tudo",
+    "source": "UX-PREP §§1–9; t23u/t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-18.png",
+    "svg": "preparacao/PREP-18.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-19",
+    "family": "preparacao",
+    "title": "Exportar e imprimir",
+    "source": "UX-PREP §§1–9; t23u/t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-19.png",
+    "svg": "preparacao/PREP-19.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-20",
+    "family": "preparacao",
+    "title": "Custos pós-fatiamento",
+    "source": "UX-PREP §§1–9; t23u/t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-20.png",
+    "svg": "preparacao/PREP-20.svg",
+    "variants": {}
+  },
+  {
+    "id": "VIS-02",
+    "family": "visualizacao",
+    "title": "Antes de fatiar",
+    "source": "PLANO/CONT/QUAL @83efc13; regra U1",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "visualizacao/VIS-02.png",
+    "svg": "visualizacao/VIS-02.svg",
+    "variants": {}
+  },
+  {
+    "id": "VIS-03",
+    "family": "visualizacao",
+    "title": "Fatiando com Orca",
+    "source": "PLANO/CONT/QUAL @83efc13; regra U1",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "visualizacao/VIS-03.png",
+    "svg": "visualizacao/VIS-03.svg",
+    "variants": {}
+  },
+  {
+    "id": "VIS-04",
+    "family": "visualizacao",
+    "title": "Falha de fatiamento",
+    "source": "PLANO/CONT/QUAL @83efc13; regra U1",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "visualizacao/VIS-04.png",
+    "svg": "visualizacao/VIS-04.svg",
+    "variants": {}
+  },
+  {
+    "id": "VIS-05",
+    "family": "visualizacao",
+    "title": "Arquivo inválido",
+    "source": "PLANO/CONT/QUAL @83efc13; regra U1",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "visualizacao/VIS-05.png",
+    "svg": "visualizacao/VIS-05.svg",
+    "variants": {}
+  },
+  {
+    "id": "VIS-06",
+    "family": "visualizacao",
+    "title": "Risco no G-code oficial OEM",
+    "source": "PLANO/CONT/QUAL @83efc13; regra U1",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "visualizacao/VIS-06.png",
+    "svg": "visualizacao/VIS-06.svg",
+    "variants": {}
+  },
+  {
+    "id": "VIS-07",
+    "family": "visualizacao",
+    "title": "ENGINE_DIVERGENCE",
+    "source": "PLANO/CONT/QUAL @83efc13; regra U1",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "visualizacao/VIS-07.png",
+    "svg": "visualizacao/VIS-07.svg",
+    "variants": {}
+  },
+  {
+    "id": "PAR-lua-litofania",
+    "family": "parametricos",
+    "title": "Lua Litofania LED",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-lua-litofania.png",
+    "svg": "parametricos/PAR-lua-litofania.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-pote-doces-imagem",
+    "family": "parametricos",
+    "title": "Pote para Doces com Imagem",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-pote-doces-imagem.png",
+    "svg": "parametricos/PAR-pote-doces-imagem.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-chaveiro-botton",
+    "family": "parametricos",
+    "title": "Chaveiro Botton",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-chaveiro-botton.png",
+    "svg": "parametricos/PAR-chaveiro-botton.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-envelope-renda",
+    "family": "parametricos",
+    "title": "Envelope de Renda em Tule",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-envelope-renda.png",
+    "svg": "parametricos/PAR-envelope-renda.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-criador-trofeu",
+    "family": "parametricos",
+    "title": "Criador de Troféu",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-criador-trofeu.png",
+    "svg": "parametricos/PAR-criador-trofeu.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-caixa-sombra",
+    "family": "parametricos",
+    "title": "Caixa de Sombra",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-caixa-sombra.png",
+    "svg": "parametricos/PAR-caixa-sombra.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-flexi-articulado",
+    "family": "parametricos",
+    "title": "Brinquedo Flexível",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-flexi-articulado.png",
+    "svg": "parametricos/PAR-flexi-articulado.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-ejetor-docinhos",
+    "family": "parametricos",
+    "title": "Ejetor de Docinhos",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-ejetor-docinhos.png",
+    "svg": "parametricos/PAR-ejetor-docinhos.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-letra-grande",
+    "family": "parametricos",
+    "title": "Letra Grande com Textura",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-letra-grande.png",
+    "svg": "parametricos/PAR-letra-grande.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-quadro-relevo",
+    "family": "parametricos",
+    "title": "Quadro em Relevo com IA",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-quadro-relevo.png",
+    "svg": "parametricos/PAR-quadro-relevo.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-topo-bolo",
+    "family": "parametricos",
+    "title": "Topo de Bolo com Nome",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-topo-bolo.png",
+    "svg": "parametricos/PAR-topo-bolo.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-chaveiro-tracos",
+    "family": "parametricos",
+    "title": "Chaveiro com Traços",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-chaveiro-tracos.png",
+    "svg": "parametricos/PAR-chaveiro-tracos.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-placa-pintura",
+    "family": "parametricos",
+    "title": "Placa para Pintura",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-placa-pintura.png",
+    "svg": "parametricos/PAR-placa-pintura.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-arvore-natal",
+    "family": "parametricos",
+    "title": "Árvore de Natal com Enfeites",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-arvore-natal.png",
+    "svg": "parametricos/PAR-arvore-natal.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-luminaria-placa",
+    "family": "parametricos",
+    "title": "Luminária Placa com Palavras",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-luminaria-placa.png",
+    "svg": "parametricos/PAR-luminaria-placa.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-porta-chaveiros-rotatorio",
+    "family": "parametricos",
+    "title": "Porta-Chaveiros Rotatório",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-porta-chaveiros-rotatorio.png",
+    "svg": "parametricos/PAR-porta-chaveiros-rotatorio.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-chaveiro-alto-relevo",
+    "family": "parametricos",
+    "title": "Chaveiro em Alto-Relevo",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-chaveiro-alto-relevo.png",
+    "svg": "parametricos/PAR-chaveiro-alto-relevo.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-termoformagem",
+    "family": "parametricos",
+    "title": "Gerador de Termoformagem",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-termoformagem.png",
+    "svg": "parametricos/PAR-termoformagem.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-presente-termoformado",
+    "family": "parametricos",
+    "title": "Presente Quadrado Termoformado",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-presente-termoformado.png",
+    "svg": "parametricos/PAR-presente-termoformado.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-foto-linear-3d",
+    "family": "parametricos",
+    "title": "Foto Linear 3D",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-foto-linear-3d.png",
+    "svg": "parametricos/PAR-foto-linear-3d.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-letra-grande-nome",
+    "family": "parametricos",
+    "title": "Letra Grande com Nome",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-letra-grande-nome.png",
+    "svg": "parametricos/PAR-letra-grande-nome.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-imagem-multipartes",
+    "family": "parametricos",
+    "title": "Imagem Multipartes",
+    "source": "UX-P §§2–4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-imagem-multipartes.png",
+    "svg": "parametricos/PAR-imagem-multipartes.svg",
+    "variants": {
+      "entrada": "faixa inferior / 1ª variante (x424,y942)",
+      "prévia": "render principal (x424,y308)",
+      "gerando": "faixa inferior / 2ª variante (x784,y942)",
+      "falha": "faixa inferior / 3ª variante (x1144,y942)",
+      "gerado": "faixa inferior / 4ª variante (x1504,y942)"
+    }
+  },
+  {
+    "id": "PAR-GAL-1",
+    "family": "parametricos",
+    "title": "Galeria / segmento 1",
+    "source": "UX-P §1; capas autorais ilustrativas não substituem catálogo real",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-GAL-1.png",
+    "svg": "parametricos/PAR-GAL-1.svg",
+    "variants": {}
+  },
+  {
+    "id": "PAR-GAL-2",
+    "family": "parametricos",
+    "title": "Galeria / segmento 2",
+    "source": "UX-P §1; capas autorais ilustrativas não substituem catálogo real",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-GAL-2.png",
+    "svg": "parametricos/PAR-GAL-2.svg",
+    "variants": {}
+  },
+  {
+    "id": "PAR-GAL-3",
+    "family": "parametricos",
+    "title": "Galeria / segmento 3",
+    "source": "UX-P §1; capas autorais ilustrativas não substituem catálogo real",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "parametricos/PAR-GAL-3.png",
+    "svg": "parametricos/PAR-GAL-3.svg",
+    "variants": {}
+  },
+  {
+    "id": "HOME-02",
+    "family": "inicio",
+    "title": "Recentes",
+    "source": "SHELL §2",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "inicio/HOME-02.png",
+    "svg": "inicio/HOME-02.svg",
+    "variants": {}
+  },
+  {
+    "id": "HOME-03",
+    "family": "inicio",
+    "title": "Catálogo Filuna / print-only",
+    "source": "SHELL §2",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "inicio/HOME-03.png",
+    "svg": "inicio/HOME-03.svg",
+    "variants": {}
+  },
+  {
+    "id": "HOME-04",
+    "family": "inicio",
+    "title": "Ferramentas",
+    "source": "SHELL §2",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "inicio/HOME-04.png",
+    "svg": "inicio/HOME-04.svg",
+    "variants": {}
+  },
+  {
+    "id": "HOME-05",
+    "family": "inicio",
+    "title": "Estoque",
+    "source": "SHELL §2",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "inicio/HOME-05.png",
+    "svg": "inicio/HOME-05.svg",
+    "variants": {}
+  },
+  {
+    "id": "HOME-06",
+    "family": "inicio",
+    "title": "Ateliê",
+    "source": "SHELL §2",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "inicio/HOME-06.png",
+    "svg": "inicio/HOME-06.svg",
+    "variants": {}
+  },
+  {
+    "id": "TOOL-1",
+    "family": "ferramentas",
+    "title": "Imagem para 3MF",
+    "source": "SHELL §2 / detalhamento proposto",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "ferramentas/TOOL-1.png",
+    "svg": "ferramentas/TOOL-1.svg",
+    "variants": {}
+  },
+  {
+    "id": "TOOL-2",
+    "family": "ferramentas",
+    "title": "Imagem para SVG",
+    "source": "SHELL §2 / detalhamento proposto",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "ferramentas/TOOL-2.png",
+    "svg": "ferramentas/TOOL-2.svg",
+    "variants": {}
+  },
+  {
+    "id": "TOOL-3",
+    "family": "ferramentas",
+    "title": "Preço simples",
+    "source": "SHELL §2 / detalhamento proposto",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "ferramentas/TOOL-3.png",
+    "svg": "ferramentas/TOOL-3.svg",
+    "variants": {}
+  },
+  {
+    "id": "TOOL-4",
+    "family": "ferramentas",
+    "title": "Preço completo",
+    "source": "SHELL §2 / detalhamento proposto",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "ferramentas/TOOL-4.png",
+    "svg": "ferramentas/TOOL-4.svg",
+    "variants": {}
+  },
+  {
+    "id": "PROJ-AUX-1",
+    "family": "projeto",
+    "title": "Salvar alterações e fechar",
+    "source": "QUAL compatibilidade / composição proposta",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "projeto/PROJ-AUX-1.png",
+    "svg": "projeto/PROJ-AUX-1.svg",
+    "variants": {}
+  },
+  {
+    "id": "PROJ-AUX-2",
+    "family": "projeto",
+    "title": "Arquivo inválido",
+    "source": "QUAL compatibilidade / composição proposta",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "projeto/PROJ-AUX-2.png",
+    "svg": "projeto/PROJ-AUX-2.svg",
+    "variants": {}
+  },
+  {
+    "id": "PROJ-AUX-3",
+    "family": "projeto",
+    "title": "Projeto vazio",
+    "source": "QUAL compatibilidade / composição proposta",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "projeto/PROJ-AUX-3.png",
+    "svg": "projeto/PROJ-AUX-3.svg",
+    "variants": {}
+  },
+  {
+    "id": "PROJ-AUX-4",
+    "family": "projeto",
+    "title": "Recuperação local",
+    "source": "QUAL compatibilidade / composição proposta",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "projeto/PROJ-AUX-4.png",
+    "svg": "projeto/PROJ-AUX-4.svg",
+    "variants": {}
+  },
+  {
+    "id": "AUX-1",
+    "family": "auxiliares",
+    "title": "Conta e sessão",
+    "source": "QUAL; OEM-UPD; UPD-W / detalhamento candidato",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "auxiliares/AUX-1.png",
+    "svg": "auxiliares/AUX-1.svg",
+    "variants": {}
+  },
+  {
+    "id": "AUX-2",
+    "family": "auxiliares",
+    "title": "Configurações e temas",
+    "source": "QUAL; OEM-UPD; UPD-W / detalhamento candidato",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "auxiliares/AUX-2.png",
+    "svg": "auxiliares/AUX-2.svg",
+    "variants": {}
+  },
+  {
+    "id": "AUX-3",
+    "family": "auxiliares",
+    "title": "Atualização disponível",
+    "source": "QUAL; OEM-UPD; UPD-W / detalhamento candidato",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "auxiliares/AUX-3.png",
+    "svg": "auxiliares/AUX-3.svg",
+    "variants": {}
+  },
+  {
+    "id": "AUX-5",
+    "family": "auxiliares",
+    "title": "Sem internet / cache",
+    "source": "QUAL; OEM-UPD; UPD-W / detalhamento candidato",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "auxiliares/AUX-5.png",
+    "svg": "auxiliares/AUX-5.svg",
+    "variants": {}
+  },
+  {
+    "id": "WEB-FUT-1",
+    "family": "web-futuro",
+    "title": "Consentimento e dados",
+    "source": "SRV §§5–7 / futuro / proposta em revisão",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "web-futuro/WEB-FUT-1.png",
+    "svg": "web-futuro/WEB-FUT-1.svg",
+    "variants": {}
+  },
+  {
+    "id": "WEB-FUT-2",
+    "family": "web-futuro",
+    "title": "Observabilidade sanitizada",
+    "source": "SRV §§5–7 / futuro / proposta em revisão",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "web-futuro/WEB-FUT-2.png",
+    "svg": "web-futuro/WEB-FUT-2.svg",
+    "variants": {}
+  },
+  {
+    "id": "WEB-FUT-3",
+    "family": "web-futuro",
+    "title": "Remoto do titular / OFF",
+    "source": "SRV §§5–7 / futuro / proposta em revisão",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "web-futuro/WEB-FUT-3.png",
+    "svg": "web-futuro/WEB-FUT-3.svg",
+    "variants": {}
+  },
+  {
+    "id": "WEB-FUT-4",
+    "family": "web-futuro",
+    "title": "Revogação e exclusão",
+    "source": "SRV §§5–7 / futuro / proposta em revisão",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "web-futuro/WEB-FUT-4.png",
+    "svg": "web-futuro/WEB-FUT-4.svg",
+    "variants": {}
+  },
+  {
+    "id": "HOME-01",
+    "family": "inicio",
+    "title": "Início / três faixas e capas autorais ilustrativas",
+    "source": "SHELL §2; HOME-18; t26u",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "inicio/HOME-01.png",
+    "svg": "inicio/HOME-01.svg",
+    "variants": {}
+  },
+  {
+    "id": "CAL-01",
+    "family": "calibracao",
+    "title": "Temperatura / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-01.png",
+    "svg": "calibracao/CAL-01.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-02",
+    "family": "calibracao",
+    "title": "Fluxo máximo / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-02.png",
+    "svg": "calibracao/CAL-02.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-03",
+    "family": "calibracao",
+    "title": "Avanço de pressão / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-03.png",
+    "svg": "calibracao/CAL-03.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-04",
+    "family": "calibracao",
+    "title": "Taxa de fluxo / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-04.png",
+    "svg": "calibracao/CAL-04.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-05",
+    "family": "calibracao",
+    "title": "Retração / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-05.png",
+    "svg": "calibracao/CAL-05.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-06",
+    "family": "calibracao",
+    "title": "Quinas / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-06.png",
+    "svg": "calibracao/CAL-06.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-07",
+    "family": "calibracao",
+    "title": "Modelagem de entrada / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-07.png",
+    "svg": "calibracao/CAL-07.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-08",
+    "family": "calibracao",
+    "title": "VFA / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-08.png",
+    "svg": "calibracao/CAL-08.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-09",
+    "family": "calibracao",
+    "title": "Tolerância / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-09.png",
+    "svg": "calibracao/CAL-09.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-10",
+    "family": "calibracao",
+    "title": "Guia de calibração / tutorial",
+    "source": "SHELL §4",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-10.png",
+    "svg": "calibracao/CAL-10.svg",
+    "variants": {
+      "navegacao": "lateral fixa x40–324",
+      "tutorial": "quatro seções x1050",
+      "modelo": "x356–1006"
+    }
+  },
+  {
+    "id": "CAL-INPUT-1",
+    "family": "calibracao",
+    "title": "Ringing tower",
+    "source": "SHELL §4 submenu input",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-INPUT-1.png",
+    "svg": "calibracao/CAL-INPUT-1.svg",
+    "variants": {}
+  },
+  {
+    "id": "CAL-INPUT-2",
+    "family": "calibracao",
+    "title": "Fast tower",
+    "source": "SHELL §4 submenu input",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-INPUT-2.png",
+    "svg": "calibracao/CAL-INPUT-2.svg",
+    "variants": {}
+  },
+  {
+    "id": "CAL-INPUT-3",
+    "family": "calibracao",
+    "title": "ZV",
+    "source": "SHELL §4 submenu input",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-INPUT-3.png",
+    "svg": "calibracao/CAL-INPUT-3.svg",
+    "variants": {}
+  },
+  {
+    "id": "CAL-INPUT-4",
+    "family": "calibracao",
+    "title": "MZV",
+    "source": "SHELL §4 submenu input",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-INPUT-4.png",
+    "svg": "calibracao/CAL-INPUT-4.svg",
+    "variants": {}
+  },
+  {
+    "id": "CAL-INPUT-5",
+    "family": "calibracao",
+    "title": "ZVD",
+    "source": "SHELL §4 submenu input",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-INPUT-5.png",
+    "svg": "calibracao/CAL-INPUT-5.svg",
+    "variants": {}
+  },
+  {
+    "id": "CAL-INPUT-6",
+    "family": "calibracao",
+    "title": "EI",
+    "source": "SHELL §4 submenu input",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "calibracao/CAL-INPUT-6.png",
+    "svg": "calibracao/CAL-INPUT-6.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-10-CONT",
+    "family": "preparacao",
+    "title": "Impressora / opções especialistas",
+    "source": "UX-PREP §§2–3",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-10-CONT.png",
+    "svg": "preparacao/PREP-10-CONT.svg",
+    "variants": {}
+  },
+  {
+    "id": "PREP-11-CONT",
+    "family": "preparacao",
+    "title": "Filamento / opções especialistas",
+    "source": "UX-PREP §§2–3",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "preparacao/PREP-11-CONT.png",
+    "svg": "preparacao/PREP-11-CONT.svg",
+    "variants": {}
+  },
+  {
+    "id": "DEV-17",
+    "family": "dispositivo",
+    "title": "Bobinas e slots",
+    "source": "UX-D §3; DEV §8; PROD",
+    "status": "PROPOSTO_EM_REVISAO",
+    "png": "dispositivo/DEV-17.png",
+    "svg": "dispositivo/DEV-17.svg",
+    "variants": {}
+  },
+  {
+    "id": "AUX-4",
+    "family": "auxiliares",
+    "title": "Instalação e rollback",
+    "source": "QUAL; OEM-UPD; UPD-W / detalhamento candidato",
+    "status": "PROPOSTO_CONTRATO_DETALHADO_PENDENTE",
+    "png": "auxiliares/AUX-4.png",
+    "svg": "auxiliares/AUX-4.svg",
+    "variants": {}
+  }
+]

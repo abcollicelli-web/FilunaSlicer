@@ -1,0 +1,77 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Filuna Slicer — módulos nativos por fabricante e atualização incremental
+
+**Ordem expressa do proprietário — 06/11/2026.** Implementação total: **em andamento**, não publicada. Contrato fixado para todos os módulos.
+
+## Comportamento no início
+
+1. O Filuna inicia seu motor Orca interno, **nunca o Orca instalado no computador**. Os recursos de fatiamento base continuam funcionais offline.
+2. O `DeviceManager` carrega os dispositivos previamente cadastrados, sem tratá-los como online até receber telemetria fresca. Em LAN permitida, o `DeviceBridge` executa descoberta dos protocolos suportados. Também deve aceitar IP manual.
+3. Identifica `manufacturer_id`, `model_id`, revisão/variante, número de série estável, `firmware_version`, protocolo e capacidades a partir de evidências **da impressora**; múltiplas identificações conflitantes levam a seleção manual, não adivinhação.
+4. Resolve o módulo compatível por **fabricante + modelo + firmware + versão ABI do Filuna**, selecionando somente módulos que passaram nos testes apropriados. Módulo desconhecido ou incompatível significa funções específicas desabilitadas, com explicação ao cliente.
+5. Carrega perfis oficiais versionados, configurações efetivas depois de herança, mapeamento de filamentos, comandos, câmera e transporte suportados. A seleção do modelo **não prova** conexão nem permite iniciar impressão automaticamente.
+6. Consulta manifesto assinado de atualização quando houver conectividade (na abertura e periodicamente, conforme política Filuna existente). Compara versões, hashes, canal e compatibilidade; não migra configurações irreversivelmente, não interrompe impressão, não perde trabalho.
+7. Se não houver Internet, mantém a última versão íntegra instalada. Se atualização falhar, faz rollback atômico e conserva log de erro sem simular sucesso.
+
+## Classes de atualização
+
+| Conteúdo | Entrega normal | Reinício | Exigência |
+|---|---|---|---|
+| Perfis oficiais, calibração, parâmetros, materiais e capacidades declarativas | Pacote assinado de dados por modelo | Não, quando compatível | schema + hashes + regressão de G-code |
+| Protocolos em código Filuna e integrações nativas | Módulo assinado por ABI, com troca atômica | Se componente estiver em uso | testes de isolamento, ABI, plataforma, rollback |
+| Motor Orca, C++ de núcleo e dependências pesadas | Atualizador binário Filuna existente | Reinício controlado ou reparo | compilação de Windows, comparações upstream, QA |
+| APIs proprietárias/login/nuvem do fabricante | **Não incorporar** | N/A | serviços próprios excluídos do escopo |
+
+**Atualização de upstream não é automaticamente aprovação para o cliente.** O robô compara commits/releases oficiais, detecta os arquivos alterados, aponta quais módulos/modelos são afetados, executa matriz de compatibilidade e publica o manifesto **apenas após aprovação e evidências exigidas**. Nunca baixar e executar diretamente um commit não homologado de fabricante.
+
+## Contrato proposto de manifesto por módulo
+
+```json
+{
+  "schema": 1,
+  "module_id": "filuna-elegoo-cc2",
+  "manufacturer": "elegoo",
+  "models": ["Elegoo-CC2"],
+  "firmware_range": {"min": null, "max": null, "status": "UNVERIFIED"},
+  "filuna_abi": 1,
+  "version": "0.1.0",
+  "upstream": {"repository": "elegooofficial/ElegooSlicer", "tag": "v1.5.3.5", "commit": "3f1042e9e44c4ad10a721d7c9432c8fe15205202"},
+  "capabilities": {
+    "discovery": "PARTIAL_SIMULATED",
+    "pairing": "NOT_RUN",
+    "monitoring": "NOT_RUN",
+    "camera": "NOT_RUN",
+    "multi_material": "NOT_RUN",
+    "printing": "BLOCKED"
+  },
+  "artifact": {"sha256": null, "signature": null, "status": "NOT_BUILT"},
+  "promotion": "BLOCKED"
+}
+```
+
+Manifesto acima é **exemplo de contrato, não artefato distribuível**. A versão e status são do candidato QA, não versão de firmware aprovada.
+
+## Implementação nativa inicial nesta branch
+
+- `src/slic3r/GUI/DeviceCore/FilunaVendorRegistry.hpp`: registro de quatro modelos com status específico.
+- `src/slic3r/GUI/DeviceCore/FilunaModuleSelection.hpp`: seletor por modelo/ABI; funções dependentes de hardware ficam bloqueadas sem evidência física, identidade/firmware/pareamento confirmados.
+- `src/slic3r/GUI/DeviceCore/DevManager.cpp`: consulta registro e candidato ao restaurar impressora cadastrada; **não carrega DLL de terceiros, não baixa módulo e não executa comandos**.
+
+**Teste executado:** compilação isolada g++ C++17 com `-Wall -Wextra -Werror`, quatro modelos resolvem para candidatos distintos, ABI desconhecida rejeitada e nenhuma operação de hardware liberada. **Não é build Windows completo nem teste de adaptação de protocolos.**
+
+## Próximas tarefas de implementação
+
+1. Compatibilizar registro com identidade real e semântica de firmware (não só rótulo `printer_type`).
+2. Criar `FilunaDeviceBridge` nativo sobre agentes existentes, sem duplicar protocolos; eliminar stubs com retorno de falso sucesso.
+3. Implementar carregador verificado por manifesto assinado, hashes e ABI, rollback atômico, fluxo de atualização por modelo e estados offline.
+4. Portar componentes AGPL adequados dos fatiadores oficiais, com origem por arquivo, avisos de atribuição e integrações testáveis por fabricante.
+5. Realizar G-code comparativo por equipamento e protocolo sobre simulador e cliente real Wine; homologação de hardware fica como etapa final.
+6. Integrar à UI os estados **Disponível**, **Atualização compatível**, **Parcial em teste**, **Incompatível**, **Aguardando homologação** com mensagens e evidências corretas.
+
+## Regras de segurança e governança
+
+Não capturar credenciais do fabricante sem consentimento, não habilitar impressão por anúncio UDP, não expor mock como firmware real, não liberar login ou cloud de terceiros, não inventar suporte para câmera/AMS/ACE/Canvas sem testes. Não fazer merge ou deploy sem passar a política canônica do projeto.
+
+
+</cursor_untrusted_data_1337>

@@ -1,0 +1,26 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Contas dos fabricantes de impressora: dá para vincular e usar a biblioteca deles? (pesquisa 04/11/2026)
+
+Pergunta do dono: alguma impressora libera a conta do cliente para vincular ao Filuna, conectar a biblioteca dele e usar recursos dele no nosso serviço?
+**Resposta curta: nenhum dos fabricantes pesquisados oferece, hoje, uma API pública com login (OAuth) para um app de terceiros entrar na conta do cliente e ler a biblioteca/nuvem dele.** O que existe é acesso pela rede local (que o Filuna já usa) e, em alguns casos, acesso não oficial por engenharia reversa, que não recomendo.
+
+| Fabricante | Caminho oficial para terceiros | Nuvem/biblioteca do cliente | Observação |
+|---|---|---|---|
+| **Bambu Lab** | **Bambu Connect** (intermediário oficial entre impressora e software de terceiros) com **pedido de acesso ao SDK** ([wiki](https://wiki.bambulab.com/en/software/third-party-integration)). Modo Desenvolvedor = só rede local, desliga a nuvem. | Sem API pública de nuvem nem do MakerWorld encontrada; só projeto comunitário por engenharia reversa (sem apoio da Bambu). | Único com programa oficial de parceria: dá para **solicitar** o SDK. |
+| **Creality** | Nenhum programa público de API/OAuth encontrado. | Creality Cloud (modelos) sem API pública. | Modelos Klipper (K2, Ender-3 V3) têm Moonraker local documentado. |
+| **Elegoo** | Protocolo local SDCP (documentado pela comunidade) — é o que o Filuna usa na CC2. Há uma "API de parceiros" da Elegoo (usada pelo Obico para IA), sem confirmação de acesso público. | ElegooSlicer é derivado do Orca; sem API de biblioteca/nuvem pública. | |
+| **Anycubic** | Nenhum programa oficial. | Só API **reversa**: usa token tirado do Slicer Next/navegador do próprio cliente (frágil, pode parar a qualquer hora, e há histórico de falha de segurança na nuvem deles). | Não recomendo: risco de termos de uso e de quebrar sem aviso. |
+| **Prusa** | PrusaLink (local, documentado). Prusa Connect/Printables sem API oficial para terceiros (usuários pedem acesso). | Printables sem API pública confirmada. | |
+| **Snapmaker (U1)** | Moonraker local (Klipper), documentado. | Biblioteca de modelos dentro do Snapmaker Orca; sem API de nuvem. | |
+| SimplyPrint | Tem o próprio OAuth2 por dono de impressora (é produto deles, não do fabricante). | — | Referência de como seria. |
+
+## Recomendação
+1. **Rede local primeiro (como já fazemos):** CC2 (SDCP), Moonraker (Snapmaker/Creality/Voron), Anycubic, Bambu em modo LAN — funciona sem conta do fabricante e sem depender de nuvem alheia.
+2. **Bambu Connect:** pedir acesso ao SDK da Bambu (ação do dono, com o CNPJ/e-mail da Filuna). É o único caminho oficial para falar com Bambu sem modo LAN.
+3. **Não usar** token/API reversa de nuvem de cliente (Anycubic, Bambu Cloud): contraria os termos, quebra sem aviso e põe a conta do cliente em risco.
+4. **Bibliotecas de modelos:** priorizar fontes que têm API oficial com login do próprio cliente (a verificar: Thingiverse, MyMiniFactory; MakerWorld/Printables/Creality Cloud não têm API pública confirmada). Até lá, o cliente importa o arquivo (STL/3MF) que baixou lá.
+5. Revisar esta tabela a cada trimestre: fabricantes mudam política (a Bambu mudou em jan/2025).
+
+
+</cursor_untrusted_data_1337>

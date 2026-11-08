@@ -1,0 +1,47 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Regra obrigatória: classificação, segurança e publicação de atualizações Filuna
+
+**Aprovada pelo proprietário em 2026-11-03.** Versão do contrato: `2026-11-03.1`.
+**Escopo:** Filuna Slicer Windows, Web e futuros Android/iOS, catálogo, paramétricos, ferramentas, módulos, serviço de sincronização, servidor beta, Grok/GitHub e qualquer pipeline que produza ou disponibilize um pacote.
+
+## Objetivo e regra principal
+O produto deve avisar e obter atualizações dentro do aplicativo, sem orientar o cliente a baixar/reinstalar tudo para cada correção. **Instalador completo somente quando indispensável**, comprovado por análise técnica. Nenhuma IA, Grok, operador ou pipeline pode declarar, anunciar ou distribuir versão sem registrar sua classe de atualização, impactos, evidências de segurança, compatibilidade e homologação. Documentar não equivale a implementar.
+
+## Classificação obrigatória
+| Classe | Exemplos | Aplicação permitida | Instalação |
+|---|---|---|---|
+| A — Sincronização de dados | JSON de catálogo e parâmetros com schema, imagens PNG/JPEG/WebP, modelos 3D autorizados, perfis de cliente não executáveis | Automaticamente em local seguro do usuário; validar assinatura do manifesto, SHA256 por arquivo, esquema e entitlement | **Nunca instalador**; dados que afetam trabalho aberto só se aplicam ao iniciar novo trabalho |
+| B — Módulo Filuna compatível | Paramétrico/ferramenta cujo **motor já existe** no cliente e cuja versão de runtime é compatível | Baixar em segundo plano após login, confirmar assinatura, SHA256, identidade, versão e dependências; preparar e ativar transacionalmente na próxima sessão/ao reiniciar o aplicativo quando necessário | **Sem instalador**; se exigir novo código executável, reclassificar para C |
+| C — Código/UI/binário Filuna | Mudança de WebView2 shell, C#, JS de UI embutido, DLL própria, processo local | Notificação automática, download de pacote binário por agente confiável, validar assinatura de código/manifesto e SHA256, fazer backup e substituir SOMENTE após fechar projetos e reiniciar de modo controlado; solicitar UAC se Windows exigir | Preferir **atualização dentro do app**; installer completo apenas com justificativa técnica e aceite |
+| D — Infraestrutura/instalação de motor | Orca, Prusa, CuraEngine, Kiri:Moto, WebView2 runtime, .NET runtime, serviço/driver, permissões em Program Files, migração incompatível, alteração da estrutura NSIS | Exige teste da instalação no Windows real, versão upstream/licença, compatibilidade e rollback; aviso claro, confirmação de usuário e elevação UAC quando requerida | **Instalador de manutenção/reparo** só quando necessário; nunca execução silenciosa não autorizada |
+
+### Limites de segurança — o que pode e não pode ser feito remotamente
+1. Servidor **só publica dados, manifestos e pacotes** para serem baixados; **não executa geração de malha, slicing/G-code dos clientes Windows/Android, nem comandos remotos arbitrários**.
+2. A/B só em diretório próprio por usuário, sem escrita em Program Files nem alterações no EXE/DLL/engine. ZIP de dados não pode conter EXE, DLL, JS, PS1, BAT, CMD, PY, SH, WASM ou SVG ativo; código compilado/scripting reclassifica para C com executor seguro homologado. Validar caminhos, expansão, limites, symlinks, formato e esquema.
+3. Assinatura criptográfica ECDSA do manifesto autenticado e SHA256 obrigatório; download somente TLS, sem redirecionamento não autorizado. Manifesto e pacote não podem conter credenciais, segredos, permissões extras ou download de outro domínio.
+4. Para C/D: **nunca sobrescrever executável em execução, forçar kill ou fechar sem salvar**. Baixar sem bloquear UI, solicitar consentimento para etapa que exige reinício/UAC, aplicar atomicamente usando processo auxiliar confiável, manter versão anterior para reversão automática/manual em falha. Atualização que afeta projeto aberto deve aguardar fechamento e salvamento.
+5. Não usar troca automática de Orca/runtime/motor, drivers, impressoras ou firmware; conservar perfis originais. Falha de atualização nunca desativa funções livres ou arquivos existentes.
+6. Falha de autenticação, licença vencida ou rede indisponível: continuar com Orca e recursos livres locais; manter módulos instalados dentro das permissões vigentes; exibir estado honesto, sem executar atualização não autorizada.
+7. Checagem ao abrir/login e periodicamente (intervalo atual: 30 min); **notificação discreta dentro do Filuna** com versão, tamanho, classe, impacto, necessidade de reiniciar, notas e botão de ver detalhes. A/B podem baixar automaticamente se política permitir, mas C/D não podem instalar silenciosamente em uso. O cliente nunca é obrigado a ir ao site para verificar atualizações.
+8. Canal separado por público: owner-beta, homologação, estável. Só oferecer a release a dispositivos autorizados; assinatura de manifesto não é aprovação de qualidade.
+9. Toda atualização exige compatibilidade cliente mínimo/máximo e estado de dependências; bloquear downgrade/replay, verificar versão instalada, origem, hashes, entrada de auditoria e regra de rollback.
+10. Regra de modelos protegidos: não expor STL/3MF originais do catálogo protegido como “atualização de dados”. Dados de modelo protegidos continuam sujeitos a autorização de impressão, sem download/exportação de geometria pelo cliente. Arquivos de terceiros e paramétricos do próprio cliente mantêm direitos previstos.
+
+## Portão bloqueador antes de QUALQUER nova versão
+Cada release precisa de ficha associada à versão e ao SHA256 exato com **classificação A/B/C/D**, justificativa, comparação com atualização remota, lista de arquivos/impactos, requisitos de versão, plano de rollback, testes por canal e **aprovação explícita do proprietário**. Para C/D com instalador é obrigatório `installer_necessary=true`, razão técnica demonstrada de não poder atualizar pelo app e verificação de Windows real antes da distribuição. Sem ficha e testes, estado = **BLOQUEADO**.
+
+Deve existir validação automática no publicador de módulos e na rota de download de builds posteriores ao marco. Em GitHub/Grok, documentos novos devem citar esta regra e propor uma classe, mas **Grok não pode aprovar release nem publicar código**. Nenhum processo deve tratar a simples existência de um ZIP/EXE/print como autorização.
+
+## Situação efetiva em 2026-11-03
+- O atual cliente Windows sabe **baixar e preparar módulos de dados assinados**, com ativação confirmada. Seu monitor também **detecta** nova versão do EXE, mas **NÃO implementa ainda o download/instalação automática de binário**. Isso fica pendente para C/D; proibido afirmar pronto ou anunciar “auto update completo”.
+- O pacote 0.1.5, criado durante a correção da janela azul PowerShell, está somente como build local e **não foi publicado**. Exige a análise de necessidade, QA em Windows e portão de aprovação acima. O canal owner-beta publicado permanece com o build anterior enquanto não houver nova aprovação.
+- Este contrato é documentação mais bloqueios do publicador; **não substitui implementação/homologação do atualizador binário**.
+
+## Testes mínimos
+A/B: pacote assinado/autenticado, modelo JSON válido, ZIP malicioso rejeitado, arquivo não executável, versão/entitlement, compatibilidade, rede offline, fallback, restauração de versão, projeto aberto sem mutação. C/D: delta assinado, instalação pelo app, reinício com salvamento, UAC quando requerido, bloqueio de arquivos em uso, falha durante escrita, rollback de binário, segurança e assinaturas, Orca e perfis intactos, instalação real em Windows, G-code no dispositivo. Exibir log/estado do processo sem janelas de console auxiliares inesperadas. Testar cada canal e jamais promover de beta para estável sem homologação.
+
+**Critério de implantação:** nenhuma alteração do site antigo pode fazer deploy por outro método além de `/srv/site/deploy/atualizar.sh`; alterações somente documentais não dão permissão de deploy. O novo app é isolado em `/srv/filuna-slicer-windows-new`.
+
+
+</cursor_untrusted_data_1337>

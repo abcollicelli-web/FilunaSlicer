@@ -1,0 +1,280 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Documento mestre — Página Dispositivos
+
+- **ID único:** `filuna.mestre-dispositivos`
+- **Data / revisão:** 2026-11-03 / v1
+- **Status:** PROPOSTO. Contrato visual do esboço. Não fala com impressora de verdade.
+- **Autor da documentação:** Grok
+- **Este arquivo manda** na página Dispositivos. Notas antigas de cartão e painel ficam como histórico. Se discordarem deste, vale este.
+- **Menu de entrada:** aba `device`, rótulo «Dispositivo». A ordem da barra não muda.
+- **Plataformas:** Windows primeiro. A janela cabe na tela. A lista rola dentro da folha clara. A barra não rola.
+- **Motor:** Orca e Prusa não são o painel da máquina. Eles fatiam. O painel fala com a impressora pelo protocolo dela. Neste esboço a busca não sai para a rede e os botões não enviam G-code.
+
+São duas telas na mesma janela. Não são dois projetos.
+
+| Tela | Quando abre |
+|---|---|
+| Lista | Aba Dispositivo, ou «Todas as impressoras» |
+| Impressora | Clique no cartão, na foto ou no nome |
+
+## 0. Como montar a lista
+
+```
+shell.dispositivos                 altura da janela, fundo berry
+├─ app-bar active=device
+└─ folha.cream                     margem 12 px, raio 16 px, rola só aqui
+   ├─ topo
+   │  ├─ titulo                    «Dispositivos»
+   │  ├─ pílula.online
+   │  ├─ pílula.imprimindo
+   │  ├─ pílula.fila
+   │  └─ botao.buscar             «Buscar na rede», rosa, à direita
+   ├─ painel.busca                 só com o botão aberto
+   ├─ abas                        Impressoras, Filamentos, Fila e histórico
+   ├─ busca.texto                 só na aba Impressoras
+   └─ miolo                       depende da aba
+```
+
+A aba inicial é Impressoras. O filtro inicial é Todas. A busca começa fechada.
+
+### Contadores
+
+| Pílula | Conta |
+|---|---|
+| online | Impressoras cujo estado não é offline. No exemplo, 8. |
+| imprimindo | Só o estado imprimindo. No exemplo, 5. Aquecendo não entra. |
+| na fila | Os três trabalhos da fila fixa, não o número de cartões. |
+
+## 1. Buscar na rede
+
+O botão abre e fecha o painel. O texto deixa claro: é demonstração. mDNS, SSDP e porta conhecida. Nada é enviado.
+
+### Máquinas de exemplo
+
+| Nome | Protocolo | Endereço | Foto do cartão |
+|---|---|---|---|
+| voron-24.local | Moonraker | 192.168.0.42:7125 | core |
+| octopi.local | OctoPrint | 192.168.0.50:5000 | core |
+| Bambu X1C | Bambu LAN | 192.168.0.31 · MQTT | prime |
+| prusa-xl.local | PrusaLink | 192.168.0.18 | core |
+| duet3.local | RepRapFirmware | 192.168.0.27 | core |
+
+«Usar» cria um cartão ocioso no começo da grade, com esse nome, sem arquivo, bico 28°, mesa 27°, câmera ligada. Fecha o painel.
+
+### Protocolos, nesta ordem
+
+O ativo inicial é Moonraker. A frase e a porta típica mudam com o clique.
+
+| id | Nome | Porta | O que é |
+|---|---|---|---|
+| `moonraker` | Moonraker | 7125 | Klipper. HTTP e WebSocket. mDNS `_moonraker._tcp`. Voron, RatRig, QIDI, Neptune 4 e Creality com Klipper. |
+| `octoprint` | OctoPrint | 5000 | REST com API key. mDNS `_octoprint._tcp` e SSDP. Marlin num host. |
+| `bambu` | Bambu LAN | MQTT 8883 | MQTT e FTPS. Serial e código de acesso. Modo desenvolvedor libera o comando de terceiros. |
+| `prusalink` | PrusaLink | 80 | HTTP Digest na rede local. CORE One, XL, MK4, MK3.9, MK3.5 e MINI. |
+| `connect` | Prusa Connect | nuvem | Nuvem da Prusa. A máquina local continua no PrusaLink. |
+| `rrf` | RepRapFirmware | 80 | Duet. API HTTP `rr_connect` e `rr_status`. |
+| `sdcp` | Elegoo SDCP | WebSocket | Centauri. SDCP v3 na rede local, com o ID da placa. |
+| `sacp` | Snapmaker SACP | TCP | Protocolo binário. J1 e Artisan. A linha 2.0 usa HTTP. |
+| `marlin` | Marlin USB | serial | G-code pela serial. Não entra na busca de rede. |
+
+Abaixo: campo «Endereço de exemplo», dica `192.168.0.40`, e «Incluir cartão». Endereço vazio não cria. O nome do cartão é o endereço mais o protocolo. Bambu usa a foto prime. Os outros usam core.
+
+No programa novo, «Usar» e «Incluir cartão» abrem a sessão real daquele protocolo. Pedem chave, serial ou senha quando o protocolo exige. Marlin pede a porta serial, não um IP.
+
+## 2. Aba Impressoras
+
+Busca pelo nome da impressora ou pelo arquivo. Filtros:
+
+| id | Rótulo | Entra |
+|---|---|---|
+| `todas` | Todas | Tudo que a busca deixar. |
+| `imprimindo` | Imprimindo | imprimindo e aquecendo. |
+| `ociosas` | Ociosas | ociosa, pronta e fila. |
+| `atencao` | Atenção | erro, offline e pausada. |
+
+Grade: 1 coluna no estreito, 2 a partir de 640 px, 3 a partir de 1280 px. Vão de 12 px. Se o filtro zerar, o texto é «Nenhuma impressora nesse filtro.»
+
+### Cartão
+
+```
+cartao
+├─ linha.estado                  bolinha, rótulo, ícone de câmera se houver, engrenagem
+├─ clique                        foto 96 px, nome, camada, termina em, bico e mesa
+├─ arquivo                       uma linha, cortada
+├─ barra                         progresso
+├─ porcentagem                  à direita
+└─ ações                        Pausar ou Retomar | Parar
+```
+
+O clique na foto ou no nome abre a tela da impressora. Pausar e Parar não abrem.
+
+Pausar, se estiver imprimindo, vira pausada e o botão vira Retomar. Retomar volta a imprimir. Nos outros estados o botão Pausar não muda o estado. Parar deixa ociosa, progresso 0 e tempo «—».
+
+Foto: modelo `prime` usa a Prime. Modelo `core` usa a Core. A engrenagem é ícone, sem ação.
+
+### Estados
+
+| id | Rótulo | Cor |
+|---|---|---|
+| `imprimindo` | Imprimindo | magenta |
+| `pausada` | Pausada | laranja |
+| `fila` | Na fila | roxo |
+| `ociosa` | Ociosa | roxo claro |
+| `erro` | Atenção | laranja |
+| `offline` | Offline | carvão claro |
+| `aquecendo` | Aquecendo | laranja |
+| `pronta` | Pronta | magenta |
+
+### Impressoras do exemplo, nesta ordem
+
+| id | Nome | Modelo | Estado | Arquivo | Camada | Bico agora / pedido | Mesa agora / pedido | Tempo | % | Câmera |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `p1` | Prime | prime | imprimindo | vaso-canelado.3mf | 195/278 | 215 / 220 | 60 / 60 | 1 h 37 min | 70 | sim |
+| `p2` | Core Norte | core | imprimindo | suporte-escudo.3mf | 81/541 | 210 / 215 | 55 / 60 | 1 h 12 min | 15 | sim |
+| `p3` | Ateliê Beta | prime | imprimindo | mascara.3mf | 138/372 | 230 / 230 | 65 / 65 | 51 min | 37 | sim |
+| `p4` | Delta | prime | pausada | capa-fone.3mf | 70/201 | 180 / 220 | 48 / 60 | 3 h 38 min | 35 | não |
+| `p5` | Parede | core | imprimindo | trofeu.3mf | 126/434 | 205 / 210 | 60 / 60 | 2 h 10 min | 29 | sim |
+| `p6` | Fila A | prime | fila | espiral.3mf | 0/509 | 32 / 220 | 28 / 60 | 4 h 40 min | 0 | sim |
+| `p7` | Eletrônica | core | ociosa | porta-guardanapo.3mf | 110/189 | 28 / 0 | 27 / 0 | — | 58 | não |
+| `p8` | Extrusora | core | erro | rack-temperos.3mf | 29/145 | 246 / 210 | 61 / 55 | 3 h 26 min | 20 | sim |
+
+## 3. Aba Filamentos
+
+Some o filtro e a busca. Entra «Adicionar filamento». O formulário pede o nome da cor. Nome vazio não inclui. O novo é PLA, magenta, 1000 g de 1000 g, impressora «Estoque», e vai para o começo da grade.
+
+Cartão do carretel: bolinha 56 px, nome, material e impressora, gramas restantes sobre o total, barra e lixeira. A lixeira tira o carretel da lista.
+
+| id | Nome | Material | Impressora | Resta |
+|---|---|---|---|---|
+| `s1` | Magenta | PLA | Prime | 820 / 1000 g |
+| `s2` | Laranja | PLA | Prime | 540 / 1000 g |
+| `s3` | Roxo | PETG | Ateliê Beta | 310 / 1000 g |
+| `s4` | Lilás | PLA | Delta | 760 / 1000 g |
+| `s5` | Branco | PLA | Core Norte | 190 / 1000 g |
+| `s6` | Preto | ABS | Parede | 640 / 1000 g |
+
+## 4. Aba Fila e histórico
+
+Duas colunas no largo, uma no estreito.
+
+Fila:
+
+| Arquivo | Impressora | Quando |
+|---|---|---|
+| chaveiro-botton.3mf | Fila A | em seguida |
+| lua-litofania.3mf | Prime | depois do vaso |
+| pote-doces.3mf | Core Norte | hoje, 19 h |
+
+Histórico:
+
+| Arquivo | Impressora | Resultado | Quando |
+|---|---|---|---|
+| envelope-tule.3mf | Prime | Concluída | hoje, 14 h 22 |
+| trofeu-base.3mf | Parede | Concluída | ontem, 21 h 05 |
+| caixa-sombra.3mf | Delta | Cancelada | ontem, 16 h 40 |
+
+No esboço a fila e o histórico não mudam quando se para um cartão.
+
+## 5. Como montar a tela da impressora
+
+Abre no lugar da lista. A barra de cima continua.
+
+```
+voltar                           «Todas as impressoras»
+linha de três colunas no largo
+├─ coluna.320
+│  ├─ estado, foto, nome, arquivo, camada, tempo, barra, %
+│  ├─ Pausar ou Retomar | Parar
+│  ├─ carretéis desta impressora, em faixa
+│  ├─ Fila desta impressora          abre
+│  └─ Histórico                     fechado
+├─ coluna.centro
+│  ├─ Webcam                         foto, tarja «Ao vivo»
+│  └─ IA Filuna · falhas            chave, frase, arco de confiança
+└─ coluna.300
+   ├─ Temperaturas                  bico, mesa, pré-aquecer, resfriar
+   ├─ Auto Filuna                   chave
+   ├─ Manutenção                   fechado
+   ├─ Saúde do equipamento         aberto
+   └─ Controle                      fechado, com grade de botões
+```
+
+Só um bloco dobrável fica aberto. O inicial é Saúde do equipamento.
+
+### Esquerda
+
+Pausar nesta tela sempre manda para pausada, mesmo se o estado era outro. Retomar só quando já está pausada. Parar deixa ociosa, progresso 0 e tempo «—».
+
+Os carretéis são os cujo campo impressora é igual ao nome do cartão. Se não houver nenhum, mostra os quatro primeiros do estoque. Cada um: bolinha, nome e gramas.
+
+Fila desta impressora lista os arquivos da fila cujo impressora bate com o nome. Senão: «Nenhum trabalho esperando.»
+
+Histórico faz o mesmo com o histórico. Senão: «Sem trabalhos anteriores neste exemplo.»
+
+### Centro
+
+Webcam é uma foto fixa da peça verde na mesa, com a tarja «Ao vivo». Não é vídeo.
+
+IA Filuna · falhas começa ligada. Ligada: «Tudo certo. A peça segue o contorno esperado.» Desligada: «Vigilância pausada neste exemplo.» Abaixo, «Confiança alta» e um arco. Não analisa imagem.
+
+### Direita
+
+Temperaturas: Bico e Mesa. O número editável é o pedido. «Agora» é a leitura. A barra usa a leitura sobre 250°. Pré-aquecer pede bico 220, mesa 60 e estado aquecendo. Resfriar pede 0 e 0. Se estava aquecendo, volta a ociosa. Senão o estado fica.
+
+Auto Filuna começa ligado. Só troca a chave. Não muda velocidade nem ventoinha.
+
+Manutenção: «Bico conferido há 12 h. Mesa limpa. Próxima lubrificação dos eixos em 40 h de impressão.»
+
+Saúde: «Extrusora estável. Ventoinha da peça em 100%. Câmara em 32°. Nenhum alerta aberto.»
+
+Controle, aberto, mostra a grade: X−, Y+, X+, Y−, Origem, Z+, Z−, Ventoinha, Extrusar. Os botões não fazem nada. O texto do bloco diz: «Movimento visual da mesa e do bico. Não envia comando real.»
+
+## 6. Programação do esboço
+
+Uma janela. A aba Dispositivo troca `screen` para `device`.
+
+| Estado | Inicial | Efeito |
+|---|---|---|
+| `printers` | as oito da tabela | Grade e detalhe. |
+| `spools` | os seis carretéis | Aba Filamentos e a faixa do detalhe. |
+| `openId` | nenhum | Vazio é a lista. Com id, é a tela daquela impressora. |
+| `filter` | `todas` | Filtro da grade. |
+| `pane` | `impressoras` | Aba do miolo. |
+| `query` | vazio | Busca de nome ou arquivo. |
+| `scanOpen` | falso | Painel de rede. |
+| `protocolId` | `moonraker` | Frase do protocolo. |
+| `manualHost` | vazio | Endereço de exemplo. |
+| `addingSpool` | falso | Formulário do carretel. |
+| `aiOn` | verdadeiro | Só na tela aberta. Ao voltar, religa. |
+| `autoOn` | verdadeiro | Igual. |
+| `openBlock` | `saude` | Qual dobra está aberta. |
+
+`patch` altera um cartão. A lista e o detalhe leem o mesmo cartão, então Pausar num lugar aparece no outro.
+
+No programa novo, o cartão nasce da sessão do protocolo, não desta tabela. Progresso, temperatura e webcam vêm da máquina. Pausar, parar, pré-aquecer e os eixos só saem depois da conexão confirmada. A IA de falha só liga se houver câmera.
+
+## 7. Manual de implementação
+
+1. Uma janela. Dispositivo abre a lista. O cartão abre a impressora. «Todas as impressoras» volta.
+2. Buscar na rede usa o protocolo escolhido. No esboço, só cria cartão local.
+3. Não inventar impressora fora das oito e das que o cliente incluir na busca.
+4. O cartão segue a árvore da seção 2. A tela da impressora segue a seção 5.
+5. Não mandar comando no esboço. Não alterar o aplicativo antigo nem o site.
+
+## 8. Teste de fidelidade
+
+A lista está fiel se o título for Dispositivos, o botão for Buscar na rede e o primeiro cartão for Prime, Imprimindo, vaso-canelado.3mf, 70%.
+
+A busca está fiel se o primeiro protocolo for Moonraker e o primeiro host for voron-24.local.
+
+A impressora está fiel se Prime abrir webcam, temperaturas e Saúde aberta, com o botão Todas as impressoras no topo.
+
+Pausar no cartão muda o rótulo para Pausada. Não abre uma janela e não fatia.
+
+## 9. Registro de revisão
+
+- v1 2026-11-03 — mapa das duas telas, cartões, protocolos, fila, filamentos e programação do esboço.
+
+
+</cursor_untrusted_data_1337>

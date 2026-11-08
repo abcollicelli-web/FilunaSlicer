@@ -1,0 +1,107 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Filuna Windows 0.1.9 — impressoras nativas (Elegoo CC2, Kobra 3 V2, Bambu, Creality SparkX)
+
+**Data:** 2026-11-03. **Canal:** `owner-beta` (somente o proprietário). **Classe:** C (delta assinado pelo canal interno). **Não é release estável e não foi testado em hardware.**
+
+## Autorização
+O proprietário autorizou expressamente, no chat de 2026-11-03, que o agente instale e publique o update pelo canal interno homologado depois que o GPT terminar o último update (QA9/0.1.8); informou depois que o GPT finalizou e mandou assumir o controle. Registro: `runtime/owner-approvals/inapp/0.1.9.json`.
+
+## O que entrega
+- Tela **Dispositivos**: protocolos `elegoo-cc2`, `anycubic`, `bambu`, `creality-ws` (além de Moonraker/OctoPrint), campos de série/modelo/código de acesso (DPAPI), **cores do filamento** (Canvas, ACE, AMS, CFS), camadas, pausar/retomar/cancelar com confirmação, **envio de G-code sem iniciar a impressão**, câmera (MJPEG CC2, JPEG Bambu A1, WebRTC Creality; Kobra FLV e Bambu P2S/A2L sem player, a tela avisa).
+- Código novo em `clients/windows/Filuna.Desktop/Printers/` (`MqttLite.cs` MQTT 3.1.1 próprio, sem DLL extra; `Cc2Adapter`, `AnycubicAdapter`, `BambuAdapter`, `BambuFtps`, `CrealityAdapter`, `PrinterModels`), integração em `DeviceService.cs`, `Program.cs`, `ui/device.js`, `ui/index.html`.
+- Segurança: todos os sockets só aceitam IPv4 privado; segredos só em DPAPI; nome remoto de arquivo validado; PASV do FTP ignora o IP do servidor.
+
+## Pacote
+- `releases/binary-patches/filuna-0.1.9.zip`, **32.062.396 bytes**, SHA-256 `745e9b470022ccddc14a233af6f539bd190826561d9921a36e1debb5c0e1fae3`.
+- Arquivos: `Filuna.Slicer.dll` (0.1.9), `ui/index.html`, `ui/app.js`, `ui/app.css`, `ui/prepare.js`, `ui/device.js`. Inclui os arquivos da 0.1.8 para aplicar tanto sobre 0.1.7 quanto sobre 0.1.8. Orca/runtime/WebView2 inalterados; nenhum instalador novo.
+- Aplica sobre 0.1.7 ou 0.1.8 (agente exige versão posterior). Se estiver na 0.1.7, o relançamento automático não existe ainda: abrir manualmente uma vez.
+
+## Testes (Ubuntu)
+- `tests/printer-adapters`: 28 PASS (codificação MQTT, recusa de host público, mapeamento de estados, cores Canvas/ACE/AMS/CFS, crypto do pareamento Kobra, FTPS PASV, câmeras).
+- `tests/device-adapter`: PASS (Moonraker/OctoPrint inalterados). `node --check` da UI e `tests/contracts.test.mjs`: PASS.
+- `dotnet publish -c Release -r win-x64`: 0 erros.
+- Pacote validado e **aplicado com o `UpdateTransaction` real** sobre instalação sintética 0.1.8: DLL passa a 0.1.9.0, `ui/device.js` presente.
+- Testes de política de release: ver resultado no histórico do agente.
+
+## NÃO validado
+Windows real, UAC, impressoras reais (apenas Elegoo e Kobra foram usadas pelo dono no Slicer antigo; Bambu A1/P2S/A2L e Creality i8 nunca testadas), câmera Kobra/P2S/A2L, descoberta automática, iniciar impressão (propositalmente desativado), A2L exige modo LAN + Developer Mode.
+
+## Reversão
+Rollback automático do agente em `%LOCALAPPDATA%/Filuna/SlicerNew/binary-rollback/`. Para recolher a oferta: remover `windows_binary_update` de `releases/beta.json` e `beta-free.json` e reassinar (backups `*.pre-0.1.9-*.bak`).
+
+## Validação informada pelo proprietário (2026-11-03)
+O proprietário informou que o **reinício automático da QA9/0.1.8 foi validado no Windows real: o Filuna reabre sozinho** após fechar. Informação do dono, sem log anexado; a ficha `0.1.8.json` ainda diz `windows_hardware_qa_passed=false` e não foi alterada.
+
+## Atualização: 0.1.10 substitui a oferta 0.1.9
+O proprietário enviou imagens de correção visual do painel esquerdo da Preparação. Foi feito o redesenho (cartão da impressora com miniatura, filamentos em cartões com menu ⋯, pílulas, perfil com lupa, abas em linha única; conferido em Chromium headless) e publicada a **0.1.10**: `releases/binary-patches/filuna-0.1.10.zip`, 32.067.457 bytes, SHA-256 `619de19801e34a473a921c5f3110ed65ceb7f0a40d57c8c39c0648b1c8145d8b`, aprovação `runtime/owner-approvals/inapp/0.1.10.json`. Contém tudo da 0.1.9 mais `ui/prepare.css`. O feed oferece agora a 0.1.10; o ZIP 0.1.9 permanece em disco.
+
+## Atualização: 0.1.11 substitui a 0.1.10
+A foto da impressora no cartão da Preparação vem de `engines/orca/resources/profiles/<fornecedor>/<printer_model>_cover.png` (imagens já instaladas com o Orca; `OrcaProfileCatalog.MachineImage`, mensagem `prepareMachineImage`). Teste com os perfis reais do Orca 2.4.2 (BBL, Prusa, Creality, Elegoo, Anycubic): 236 de 236 máquinas com imagem; caminho `../..` e perfil que não é máquina retornam nulo. Pacote `releases/binary-patches/filuna-0.1.11.zip`, 32.067.972 bytes, SHA-256 `2bbff56dcadcc81e60daa03f067d0156711e0fcda47370c65c7741d494239a01`, aprovação `runtime/owner-approvals/inapp/0.1.11.json`.
+
+## 0.1.12 — busca automática na rede
+A 0.1.11 mostrou 'nenhuma impressora' porque o botão só abria o formulário. Implementado `Printers/DiscoveryService.cs` (UDP 52700 CC2; SSDP 1990/2021 Bambu; varredura TCP 80/5000/322/990/1883/7125/8000/8883/18910 com identificação por HTTP) só em sub-redes IPv4 privadas /24 do PC, mensagem `deviceScan`/`deviceScanResult`, lista com botão Conectar que preenche protocolo, IP, série e modelo. Pacote `filuna-0.1.12.zip` (ver aprovação `0.1.12.json`). Testes: parsers de CC2/SSDP/modelos Bambu (35 PASS no total). **Não validado em rede real.** Limites conhecidos: assume /24; redes com isolamento de clientes ou firewall bloqueando UDP não retornam nada.
+
+## 0.1.13 a 0.1.15 — correções a partir dos prints do proprietário
+- **0.1.13**: erro real da Kobra ("RemoteCertificateValidationCallback already set"): callback duplicado no `SslStream` em MqttLite/Bambu/FTPS/descoberta, corrigido e coberto por teste de MQTT sobre TLS contra um broker falso local. Filamento chegava como `undefined/NaN` (JSON PascalCase): agora camelCase. Fotos das impressoras cadastradas pelo catálogo do Orca. Cadastro automático das impressoras sem chave e acompanhamento de IP por série. Descoberta por adaptador de rede, máscara real, CC2 por unicast, série Bambu pelo CN do certificado.
+- **0.1.14**: câmeras: a janela é `https://filuna.internal` e o navegador bloqueia stream `http://` da impressora (conteúdo misto). Solução: `Printers/CameraRelay.cs`, retransmissor só em 127.0.0.1 com chave por sessão e só para hosts privados; player FLV `ui/vendor/mpegts.js` (mpegts.js 1.7.3, Apache-2.0) para a Kobra. Cores e material do filamento nos cartões. Perfis do Orca em subpastas (Elegoo CC2 agora tem perfil).
+- **0.1.15**: assistente **Adicionar impressora** (fornecedor, modelo, bico do catálogo do Orca; conexão; só perfil) ligado a Dispositivos e Preparação; menu de impressoras cadastradas na Preparação com `prepareUseDevice` (máquina+processo+filamento padrão do Orca); `SnapmakerAdapter` (U1: Moonraker + `print_task_config`); Bambu: presença de slot pelos bitfields `tray_exist_bits`, spool externo `vt_tray`, câmera conforme `ipcam.rtsp_url`.
+
+### Estado por impressora (câmera / filamento) — sem hardware, exceto relato do dono
+| Impressora | Filamento | Câmera | Observação |
+|---|---|---|---|
+| Elegoo CC2 | Canvas (4 slots) lido; dono viu status real | MJPEG 8080 via relé (0.1.14, a confirmar) | perfil Orca ECC2 existe |
+| Kobra 3 V2 | ACE só se houver ACE | FLV 18088 via relé + mpegts.js (a confirmar) | status OK depois da 0.1.13 |
+| Bambu A1 | AMS/AMS Lite por bitfields + vt_tray | JPEG porta 6000 por quadros | exige modo LAN; Developer Mode para comandos |
+| Bambu P2S | AMS idem | **RTSPS 322 sem player ainda** (precisa portar RTSP+H.264→fMP4, ref. SnapCon) e "LAN Only Liveview" ligado | Developer Mode obrigatório para comandos |
+| Bambu A2L | AMS idem | não confirmada | LAN + Developer Mode |
+| Creality SparkX i8 | CFS via `boxsInfo` (WebSocket) | WebRTC 8000 via mensagens | sem perfil no Orca 2.4.2 |
+| Snapmaker U1 | 4 cabeçotes via `print_task_config` | Moonraker webcam via relé | adaptador novo, sem hardware |
+
+## 0.1.16 — perfis compatíveis, filamentos da impressora, correções de interface
+- **Menu da impressora**: abria no `pointerdown` e o clique de soltar o fechava; agora abre no clique (e por teclado), com o seletor nativo bloqueado. Verificado em Chromium headless (clique único mantém aberto, escolha envia `prepareUseDevice`).
+- **Perfil de processo e filamento**: ao clicar, lista só o que o Orca marca como feito para a impressora (`compatible_printers`, seguindo a cadeia `inherits`, inclusive a biblioteca OrcaFilamentLibrary). Na CC2: 6 processos e 41 filamentos; Kobra 3: 6 e 16; Bambu A1: 10 e 198. O catálogo completo (`openCatalog`) ficou como **opção avançada**, atrás de aviso de risco (também no botão da lupa).
+- **Botão "Da impressora"** (`prepareFilamentsFromPrinter`): lê os slots carregados (Canvas/ACE/AMS/CFS/cabeçotes), escolhe para cada um o melhor perfil de filamento compatível por material, marca e variante (`OrcaProfileCatalog.FilamentFor`: CC2 PLA→"Elegoo PLA @ECC2", A1 PLA→"Bambu PLA Basic @BBL A1", PETG HF→"Bambu PETG HF @BBL A1") e usa a **cor real** do slot. Slots sem perfil compatível são avisados.
+- **Aba ativa** do menu superior na Preparação (texto branco sobre branco): regra de cor corrigida.
+- Defeito pego pelo teste de navegador: o campo `kind` do pedido `prepareProfiles` sobrescrevia o nome da mensagem; renomeado para `profileKind`.
+- Contrato `tests/prepare-catalog-contract.test.cjs` atualizado para o novo comportamento intencional.
+- Pacote `filuna-0.1.16.zip` (aprovação `runtime/owner-approvals/inapp/0.1.16.json`).
+
+## 0.1.17 — visualizador 3D da Preparação
+- **Causa do objeto "só traços"**: `ModelPreviewService` enviava 24.000 triângulos sorteados (amostragem). Agora envia a malha inteira, com vértices soldados, em base64 (`positions` Float32, `indices` Uint32); no navegador vira malha indexada com normais suaves (faceta plana abaixo de 30 mil triângulos) e material sólido na cor do primeiro filamento.
+- **Mesa real**: `OrcaProfileCatalog.BedFor` lê `printable_area`/`printable_height` do perfil (com herança) e acha o modelo e a textura da mesa nos arquivos `*_buildplate_model.stl`/`*_texture.svg` do Orca por semelhança de nome (CC2 e Kobra 3 acham; A1 não e usa mesa lisa). Mensagem `prepareBed`.
+- **Várias mesas** lado a lado (ativa escura, as outras claras), número 01/02, botão "＋ Adicionar mesa" e menu lateral por mesa (remover, orientar, organizar, bloquear, nome, mover para o início).
+- **Barra de ferramentas** maior, com rótulos: Selecionar, Mover, Girar, Escalar, Assentar (maior face plana), Espelhar, Centralizar, Desfazer; Cortar e Pintar aparecem esmaecidos (ainda não existem no Filuna).
+- **Edição real**: mover (arrastar ou digitar), girar, escalar, assentar e espelhar geram uma matriz; `prepareApplyEdit` grava um **novo STL** (`ModelPreviewService.WriteEditedStl`) e o fatiamento usa esse STL; "Desfazer" volta ao arquivo original (`prepareRestoreOriginal`). Um 3MF editado vira modelo único sem cores. O fatiamento espera a gravação da edição.
+- **Botão direito** com o menu completo em português (selecionar, apagar tudo, organizar, recarregar, orientar, apagar mesa, adicionar forma simples [cubo/cilindro/esfera/cone 20 mm], adicionar/trocar modelo, nova mesa, bloquear, renomear). "Adicionar modelos úteis" está desativado por enquanto.
+- Verificações: Chromium headless com WebGL (mesa Elegoo real, modelo de teste, duas mesas, rotação X 90° → tamanho Z 62 mm, espelho, desfazer, mesa bloqueada recusa edição); C#: formas com volume positivo (esfera estava invertida, corrigido), STL editado com escala 2 (volume 64000) e espelho (volume positivo); contratos `tests/viewer-contract.test.cjs`.
+- **Não incluído (anotado em PROXIMAS-CORRECOES.md)**: painel da peça colado à esquerda, remover o "+" do topo, assistente no menu da Preparação, erro de filamento ACE sem tipo, erro -2 ao fatiar, ícone, Home real, só Lua em paramétricos, Admin e convite WhatsApp.
+
+## 0.1.18 — correções do bloco A (A1–A6)
+- Botão "+" do topo do cartão da impressora removido (adicionar fica no menu do seletor). O assistente "Adicionar impressora" foi movido para o nível do `body` e abre a partir da Preparação (verificado em Chromium: menu → assistente visível → vendor/modelo → `prepareUseMachine`).
+- "Da impressora": slots sem material são ignorados com mensagem; falha do Orca agora diz a causa (`PrepareOrcaService.DescribeFailure`: código → motivo em português + últimas linhas de erro do log). No Orca do servidor um 3MF com 3 filamentos iguais fatia (exit 0), então a causa do -2 no Windows continua não confirmada; a próxima falha mostrará o detalhe.
+- Painel da peça (botão direito no modelo): cor, "Mais uma cópia", "Encher a mesa" (9 cópias na mesa da Elegoo), "Voltar a uma cópia", centralizar, deitar, espelhar, "Pode imprimir/Não imprimir" (bloqueia o fatiamento com aviso). Cópias vão em um STL novo (`WriteEditedStl` com uma matriz por cópia; 3 cópias = volume 3×). Lista Placa N / Fora da mesa na coluna esquerda.
+- Pendências do bloco F em `PROXIMAS-CORRECOES.md`.
+
+## 0.1.20 — bloco H
+- Cortar nativo (`MeshCutter` + `ModelPreviewService.CutStl` + `prepareCut`): teste C# em tubo com furo, cortes cima/baixo, volumes 2520/4200 mm³ iguais ao esperado e malha fechada.
+- Destaque do objeto selecionado, painel esquerdo recolhível, toolbar em uma linha, atalhos do Orca, menu lateral do objeto ampliado: Chromium headless.
+- Janela maximizada, ícone embutido (`Filuna.ico`), fatiamento com tentativas (`PrepareOrcaService`), Home real (`ui/home.js`), Autoajuda em português (`ui/ajuda.js`), página pública `/convite`.
+- Não testado em Windows físico. Pintar suporte e demais ferramentas avançadas pendentes.
+
+## 0.1.21 — Pintar suporte
+- Viewer: ferramenta Pintar suporte (reforçar, bloquear, apagar, raio 1–30 mm, limpar), sobreposição verde/vermelha, mapa por triângulo na ordem de leitura do arquivo.
+- C#: `ModelPreviewService.WritePaintedThreeMf` grava 3MF com `paint_supports` ("4" reforçar, "8" bloquear) e aplica as matrizes de edição; `prepareApplyEdit` aceita `paint`; com pintura o suporte do perfil é ligado (`--enable-support=1`).
+- Prova com o Orca 2.4.2 real (peça em L com aba em balanço, A1): sem pintura 99 linhas de suporte; reforçar 99; bloquear 0 (3MF escrito pelo C#).
+- Navegador headless: arrastar sobre o modelo pinta 2.711 triângulos e envia o mapa. Limite: modelos acima do limite da prévia não podem ser pintados.
+
+## 0.1.22 — correção do fatiamento (publicada)
+- Log real do Windows: "Invalid option --export-statistics" → código -2. Parâmetro removido; fatiamento reproduzido sem ele no Orca do servidor (exit 0, result.json, G-code). Métricas só se o Orca fornecer.
+
+## Bloco J (na árvore, ainda não publicado)
+- Menu do objeto, barra do Orca, pintura de suporte/costura/pele felpuda por camadas, Corrigir/Simplificar/Subdividir.
+- Provas no Orca real: pele felpuda muda o G-code (372 → 471 KB); costura reforçada altera 4.132 linhas; bloqueio de suporte 99 → 0 linhas. MeshOps testado numa esfera (3.120 → 926 triângulos; subdivisão ×4; correção remove degenerado/duplicado e desvira faces).
+- Navegador: botão direito abre só o menu; lista abre o painel; pintura de seam+support envia as duas camadas.
+
+
+</cursor_untrusted_data_1337>

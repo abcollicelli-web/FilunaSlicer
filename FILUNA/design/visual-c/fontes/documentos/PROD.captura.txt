@@ -1,0 +1,35 @@
+<cursor_untrusted_data_1337 source="CallDynamicTool">
+
+# Produção (histórico, fila, agenda, manutenção, avisos, pular objeto)
+
+Inspirado na página de recursos do SimplyPrint, mas ligado ao que só a Filuna tem: loja (Mercado Livre), Estoque com preço de bobina e Modelos 3D validados.
+
+## O que existe
+- **Histórico com custo e lucro** (`producao.py`, `/v1/prod/history*`, `/stats`, `/profit`). Toda impressão que o Slicer INICIA entra sozinha; o Slicer acompanha a impressora (a cada 20 s) e fecha como concluída / falhou / cancelada. Custo = gramas × (preço da bobina ÷ peso) + horas × W × preço do kWh. Falha custa só o que foi gasto até o progresso. Lucro da venda = (total − tarifa − frete) − custo de todas as impressões ligadas (inclusive falhas).
+- **Fila de produção** (`/v1/prod/queue*`): vendas pagas viram itens (idempotente), manual, prioridade, quantidade (x/y), falha volta para a fila com contador de tentativas, "mesa limpa?" por impressora, **impressora ideal** (conectada, livre, mesa limpa, material parecido, mesa validada do Modelo 3D) e **Produzir** (liga o próximo envio ao item).
+- **Agendar**: só AVISA na hora; o início continua com a confirmação do cliente. Sugere o próximo horário de energia barata (configurável).
+- **Manutenção**: tarefas por horas e/ou impressões, com "já rodadas" para impressora usada; sugestões comuns editáveis (não substituem o manual do fabricante).
+- **Avisos**: fim, falha, venda nova, agenda, manutenção; dentro do Slicer (toast + selo no menu).
+- **Pular objeto** (`SkipObjects.cs`, cartão "Objetos na mesa" no painel da impressora): lê o que a própria impressora lista (Klipper `exclude_object`), mesa esquemática + lista, confirmação obrigatória, sem desfazer, não pula o último objeto, nome validado contra a lista da impressora (nunca texto livre no comando).
+
+## Regras que não mudam
+Nada inicia sozinho (fila/agenda só avisam; `printSend` só pela tela de envio). Pular objeto sempre pede confirmação. Dados por conta (tenant), testado isolamento.
+
+## Provado (sem impressora real)
+- `tests/test_producao.py` (9): custo, energia, falha, lucro por venda, isolamento, reabertura/carência de 3 min, fila x vendas, roteamento, agenda/energia barata, manutenção, avisos sem repetir.
+- `tests/skip-objects` (C#): G-code REAL do Orca 2.4.2 (CC2, 2 objetos → `EXCLUDE_OBJECT_DEFINE` com centro e polígono), resposta Moonraker, nomes maliciosos, "já pulado", "último objeto", sem suporte com motivo.
+- UI ponta a ponta (Chromium + Hub real + impressoras simuladas): importar vendas → impressora ideal → envio → progresso → conclusão → histórico/lucro/manutenção/avisos → objetos → pular → cinza (Bambu).
+- `tests/producao-contract.test.cjs`; suíte completa: 118 testes Python OK (4 pulados), 13 contratos node OK, build C# 0 erros.
+
+## Limites honestos / pendências
+1. **Pular objeto em impressora real NÃO foi testado.** Habilitado só para Klipper/Moonraker e Snapmaker U1 (que é Klipper). Precisa de `[exclude_object]` ligado no Klipper e do G-code com marcas (perfil Orca com `exclude_object=1`; o da CC2 já vem ligado, mas a CC2 NÃO tem comando de pular homologado). Bambu, CC2, Anycubic, Creality e OctoPrint aparecem cinza com o motivo. Marlin/M486: o Orca 2.4.2 não gerou M486 no perfil testado (falhou por outra regra do perfil) — não suportado.
+2. O acompanhamento só funciona **com o Slicer aberto**. Se fechar durante a impressão, ao reabrir o servidor fecha o registro (≥95% = concluída, senão "sem confirmação"; o cliente corrige com um clique).
+3. Só impressoras em que o Slicer **inicia** a impressão entram no histórico automático; nas que só recebem o arquivo, não.
+4. Avisos: só dentro do Slicer. **E-mail** (falta remetente configurado) e **WhatsApp** (pendência Meta Brasil) não estão ligados. Sem notificação nativa do Windows.
+5. "Produzir" liga o próximo envio ao item, mas não abre sozinho o G-code do Modelo 3D vinculado (o vínculo anúncio→modelo existe no servidor, `/v1/prod/queue/map`, sem tela ainda).
+6. Custo usa preço da bobina do Estoque; bobina sem preço aparece como "custo subestimado". Potência é uma média única (150 W) até o cliente ajustar.
+7. Teste real na casa do dono: uma impressão completa com fila→histórico→lucro; pular objeto numa Klipper/Snapmaker.
+8. Nada publicado: entra no próximo pacote acumulado (depois do dono baixar a 0.1.28). Hub beta reiniciado com as rotas novas.
+
+
+</cursor_untrusted_data_1337>
