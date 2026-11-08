@@ -1,0 +1,23 @@
+{
+  "version": "FLN-ACCESS-20261108.2",
+  "source": "declaração expressa do proprietário registrada na conversa; não é assinatura criptográfica",
+  "date_local": "2026-11-08 15:18 Europe/Rome",
+  "owner_literal": "o fatiamento basico por regras do orca e modelo base devem serem liberados unica regra perfis e modelo homologado no filuna slicer nao carregam para o cliente e passa a usar a versao limpa do orca",
+  "interpretation": "Fatiamento básico e modelo-base Orca livres/offline. Sem assinatura válida, não carregar perfis/modelos homologados do catálogo Filuna; usar modo base limpo na MESMA engine Orca única.",
+  "engine_count": 1,
+  "engine_pin": "a620d804efbe74162c96ad29d755cdab2b823530",
+  "preserve_user_files_and_creations": true,
+  "preserve_existing_free_license_rights": true,
+  "resource_license_review_required": true,
+  "offline_grace_seconds": null,
+  "cache_expiry_seconds": null,
+  "revocation_policy": null,
+  "supersedes": "Somente a dúvida core básico versus recursos premium do contrato WEB-20261108.1; preserva histórico, licenças, segurança e gates.",
+  "not_approval_of": [
+    "web individual visual",
+    "desktop implementation",
+    "physical tests",
+    "release or public deployment"
+  ],
+  "implementation_evidence": "../WEB-FASE-01-EVIDENCIAS-20261108.md"
+}

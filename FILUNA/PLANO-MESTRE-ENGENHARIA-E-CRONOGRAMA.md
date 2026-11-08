@@ -397,3 +397,16 @@ O proprietário solicitou o novo sistema e declarou literalmente **«esta libera
 **Contrato obrigatório:** [WEB-SERVICOS-ESCOPO-20261108.md](WEB-SERVICOS-ESCOPO-20261108.md), vinculado ao [mestre servidor existente](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md#web-servicos-20261108): escopo, raiz canônica real, ownership, dependências, API/schemas versionados, entitlements assinados/assíncronos, backups/sync, compatibilidade, migrações seguras, testes e rollout/rollback. Home C candidata para revisão; admin protegido; contas, planos/acessos, conteúdo/estoque/impressoras/perfis/configurações, versões/updates/downloads, central/ajuda/chat e backups. Geração/preparação/fatiamento permanecem no PC. Admin nunca controla LAN/câmera/impressão de clientes; motor Orca único e G-code imutável preservados.
 
 O texto literal está incorporado por referência ao registro de autorização, sem paráfrase substituir sua evidência. A cláusula visual FLN-VISUAL-C-100 continua obrigatória; preparar nova home candidata está autorizado, mas não aprova automaticamente derivadas nem conformidade. Integração desktop é etapa coordenada futura. Conflito de chave comercial versus core livre/offline permanece explicitado no contrato: não bloquear o motor básico por decisão da IA. Políticas comerciais não definidas ficam pendentes. Neste lote: documentação registrada neste commit; implementação nova, migração, testes web e deploy NOT RUN; nenhum gate Slicer promovido.
+
+
+<a id="base-orca-livre-20261108"></a>
+## Decisão posterior — base Orca livre e catálogo Filuna condicionado (08/11/2026, 15:18 Europe/Rome)
+
+Texto literal do proprietário:
+> o fatiamento basico por regras do orca e modelo base devem serem liberados unica regra perfis e modelo homologado no filuna slicer nao carregam para o cliente e passa a usar a versao limpa do orca
+
+[Registro da decisão e limites](approvals/WEB-ACESSO-BASE-ORCA-20261108.json). Esta decisão **resolve a dúvida comercial core básico versus premium** levantada anteriormente: fatiamento básico e modelo-base Orca livres/offline; sem assinatura válida, não carregar perfis/modelos homologados do catálogo Filuna; usar modo base limpo **na mesma engine Orca única**, sem instalar segundo aplicativo/fatiador. Não apagar/confiscar arquivos próprios, criações ou dados do usuário, nem revogar direitos de cópias sob licenças livres; respeitar licença por recurso. Prazos offline, cache e revogação de autorização de serviço continuam pendentes, sem defaults comerciais inventados.
+
+A política foi incorporada ao domínio/API da prévia na área nova: `contracts/access-policy.v1.json`, `service/domain.py::access_policy` e `/api/v1/policy` **somente loopback**. Básico sempre permitido; carregamento premium só admite estado ativo com entrada interna de assinatura verificada pelo futuro adaptador confiável. Não confiar em booleano/query do cliente. Autenticação e assinatura reais não configuradas: API individual de direitos continua negada (503), sem concessões emitidas, sem alteração do desktop.
+
+[Marco real da primeira fatia](WEB-FASE-01-EVIDENCIAS-20261108.md): home C candidata, API de prévia e schema/migração inicial com 33 testes executados PASS no subconjunto descrito; não equivalem a homologação visual, produto completo ou G2–G6. Cofre/legado não restaurados, tráfego público não trocado.

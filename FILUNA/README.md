@@ -98,3 +98,8 @@ Antes de qualquer trabalho de UI, ler obrigatoriamente [REGRA-FIDELIDADE-VISUAL-
 ## Continuidade web autorizada — 08/11/2026, 14:57 Europe/Rome
 
 Nova ordem expressa + **«esta liberado»** autorizam iniciar home/admin/serviços somente na área nova `/srv/filuna-new-site`, respeitando `docs/NEW-SITE.md`. Ler [contrato web](WEB-SERVICOS-ESCOPO-20261108.md), [mestre servidor](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md#web-servicos-20261108) e [pedido literal](approvals/WEB-SERVICOS-AUTORIZACAO-20261108.json). Não mexer no cofre/legado; não copiar código privado/segredo para este repositório. Home C é candidata para revisão, não aprovação individual automática. Esta autorização específica não retoma implementação geral Slicer, CI ou hardware nem promove gates. Contrato comercial conflitante com core AGPL/offline deve ser resolvido, não interpretado como bloqueio global do motor. Neste lote documental, implementação/testes/deploy web NOT RUN.
+
+
+## Regra de acesso posterior — 08/11/2026, 15:18 Europe/Rome
+
+[Decisão expressa básica/premium](approvals/WEB-ACESSO-BASE-ORCA-20261108.json): básico Orca/modelo-base livres/offline; sem assinatura válida, não carregar perfis/modelos homologados Filuna e usar modo base limpo da MESMA engine. Não apagar arquivos/criações nem revogar direitos de licenças livres. Prazos offline/cache/revogação ainda pendentes. [Fatia web real e limites](WEB-FASE-01-EVIDENCIAS-20261108.md): prévia isolada, 33 testes de subconjunto PASS; home candidata e APIs privadas fechadas, não sistema completo nem homologação. Não publicar código web privado ou alterar gates do desktop por esse resultado.

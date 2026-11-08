@@ -101,3 +101,16 @@ A autorização atual permite **preparar home web candidata no padrão C para re
 | WEB-T10 | Smoke isolado e testes efetivamente implementados com versão, comandos, resultados brutos, logs sanitizados, limitações e checklist de deploy revisado. |
 
 Não considerar contrato/teste de texto como execução dessas verificações. Uma fatia parcial deve informar exatamente o que funciona e o que está bloqueado, sem painel fake, billing improvisado ou declaração de sistema inteiro pronto. Homologação desktop/física, beta e release continuam sujeitos aos gates anteriores e não foram realizados.
+
+
+<a id="base-orca-livre-20261108"></a>
+## Decisão posterior — base Orca livre e catálogo Filuna condicionado (08/11/2026, 15:18 Europe/Rome)
+
+Texto literal do proprietário:
+> o fatiamento basico por regras do orca e modelo base devem serem liberados unica regra perfis e modelo homologado no filuna slicer nao carregam para o cliente e passa a usar a versao limpa do orca
+
+[Registro da decisão e limites](approvals/WEB-ACESSO-BASE-ORCA-20261108.json). Esta decisão **resolve a dúvida comercial core básico versus premium** levantada anteriormente: fatiamento básico e modelo-base Orca livres/offline; sem assinatura válida, não carregar perfis/modelos homologados do catálogo Filuna; usar modo base limpo **na mesma engine Orca única**, sem instalar segundo aplicativo/fatiador. Não apagar/confiscar arquivos próprios, criações ou dados do usuário, nem revogar direitos de cópias sob licenças livres; respeitar licença por recurso. Prazos offline, cache e revogação de autorização de serviço continuam pendentes, sem defaults comerciais inventados.
+
+A política foi incorporada ao domínio/API da prévia na área nova: `contracts/access-policy.v1.json`, `service/domain.py::access_policy` e `/api/v1/policy` **somente loopback**. Básico sempre permitido; carregamento premium só admite estado ativo com entrada interna de assinatura verificada pelo futuro adaptador confiável. Não confiar em booleano/query do cliente. Autenticação e assinatura reais não configuradas: API individual de direitos continua negada (503), sem concessões emitidas, sem alteração do desktop.
+
+[Marco real da primeira fatia](WEB-FASE-01-EVIDENCIAS-20261108.md): home C candidata, API de prévia e schema/migração inicial com 33 testes executados PASS no subconjunto descrito; não equivalem a homologação visual, produto completo ou G2–G6. Cofre/legado não restaurados, tráfego público não trocado.
