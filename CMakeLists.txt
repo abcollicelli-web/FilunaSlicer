@@ -129,7 +129,7 @@ set(ORCA_BUNDLED_UV_EXECUTABLE "" CACHE FILEPATH "Path to a uv executable to bun
 if(DEFINED ENV{FILUNA_QA_USE_PATH_UV} AND "$ENV{FILUNA_QA_USE_PATH_UV}" STREQUAL "1" AND NOT ORCA_BUNDLED_UV_EXECUTABLE)
     find_program(_filuna_qa_uv NAMES uv REQUIRED)
     execute_process(COMMAND "${_filuna_qa_uv}" --version OUTPUT_VARIABLE _filuna_qa_uv_version OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE _filuna_qa_uv_result)
-    if(NOT _filuna_qa_uv_result EQUAL 0 OR NOT _filuna_qa_uv_version STREQUAL "uv 0.11.21")
+    if(NOT _filuna_qa_uv_result EQUAL 0 OR NOT _filuna_qa_uv_version MATCHES "^uv 0\\.11\\.21( |$)")
         message(FATAL_ERROR "FILUNA_QA_UV_VERSION_MISMATCH: ${_filuna_qa_uv_version}")
     endif()
     set(ORCA_BUNDLED_UV_EXECUTABLE "${_filuna_qa_uv}" CACHE FILEPATH "Pinned uv for Windows QA" FORCE)
