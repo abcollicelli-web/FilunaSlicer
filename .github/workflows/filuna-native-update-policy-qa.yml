@@ -40,6 +40,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "TRANSPORT_COMPILE_FAILED" }
           .\filuna-transport.exe
           if ($LASTEXITCODE -ne 0) { throw "TRANSPORT_QA_FAILED" }
+          cl /nologo /std:c++17 /EHsc /W4 /WX /I FILUNA\update FILUNA\update\test_windows_payload_hash.cpp /Fe:filuna-payload-hash.exe bcrypt.lib
+          if ($LASTEXITCODE -ne 0) { throw "PAYLOAD_HASH_COMPILE_FAILED" }
+          .\filuna-payload-hash.exe
+          if ($LASTEXITCODE -ne 0) { throw "PAYLOAD_HASH_QA_FAILED" }
           cl /nologo /std:c++17 /EHsc /W4 /WX /I FILUNA\update FILUNA\update\test_native_update_flow.cpp /Fe:filuna-flow.exe
           if ($LASTEXITCODE -ne 0) { throw "FLOW_COMPILE_FAILED" }
           .\filuna-flow.exe

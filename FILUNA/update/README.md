@@ -20,6 +20,8 @@ Próxima integração obrigatória: transporte HTTPS/BFF autenticado + verificad
 
 A passagem para o helper exige nova leitura dos projetos salvos, tarefas e snapshot de recuperação. Se qualquer condição mudar após autorizar o fechamento, o fluxo volta a aguardar e exige nova autorização de fechamento. O integrador deve ler esses sinais na thread da interface e impedir novas edições/tarefas durante a passagem; esta classe não bloqueia a interface nem executa o fechamento por conta própria.
 
+`NativeWindowsPayloadHash.hpp` confere tamanho e SHA-256 dos bytes de um arquivo local com BCrypt, em blocos de 64 KiB. O objeto devolvido mantém aberto o mesmo handle de leitura, sem compartilhamento para escrita/exclusão, e o reposiciona no início. Rejeita reparse point final, diretórios, arquivo com múltiplos hardlinks, hash/tamanho incorretos e conflito com escritor aberto. O chamador ainda precisa garantir a raiz/caminho de staging confiável, proteger os diretórios e consumir esse mesmo handle enquanto o objeto existir. Hash não comprova ECDSA, procedência GitHub, assinatura Windows, autorização ou QA; este verificador ainda não está conectado à GUI/helper.
+
 ## Integração GUI, primeiro gate
 `MainFrame::generate_help_menu` oferece a entrada **Atualizações Filuna**; até existir confiança operacional mostra aviso honesto, sem downloads. No startup, o aplicativo deixa de consultar automaticamente o feed **Orca upstream** como se fosse distribuição Filuna. O motor Orca e o código de fatiamento são preservados. A consulta Filuna autenticada na abertura e a cada 30 minutos só será ativada após trustroot, licenças, sessão segura, manifesto e helper; compilar o GUI é obrigatório, fonte estática não comprova funcionalidade.
 
