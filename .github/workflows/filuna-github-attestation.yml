@@ -87,6 +87,8 @@ jobs:
           set -euo pipefail
           gh attestation verify filuna-qa-candidate.zip --repo "$GITHUB_REPOSITORY" \
             --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/filuna-github-attestation.yml" \
+            --source-digest "$GITHUB_SHA" --signer-digest "$GITHUB_SHA" --source-ref "$GITHUB_REF" \
+            --deny-self-hosted-runners \
             --predicate-type https://filuna3d.com/attestations/github-artifact-import/v1 \
             --format json > verification.json
       - name: Preserve QA attestation evidence without redistributing the binary

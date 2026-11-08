@@ -558,7 +558,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $package = Join-Path (Join-Path $env:GITHUB_WORKSPACE $env:BUILD_DIR) ('OrcaSlicer_Windows_{0}{1}_portable.zip' -f $env:ver, $env:ARCH_SUFFIX)
-          gh attestation verify $package --repo $env:GITHUB_REPOSITORY --signer-workflow "$env:GITHUB_REPOSITORY/.github/workflows/build_orca.yml" --format json > filuna-build-attestation-verification.json
+          gh attestation verify $package --repo $env:GITHUB_REPOSITORY --signer-workflow "$env:GITHUB_REPOSITORY/.github/workflows/build_orca.yml" --source-digest $env:GITHUB_SHA --signer-digest $env:GITHUB_SHA --source-ref $env:GITHUB_REF --deny-self-hosted-runners --format json > filuna-build-attestation-verification.json
           if ($LASTEXITCODE -ne 0) { throw 'GITHUB_BUILD_PROVENANCE_VERIFICATION_FAILED' }
 
       - name: Preserve Windows portable attestation evidence
