@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/filuna-windows-qa-exe.yml"
       - "src/libslic3r/**"
+      - "CMakeLists.txt"
   workflow_dispatch:
 permissions:
   contents: read
