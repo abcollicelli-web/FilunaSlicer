@@ -11,12 +11,12 @@ Outputs (read-only analysis, G-code never rewritten):
 NOT network/ACK, NOT firmware, NOT physical, NOT release.
 """
 from __future__ import annotations
-import argparse, difflib, hashlib, json, re, sys
+import argparse, difflib, hashlib, json, re, shutil, subprocess, sys
 from pathlib import Path
 
 from snapmaker_u1_inherit import build_effective_original_presets
 from snapmaker_runtime_nozzle_guard_qa import guarded_runtime_process
-from snapmaker_u1_guard_probe import run_cli
+from snapmaker_u1_guard_probe import list_gcodes
 from snapmaker_u1_fourtool_original_qa import build_minimal_core_3mf, build_four_from_core_3mf
 from snapmaker_u1_temporal_ab_qa import header_date_only_normalization
 from snapmaker_spatial_gcode_validator import policy_from_yaml, validate_gcode
@@ -100,6 +100,45 @@ def compare(filuna: list[bytes], oem: list[bytes]) -> dict:
             "similarity_ratio": round(sm.ratio(), 6), "first_divergence": first}
 
 
+def run_filuna_arrange0(exe: Path, machine: Path, process: Path,
+                        filament: Path, cube: Path, out: Path, label: str,
+                        timeout: int = 600) -> dict:
+    """Local copy of run_cli, adding --arrange 0; shared OEM helper untouched."""
+    target = out / label
+    if target.exists():
+        shutil.rmtree(target)
+    target.mkdir()
+    log = out / (label + ".log")
+    settings = str(machine) + ";" + str(process)
+    filaments = ";".join([str(filament)] * 4)
+    argv = ["--debug", "3", "--arrange", "0", "--slice", "0",
+            "--load-settings", settings, "--load-filaments", filaments,
+            "--outputdir", str(target), str(cube.resolve())]
+    command = [str(exe), *argv]
+    with log.open("w", encoding="utf-8", errors="replace") as fp:
+        fp.write("COMMAND_JSON=" + json.dumps(command, ensure_ascii=False) + "\n")
+        fp.flush()
+        try:
+            code = subprocess.run(command, cwd=exe.parent, stdout=fp,
+                                  stderr=subprocess.STDOUT, timeout=timeout,
+                                  check=False).returncode
+        except subprocess.TimeoutExpired:
+            code = 124
+            fp.write("TIMEOUT\n")
+    gcodes = list_gcodes(target)
+    inventory = {"case": label, "exit_code": code,
+                 "gcodes": [{"path": str(p.relative_to(out)), "bytes": p.stat().st_size,
+                             "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
+                            for p in gcodes], "log": log.name}
+    (out / (label + "-inventory.json")).write_text(json.dumps(inventory, indent=2) + "\n")
+    return inventory
+
+
+def object_defines(data: bytes) -> list[str]:
+    return [line.decode(errors="replace") for line in data.splitlines()
+            if line.startswith(b"EXCLUDE_OBJECT_DEFINE ")]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--exe", type=Path, required=True)
@@ -125,35 +164,11 @@ def main() -> int:
         single, four = a.out / "seed-core.3mf", a.out / "four-tools.3mf"
         build_minimal_core_3mf(single)
         build_four_from_core_3mf(single, four)
-        run = run_cli(a.exe.resolve(), prof["machine"], proc, prof["filament"], four, a.out, "filuna", timeout=600)
+        # The updated build_four_from_core_3mf fixture already places cubes on OEM A's 2x2 grid.
+        run = run_filuna_arrange0(a.exe, prof["machine"], proc, prof["filament"],
+                                  four, a.out, "filuna", timeout=600)
         rep["cli"] = run
-        # Diagnostic only: re-slice the identical 3MF with explicit --arrange 0.
-        # Never rewrite OEM or Filuna G-code; preserve both outputs separately.
-        import subprocess
-        diag_dir = a.out / "filuna-arrange0"
-        diag_dir.mkdir(exist_ok=True)
-        cmd = [str(a.exe), "--debug", "3", "--arrange", "0", "--slice", "0",
-               "--load-settings", str(prof["machine"]) + ";" + str(proc),
-               "--load-filaments", ";".join([str(prof["filament"])] * 4),
-               "--outputdir", str(diag_dir), str(four)]
-        with (a.out / "filuna-arrange0.log").open("w", encoding="utf-8") as fp:
-            fp.write("COMMAND_JSON=" + json.dumps(cmd) + "\\n")
-            fp.flush()
-            try:
-                diag_code = subprocess.run(cmd, cwd=a.exe.parent, stdout=fp,
-                                           stderr=subprocess.STDOUT, timeout=600).returncode
-            except subprocess.TimeoutExpired:
-                diag_code = 124
-        diag_gcodes = sorted(diag_dir.rglob("*.gcode"))
-        diag = {"exit_code": diag_code, "gcode_count": len(diag_gcodes)}
-        if diag_code == 0 and len(diag_gcodes) == 1:
-            diag_data = diag_gcodes[0].read_bytes()
-            diag["exclude_object_define"] = [
-                line.decode(errors="replace") for line in diag_data.splitlines()
-                if line.startswith(b"EXCLUDE_OBJECT_DEFINE ")]
-            diag["vs_oem_A"] = compare(functional_lines(diag_data),
-                                        functional_lines(a.oem_a.read_bytes()))
-        rep["arrange0_diagnostic"] = diag
+        rep["arrange_mode"] = "--arrange 0"
         if run["exit_code"] != 0 or len(run["gcodes"]) != 1:
             rep["status"] = "FAIL_FILUNA_CLI_NO_GCODE"
             return 1
@@ -165,6 +180,18 @@ def main() -> int:
         risk = validate_gcode(data, policy_from_yaml(ROOT / "FILUNA/fabricantes/snapmaker/vendor.yaml"), source="filuna")
         rep["python_validator"] = {"status": risk["status"], "issues": risk["issues"][:5]}
         fl = functional_lines(data)
+        filuna_defines = object_defines(data)
+        oem_a_defines = object_defines(a.oem_a.read_bytes())
+        oem_b_defines = object_defines(a.oem_b.read_bytes())
+        rep["exclude_object_define"] = {
+            "filuna": filuna_defines, "oem_A": oem_a_defines, "oem_B": oem_b_defines,
+            "side_by_side_A": [{"filuna": filuna_defines[i] if i < len(filuna_defines) else None,
+                                "oem_A": oem_a_defines[i] if i < len(oem_a_defines) else None}
+                               for i in range(max(len(filuna_defines), len(oem_a_defines)))],
+            "side_by_side_B": [{"filuna": filuna_defines[i] if i < len(filuna_defines) else None,
+                                "oem_B": oem_b_defines[i] if i < len(oem_b_defines) else None}
+                               for i in range(max(len(filuna_defines), len(oem_b_defines)))],
+        }
         rep["vs_oem_A"] = compare(fl, functional_lines(a.oem_a.read_bytes()))
         rep["vs_oem_B"] = compare(fl, functional_lines(a.oem_b.read_bytes()))
         safe = rep["python_validator"]["status"] == "PASS" and rep["final_purge"]["status"].startswith("PASS")
