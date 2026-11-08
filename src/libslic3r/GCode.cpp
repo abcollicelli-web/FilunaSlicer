@@ -1121,8 +1121,7 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
         float wipe_tower_rotation = tcr.priming ? 0.f : alpha;
 
         // Opt-in U1 QA diagnostic only: stderr, never G-code; no motion changes.
-        if (!tcr.priming && m_print_config->printer_model.value == "Snapmaker U1" &&
-            std::getenv("FILUNA_U1_TRACE_FIRST_TCR") != nullptr) {
+        if (!tcr.priming && std::getenv("FILUNA_U1_TRACE_FIRST_TCR") != nullptr) {
             static bool first_u1_tcr_traced = false;
             if (!first_u1_tcr_traced) {
                 first_u1_tcr_traced = true;
