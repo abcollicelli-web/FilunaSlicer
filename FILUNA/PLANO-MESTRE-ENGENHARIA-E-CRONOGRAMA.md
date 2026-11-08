@@ -1,5 +1,14 @@
 # FILUNA SLICER — PLANO MESTRE DE ENGENHARIA, EXECUÇÃO E CRONOGRAMA
 
+## Checkpoint atual — integração Windows ainda bloqueada (08/11/2026, Europe/Rome)
+
+O proprietário reafirmou literalmente às17:47: «entao faça tudo perfeito e completo». Isso autoriza continuar o escopo de integração nativa e assinatura, mas não constitui prova de implementação, aceite visual derivado ou homologação. A tentativa subsequente não alterou nenhum arquivo do aplicativo Windows, não gerou patch de código, PR, compilação, instalador, assinatura ou release. A autenticação GitHub foi confirmada; o impedimento é o caminho de implementação disponível nesta execução, não falta de acesso ao repositório. Não anunciar implementação em curso enquanto esse impedimento persistir.
+
+A pesquisa de caminhos suportados realizou três buscas e cinco leituras públicas, sem encontrar uma rota efetivamente utilizável nesta execução. As rotas oficiais documentadas são os [agentes na nuvem](https://cursor.com/docs/cloud-agent), o [painel de agentes](https://cursor.com/agents) e a [CLI do Cursor](https://cursor.com/docs/cli/overview); a existência dessas opções não significa que estejam habilitadas ou autorizadas neste fluxo. A tabela pública de [planos](https://cursor.com/pricing) não confirma o plano individual nem garante a habilitação das ferramentas desta conversa. Nenhum plano, conta ou acesso foi modificado. O usuário pode verificar a elegibilidade no painel oficial ou esclarecer a divergência com o suporte; não prometer que apenas trocar o plano resolverá esta sessão.
+
+O último resultado funcional permanece a Fase05.2 privada: 196 testes PASS em temporários, sem ativação operacional. Esta tentativa não reexecutou esses testes. Integração nativa Windows, assinatura real GitHub/Windows/manifesto e primeiro download beta/admin continuam PENDENTES; nenhuma versão antiga deve ser apresentada como integrada. Migrações006/007 não foram aplicadas operacionalmente, não houve restart/deploy do serviço ou exclusão de instaladores. Nenhuma frente de implementação permanece ativa neste checkpoint. Gates G2/G3 BLOCKED, G4 NOT RUN e G5/G6 BLOCKED permanecem. Homologação geral continua condicionada à prova da integração nativa.
+
+
 ## Estado mais recente — Fase05.2: lifecycle privado real, SOMENTE TEMP
 
 08/11/2026 Europe/Rome: biblioteca interna de promoção, retenção e recuperação implementada em `/srv/filuna-new-site`; **196 PASS / 0 FAIL = 173 baseline + 23 novos** (baseline também reexecutado separadamente). Dez interrupções reais de processo, concorrência, falhas FS/SQL e HTTP privado em testes isolados. Limite global de **cinco VERSÕES físicas**, inclusive staging/trash, preservando todo histórico; active/rollback/pins/leases protegidos e sexta promoção negada se todas estiverem protegidas. Uma falha após poda pode deixar quatro versões: não há promessa de atomicidade FS+SQL ou restauração de bytes já removidos.
