@@ -1224,7 +1224,11 @@ std::string GCodeWriter::_spiral_travel_to_z(double z, const Vec2d &ij_offset, c
                                  : this->config.travel_speed.get_at(m_cached_extruder_idx);
     }
 
-    if (this->config.enable_arc_fitting.value == ArcFittingMode::Disabled) { // Orca: if arc fitting is disabled, approximate the arc with small linear segments
+    // Snapmaker U1 OEM 2.4.1 emits a native G17/G3 spiral lift even when
+    // general arc fitting is disabled. Keep the Orca segmented fallback for all
+    // other printers; the axis-remap safety guard above still takes precedence.
+    const bool snapmaker_u1_native_spiral = this->config.printer_model.value == "Snapmaker U1";
+    if (!snapmaker_u1_native_spiral && this->config.enable_arc_fitting.value == ArcFittingMode::Disabled) { // Orca: if arc fitting is disabled, approximate the arc with small linear segments
         const double z_start = m_pos(2); // starting Z height
 
         const double px = m_pos(0) - m_x_offset;        // take plate offset into consideration
