@@ -103,3 +103,7 @@ Nova ordem expressa + **«esta liberado»** autorizam iniciar home/admin/serviç
 ## Regra de acesso posterior — 08/11/2026, 15:18 Europe/Rome
 
 [Decisão expressa básica/premium](approvals/WEB-ACESSO-BASE-ORCA-20261108.json): básico Orca/modelo-base livres/offline; sem assinatura válida, não carregar perfis/modelos homologados Filuna e usar modo base limpo da MESMA engine. Não apagar arquivos/criações nem revogar direitos de licenças livres. Prazos offline/cache/revogação ainda pendentes. [Fatia web real e limites](WEB-FASE-01-EVIDENCIAS-20261108.md): prévia isolada, 33 testes de subconjunto PASS; home candidata e APIs privadas fechadas, não sistema completo nem homologação. Não publicar código web privado ou alterar gates do desktop por esse resultado.
+
+
+### Continuidade obrigatória — Central do cliente / identidade (08/11/2026)
+Antes de evoluir web, ler [WEB-FASE-02-EVIDENCIAS-20261108.md](WEB-FASE-02-EVIDENCIAS-20261108.md), [decisão t33](approvals/WEB-CENTRAL-CLIENTE-T33-20261108.json) e [contrato atualizado](WEB-SERVICOS-ESCOPO-20261108.md#central-cliente-identidade-20261108). Aceite visual condicional exige entrada Central do cliente, sem redesenho. Composer `/conta/` e verificação real testados somente na área nova, 76 PASS; login/provedor/signer e checkout/storage/delivery ainda não operacionais, privado fail-closed. Não importar fixture de teste para conceder acesso. Código privado só na raiz autorizada; nenhum deploy, cofre/legado, desktop ou gate promovido.

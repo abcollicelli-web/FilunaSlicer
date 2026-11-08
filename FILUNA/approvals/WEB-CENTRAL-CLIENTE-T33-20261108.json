@@ -1,0 +1,26 @@
+{
+  "decision_id": "FLN-WEB-CENTRAL-T33-20261108",
+  "source": "declaração do proprietário t33u, retransmitida pelo coordenador após captura",
+  "date_local": "2026-11-08 15:36 Europe/Rome",
+  "literal": "esta bom a unica coisa que precisa ter precisa ser um acesso ao cliente para ele contratar, assinar, acessar seus backup, seus recursos, seus download, e isso sera expandido conforme novas ferrasmentas para o cliente serao criadas",
+  "conditional_visual_acceptance": "home apresentada aceita com adição de acesso claro à Central do cliente; manter visual C sem redesenho",
+  "requested_sections": [
+    "contratar",
+    "assinatura",
+    "backups",
+    "meus recursos",
+    "downloads"
+  ],
+  "future_extension": "novos módulos versionados com owner/rota/permissão/contrato e testes",
+  "does_not_approve": [
+    "homologação funcional",
+    "fidelidade 100%",
+    "todas as derivadas",
+    "nova central automaticamente",
+    "cobrança/checkout/provedor/preços",
+    "deploy público geral",
+    "retomada Slicer/hardware"
+  ],
+  "preserves_decision_t32": "base Orca livre/offline, mesma engine; sem assinatura válida não carregar catálogo homologado premium; preservar dados e direitos livres",
+  "implementation_status": "isolated preview only; private default deny; operational login/signer absent"
+}
