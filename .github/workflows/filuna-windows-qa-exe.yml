@@ -23,6 +23,14 @@ jobs:
           lfs: false
       - uses: lukka/get-cmake@latest
       - uses: microsoft/setup-msbuild@v2
+      - name: Install pinned uv for offline-safe CMake configuration
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.21"
+      - name: Enable pinned CI uv for CMake
+        shell: pwsh
+        run: |
+          "FILUNA_QA_USE_PATH_UV=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Restore exact native Windows MSVC dependencies
         id: deps
         uses: actions/cache/restore@v4
