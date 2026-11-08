@@ -22,6 +22,7 @@ jobs:
           /tmp/filuna-policy
           g++ -std=c++17 -Wall -Wextra -Werror -pedantic -IFILUNA/update FILUNA/update/test_native_update_flow.cpp -o /tmp/filuna-flow
           /tmp/filuna-flow
+          python3 FILUNA/update/test_gui_update_entrypoints.py
   windows:
     runs-on: windows-2022
     steps:

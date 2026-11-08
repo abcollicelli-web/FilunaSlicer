@@ -1,0 +1,26 @@
+name: Filuna native update GUI integration compile (no installer)
+on:
+  push:
+    paths:
+      - "src/slic3r/GUI/MainFrame.cpp"
+      - "src/slic3r/GUI/GUI_App.cpp"
+      - ".github/workflows/filuna-native-update-gui-build.yml"
+  pull_request:
+    paths:
+      - "src/slic3r/GUI/MainFrame.cpp"
+      - "src/slic3r/GUI/GUI_App.cpp"
+      - ".github/workflows/filuna-native-update-gui-build.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  windows-gui:
+    name: Compile Filuna GUI x64 without publication
+    uses: ./.github/workflows/build_check_cache.yml
+    with:
+      os: windows-latest
+      arch: x64
+      compiler: clang
+      build-deps-only: false
+      force-build: true

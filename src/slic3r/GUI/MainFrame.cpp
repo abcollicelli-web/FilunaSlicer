@@ -2951,13 +2951,22 @@ wxMenu* MainFrame::generate_help_menu()
     //    [](wxCommandEvent&) {
     //        //TODO
     //    });
-    // Check New Version
-    append_menu_item(helpMenu, wxID_ANY, _L("Check for Updates"), _L("Check for Updates"),
+    // Filuna beta update entry: never present an Orca upstream release as a Filuna update.
+    // Until signed service/identity/bootstrap are installed, display an honest
+    // offline status; cannot download or apply unverified executable code.
+    append_menu_item(helpMenu, wxID_ANY, wxString::FromUTF8("Atualizações Filuna"),
+        wxString::FromUTF8("Ver o estado das atualizações do Filuna"),
         [](wxCommandEvent&) {
-            wxGetApp().check_new_version_sf(true, 1);
-        }, "", nullptr, []() {
-            return true;
-        });
+            MessageDialog dlg(wxGetApp().mainframe,
+                wxString::FromUTF8(
+                    "O canal privado de atualizações Filuna ainda não está ativo nesta versão.\n\n"
+                    "Nenhum pacote será instalado sem a verificação do manifesto, da assinatura, "
+                    "da autorização beta e dos testes de segurança.\n\n"
+                    "Ao ativar o serviço homologado, as novidades serão exibidas aqui antes da confirmação "
+                    "do cliente. Seus projetos e o motor Orca local permanecem disponíveis."),
+                wxString::FromUTF8("Filuna — Atualizações"), wxOK);
+            dlg.ShowModal();
+        }, "", nullptr, []() { return true; });
 
     // About
 #ifndef __APPLE__
