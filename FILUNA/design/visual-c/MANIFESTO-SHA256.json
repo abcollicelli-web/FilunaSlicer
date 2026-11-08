@@ -4,16 +4,16 @@
     "sha256": "622c35f3e5b540ffb0f68aebe32f07a436b11fa09b79e6616fc774b4d0776e69"
   },
   "MATRIZ-COBERTURA.json": {
-    "bytes": 242924,
-    "sha256": "0f407e7e4b975c561ab29acf61e3ae993e315d5480e7cbf35cc936d432be8495"
+    "bytes": 243470,
+    "sha256": "1d15996bdd6fe78c4d05e2e3d2fdc753e8f9eda2b255a2abedb84e69777dc73f"
   },
   "MATRIZ-COBERTURA.md": {
-    "bytes": 86330,
-    "sha256": "d79651456486b1b403e18e03cc630d072d0bc447e2326cbdf0ef1a36c520bd04"
+    "bytes": 86844,
+    "sha256": "a2654e1a05e217780978d41ce3369e176babcb8d7203a8ffa9311c9728f690b0"
   },
   "README.md": {
-    "bytes": 20589,
-    "sha256": "2d76ddb59823d5d5dcafcabe7b5280c71a33674ff79c88e67c3da15fc94bbfee"
+    "bytes": 21267,
+    "sha256": "a5e9956bb32e4906de183cb4bb2c830a013b15091b53d5d895ec3c8feaf33517"
   },
   "assets/camera-generica.png": {
     "bytes": 697724,
@@ -428,8 +428,8 @@
     "sha256": "c7ff11d02d78a98131b75dfb34b31eb0f72287167ba59c1b872f9142a7e83620"
   },
   "documentacao/DESIGN-SYSTEM-C.md": {
-    "bytes": 9242,
-    "sha256": "987a1ef676384f407a84711d15124715acb9eece7b5dea6d3431823ecf97b746"
+    "bytes": 10103,
+    "sha256": "f4eef8e53b39ccc4b42c7bbfa85456ce533a77d2c361b46b5605a4e1ae97a474"
   },
   "documentacao/FONTES.json": {
     "bytes": 23404,
@@ -1278,5 +1278,25 @@
   "web-futuro/WEB-FUT-4.svg": {
     "bytes": 464301,
     "sha256": "8c45ade6d7860d2dcb065072876f0b0d67279fe4bac1c6141af34d037a82f5f0"
+  },
+  "documentacao/ORDEM-FIDELIDADE-VISUAL-C-20261108.json": {
+    "bytes": 1138,
+    "sha256": "49c767b6327ee5d49003b6639a4660b7eb2e2fdc33d47329bc78d53a2ae1c5b0"
+  },
+  "documentacao/CONTRATO-MONTAGEM-VISUAL-C.json": {
+    "bytes": 218203,
+    "sha256": "cbbc6f64da8bffc96e0df2e6905d730d5e12cd7a2d84c2ce95c1e4079783d3d1"
+  },
+  "documentacao/REGRA-FIDELIDADE-VISUAL-C.md": {
+    "bytes": 9594,
+    "sha256": "3072696c72448bbfab08f956f4bc3e635f067ab63fae548394453a6d41f7f1ea"
+  },
+  "documentacao/CONTRATO-MONTAGEM-VISUAL-C.md": {
+    "bytes": 6250,
+    "sha256": "d01d7fca2dfdc300d1765b4ff48ae8cfc03b917aff0ea7f482875921488a12cf"
+  },
+  "documentacao/ACEITE-VISUAL-C-TEMPLATE.json": {
+    "bytes": 6225,
+    "sha256": "a16af3f245e5d97844ba156d8f052479402aa33bafa208bf2b0ac4e965401195"
   }
 }

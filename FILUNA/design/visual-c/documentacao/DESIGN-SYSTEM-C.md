@@ -48,3 +48,7 @@ Revisão de risco não modifica G-code. Risco do próprio OEM admite revisão de
 
 ### Lacunas documentais não disfarçadas
 Visualização, Projeto, Ateliê, ferramentas auxiliares, conta/temas e telas web possuem detalhamento visual candidato em relação às fontes gerais; não se inventou confirmação contratual. Sincronização automática não foi confirmada e não aparece como ativa. O assistente usa uma ordem proposta, porque fontes antigas divergem; confirmar ordem antes de implementar. Os cenários não promovem recursos beta a estáveis. Guia de calibração não tem arquivo e termina pedindo sair do modo de calibração antes de peça comum.
+
+## Adendo vinculante de fidelidade — 08/11/2026
+
+[FLN-VISUAL-C-100](REGRA-FIDELIDADE-VISUAL-C.md) torna obrigatória a reprodução 100% idêntica do modelo aprovado, não mera inspiração. [Contrato de montagem](CONTRATO-MONTAGEM-VISUAL-C.md) / [JSON](CONTRATO-MONTAGEM-VISUAL-C.json) fixa baseline, hashes e medidas reais. Toda sugestão de adaptação/estado neste documento que não tenha aprovação individual permanece proposta: em conflito ou lacuna, bloquear, não interpretar como liberdade de redesenhar. Nova mudança exige aprovação explícita do proprietário. [Ordem nova](ORDEM-FIDELIDADE-VISUAL-C-20261108.json) não altera a aprovação anterior nem aprova derivadas automaticamente. Conformidade real da aplicação NOT RUN; aceitação segue evidência visual bruta, sobreposição/diff e aceite humano, sem tolerância autoconcedida.

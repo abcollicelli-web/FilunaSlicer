@@ -1,0 +1,17 @@
+{
+  "id": "FLN-VISUAL-C-100-20261108.1",
+  "rule_id": "FLN-VISUAL-C-100",
+  "owner": "DTM Serviços",
+  "date": "2026-11-08T14:16:00+01:00",
+  "timezone": "Europe/Rome",
+  "source": "Declaração expressa do proprietário na conversa do projeto Filuna Slicer; registro documental não criptográfico",
+  "quote_exact": "adicione isso ao documento mestre do Filuna Slicer onde deve ser obrigatorio o resutaldo 100% identifo visual seguindo as imagens e regras de montagem e recursos para fazer com essa estrutura e visual que voce vai deixar pronto, nenhuma ia pode construir o designer do aplicativo diferente do modelo aprovado",
+  "scope": "Obrigatoriedade de reprodução fiel do modelo visual aprovado; não aprovação individual de derivadas nem implementação/QA do aplicativo",
+  "approved_baseline_commit": "720291b8263e0898f7d6723bc904112ba2c6b3eb",
+  "prior_approval": "APROVACAO-VISUAL-C.json",
+  "prior_approval_sha256": "eb43ee8a3dd1ac1e9142aa2c027604172647f3037776a1214cf56b5e1be75cde",
+  "prior_approval_unchanged": true,
+  "new_layouts": false,
+  "application_conformance": "NOT RUN",
+  "product_gates_changed": false
+}

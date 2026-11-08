@@ -195,3 +195,7 @@ PNG e SVG medem 2880×1920. SVGs usam assets locais relativos, sem dependência 
 A matriz informa coordenadas no viewBox 1920×1280, não nos pixels finais 1,5×. Em geradores, o render principal demonstra prévia; a faixa inferior mostra entrada vazia/nome, geração, falha e arquivo válido. Estados propostos não são comportamento executado.
 Contratos detalhados ainda não confirmados estão anotados por linha; campos numéricos sem domínio normativo são amostras, não padrões oficiais. Home/galeria não alteram o catálogo publicado.
 Histórico do lote parcial está preservado em producao/; ele não é a cobertura desta revisão.
+
+## Fidelidade obrigatória — FLN-VISUAL-C-100
+
+Toda IA/pessoa deve reproduzir 100% identicamente o modelo aprovado. [Regra operacional](documentacao/REGRA-FIDELIDADE-VISUAL-C.md) · [montagem/recursos](documentacao/CONTRATO-MONTAGEM-VISUAL-C.md) · [índice JSON](documentacao/CONTRATO-MONTAGEM-VISUAL-C.json) · [ordem expressa nova](documentacao/ORDEM-FIDELIDADE-VISUAL-C-20261108.json) · [template de aceite](documentacao/ACEITE-VISUAL-C-TEMPLATE.json). Nenhuma reinterpretação ou mudança sem nova aprovação explícita. Derivadas continuam em revisão; item sem referência homologada fica bloqueado. Aplicação conforme NOT RUN, não certificado de pixel-perfect.

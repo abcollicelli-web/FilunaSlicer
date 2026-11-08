@@ -4310,6 +4310,16 @@
   "state_count": 208,
   "pending_images": 0,
   "pending_contracts": "Detalhes normativos não confirmados continuam rotulados por linha; não são aprovação funcional.",
-  "remote_publication": "NAO_EXECUTADA",
-  "consolidation": "110 estados de 22 geradores em 22 pranchas com render e quatro variantes visíveis. Galeria em três segmentos. Nenhum estado contado só por menção em documento."
+  "remote_publication": "BASELINE_VISUAL_PUBLICADA",
+  "consolidation": "110 estados de 22 geradores em 22 pranchas com render e quatro variantes visíveis. Galeria em três segmentos. Nenhum estado contado só por menção em documento.",
+  "published_baseline_commit": "720291b8263e0898f7d6723bc904112ba2c6b3eb",
+  "visual_fidelity_policy": {
+    "rule": "FLN-VISUAL-C-100",
+    "document": "documentacao/REGRA-FIDELIDADE-VISUAL-C.md",
+    "resources": "documentacao/CONTRATO-MONTAGEM-VISUAL-C.json",
+    "approved_baseline_commit": "720291b8263e0898f7d6723bc904112ba2c6b3eb",
+    "application_visual_conformance": "NOT RUN",
+    "unapproved_derivatives": "BLOCKED_PARA_IMPLEMENTACAO_VISUAL_ATE_APROVACAO_INDIVIDUAL",
+    "owner_approval_required_for_changes": true
+  }
 }

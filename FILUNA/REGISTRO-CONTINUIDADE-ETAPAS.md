@@ -484,3 +484,11 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 Antes de criar ou alterar qualquer tela Filuna, consultar `FILUNA/design/visual-c/documentacao/DESIGN-SYSTEM-C.md`, a aprovação literal em `FILUNA/design/visual-c/documentacao/APROVACAO-VISUAL-C.json`, os dois modelos C aprovados e a galeria/matriz em `FILUNA/design/visual-c/README.md` e `FILUNA/design/visual-c/MATRIZ-COBERTURA.md`. O proprietário aprovou a direção visual; as demais telas e detalhamentos são propostas em revisão. O inventário consolidado contém 123 pranchas e 208 itens rastreados, sem equivaler à homologação de software.
 
 Preparação permanece sem painel direito de informações de arquivo; Orca é o motor único. A regra vigente de G-code imutável e a distinção entre risco OEM e divergência de motor permanecem intactas. Esta aprovação não retoma implementação, CI, hardware, distribuição, servidor ou website. No escopo pausado pelo proprietário, G2/G3 permanecem BLOCKED, G4 NOT RUN e G5/G6 BLOCKED. Nenhum requisito funcional ou registro histórico foi revogado.
+
+## Ordem expressa — fidelidade visual obrigatória (08/11/2026 14:16 Europe/Rome)
+
+Texto do proprietário, ipsis litteris:
+
+> adicione isso ao documento mestre do Filuna Slicer onde deve ser obrigatorio o resutaldo 100% identifo visual seguindo as imagens e regras de montagem e recursos para fazer com essa estrutura e visual que voce vai deixar pronto, nenhuma ia pode construir o designer do aplicativo diferente do modelo aprovado
+
+Decisão: [FLN-VISUAL-C-100 no plano](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md#fln-visual-c-100), [regra operacional](design/visual-c/documentacao/REGRA-FIDELIDADE-VISUAL-C.md), [recursos e montagem](design/visual-c/documentacao/CONTRATO-MONTAGEM-VISUAL-C.md) e [registro da ordem](design/visual-c/documentacao/ORDEM-FIDELIDADE-VISUAL-C-20261108.json). Baseline 720291b8263e0898f7d6723bc904112ba2c6b3eb; âncoras e aprovação t26u preservadas. Proibida reinterpretação por qualquer IA; resultado 100% idêntico exige evidência real e aceite humano, sem tolerância autoconcedida. Derivadas e lacunas mantêm pendência e bloqueiam o item. Apenas documentação preparada neste lote; implementação/QA visual da aplicação NOT RUN. G2/G3 BLOCKED, G4 NOT RUN, G5/G6 BLOCKED; nenhuma retomada funcional.

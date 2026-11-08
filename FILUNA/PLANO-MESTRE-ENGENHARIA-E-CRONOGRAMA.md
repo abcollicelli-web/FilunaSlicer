@@ -364,3 +364,26 @@ O laboratório GitHub [#42345082502](https://github.com/abcollicelli-web/FilunaS
 Antes de criar ou alterar qualquer tela Filuna, consultar `FILUNA/design/visual-c/documentacao/DESIGN-SYSTEM-C.md`, a aprovação literal em `FILUNA/design/visual-c/documentacao/APROVACAO-VISUAL-C.json`, os dois modelos C aprovados e a galeria/matriz em `FILUNA/design/visual-c/README.md` e `FILUNA/design/visual-c/MATRIZ-COBERTURA.md`. O proprietário aprovou a direção visual; as demais telas e detalhamentos são propostas em revisão. O inventário consolidado contém 123 pranchas e 208 itens rastreados, sem equivaler à homologação de software.
 
 Preparação permanece sem painel direito de informações de arquivo; Orca é o motor único. A regra vigente de G-code imutável e a distinção entre risco OEM e divergência de motor permanecem intactas. Esta aprovação não retoma implementação, CI, hardware, distribuição, servidor ou website. No escopo pausado pelo proprietário, G2/G3 permanecem BLOCKED, G4 NOT RUN e G5/G6 BLOCKED. Nenhum requisito funcional ou registro histórico foi revogado.
+
+<a id="fln-visual-c-100"></a>
+## FLN-VISUAL-C-100 — reprodução visual obrigatória do modelo aprovado (08/11/2026)
+
+**Ordem expressa do proprietário, 08/11/2026 14:16 Europe/Rome. Aplicável a toda IA e pessoa que construir ou alterar UI. O resultado DEVE ser 100% visualmente idêntico às imagens e regras de montagem/recursos do modelo aprovado.** Não basta inspiração, aproximação, reinterpretação, redesenho ou layout genérico/nativo/de framework. Nenhuma IA pode construir o design diferente do aprovado.
+
+**É proibido mudar estética, estrutura, cores, tipografia, ícones, logo, posições, proporções, espaçamento, estados ou recursos sem NOVA aprovação EXPLÍCITA do proprietário registrada por versão/escopo/hash.** Todos os recursos e funções do projeto são preservados; não removê-los silenciosamente por estética e não maquiar aplicativo funcional com screenshot como fundo.
+
+Regra operacional integral e obrigatória: [REGRA-FIDELIDADE-VISUAL-C.md](design/visual-c/documentacao/REGRA-FIDELIDADE-VISUAL-C.md). Recursos, coordenadas extraídas, SHA e mapeamento: [contrato de montagem](design/visual-c/documentacao/CONTRATO-MONTAGEM-VISUAL-C.md) / [JSON](design/visual-c/documentacao/CONTRATO-MONTAGEM-VISUAL-C.json). Declaração literal nova: [ordem de 08/11](design/visual-c/documentacao/ORDEM-FIDELIDADE-VISUAL-C-20261108.json); aprovação anterior preservada.
+
+Baseline imutável `720291b8263e0898f7d6723bc904112ba2c6b3eb`, caminhos:
+- `FILUNA/design/visual-c/preparacao/filuna-preparacao-C.png` — SHA-256 `9e0faadedf2e4dd89cc7e62ed26becc807d2e26e86288cae8b1ec59ed19d0fd6`;
+- `FILUNA/design/visual-c/preparacao/filuna-preparacao-C.svg` — SHA-256 `98040a285ed17e4144397d8dc1e6f9b7823594111dc13cc7bda435bf4bc5e74f`;
+- `FILUNA/design/visual-c/dispositivo/filuna-dispositivo-C.png` — SHA-256 `4113989f7162c02fad16f56dccf49bec78b22b70bf97de1f721ce5df37893b3f`;
+- `FILUNA/design/visual-c/dispositivo/filuna-dispositivo-C.svg` — SHA-256 `52114cfb26faa9d4c04b9ab5a9fac47af6176c241624ce298bf7bfd2567e478d`;
+- `FILUNA/design/visual-c/documentacao/APROVACAO-VISUAL-C.json`, `tokens.json` e `DESIGN-SYSTEM-C.md`;
+- `FILUNA/design/visual-c/MATRIZ-COBERTURA.json` / `.md`: todo o universo rastreado (208 cenários/123 pranchas), mantendo o estado de aprovação de cada item.
+
+Hashes dos quatro modelos constam integralmente no contrato de montagem e na aprovação preservada. Apenas as duas âncoras possuem aprovação visual: esta ordem **não aprova individualmente 206 linhas derivadas**. Tela/estado sem referência homologada, conflito, recurso ou contrato faltante, limitação técnica ou impossibilidade de demonstrar 100% => **BLOCKED no item**, apresentar divergência ao proprietário; nunca inventar solução estética ou reduzir a meta.
+
+Aceitação futura exige screenshot real bruto, referência autorizada/hash, ambiente controlado (dimensões/DPI/escala/tema/locale/fontes/conteúdo), sobreposição/diff, evidências por toda tela/estado obrigatório e aceite humano expresso do dono. Sem tolerância visual autoconcedida; máscara/normalização/recorte não pode ocultar mudança. Conteúdo dinâmico exige fixture determinística ou exceção de região expressamente aprovada. Existência de arquivos, testes de texto ou “parece igual” não dão PASS. Sem 100% demonstrável, permanece BLOCKED até correção ou nova decisão explícita do proprietário.
+
+**Estado: contrato visual documentado; conformidade da aplicação NOT RUN.** Nenhuma implementação ou teste funcional foi feito por este adendo. Não promove gates: G2/G3 BLOCKED, G4 NOT RUN, G5/G6 BLOCKED; pausa funcional, motor Orca único, G-code imutável, segurança/AGPL e histórico preservados. FLN-VISUAL-C-100 é identificador documental, não alteração dos gates do produto.
