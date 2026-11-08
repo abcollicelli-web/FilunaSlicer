@@ -32,3 +32,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "POLICY_COMPILE_FAILED" }
           .\filuna-policy.exe
           if ($LASTEXITCODE -ne 0) { throw "POLICY_QA_FAILED" }
+          cl /nologo /std:c++17 /EHsc /W4 /WX /I FILUNA\update FILUNA\update\test_windows_release_transport.cpp /Fe:filuna-transport.exe winhttp.lib
+          if ($LASTEXITCODE -ne 0) { throw "TRANSPORT_COMPILE_FAILED" }
+          .\filuna-transport.exe
+          if ($LASTEXITCODE -ne 0) { throw "TRANSPORT_QA_FAILED" }

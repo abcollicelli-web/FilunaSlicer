@@ -11,3 +11,6 @@ Classes: A dados sem instalador; B módulo compatível versionado; C pacote cumu
 No servidor: máximo CINCO conjuntos físicos de versões globais, incluindo staging/trash, protegendo versão ativa, rollback, pins e downloads; histórico, notas, hashes e QA conservados para sempre. A implementação do servidor é apenas isolada até trustroot, migração e provas de release.
 
 Próxima integração obrigatória: transporte HTTPS/BFF autenticado + verificadores reais, UI nativa Grok/UPD-W, helper Windows assinado (download, staging, atomic swap, shutdown gracioso, restart/rollback), teste de falha com projeto não salvo, perda de energia, UAC, base cumulativa e offline; então aprovação explícita de primeira beta/admin no site. Nada foi publicado ou alterado no servidor nesta fatia.
+
+## Camada de leitura HTTPS nativa (em teste)
+`NativeWinHttpReleaseClient.hpp` consulta o catálogo privado `/api/v1/tenants/{tenant}/releases` por WinHTTP/Schannel (TLS obrigatório) com Bearer fornecido pela sessão, sem seguir redirecionamentos, sem IP fixo, sem execução de comandos, sem chamada quando token/tenant for inválido, timeout e limite de 128 KiB. Resposta HTTP 200 continua **não verificada** até ECDSA/hash/procedência. O servidor ainda não ativou o loader de confiança e o cliente não está integrado à GUI; testes não fazem tráfego real nem usam credenciais.
