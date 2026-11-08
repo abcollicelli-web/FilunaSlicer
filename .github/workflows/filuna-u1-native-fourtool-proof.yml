@@ -23,12 +23,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Download Filuna QA executable (run 42469548182)
+      - name: Download instrumented Filuna QA executable (run 42479366076)
         uses: actions/download-artifact@v4
         with:
-          name: filuna-qa-windows-exe-530541ff81b4da7ad9c7b1f7dec4544bd6b32993
+          name: filuna-qa-windows-exe-83efc13ee2bfdb208859ceb6095fcbd69fe5bef9
           repository: abcollicelli-web/FilunaSlicer
-          run-id: 42469548182
+          run-id: 42479366076
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: .filuna-exe
       - name: Download OEM 20-run stress reference (run 42396616586)
@@ -49,6 +49,7 @@ jobs:
           $b=(Get-ChildItem -Recurse .oem-stress -Filter *.gcode | Where-Object { $_.FullName -match 'stress-09' } | Select-Object -First 1).FullName
           Write-Host "EXE=$exe"; Write-Host "OEM_A=$a"; Write-Host "OEM_B=$b"
           if (-not $a -or -not $b) { Get-ChildItem -Recurse .oem-stress | Select-Object FullName; throw "OEM_REFERENCE_NOT_FOUND" }
+          $env:FILUNA_U1_TRACE_FIRST_TCR="1" 
           python lab/filuna_u1_native_fourtool_proof.py --exe "$exe" --oem-a "$a" --oem-b "$b" --out qa-u1-filuna-native
           $code=$LASTEXITCODE
           Get-Content qa-u1-filuna-native/proof.json | Out-File -Append -FilePath $env:GITHUB_STEP_SUMMARY
