@@ -105,6 +105,7 @@ bool GCodeWriter::supports_separate_travel_acceleration(GCodeFlavor flavor)
 void GCodeWriter::apply_print_config(const PrintConfig &print_config)
 {
     this->config.apply(print_config, true);
+    m_snapmaker_u1_native_spiral = print_config.printer_model.value == "Snapmaker U1";
 
     // Some machine limits are stride-2 (normal, silent) pairs, here we extract the value that will be used,
     // which is always normal mode at the moment
@@ -1227,7 +1228,7 @@ std::string GCodeWriter::_spiral_travel_to_z(double z, const Vec2d &ij_offset, c
     // Snapmaker U1 OEM 2.4.1 emits a native G17/G3 spiral lift even when
     // general arc fitting is disabled. Keep the Orca segmented fallback for all
     // other printers; the axis-remap safety guard above still takes precedence.
-    const bool snapmaker_u1_native_spiral = this->config.printer_model.value == "Snapmaker U1";
+    const bool snapmaker_u1_native_spiral = m_snapmaker_u1_native_spiral;
     if (!snapmaker_u1_native_spiral && this->config.enable_arc_fitting.value == ArcFittingMode::Disabled) { // Orca: if arc fitting is disabled, approximate the arc with small linear segments
         const double z_start = m_pos(2); // starting Z height
 
