@@ -1120,6 +1120,35 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
         Vec2f wipe_tower_offset   = (tcr.priming ? Vec2f::Zero() : m_wipe_tower_pos) + m_rib_offset;
         float wipe_tower_rotation = tcr.priming ? 0.f : alpha;
 
+        // Opt-in U1 QA diagnostic only: stderr, never G-code; no motion changes.
+        if (!tcr.priming && m_print_config->printer_model.value == "Snapmaker U1" &&
+            std::getenv("FILUNA_U1_TRACE_FIRST_TCR") != nullptr) {
+            static bool first_u1_tcr_traced = false;
+            if (!first_u1_tcr_traced) {
+                first_u1_tcr_traced = true;
+                const Vec2f local_toolchange = tcr.is_tool_change ? tcr.tool_change_start_pos : tcr.start_pos;
+                const Vec2f rotated_start = Eigen::Rotation2Df(alpha) * tcr.start_pos;
+                const Vec2f rotated_rib = Eigen::Rotation2Df(alpha) * m_rib_offset;
+                std::fprintf(stderr,
+                    "FILUNA_U1_TCR_TRACE first_nonpriming=1 is_tool_change=%d is_finish_first=%d "
+                    "local_start=(%.6f,%.6f) local_toolchange=(%.6f,%.6f) "
+                    "tower=(%.6f,%.6f) rib=(%.6f,%.6f) rotation_deg=%.6f "
+                    "plate_origin=(%.6f,%.6f) object_origin=(%.6f,%.6f) "
+                    "rotated_local=(%.6f,%.6f) rotated_rib=(%.6f,%.6f) "
+                    "mapped_start=(%.6f,%.6f) mapped_toolchange=(%.6f,%.6f) "
+                    "postprocess_offset=(%.6f,%.6f) postprocess_rotation_rad=%.6f\n",
+                    int(tcr.is_tool_change), int(tcr.is_finish_first),
+                    tcr.start_pos.x(), tcr.start_pos.y(), local_toolchange.x(), local_toolchange.y(),
+                    m_wipe_tower_pos.x(), m_wipe_tower_pos.y(), m_rib_offset.x(), m_rib_offset.y(),
+                    double(m_wipe_tower_rotation), m_plate_origin(0), m_plate_origin(1),
+                    gcodegen.origin()(0), gcodegen.origin()(1),
+                    rotated_start.x(), rotated_start.y(), rotated_rib.x(), rotated_rib.y(),
+                    start_pos.x(), start_pos.y(), tool_change_start_pos.x(), tool_change_start_pos.y(),
+                    wipe_tower_offset.x(), wipe_tower_offset.y(), double(wipe_tower_rotation));
+                std::fflush(stderr);
+            }
+        }
+
         std::string tcr_rotated_gcode = post_process_wipe_tower_moves(tcr, wipe_tower_offset, wipe_tower_rotation);
 
         // BBS: add partplate logic
