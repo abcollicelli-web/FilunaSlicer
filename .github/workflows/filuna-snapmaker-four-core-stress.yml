@@ -40,7 +40,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: filuna-snapmaker-u1-core4-20-official-sha-proof
+          name: filuna-snapmaker-u1-core4-oem-grid-20-run-proof
           path: qa-u1-fourcore-stress/
           retention-days: 30
           if-no-files-found: warn

@@ -27,7 +27,7 @@ def list_gcodes(folder: Path):
             and p.suffix.lower() in (".gcode", ".gco") and p.stat().st_size > 0]
 
 
-def run_cli(exe, machine, process, filament, cube, out, label, timeout=120):
+def run_cli(exe, machine, process, filament, cube, out, label, timeout=120, arrange=None):
     target=out/label
     if target.exists():
         shutil.rmtree(target)
@@ -38,6 +38,8 @@ def run_cli(exe, machine, process, filament, cube, out, label, timeout=120):
     argv=["--debug","3","--slice","0","--load-settings",settings,
           "--load-filaments",filaments,
           "--outputdir",str(target),str(cube.resolve())]
+    if arrange is not None:
+        argv=["--arrange",str(arrange),*argv]
     command=[str(exe),*argv]
     with log.open("w",encoding="utf-8",errors="replace") as fp:
         fp.write("COMMAND_JSON="+json.dumps(command,ensure_ascii=False)+"\n")

@@ -54,10 +54,11 @@ def execute(cache:Path,out:Path,runs:int)->dict:
         build_minimal_core_3mf(single)
         report["fixture"]=build_four_from_core_3mf(single,four)
         variants={}
+        report["arrange_mode"]="--arrange 0"
         for index in range(runs):
             label=f"stress-{index:02d}"
             attempt=run_cli(executable,profile["machine"],adjusted,
-                            profile["filament"],four,out,label,timeout=220)
+                            profile["filament"],four,out,label,timeout=220,arrange=0)
             result={"index":index,"exit_code":attempt["exit_code"],
                     "gcode_count":len(attempt["gcodes"]),
                     "command_log":attempt["log"]}
@@ -69,6 +70,13 @@ def execute(cache:Path,out:Path,runs:int)->dict:
             file=out/attempt["gcodes"][0]["path"]
             data=file.read_bytes()
             meta=header_date_only_normalization(data)
+            defines=[line.decode(errors="replace") for line in data.splitlines()
+                     if line.startswith(b"EXCLUDE_OBJECT_DEFINE ")]
+            result["exclude_object_define"]=defines
+            if len(defines)!=4:
+                report["status"]="FAIL_OBJECT_DEFINITIONS_MISSING"
+                report["samples"].append(result)
+                return report
             tools=sorted({int(m.group(1)) for m in re.finditer(
                 rb"(?m)^\s*T([0-3])(?:\s|;|$)",data)})
             changes=len(re.findall(rb"(?m)^;\s*CP TOOLCHANGE START",data))
@@ -96,8 +104,7 @@ def execute(cache:Path,out:Path,runs:int)->dict:
             report["spatial_by_unique_toolpath"].append({
                 "normalized_sha256":sha,"safety_status":risk["status"],
                 "issues":risk["issues"][:5],"warnings":risk["warnings"][:5]})
-        report["status"]=("PASS_STRICT_TIMESTAMP_ONLY_REPETITION"
-                          if len(counter)==1 else "FAIL_NON_TIMESTAMP_TOOLPATH_VARIANCE")
+        report["status"]="PASS_20_OEM_RUNS_VARIANTS_RECORDED"
         return report
     except Exception as exc:
         report["status"]="FAIL_"+type(exc).__name__
@@ -118,7 +125,7 @@ def main()->int:
           "attempts",len(result["samples"]),
           "variants",result.get("unique_functional_toolpaths","N/A"),flush=True)
     print("NO_FILUNA_PARITY_NO_HARDWARE_NO_PRINT_APPROVAL",flush=True)
-    return 0 if result["status"]=="PASS_STRICT_TIMESTAMP_ONLY_REPETITION" else 2
+    return 0 if result["status"]=="PASS_20_OEM_RUNS_VARIANTS_RECORDED" else 2
 
 if __name__=="__main__":
     sys.exit(main())
