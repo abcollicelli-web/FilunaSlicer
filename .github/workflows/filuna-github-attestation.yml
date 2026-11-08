@@ -1,6 +1,7 @@
 name: Filuna GitHub artifact attestation (QA only)
 on:
   push:
+    branches: ["filuna/native-update-first-beta-20261108"]
     paths: [".github/workflows/filuna-github-attestation.yml"]
   workflow_dispatch:
     inputs:
