@@ -107,6 +107,9 @@ def main() -> int:
     ap.add_argument("--oem-b", type=Path, required=True, help="OEM stress-09 plate G-code")
     ap.add_argument("--out", type=Path, default=Path("qa-u1-filuna-native"))
     a = ap.parse_args()
+    # run_cli executes with cwd=exe.parent, so every preset/3MF path must be absolute.
+    a.out = a.out.resolve()
+    a.exe, a.oem_a, a.oem_b = a.exe.resolve(), a.oem_a.resolve(), a.oem_b.resolve()
     a.out.mkdir(parents=True, exist_ok=True)
     rep = {"scope": "FILUNA executable, Snapmaker U1 0.4, synthetic 4-tool Core 3MF",
            "exe_sha256": hashlib.sha256(a.exe.read_bytes()).hexdigest(),
