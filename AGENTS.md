@@ -1,5 +1,10 @@
 # Filuna Slicer — continuidade (fork)
 
+## Estado atual — backend Fase05.1 testado, não ativado
+
+08/11/2026 Europe/Rome: SSH recuperado pelo proprietário; catálogo privado e streaming implementados somente em `/srv/filuna-new-site`, com 173 testes PASS (148 anteriores reexecutados + 25 novos). Migração006 aplicada apenas em bancos temporários; processo operacional não reiniciado, rotas novas não carregadas e configuração de confiança operacional ausente. Retenção de cinco versões tem somente planejador; nenhuma exclusão ou publicação real. Assinatura GitHub/Windows, integração nativa do cliente e primeiro download beta continuam pendentes. Checkpoints anteriores de SSH bloqueado/proposta pura são históricos. [Evidências e limitações](FILUNA/WEB-FASE-05-IMPLEMENTACAO-EVIDENCIAS-20261108.md). Não promover gates nem retomar homologação geral.
+
+
 ## Prioridade vigente — ordens t36–t38 de 08/11/2026
 
 O proprietário autoriza iniciar AGORA a integração nativa de atualizações Slicer/servidor e o fluxo de assinatura pelo GitHub conforme regras. Primeira distribuição só beta/admin; até CINCO versões de instaladores, preservando o histórico documental; compilar somente quando necessário. A retomada geral/homologação fica condicionada à integração comprovada. Esta ordem atualiza a pausa histórica somente nesse escopo; não promove gates nem aprova telas derivadas.

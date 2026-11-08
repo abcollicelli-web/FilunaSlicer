@@ -1,0 +1,108 @@
+{
+  "ledger": [
+    [
+      1
+    ],
+    [
+      2
+    ],
+    [
+      3
+    ],
+    [
+      4
+    ],
+    [
+      5
+    ]
+  ],
+  "integrity": "ok",
+  "foreign_keys": [],
+  "counts": {
+    "accounts": 0,
+    "identities": 0,
+    "local_credentials": 0,
+    "browser_sessions": 0,
+    "file_versions": 0,
+    "oauth_flows": 0
+  },
+  "release_tables_present": false,
+  "pid_unchanged": true,
+  "process_alive": true,
+  "process_uid": 33,
+  "configs_present": {
+    "auth-config.json": false,
+    "security-config.json": false
+  },
+  "captured_at_local": "2026-11-08T17:16:04.325770+01:00",
+  "protected_source_unchanged": true,
+  "protected_source_files_checked": 38,
+  "loaded_new_source": false,
+  "no_config_or_release_seeded": true,
+  "schema006_operationally_applied": false,
+  "new_test_count": 25,
+  "total_tests_pass": 173,
+  "total_tests_fail": 0,
+  "operational_table_counts": {
+    "schema_migrations": 5,
+    "tenants": 0,
+    "catalog_items": 0,
+    "user_state": 0,
+    "mutation_receipts": 0,
+    "accounts": 0,
+    "identities": 0,
+    "tenant_memberships": 0,
+    "platform_roles": 0,
+    "revoked_signing_keys": 0,
+    "revoked_tokens": 0,
+    "entitlement_epochs": 0,
+    "licensed_resources": 0,
+    "content_publications": 0,
+    "account_state": 0,
+    "client_backups": 0,
+    "downloadable_releases": 0,
+    "account_downloads": 0,
+    "file_heads": 0,
+    "file_versions": 0,
+    "file_mutation_receipts": 0,
+    "content_artifact_bindings": 0,
+    "local_credentials": 0,
+    "account_emails": 0,
+    "auth_epochs": 0,
+    "browser_sessions": 0,
+    "auth_one_time": 0,
+    "oauth_flows": 0,
+    "auth_rate_buckets": 0
+  },
+  "release_object_root_created": false,
+  "requirements_lock_unchanged": true,
+  "loaded_preview_smoke": [
+    {
+      "path": "/api/v1/auth/options",
+      "status": 200,
+      "note": "OLD_LOADED_PROCESS_NOT_NEW_RELEASE_CODE"
+    },
+    {
+      "path": "/api/v1/tenants/no-real-tenant/releases",
+      "status": 503,
+      "note": "OLD_LOADED_PROCESS_NOT_NEW_RELEASE_CODE"
+    },
+    {
+      "path": "/api/v1/admin/releases/retention-plan",
+      "status": 404,
+      "note": "OLD_LOADED_PROCESS_NOT_NEW_RELEASE_CODE"
+    }
+  ],
+  "new_source_default_deny_direct_route": 503,
+  "last_verified_at_local": "2026-11-08T17:17:35.608303+01:00",
+  "real_release_publications": 0,
+  "real_artifact_deletions": 0,
+  "real_builds_signatures_or_ci": 0,
+  "phase05_requirement_matrix": {
+    "PASS_scoped": 19,
+    "NOT_RUN": 3,
+    "actual_provenance_code_verification": "NOT_RUN, current adapters fixtures only"
+  },
+  "final_tests_at_local": "2026-11-08T17:21:12.783484+01:00",
+  "post_hardening_operational_state_unchanged": true
+}

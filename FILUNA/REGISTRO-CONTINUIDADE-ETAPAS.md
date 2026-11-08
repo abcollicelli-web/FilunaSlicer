@@ -1,5 +1,10 @@
 # FILUNA — REGISTRO DE CONTINUIDADE E ETAPAS REALIZADAS
 
+## Estado mais recente — Fase05.1 privada implementada/testada, NÃO ativada
+
+08/11/2026 Europe/Rome, após recuperação autorizada t43 às17:04: código real de catálogo/ledger candidato, bytesstreaming privados e planner retenção existem em `/srv/filuna-new-site`, **173 testesPASS/0FAIL =148baseline+25novos**. As afirmações abaixo de bloqueioSSH/ausência total de implementação são checkpoints HISTÓRICOS, superados somente nesta subfatia. Não foi publicada primeira versão integrada, nem criada confiança operacional;006 só em DBtemporário, processo operacional NÃO reiniciado e domínio estático intacto. [Evidência, rotas efetivas xcarregadas e limitações](WEB-FASE-05-IMPLEMENTACAO-EVIDENCIAS-20261108.md). GatesG2/G3BLOCKED,G4NOTRUN,G5/G6BLOCKED permanecem; nenhuma homologação/assinatura/certificação/updaterWindows inferida.
+
+
 ## Prioridade vigente — ordens t36–t38 de 08/11/2026
 
 O proprietário autoriza iniciar AGORA a integração nativa de atualizações Slicer/servidor e o fluxo de assinatura pelo GitHub conforme regras. Primeira distribuição só beta/admin; até CINCO versões de instaladores, preservando o histórico documental; compilar somente quando necessário. A retomada geral/homologação fica condicionada à integração comprovada. Esta ordem atualiza a pausa histórica somente nesse escopo; não promove gates nem aprova telas derivadas.
@@ -603,3 +608,11 @@ O coordenador executou Chrome público real, desktop1280×800/zoom100%, sem emul
 08/11/2026 Europe/Rome. t36/t37 resumidos pelo pai exigem integração nativa desde primeira versão, resumo/reabertura seguros e histórico completo; download inicial só beta/admin, máximo CINCO VERSÕES de instaladores, novo build só necessário. t38 literal: «a assinatira da priimeira versao sera feita pelo github conforme regras». Não equivale a dispensar ECDSA manifesto, SHA256, assinatura real de código/identidadeFiluna, consentimento/salvamento ou QAWindows; attestation GitHub é proveniência separada. [Especificação pré-código e testes NOT RUN](WEB-FASE-05-RELEASE-CONTRATO-20261108.md).
 
 **Checkpoint honesto:** somente especificação/plano local e patch documental; código/rotas/migração/serviço privado novo NÃO implementados nesta fatia. Canal SSH existente deixou de responder a comandos, embora check local do master tenha sucesso; nenhuma mutação remota, acesso alternativo, build/CI/assinatura/publicação/pruning/remoção. Fase04 148 PASS é histórica, não novo baseline executado. Estado atual DB/zero dados NÃO reverificado. Config/trust não devem ser inventados, frontend aprovado/t35/APIs públicas/nginx/cofre/legado/desktop preservados por não atuação. Retomar leitura de NEW-SITE/mestres atuais pelo mesmo acesso existente antes de código.
+
+
+## Continuidade executável — Fase05.1 privada (08/11/2026 Europe/Rome)
+T36–t38 literais continuam no [registro autorizado](approvals/ATUALIZACAO-NATIVA-BETA-T36-T38-20261108.json); backend agora implementou primeira subfatia REAL, não outra proposta: ledger imutável de candidatos/história, ECDSAcapacidade de verificação, streaming privado por64KiB, autorização tenant/conta/beta/adminMFA/licença e plano retenção5VERSÕES global/pins/leases/snapshotconflito. Nenhum executor de pruning/publicação, nenhum artefato real removido/importado/assinado. ECDSAcurva/envelope/raiz NÃO escolhidos operacionalmente; testes P256/SHA256/DER são só capacidade. Adaptadores GitHubprovenance/Windowscode/ownerQA apenas fixtures em memória, não provas reais.
+
+173PASS de unidade/integradosHTTP/cripto não equivalem aos22 requisitos globais aceitos: matriz19PASS estritamente escopados/3NOTRUN com subcasos incompletos explícitos. NativeWindows/confirm/save/helper/reopen/rollback, cadeiaGitHub/Windows e recovery/promotion/pruning reais continuamNOTRUN. Auth/trust config AUSENTES; DBoperacional intacto1–5/integridadeFK/zero contas e catálogo, tabela006 não existe nele. Código novo NÃO carregado no PID2089150, nenhum restart/deploy; domínio/Nginx/publict35 preservados. Antes de aplicar006 futuramente exigir backupDBnovo/revisão/coordenação. Não executar --migrate-only cegamente.
+
+[Arquivos/hashes, testes, contratos, matriz e próximas lacunas](WEB-FASE-05-IMPLEMENTACAO-EVIDENCIAS-20261108.md). Nada de cofre/legado/OS/SSHconfig/CI/build/pagamentos/GoogleSMTP/hardware. Operação atual permanece fechada e catálogo real vazio, básicoOrca/offline e arquivos próprios preservados.

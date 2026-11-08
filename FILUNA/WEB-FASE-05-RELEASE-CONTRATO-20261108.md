@@ -1,5 +1,10 @@
 # FASE05 — contrato privado de releases, proposta pré-código
 
+## Estado mais recente — Fase05.1 privada implementada/testada, NÃO ativada
+
+08/11/2026 Europe/Rome, após recuperação autorizada t43 às17:04: código real de catálogo/ledger candidato, bytesstreaming privados e planner retenção existem em `/srv/filuna-new-site`, **173 testesPASS/0FAIL =148baseline+25novos**. As afirmações abaixo de bloqueioSSH/ausência total de implementação são checkpoints HISTÓRICOS, superados somente nesta subfatia. Não foi publicada primeira versão integrada, nem criada confiança operacional;006 só em DBtemporário, processo operacional NÃO reiniciado e domínio estático intacto. [Evidência, rotas efetivas xcarregadas e limitações](WEB-FASE-05-IMPLEMENTACAO-EVIDENCIAS-20261108.md). GatesG2/G3BLOCKED,G4NOTRUN,G5/G6BLOCKED permanecem; nenhuma homologação/assinatura/certificação/updaterWindows inferida.
+
+
 **Estado: PROPOSTO / IMPLEMENTAÇÃO E TESTES NOT RUN.** Não é endpoint disponível, migração aplicada, release publicada ou assinatura verificada. Código privado existente fases01–04 não foi alterado nesta fatia: leitura remota bloqueada por canal SSH existente sem resposta; nenhum caminho alternativo de acesso tentado. Não criar segunda árvore/backend. Esta especificação fica na box para integração posterior aos documentos canônicos `/srv/filuna-new-site/docs/` quando acesso existente funcionar.
 
 ## Autoridade e fontes
@@ -60,3 +65,11 @@ FASE04 histórica148 PASS, zero dados/config ausente naquela captura. Nesta fati
 ## Adendo do coordenador — pedidos literais e autenticação
 
 As transcrições literais t36/t37/t38, conferidas com as mensagens do proprietário, estão no [registro de autorização](approvals/ATUALIZACAO-NATIVA-BETA-T36-T38-20261108.json). Os resumos anteriores permanecem identificados como resumos, não substituem esse registro. A nova tentativa SSH normal ao mesmo host, com known-host estrito, alcançou o servidor e retornou necessidade de autenticação; a sessão antiga foi preservada. Recuperar autenticação legítima antes de ler os mestres atuais e implementar; nenhuma mudança de chaves/configuração nem credencial em chat.
+
+
+## Continuidade executável — Fase05.1 privada (08/11/2026 Europe/Rome)
+T36–t38 literais continuam no [registro autorizado](approvals/ATUALIZACAO-NATIVA-BETA-T36-T38-20261108.json); backend agora implementou primeira subfatia REAL, não outra proposta: ledger imutável de candidatos/história, ECDSAcapacidade de verificação, streaming privado por64KiB, autorização tenant/conta/beta/adminMFA/licença e plano retenção5VERSÕES global/pins/leases/snapshotconflito. Nenhum executor de pruning/publicação, nenhum artefato real removido/importado/assinado. ECDSAcurva/envelope/raiz NÃO escolhidos operacionalmente; testes P256/SHA256/DER são só capacidade. Adaptadores GitHubprovenance/Windowscode/ownerQA apenas fixtures em memória, não provas reais.
+
+173PASS de unidade/integradosHTTP/cripto não equivalem aos22 requisitos globais aceitos: matriz19PASS estritamente escopados/3NOTRUN com subcasos incompletos explícitos. NativeWindows/confirm/save/helper/reopen/rollback, cadeiaGitHub/Windows e recovery/promotion/pruning reais continuamNOTRUN. Auth/trust config AUSENTES; DBoperacional intacto1–5/integridadeFK/zero contas e catálogo, tabela006 não existe nele. Código novo NÃO carregado no PID2089150, nenhum restart/deploy; domínio/Nginx/publict35 preservados. Antes de aplicar006 futuramente exigir backupDBnovo/revisão/coordenação. Não executar --migrate-only cegamente.
+
+[Arquivos/hashes, testes, contratos, matriz e próximas lacunas](WEB-FASE-05-IMPLEMENTACAO-EVIDENCIAS-20261108.md). Nada de cofre/legado/OS/SSHconfig/CI/build/pagamentos/GoogleSMTP/hardware. Operação atual permanece fechada e catálogo real vazio, básicoOrca/offline e arquivos próprios preservados.
