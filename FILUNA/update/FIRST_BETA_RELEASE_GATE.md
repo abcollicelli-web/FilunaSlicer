@@ -2,6 +2,11 @@
 
 **Status atual:** BLOQUEADO; pipeline de assinatura pronto como candidato de QA, não executado. Não publicar um pacote sem assinatura verificada, nem afirmar que a primeira versão está no site.
 
+## Ordem de assinatura indicada pelo proprietário em 08/11/2026
+Primeiro usar o GitHub; a assinatura pelo computador do proprietário fica para depois. `filuna-github-attestation.yml` implementa a etapa independente do GitHub, sem Azure, certificado local ou reconstrução: exige build GUI Windows concluído com sucesso no mesmo repositório/branch e SHA exato, seleciona um único artefato portable x64, confere o SHA-256 do arquivo e gera uma atestação de importação/integridade com referência ao build de origem. A própria atestação é verificada contra o repositório e o workflow signatário antes de guardar a evidência.
+
+O predicado `filuna.github-artifact-import.v1` registra expressamente `authenticode=NOT_PERFORMED` e `release_approval=NOT_GRANTED`. Não é uma nova compilação, uma atestação SLSA emitida pelo builder original, uma assinatura Authenticode ou aprovação de publicação. O binário não é republicado por este workflow; somente a evidência é guardada. O workflow anterior de assinatura Windows permanece separado para quando a identidade legítima estiver disponível. Os gates de integração nativa, ECDSA, recuperação e distribuição continuam exigidos; adiar a assinatura local não fornece resultados desses ensaios.
+
 ## Verificações existentes
 - GitHub Actions público suporta *artifact attestation* (prova de procedência) no plano Pro; isso **não** é Authenticode nem garantia de ausência de alertas SmartScreen.
 - Assinatura Windows confiável é independente. O workflow usa Azure Artifact Signing somente após perfil, identidade de editor, OIDC/certificado e consentimentos configurados fora do repositório. Sem esses itens recusa a execução, sem usar certificado de teste para beta.

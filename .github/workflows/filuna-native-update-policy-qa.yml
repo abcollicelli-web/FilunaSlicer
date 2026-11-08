@@ -23,6 +23,7 @@ jobs:
           g++ -std=c++17 -Wall -Wextra -Werror -pedantic -IFILUNA/update FILUNA/update/test_native_update_flow.cpp -o /tmp/filuna-flow
           /tmp/filuna-flow
           python3 FILUNA/update/test_gui_update_entrypoints.py
+          python3 FILUNA/update/test_github_attestation_gate.py
   windows:
     runs-on: windows-2022
     steps:
@@ -43,3 +44,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "FLOW_COMPILE_FAILED" }
           .\filuna-flow.exe
           if ($LASTEXITCODE -ne 0) { throw "FLOW_QA_FAILED" }
+          python FILUNA/update/test_github_attestation_gate.py
+          if ($LASTEXITCODE -ne 0) { throw "GITHUB_ATTESTATION_GATE_QA_FAILED" }
