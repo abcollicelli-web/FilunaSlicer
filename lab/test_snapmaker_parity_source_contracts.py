@@ -28,7 +28,10 @@ class SnapmakerParitySourceContracts(unittest.TestCase):
         self.assertIn("((ConfigOptionBool,                klipper_emit_minimum_cruise_ratio))",h)
         section = cpp.split('this->add("klipper_emit_minimum_cruise_ratio", coBool)',1)[1].split('this->add(',1)[0]
         self.assertIn("ConfigOptionBool(true)",section)
-        self.assertIn("if (this->config.klipper_emit_minimum_cruise_ratio.value)",writer)
+        self.assertIn("if (emit_minimum_cruise_ratio)",writer)
+        self.assertIn("this->config.klipper_emit_minimum_cruise_ratio.value);",writer)
+        tower = (ROOT / "src/libslic3r/GCode/WipeTower.cpp").read_text()
+        self.assertIn("m_klipper_emit_minimum_cruise_ratio",tower)
         self.assertIn('gcode += " MINIMUM_CRUISE_RATIO=";',writer)
 
 if __name__ == "__main__":

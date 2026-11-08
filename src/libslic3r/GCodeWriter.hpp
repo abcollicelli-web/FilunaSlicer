@@ -74,7 +74,7 @@ public:
     // Orca: Klipper's accel_to_decel limit for `acceleration`, sent as the legacy ACCEL_TO_DECEL and as the
     // equivalent MINIMUM_CRUISE_RATIO = 1 - ACCEL_TO_DECEL / ACCEL that replaced it. Klipper before 0.13 and
     // vendor forks read only the first, current Klipper only the second, and 0.13 prefers the second.
-    void append_klipper_accel_to_decel(std::string &gcode, unsigned int acceleration, double accel_to_decel_factor);
+    static void append_klipper_accel_to_decel(std::string &gcode, unsigned int acceleration, double accel_to_decel_factor, bool emit_minimum_cruise_ratio = true);
     std::string set_junction_deviation(double junction_deviation); 
     std::string set_pressure_advance(double pa, int tool = -1) const;
     std::string set_input_shaping(char axis, float damp, float freq, std::string type) const;
