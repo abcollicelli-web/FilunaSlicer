@@ -22,3 +22,5 @@ A passagem para o helper exige nova leitura dos projetos salvos, tarefas e snaps
 
 ## Integração GUI, primeiro gate
 `MainFrame::generate_help_menu` oferece a entrada **Atualizações Filuna**; até existir confiança operacional mostra aviso honesto, sem downloads. No startup, o aplicativo deixa de consultar automaticamente o feed **Orca upstream** como se fosse distribuição Filuna. O motor Orca e o código de fatiamento são preservados. A consulta Filuna autenticada na abertura e a cada 30 minutos só será ativada após trustroot, licenças, sessão segura, manifesto e helper; compilar o GUI é obrigatório, fonte estática não comprova funcionalidade.
+
+A validação GUI usa `windows-installer=false` nos workflows reutilizáveis, desativando NSIS/MSIX e suas entregas, e permite reaproveitar dependências compiladas. Essa opção mantém o empacotamento portable e não muda o padrão dos outros chamadores. Builds iniciados com a definição anterior não recebem essa mudança retroativamente e seus instaladores continuam sem autorização de distribuição.

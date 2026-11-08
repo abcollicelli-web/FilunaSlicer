@@ -19,6 +19,11 @@ on:
       force-build:
         required: false
         type: boolean
+      windows-installer:
+        description: "Package Windows installers; disable for portable-only QA"
+        required: false
+        type: boolean
+        default: true
   
 # Read by scripts/ci_deps_cache.sh.
 env:
@@ -195,4 +200,5 @@ jobs:
       compiler: ${{ inputs.compiler }}
       build-deps-only: ${{ inputs.build-deps-only }}
       force-build: ${{ inputs.force-build }}
+      windows-installer: ${{ inputs.windows-installer }}
     secrets: inherit

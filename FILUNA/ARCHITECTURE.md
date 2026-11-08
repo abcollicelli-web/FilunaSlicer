@@ -24,7 +24,9 @@
 
 | Arquivo upstream | Motivo | Desde |
 |---|---|---|
-| (nenhum ainda) | | |
+| `src/slic3r/GUI/MainFrame.cpp` | Entrada de atualizações Filuna no menu de ajuda, bloqueada sem confiança operacional. | PR #7 |
+| `src/slic3r/GUI/GUI_App.cpp` | Remove a consulta automática ao feed Orca na inicialização Filuna. | PR #7 |
+| `.github/workflows/build_check_cache.yml`, `build_deps.yml`, `build_orca.yml` | Opção `windows-installer` propagada até o empacotamento. A validação GUI Filuna usa `false` para gerar somente portable, sem NSIS/MSIX; outros chamadores mantêm o padrão anterior. | PR #7 |
 
 ## Módulos de fabricante
 Ver MODULES.md. Cada módulo traz o código de envio e controle vindo do slicer do fabricante, com versão e origem registradas. Eles não alteram o motor de fatiamento.

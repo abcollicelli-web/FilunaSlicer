@@ -23,4 +23,5 @@ jobs:
       arch: x64
       compiler: clang
       build-deps-only: false
-      force-build: true
+      force-build: false
+      windows-installer: false
