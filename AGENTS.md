@@ -155,3 +155,7 @@ Nova ordem expressa + **«esta liberado»** autorizam iniciar home/admin/serviç
 
 ### Continuidade obrigatória — Central do cliente / identidade (08/11/2026)
 Antes de evoluir web, ler [FILUNA/WEB-FASE-02-EVIDENCIAS-20261108.md](FILUNA/WEB-FASE-02-EVIDENCIAS-20261108.md), [decisão t33](FILUNA/approvals/WEB-CENTRAL-CLIENTE-T33-20261108.json) e [contrato atualizado](FILUNA/WEB-SERVICOS-ESCOPO-20261108.md#central-cliente-identidade-20261108). Aceite visual condicional exige entrada Central do cliente, sem redesenho. Composer `/conta/` e verificação real testados somente na área nova, 76 PASS; login/provedor/signer e checkout/storage/delivery ainda não operacionais, privado fail-closed. Não importar fixture de teste para conceder acesso. Código privado só na raiz autorizada; nenhum deploy, cofre/legado, desktop ou gate promovido.
+
+
+### Marco storage e revisão visual t34 (08/11/2026)
+Ler [evidências fase03](FILUNA/WEB-FASE-03-EVIDENCIAS-20261108.md), [contrato](FILUNA/WEB-SERVICOS-ESCOPO-20261108.md#storage-restore-bytes-20261108) e [ordem visual t34](FILUNA/approvals/WEB-VISUAL-REVISAO-T34-20261108.json). 111 testes PASS no backend privado novo; 004 já aplicada, não repetir cegamente. Provedor/signer ausentes, privado negado; não produção/DR. T34 exige revisão DESIGN: não homologar home/central nem mudar CSS/markup neste workstream backend. Nenhum segundo backend, cofre/legado/deploy/Slicer/hardware.

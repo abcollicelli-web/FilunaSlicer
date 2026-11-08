@@ -1,0 +1,15 @@
+{
+  "record_id": "FLN-WEB-VISUAL-REVISION-T34-20261108",
+  "source": "proprietário t34u, retransmitido pelo coordenador",
+  "date_local": "2026-11-08 15:57 Europe/Rome",
+  "literal": "minha colaboracao as paginas estao muito com cara de wordpress travado layout pronto precisa ser moderno e perfeito como o visual do filuna pagina premiada",
+  "effect": "aceite visual anterior condicionado à nova revisão; home/central não homologadas; preservar identidade C",
+  "not_authorized_by_comparison": [
+    "instalar WordPress/CMS/plugin",
+    "copiar template para login",
+    "trocar backend",
+    "deploy geral",
+    "homologação 100%"
+  ],
+  "backend_scope": "continua autorizado; não alterar CSS/markup/hero durante frente DESIGN candidata separada"
+}
