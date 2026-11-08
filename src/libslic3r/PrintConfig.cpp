@@ -3967,6 +3967,11 @@ void PrintConfigDef::init_fff_params()
     def->nullable = true;
     def->set_default_value(new ConfigOptionFloatsNullable{300});
 
+    def = this->add("klipper_emit_minimum_cruise_ratio", coBool);
+    def->label = L("Emit Klipper minimum cruise ratio");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
     def = this->add("accel_to_decel_enable", coBool);
     def->label = L("Enable accel_to_decel");
     def->category = L("Speed");
@@ -6982,6 +6987,11 @@ void PrintConfigDef::init_fff_params()
                      "Only effective in traditional timelapse mode on non-I3 printers.");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("tool_change_temprature_wait", coBool);
+    def->label = L("Wait for tool temperature after tool change");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("standby_temperature_delta", coInt);
     def->label = L("Temperature variation");

@@ -73,5 +73,9 @@
     "explicit user consent recorded per exact G-code SHA and operator"
   ],
   "check_bounds": true,
-  "note_mechanical_limits": "This 270x270x270 gate applies to explicit slicer G0/G1/G2/G3; firmware-only park macros have separate proof and may use a larger service envelope. No blanket exemption."
+  "note_mechanical_limits": "This 270x270x270 gate applies to explicit slicer G0/G1/G2/G3; firmware-only park macros have separate proof and may use a larger service envelope. No blanket exemption.",
+  "filuna_native_defaults": {
+    "klipper_emit_minimum_cruise_ratio": false,
+    "description": "Snapmaker U1 OEM 2.4.1 Klipper output parity; keep other manufacturers on global true default"
+  }
 }

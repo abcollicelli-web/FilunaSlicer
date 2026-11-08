@@ -4,6 +4,7 @@ on:
     branches: [filuna/oem-portable-first-qa-20261106]
     paths:
       - ".github/workflows/filuna-windows-qa-exe.yml"
+      - "src/libslic3r/**"
   workflow_dispatch:
 permissions:
   contents: read

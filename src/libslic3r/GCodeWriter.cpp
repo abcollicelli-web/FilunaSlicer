@@ -476,8 +476,10 @@ void GCodeWriter::append_klipper_accel_to_decel(std::string &gcode, unsigned int
 {
     gcode += " ACCEL_TO_DECEL=";
     gcode += float_to_string_decimal_point(acceleration * accel_to_decel_factor / 100);
-    gcode += " MINIMUM_CRUISE_RATIO=";
-    gcode += float_to_string_decimal_point(1. - accel_to_decel_factor / 100);
+    if (this->config.klipper_emit_minimum_cruise_ratio.value) {
+        gcode += " MINIMUM_CRUISE_RATIO=";
+        gcode += float_to_string_decimal_point(1. - accel_to_decel_factor / 100);
+    }
 }
 
 std::string GCodeWriter::set_jerk_xy(double jerk)

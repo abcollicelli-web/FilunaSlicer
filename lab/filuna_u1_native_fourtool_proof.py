@@ -161,11 +161,27 @@ def main() -> int:
         prof = build_effective_original_presets(a.out)
         proc = a.out / "qa-process-nozzle-guard.json"
         guarded_runtime_process(prof["machine"], prof["process"], proc)
+        # QA-only manufacturer overlay: the pinned official JSON stays byte-for-byte unchanged.
+        # The native Filuna Snapmaker module must apply this vendor default in production.
+        vendor = json.loads((ROOT / "FILUNA/fabricantes/snapmaker/vendor.yaml").read_text(encoding="utf-8"))
+        native_defaults = vendor["filuna_native_defaults"]
+        if native_defaults.get("klipper_emit_minimum_cruise_ratio") is not False:
+            raise ValueError("SNAPMAKER_U1_MCR_VENDOR_DEFAULT_NOT_FALSE")
+        filuna_machine = a.out / "filuna-snapmaker-machine.json"
+        machine_cfg = json.loads(prof["machine"].read_text(encoding="utf-8"))
+        if machine_cfg.get("tool_change_temprature_wait") not in ("0", 0, False):
+            raise ValueError("OEM_U1_TOOLCHANGE_WAIT_NOT_ZERO")
+        machine_cfg["klipper_emit_minimum_cruise_ratio"] = "0"
+        filuna_machine.write_text(json.dumps(machine_cfg, indent=2) + "\n", encoding="utf-8")
+        rep["snapmaker_vendor_defaults"] = {"tool_change_temprature_wait": machine_cfg["tool_change_temprature_wait"],
+                                              "klipper_emit_minimum_cruise_ratio": "0",
+                                              "source": "FILUNA/fabricantes/snapmaker/vendor.yaml",
+                                              "official_preset_modified": False}
         single, four = a.out / "seed-core.3mf", a.out / "four-tools.3mf"
         build_minimal_core_3mf(single)
         build_four_from_core_3mf(single, four)
         # The updated build_four_from_core_3mf fixture already places cubes on OEM A's 2x2 grid.
-        run = run_filuna_arrange0(a.exe, prof["machine"], proc, prof["filament"],
+        run = run_filuna_arrange0(a.exe, filuna_machine, proc, prof["filament"],
                                   four, a.out, "filuna", timeout=600)
         rep["cli"] = run
         rep["arrange_mode"] = "--arrange 0"
