@@ -1,0 +1,87 @@
+{
+  "schema": "filuna.github-qa-attestation-evidence.v1",
+  "date": "2026-11-08",
+  "timezone": "Europe/Rome",
+  "source_repository": "abcollicelli-web/FilunaSlicer",
+  "source_sha": "c90f88c0d91e464cb668efcb8170279dc887c0bd",
+  "status": "QA_ONLY_NOT_RELEASED",
+  "release_authorized": false,
+  "build": {
+    "conclusion": "success",
+    "event": "workflow_dispatch",
+    "head_branch": "filuna/native-update-first-beta-20261108",
+    "head_sha": "c90f88c0d91e464cb668efcb8170279dc887c0bd",
+    "html_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42511597052",
+    "id": 42511597052,
+    "path": ".github/workflows/filuna-native-update-gui-build.yml",
+    "run_started_at": "2026-11-08T18:45:42Z",
+    "status": "completed",
+    "updated_at": "2026-11-08T19:57:16Z"
+  },
+  "native_qa": {
+    "run_id": 42507970589,
+    "url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42507970589",
+    "linux": "PASS",
+    "windows": "PASS"
+  },
+  "payload": {
+    "filename": "OrcaSlicer_Windows_V2.5.0-dev_x64_portable.zip",
+    "bytes": 212238636,
+    "sha256": "abc8b4823ff2ce459d9535262fb0e1bc2ead40b7fb8ab85a96c18473584922e7",
+    "github_artifact_id": 13631459660
+  },
+  "verification": {
+    "github_workflow": "PASS",
+    "independent_github_cli": "PASS",
+    "windows_native_payload_hash": "PASS",
+    "preserved_sigstore_bundle": "PASS",
+    "predicate_type": "https://slsa.dev/provenance/v1",
+    "certificate": {
+      "certificateIssuer": "CN=sigstore-intermediate,O=sigstore.dev",
+      "subjectAlternativeName": "https://github.com/abcollicelli-web/FilunaSlicer/.github/workflows/build_orca.yml@refs/heads/filuna/native-update-first-beta-20261108",
+      "issuer": "https://token.actions.githubusercontent.com",
+      "githubWorkflowTrigger": "workflow_dispatch",
+      "githubWorkflowSHA": "c90f88c0d91e464cb668efcb8170279dc887c0bd",
+      "githubWorkflowName": "Filuna native update GUI integration compile (no installer)",
+      "githubWorkflowRepository": "abcollicelli-web/FilunaSlicer",
+      "githubWorkflowRef": "refs/heads/filuna/native-update-first-beta-20261108",
+      "buildSignerURI": "https://github.com/abcollicelli-web/FilunaSlicer/.github/workflows/build_orca.yml@refs/heads/filuna/native-update-first-beta-20261108",
+      "buildSignerDigest": "c90f88c0d91e464cb668efcb8170279dc887c0bd",
+      "runnerEnvironment": "github-hosted",
+      "sourceRepositoryURI": "https://github.com/abcollicelli-web/FilunaSlicer",
+      "sourceRepositoryDigest": "c90f88c0d91e464cb668efcb8170279dc887c0bd",
+      "sourceRepositoryRef": "refs/heads/filuna/native-update-first-beta-20261108",
+      "sourceRepositoryIdentifier": "1447109374",
+      "sourceRepositoryOwnerURI": "https://github.com/abcollicelli-web",
+      "sourceRepositoryOwnerIdentifier": "257887225",
+      "buildConfigURI": "https://github.com/abcollicelli-web/FilunaSlicer/.github/workflows/filuna-native-update-gui-build.yml@refs/heads/filuna/native-update-first-beta-20261108",
+      "buildConfigDigest": "c90f88c0d91e464cb668efcb8170279dc887c0bd",
+      "buildTrigger": "workflow_dispatch",
+      "runInvocationURI": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42511597052/attempts/1",
+      "sourceRepositoryVisibilityAtSigning": "public"
+    }
+  },
+  "installer_steps": {
+    "Restore NSIS": "skipped",
+    "Install NSIS": "skipped",
+    "Save NSIS": "skipped",
+    "Create installer Win": "skipped",
+    "Upload artifacts Win installer": "skipped",
+    "Deploy Windows release installer": "skipped",
+    "Build MSIX Store package Win": "skipped",
+    "Upload artifacts Win MSIX": "skipped"
+  },
+  "windows_authenticode": "DEFERRED_BY_OWNER_NOT_PERFORMED_IN_THIS_STAGE",
+  "gui_runtime": "NOT_RUN_ON_OWNER_HOST_AUTOMATIC_ORCASLICER_PROTOCOL_REGISTRATION",
+  "native_update_close_reopen_rollback": "NOT_RUN",
+  "manifest_ecdsa_operational_trust": "NOT_CONFIGURED",
+  "server_activation": "NOT_PERFORMED",
+  "site_beta_download": "NOT_PUBLISHED",
+  "server_documentation": "PENDING_READ_ONLY_CONNECTION_FOR_NEW_SITE_DOCS",
+  "runtime_finding": {
+    "file": "src/slic3r/GUI/GUI_App.cpp",
+    "call_line": 3486,
+    "implementation_line": 10408,
+    "detail": "Editor startup registers orcaslicer:// in HKCU even with a custom --datadir; needs disposable Windows QA and namespace review before beta."
+  }
+}

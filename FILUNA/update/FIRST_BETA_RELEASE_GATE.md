@@ -1,6 +1,12 @@
 # Primeiro beta Filuna — gate de assinatura e distribuição
 
-**Status atual:** BLOQUEADO; pipeline de assinatura pronto como candidato de QA, não executado. Não publicar um pacote sem assinatura verificada, nem afirmar que a primeira versão está no site.
+**Status da beta:** BLOQUEADO. A atestação GitHub do portable de QA foi emitida e verificada na revisão `c90f88c0d91e464cb668efcb8170279dc887c0bd`; a assinatura Windows local segue adiada pelo proprietário. A integração operacional e os ensaios completos de atualização/recuperação continuam pendentes. Não afirmar que a primeira versão está no site.
+
+## Resultado real da etapa GitHub
+
+[Build 42511597052: PASS](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42511597052). Compilação completa Windows x64, portable sem NSIS/MSIX, atestação SLSA pelo próprio builder e verificação de identidade/revisão aprovados. Verificação independente pelo GitHub CLI e hash nativo BCrypt dos bytes reais também PASS. Pacote de 212238636 bytes, SHA-256 `abc8b4823ff2ce459d9535262fb0e1bc2ead40b7fb8ab85a96c18473584922e7`.
+
+O [registro completo](../qa/native-update-github-attestation-c90f88c0.md) distingue essas provas de compilação/procedência dos ensaios ainda ausentes. Não foi criado `first-beta-release-evidence.json` nem aprovação de proprietário por versão. O registro canônico na pasta nova do servidor ficou pendente porque a conexão atual só permite leitura em `/srv/filuna-new-site/docs`; o site antigo não foi usado como destino alternativo.
 
 ## Ordem de assinatura indicada pelo proprietário em 08/11/2026
 O build GUI Filuna usa `attest-windows-portable=true`: o próprio workflow que compila o executável gera a atestação de build GitHub para o ZIP portable exato e verifica a identidade do workflow reutilizável `build_orca.yml`. O ZIP original e a evidência ficam nos artefatos de QA; não há promoção no site. Os outros chamadores mantêm a opção desativada por padrão. Isso permite a etapa GitHub antes da assinatura Windows local, sem criar dependência de Azure ou certificado do computador do proprietário.

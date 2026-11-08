@@ -1,6 +1,12 @@
 # Filuna — atualizador nativo da primeira versão
 
-**Estado: PRIMEIRA FATIA C++17 + CI. Sem conexão HTTP ativa, helper, reinício ou instalador assinado. Não é um beta liberado.**
+**Estado: base C++17 + CI e atestação GitHub real do portable de QA. Sem conexão HTTP ativa, helper, reinício ou instalador assinado. Não é um beta liberado.**
+
+## Evidência real de compilação e procedência
+
+O [build Windows 42511597052](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42511597052) terminou com PASS na revisão `c90f88c0d91e464cb668efcb8170279dc887c0bd`, reutilizando as dependências e pulando NSIS/MSIX. O próprio builder emitiu atestação GitHub para o ZIP original; a verificação no workflow e a verificação independente exigiram o repositório, as revisões de origem/signatário, a branch e executor hospedado exatos. O SHA-256 também foi conferido pelo verificador C++/BCrypt no Windows, nos bytes reais do pacote. Os [testes nativos Linux/Windows 42507970589](https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42507970589) passaram no mesmo SHA.
+
+O [comprovante e os limites do ensaio](../qa/native-update-github-attestation-c90f88c0.md), o JSON de evidência e o bundle Sigstore estão preservados em `FILUNA/qa/`. O pacote é candidato de QA, sem aprovação de release; assinatura Windows local adiada pelo proprietário. A interface não foi executada no Windows habitual: o editor herdado registra `orcaslicer://` mesmo com `--datadir` separado, exigindo revisão e ensaio em Windows descartável antes da beta. Atualização, salvamento, fechamento, reabertura e rollback completos permanecem NOT RUN.
 
 O servidor novo em /srv/filuna-new-site já tem contratos de releases.v1 e release-lifecycle.v1, testados com 196 PASS somente em instalações temporárias. Ainda não há raiz de confiança operacional nem migrações 006/007 em produção, logo nenhum download beta deve ser anunciado como disponível.
 
