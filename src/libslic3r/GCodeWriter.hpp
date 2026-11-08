@@ -26,6 +26,8 @@ namespace Slic3r {
 class GCodeWriter {
 public:
     GCodeConfig config;
+    // Set from PrintConfig by apply_print_config; never affects other vendors.
+    bool m_snapmaker_u1_native_spiral = false;
     bool multiple_extruders;
 
     GCodeWriter() :
