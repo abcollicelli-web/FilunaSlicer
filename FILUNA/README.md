@@ -93,3 +93,8 @@ Preparação permanece sem painel direito de informações de arquivo; Orca é o
 ## Obrigação visual FLN-VISUAL-C-100 — 08/11/2026
 
 Antes de qualquer trabalho de UI, ler obrigatoriamente [REGRA-FIDELIDADE-VISUAL-C.md](design/visual-c/documentacao/REGRA-FIDELIDADE-VISUAL-C.md), contrato de montagem e ordem expressa de 14:16 Europe/Rome. Toda IA/pessoa deve reproduzir 100% identicamente o modelo aprovado; nenhuma mudança estética/estrutural/de recurso sem nova aprovação explícita do proprietário. Derivadas não são aprovadas automaticamente; lacuna ou conflito bloqueia o item. Evidência visual real e aceite humano são obrigatórios; conformidade da aplicação NOT RUN. Pausa funcional e gates preservados.
+
+
+## Continuidade web autorizada — 08/11/2026, 14:57 Europe/Rome
+
+Nova ordem expressa + **«esta liberado»** autorizam iniciar home/admin/serviços somente na área nova `/srv/filuna-new-site`, respeitando `docs/NEW-SITE.md`. Ler [contrato web](WEB-SERVICOS-ESCOPO-20261108.md), [mestre servidor](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md#web-servicos-20261108) e [pedido literal](approvals/WEB-SERVICOS-AUTORIZACAO-20261108.json). Não mexer no cofre/legado; não copiar código privado/segredo para este repositório. Home C é candidata para revisão, não aprovação individual automática. Esta autorização específica não retoma implementação geral Slicer, CI ou hardware nem promove gates. Contrato comercial conflitante com core AGPL/offline deve ser resolvido, não interpretado como bloqueio global do motor. Neste lote documental, implementação/testes/deploy web NOT RUN.

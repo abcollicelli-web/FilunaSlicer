@@ -181,3 +181,17 @@ Eventos **INFO** (impressora deliberadamente desligada) não acionam incidente P
 - **Conformidade:** avaliar CRA comercial, GDPR, retenção de vídeo e, quando aplicável, avaliações externas de segurança. **Esta documentação não é homologação legal**.
 
 **Regra final:** Filuna pode prestar suporte técnico lendo **erros e estados autorizados minimizados**; não terá controle remoto das impressoras dos clientes. A **impressão à distância do cliente** só existirá depois do **controle local aprovado + servidor, privacidade, segurança e hardware remoto 100% testados**, com opt-in, revogação, dossiê e aprovação por versão.
+
+
+<a id="web-servicos-20261108"></a>
+## 10. Mestre servidor/web — nova autorização de 08/11/2026, 14:57 Europe/Rome
+
+Este arquivo já é o mestre de servidor/dados; **é ampliado em continuidade, não substituído por árvore ou mestre paralelo**. O proprietário solicitou home pública C, admin e serviços novos e depois declarou **«esta liberado»**. Pedido completo e autorização literal: [registro de origem](approvals/WEB-SERVICOS-AUTORIZACAO-20261108.json). [Plano mestre Slicer](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md#web-servicos-20261108) e [contrato detalhado obrigatório](WEB-SERVICOS-ESCOPO-20261108.md) ficam cruzados.
+
+Desenvolver apenas em `/srv/filuna-new-site`, usando seu `docs/NEW-SITE.md` como mapa de stack, árvore, ownership e deploy reais. Cofre preservado; apenas seus dois guias permitidos podem ser lidos sem revelar segredos, sem restaurar, migrar ou buscar credenciais. Não presumir que DB/stack/topologia do legado são os do novo site. Não publicar código web privado nem dados/segredos no repositório público Slicer.
+
+A extensão compreende home descritiva candidata C, shell admin protegido, conta/usuário/planos/direitos, conteúdo original/versionado e receitas locais, perfis e deltas OEM sob demanda, estoque/configurações, downloads/update, backup/retomada, central/ajuda/chat. A §3 continua modelo lógico, não DB implantado. Servidor distribui direitos/manifests e dados; geração e fatiamento ficam no PC, não servidor. Admin não adquire nenhum controle de impressoras. API/schema/migrações versionados, RBAC/tenant isolation, idempotência, assinatura/hash/compatibilidade/replay, cache/renovação assíncrona, consentimento, rollback e restore verificável são obrigatórios. Nenhum novo preço, janela offline, dispositivo permitido ou provedor é escolhido por inferência.
+
+Contratos comerciais com core AGPL/offline devem ser reconciliados antes de ativar bloqueio: pedido de chave não autoriza esta IA a revogar silenciosamente fatiamento básico livre. Dados próprios não são apagados por suspensão. A nova autorização permite pesquisa, implementação e testes da fatia web isolada; não habilita `SRV-08..10`, não retoma implementação geral Slicer e não promove G2–G6. Ordem de aceitação, dependências reais e casos WEB-T01..10 constam no contrato. Atualização segura significa prevenção, teste/rollout e recuperação, não garantia metafísica de nunca falhar.
+
+**Checkpoint deste lote:** documentação registrada neste commit; acesso ao novo ambiente/NEW-SITE ainda não estabelecido neste contexto, stack/rotas/deploy não verificados. Implementação, schemas executáveis, migrações, testes funcionais e deploy NOT RUN. Atualizar a continuidade a cada marco com evidências reais, sem passar contrato por serviço ativo.

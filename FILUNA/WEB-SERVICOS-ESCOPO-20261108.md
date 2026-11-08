@@ -1,0 +1,103 @@
+# FILUNA — contrato de escopo da home, admin e serviços novos
+
+**ID:** FLN-WEB-20261108.1. **Autorização:** solicitação expressa + «esta liberado», 08/11/2026, 14:57 Europe/Rome (horário registrado na conversa do proprietário). [Texto literal e proveniência](approvals/WEB-SERVICOS-AUTORIZACAO-20261108.json). **Estado deste lote: documentação registrada neste commit; implementação, migração e deploy NOT RUN.** Este documento não afirma que a nova área já foi acessada.
+
+## 1. Fontes mestras e precedência
+
+[Plano mestre Slicer](PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md#web-servicos-20261108) e [mestre existente do servidor](ARQUITETURA-SERVIDOR-DADOS-REMOTO.md#web-servicos-20261108) permanecem os dois pontos normativos; este é contrato subordinado, não terceiro mestre concorrente. Reusar no servidor a estrutura efetiva definida por `/srv/filuna-new-site/docs/NEW-SITE.md`, após lê-lo. Não inventar segunda árvore, framework ou banco com base no legado. O guia NEW-SITE e os dois guias permitidos do cofre ainda não foram lidos neste lote, porque seus caminhos não existem no computador de trabalho disponível. Stack, serviços, isolamento do deploy, rotas e ownership técnico real **não verificados**.
+
+A nova autorização supera o bloqueio de iniciar **somente o novo workstream web**; não reabre implementação geral, CI, gates ou hardware do Slicer. Regras históricas de pausa continuam válidas no restante. Testes da fatia web implementada são necessários, mas não equivalem a G2–G6 do desktop. Sem promessa de software literalmente incapaz de falhar: prevenir, detectar, testar, fazer rollout controlado e recuperar.
+
+## 2. Área canônica e ownership
+
+| Área | Responsabilidade / limite |
+|---|---|
+| `/srv/filuna-new-site` | Única raiz autorizada para código e desenvolvimento web; ler guia e inventário antes de escolher caminhos. Reutilizar stack, lockfiles, estrutura e execução reais. |
+| `/srv/filuna-vault/VAULT.md` e `RESTORE.md` | Apenas leitura desses dois guias, se acessíveis; não copiar eventual segredo para documentos, código ou logs. |
+| `/srv/filuna-vault` e legado | Não restaurar, manipular, migrar, explorar recursivamente nem usar chaves, envs, DB ou modelos como origem. |
+| Repositório público Slicer | Só contratos/documentação públicos seguros; nenhum código web privado, segredo, topologia restrita ou dump. |
+| Proprietário | Aceita visual candidato, resolve políticas comerciais/AGPL conflitantes e aprova liberação quando exigido. |
+| Implementação web / segurança / dados | Responsáveis técnicos a identificar no NEW-SITE; conflito com trabalho ativo de outra pessoa impede sobrescrita. |
+| Desktop / DeviceBridge | Integração contratual coordenada em fase futura, sem mudança implícita por este trabalho web. |
+
+Não trocar domínio vivo, DNS, proxy, serviço, banco ou runtime legado por suposição. Publicação da home só após comprovar isolamento e o fluxo autorizado de deploy no NEW-SITE. Não processar cobrança, criar conta externa, contratar serviço ou enviar e-mail/chat por esta autorização genérica.
+
+## 3. Escopo funcional e mapa de dependências
+
+Os vínculos abaixo apontam aos IDs reais do [DAG existente](CRONOGRAMA-DEPENDENCIAS.json). Não modificam seus gates nem alegam predecessores PASS. Pesquisa, documentação e primeira fatia web isolada estão autorizadas; ativação integrada requer dependências e aceite.
+
+| ID deste escopo | Entrega / ownership | Dependências existentes | Estado neste lote |
+|---|---|---|---|
+| WEB-HOME-01 | Home pública descritiva do Filuna em C, candidata para revisão | BRAND-08, PORTAL-36 (integração), SRV-00 | NOT RUN |
+| WEB-ADMIN-01 | Shell admin autenticado, RBAC e auditoria; sem acesso público ao painel | SRV-01, SRV-02, LEGAL-02 | NOT RUN |
+| WEB-CONTENT-01 | Conteúdo, ferramentas, paramétricos, receitas e modelos originais versionados | PARAM-29, CATALOG-30, TRUST-11 | NOT RUN |
+| WEB-OEM-01 | Catálogo compatível de módulos/perfis/configurações por identidade/firmware/ABI | PROFILES-06, BRIDGE-14, TRUST-11 | NOT RUN |
+| WEB-RIGHTS-01 | Contas, planos, acesso e direitos assinados; consulta assíncrona | AUTH-12, SRV-02, LEGAL-02 | NOT RUN |
+| WEB-SYNC-01 | Estado, recentes, configurações, metadados, modelos e retomada em outro PC | DATA-05, SYNC-28, SRV-03 | NOT RUN |
+| WEB-STOCK-01 | Registro isolado de estoque, impressoras, perfis e configurações | STOCK-31, SRV-03 | NOT RUN |
+| WEB-RELEASE-01 | Versão, downloads, updates e rollback verificáveis | TRUST-11, SRV-01, QA-03 | NOT RUN |
+| WEB-SUPPORT-01 | Central do assinante, ajuda e chat com acesso/privacidade | SRV-02, LEGAL-02, SRV-04 | NOT RUN |
+| WEB-BACKUP-01 | Backup/restore com catálogo, isolamento e ensaio de restauração | SRV-03, DATA-05 | NOT RUN |
+
+O inventário deve manter por recurso: ID, dono, fonte, caminho canônico, rota/API, versão, consumidor, dependências, migração, teste, evidência, rollout e rollback. Caminho sem consumidor ou rota sem handler/documentação/teste é bloqueio, não “pronto”. Não criar diretórios vazios para parecer sistema completo. Acrescentar novos nós ao DAG quando o desenho real da implementação exigir, sem remover dependências ou mudar gates para fazê-los passar.
+
+## 4. Contratos de fronteira, sem servidor fatiador
+
+- Um Orca compartilhado pinado a `a620d804efbe74162c96ad29d755cdab2b823530`; deltas OEM legalmente reutilizáveis isolados, completos por capacidade e verificáveis. Não baixar fatiadores completos duplicados. Rede e fatiamento são módulos distintos no contrato OEM.
+- Descoberta, identificação, pareamento e online são fatos separados. Cliente identifica modelo/firmware/capacidades localmente; resolver conjunto mínimo compatível por manifesto versionado, dependências/heranças, ABI, origem, licença, hashes e assinatura. Não anunciar compatibilidade só porque existe JSON.
+- Servidor armazena catálogo/base/receita/modelo original e distribui conteúdo autorizado; **geração geométrica, preparação, download no cliente e fatiamento executam no PC**. Não transformar web em cálculo de geração ou motor obrigatório.
+- Admin/servidor gerem registros, direitos, conteúdo e observabilidade sanitizada consentida. **Nunca** recebem sessão LAN/câmera, códigos OEM ou ações de aquecer/imprimir/pausar/cancelar das impressoras dos clientes. Estoque e registro não concedem controle físico.
+- Envio ≠ ACK ≠ início. Fila/agenda não iniciam impressão. Controle local requer titular, sessão, capacidade e confirmação. Remoto futuro permanece OFF e sujeito a gates próprios.
+- G-code imutável e U1 preservados: risco OEM pode requerer aceite explícito por SHA/operador; `ENGINE_DIVERGENCE` não admite override nem licença paga como bypass.
+- Catálogo Filuna print-only na experiência Filuna não apaga direitos sobre arquivos próprios/exportáveis nem promete DRM impossível de extrair.
+
+## 5. Direitos e consulta rápida sem congelar UI
+
+Entitlement/manifesto deve ser assinado pelo serviço apropriado e verificável localmente: versão do esquema/política, emissor e audiência, sujeito/instalação autorizada, escopos/conteúdo, validade, versão/época de revogação e proteção a replay, identificador de chave pública e algoritmo **a selecionar no projeto real**. Nenhum segredo permanente em desktop, JS, manifesto ou repositório. Tokens de sessão não são chaves de assinatura; a origem da assinatura fica em serviço restrito, não no cliente.
+
+Renovar assincronamente, com cache local verificável e estado explícito: válido, indisponível, expirado, revogado, incompatível. Validação incorreta não concede serviço pago. Não bloquear a thread de UI com rede; preservar trabalho não salvo e sessão segura em andamento. Timeout, política de cache/offline, revogação, relógio/replay, reconexão e orçamento de latência são contratos mensuráveis **pendentes de decisão/ensaio**, não números inventados.
+
+**Conflito a resolver antes de implementar autorização comercial:** plano mestre §1, §13 e regra de qualidade preservam Orca livre/offline e fatiamento sem login/assinatura; o novo pedido menciona chave para fatiamento/criação/preparação ao mesmo tempo que restringe “serviços pagos”. Não interpretar como revogação silenciosa do core AGPL. **Questão precisa:** a chave limita somente conteúdo/módulos/serviços premium legalmente separáveis, mantendo fatiamento/preparação básicos com arquivos próprios e perfil válido livres/offline, conforme contrato vigente? Até resolução, bloquear apenas a política conflitante; home candidata, inventário, contratos e API independente podem avançar. Não implementar bloqueio comercial global do motor básico.
+
+Pendências comerciais adicionais: planos/preços, provedor de pagamento, número de dispositivos, janela offline, tolerância de inadimplência, quotas/retenção e regras de mudanças de plano. Não preencher defaults comerciais por conta da IA. Suspensão restringe serviços pagos conforme política aprovada, não apaga dados próprios.
+
+## 6. Dados, conta e restauração real
+
+Reutilizar modelo lógico do mestre servidor: contas/identidades/sessões, tenants/memberships, instalações, registro de impressoras/capacidades, estoque/ledger, projetos/objetos, sync/outbox/cursors, consentimentos, auditoria e catálogo de backup. Não anunciar tabelas ou migrações executadas sem código e evidência.
+
+Estado de última tela/recentes/configurações é parte da retomada, **não substituto do backup de trabalhos/metadados/modelos autorizados**. Objetos 3D grandes ficam em storage privado com hash/versão, metadados e referências no DB; não inflar banco com binários por conveniência. Upload depende de consentimento/minimização e política de licença; não extrair modelos do cofre.
+
+Tenant vem da identidade autorizada no servidor, nunca de parâmetro confiado cegamente. Verificar RBAC/ABAC por entidade/objeto, separação de usuários A/B, logs e acessos admin. Outbox persistente, IDs idempotentes, sequência/cursor e CAS/revision detectam conflitos entre PCs; nenhum last-write-wins silencioso para estoque ou modelos. “Salvo na nuvem” só após ACK durável. Restore deve reconstituir dados reais e verificar hashes num ambiente isolado, incluindo reinstalação, máquina nova, upload parcial, disco cheio, corrupção e suspensão. RPO/RTO e retenção exigem medição/decisão, não promessa absoluta. Dados próprios e export permanecem independentes do pagamento, respeitando exclusão legal consentida.
+
+## 7. API, schemas, atualização e migrações
+
+O contrato existente exige HTTPS/API versionada (`/v1` como padrão arquitetural, não declaração de endpoint ativo), OIDC/PKCE, DB privado e erros estruturados. A rota exata, stack e schema físico devem ser obtidos do NEW-SITE; **nenhuma nova rota de produção foi inventada ou publicada neste lote**.
+
+Antes de implementar a fatia: registrar operações com autenticação, escopo, payload mínimo, validação, limite de tamanho, erro real, idempotência, compatibilidade e teste. Domínios necessários: sessão/direitos, catálogo e resolução de perfis/módulos, metadados de downloads/releases, sync de estado/objetos e admin. Não criar endpoint de impressão nem de acesso LAN/câmera para admin. Autenticação indisponível deve negar acesso explicitamente; não usar dashboard mock ou token de demonstração em produção.
+
+Schemas/API/manifests com versão e compatibilidade retroativa; extensões opcionais sem quebrar cliente antigo. Pacote desconhecido/incompatível não ativa código. Manifesto associa artefatos a hash, assinatura, plataforma, ABI, dependências, origem/licença, canal e versão anterior íntegra. Instalação staging/atômica, last-known-good, retomada após queda, rollback e consentimento/reinício seguro quando aplicável. Não atualizar motor OEM, runtime ou firmware por interpretação de JSON.
+
+Migrações versionadas e não destrutivas: expandir primeiro, validar compatibilidade com consumidores antigo/novo, backfill idempotente mensurado e auditável, só contrair depois de aprovação, backup e restore testados. Nenhuma migração do legado/cofre autorizada aqui. Rollout gradual/canário e observação sem dados sensíveis; regressão bloqueia promoção e conserva versão anterior. Nova função requer mapa de dependências/rotas e teste de links, consumidor e rollback; eliminar caminhos mortos por revisão controlada, não apagar trabalho alheio automaticamente.
+
+## 8. Direção C e revisão da home nova
+
+[Regra vinculante visual](design/visual-c/documentacao/REGRA-FIDELIDADE-VISUAL-C.md), [montagem/recursos](design/visual-c/documentacao/CONTRATO-MONTAGEM-VISUAL-C.md) e baseline `720291b8263e0898f7d6723bc904112ba2c6b3eb` continuam intactos. Porcelana `#F8F7F3`, grafite `#1B2024`, rosa `#A82F57`, seleção `#F2E1E7`, texto `#252A2E`, secundário `#646B72`, laranja `#E88759`, estado `#26735D`; Inter 400/500/600 com OFL e logo original, sem redesenho. Composição elegante orientada a conteúdo/3D, não dashboard genérico de caixas idênticas.
+
+A autorização atual permite **preparar home web candidata no padrão C para revisão**, não declara aprovadas suas medidas/responsividade/interações nem as 206 linhas derivadas. Não exigir que a home pública replique abas técnicas do desktop. Quando mostrar a ferramenta, apresentar as imagens como estudos identificados, nunca como screenshot de aplicativo homologado ou UI funcional. Preparação continua sem painel direito nº4, viewport amplo e toolbar de ícone único, se representada. Só as duas âncoras têm aceite anterior; nova aprovação visual explícita fixa a referência web antes de alegar reprodução 100%/conformidade. Nenhuma arte existente é substituída por este contrato.
+
+## 9. Aceitação da primeira fatia — todos NOT RUN neste lote
+
+| Caso | Evidência obrigatória antes de afirmar pronto |
+|---|---|
+| WEB-T01 | Leitura NEW-SITE, estrutura/stack/serviços reais e prova de isolamento do ambiente novo; sem intervenção legado/cofre. |
+| WEB-T02 | Home candidata renderizada, logo/fonte/tokens corretos, desktop/mobile/teclado/foco/reduced-motion; links sem rota morta, sem métricas/integrações fictícias; revisão do proprietário. |
+| WEB-T03 | Admin anônimo negado pelo servidor, sessão inválida/expirada negada, role insuficiente negada, CSRF quando aplicável; shell não exposto só por URL escondida. |
+| WEB-T04 | API/schema versionados válidos; payload inválido, erro indisponível e rota desconhecida sem falso sucesso; links/rotas coerentes. |
+| WEB-T05 | Tenant A/B e RBAC por entidade/objeto/auditoria; nenhuma permissão admin de LAN/câmera/comando. |
+| WEB-T06 | Manifesto/hash/assinatura/replay/ABI inválidos bloqueados; renovação assíncrona sem travar UI, política offline decidida e testes comerciais/core livre separados. |
+| WEB-T07 | Migração limpa e repetida/backfill idempotente, compatibilidade antigo/novo, queda/rollback e restauração com hashes; nenhum dado legado usado. |
+| WEB-T08 | Conflito entre PCs, retries/ACK, retomada de projeto/estado real e backup em instalação nova sem vazamento entre contas. |
+| WEB-T09 | Install atômico interrompido, artefato corrompido, last-known-good/rollback; sem reinício em impressão nem download de slicer duplicado. |
+| WEB-T10 | Smoke isolado e testes efetivamente implementados com versão, comandos, resultados brutos, logs sanitizados, limitações e checklist de deploy revisado. |
+
+Não considerar contrato/teste de texto como execução dessas verificações. Uma fatia parcial deve informar exatamente o que funciona e o que está bloqueado, sem painel fake, billing improvisado ou declaração de sistema inteiro pronto. Homologação desktop/física, beta e release continuam sujeitos aos gates anteriores e não foram realizados.
