@@ -127,6 +127,33 @@ def main() -> int:
         build_four_from_core_3mf(single, four)
         run = run_cli(a.exe.resolve(), prof["machine"], proc, prof["filament"], four, a.out, "filuna", timeout=600)
         rep["cli"] = run
+        # Diagnostic only: re-slice the identical 3MF with explicit --arrange 0.
+        # Never rewrite OEM or Filuna G-code; preserve both outputs separately.
+        import subprocess
+        diag_dir = a.out / "filuna-arrange0"
+        diag_dir.mkdir(exist_ok=True)
+        cmd = [str(a.exe), "--debug", "3", "--arrange", "0", "--slice", "0",
+               "--load-settings", str(prof["machine"]) + ";" + str(proc),
+               "--load-filaments", ";".join([str(prof["filament"])] * 4),
+               "--outputdir", str(diag_dir), str(four)]
+        with (a.out / "filuna-arrange0.log").open("w", encoding="utf-8") as fp:
+            fp.write("COMMAND_JSON=" + json.dumps(cmd) + "\\n")
+            fp.flush()
+            try:
+                diag_code = subprocess.run(cmd, cwd=a.exe.parent, stdout=fp,
+                                           stderr=subprocess.STDOUT, timeout=600).returncode
+            except subprocess.TimeoutExpired:
+                diag_code = 124
+        diag_gcodes = sorted(diag_dir.rglob("*.gcode"))
+        diag = {"exit_code": diag_code, "gcode_count": len(diag_gcodes)}
+        if diag_code == 0 and len(diag_gcodes) == 1:
+            diag_data = diag_gcodes[0].read_bytes()
+            diag["exclude_object_define"] = [
+                line.decode(errors="replace") for line in diag_data.splitlines()
+                if line.startswith(b"EXCLUDE_OBJECT_DEFINE ")]
+            diag["vs_oem_A"] = compare(functional_lines(diag_data),
+                                        functional_lines(a.oem_a.read_bytes()))
+        rep["arrange0_diagnostic"] = diag
         if run["exit_code"] != 0 or len(run["gcodes"]) != 1:
             rep["status"] = "FAIL_FILUNA_CLI_NO_GCODE"
             return 1
