@@ -1,0 +1,138 @@
+{
+  "status": "PROPOSED_NOT_RUN",
+  "scope": "private canonical backend, no activation",
+  "cases": [
+    {
+      "id": "REL01",
+      "requirement": "unconfigured trust/auth denies catalogue/bytes/admin",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL02",
+      "requirement": "visitor/common/client beta flag denied",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL03",
+      "requirement": "valid trusted beta can read only authorized channel",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL04",
+      "requirement": "admin requires server RBAC and MFA; BFF without MFA denied",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL05",
+      "requirement": "cross-account/tenant and forged roles denied",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL06",
+      "requirement": "cookie mutation CSRF/sameorigin; Bearer ambiguity denied",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL07",
+      "requirement": "immutable metadata, duplicate ID/version/idempotence/CAS conflicts",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL08",
+      "requirement": "ECDSA invalid/wrongroot/algorithm/keyid/revoked/expired proof denied",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL09",
+      "requirement": "GitHub provenance alone cannot satisfy manifest or Windows code signing",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL10",
+      "requirement": "GitHub workflow/repo/commit/digest identity mismatch denied",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL11",
+      "requirement": "hash bytes differs signed descriptor: no bytes/ACK",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL12",
+      "requirement": "declared size differs actual; bounded large stream and abort",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL13",
+      "requirement": "traversal/symlink/FD replacement/hostile names denied",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL14",
+      "requirement": "compat min/max/dependencies/class/notes/installer rationale missing denied",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL15",
+      "requirement": "replay/downgrade rejected except separate signed authorized rollback",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL16",
+      "requirement": "five versions across multiartifact/channel, all documentary history preserved",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL17",
+      "requirement": "active/rollback pin blocks pruning; concurrent download completes safely",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL18",
+      "requirement": "pruning cannot address user backup/storage roots; no real deletion",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL19",
+      "requirement": "crash after fsync/beforecommit/aftercommit/unlink recovery consistency",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL20",
+      "requirement": "aditive next migration backup/integrity/idempotence/rollback without reapplying005",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL21",
+      "requirement": "baseline148 reexecuted; home/static/frontend bytes unchanged by backend",
+      "result": "NOT_RUN",
+      "evidence": null
+    },
+    {
+      "id": "REL22",
+      "requirement": "native Windows confirmation/save/helper/reopen/rollback actual integration proof separate",
+      "result": "NOT_RUN",
+      "evidence": null
+    }
+  ]
+}

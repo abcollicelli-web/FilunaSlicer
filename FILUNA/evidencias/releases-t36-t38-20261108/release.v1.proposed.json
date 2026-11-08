@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "status": "PROPOSED_NOT_IMPLEMENTED",
+  "owner_order_refs": [
+    "t36 summary delegated",
+    "t37 summary delegated",
+    "t38 literal"
+  ],
+  "t38_literal": "a assinatira da priimeira versao sera feita pelo github conforme regras",
+  "artifact_versions_retained_max": 5,
+  "retention_unit": "version_not_file",
+  "history": "immutable_all_versions_and_corrections",
+  "channel_first": "beta_admin_only_legitimate_server_authorization",
+  "trust": {
+    "release_manifest": "ECDSA; curve/hash/envelope/root UNRESOLVED",
+    "provenance": "GitHub attestation separately verified",
+    "windows": "real code signature and Filuna identity independently required",
+    "entitlement": "Ed25519 separate, never release trust by inference"
+  },
+  "operational_releases_created": 0,
+  "test_results_this_slice": "NOT_RUN",
+  "server_current_state": "NOT_REVERIFIED_SSH_UNRESPONSIVE"
+}

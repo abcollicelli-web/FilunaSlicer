@@ -1,5 +1,12 @@
 # Filuna Slicer — continuidade (fork)
 
+## Prioridade vigente — ordens t36–t38 de 08/11/2026
+
+O proprietário autoriza iniciar AGORA a integração nativa de atualizações Slicer/servidor e o fluxo de assinatura pelo GitHub conforme regras. Primeira distribuição só beta/admin; até CINCO versões de instaladores, preservando o histórico documental; compilar somente quando necessário. A retomada geral/homologação fica condicionada à integração comprovada. Esta ordem atualiza a pausa histórica somente nesse escopo; não promove gates nem aprova telas derivadas.
+
+**Estado neste checkpoint: especificação proposta, código e testes novos NOT RUN, nenhum instalador beta integrado publicado.** A sessão SSH antiga deixou de responder; uma conexão normal nova alcança o mesmo servidor, mas requer autenticação. Nenhuma chave/configuração foi alterada. Ler [pedido literal e limites](FILUNA/approvals/ATUALIZACAO-NATIVA-BETA-T36-T38-20261108.json) e [contrato pré-código](FILUNA/WEB-FASE-05-RELEASE-CONTRATO-20261108.md) antes de continuar.
+
+
 Este repositório é o **FilunaSlicer** (fork AGPL do OrcaSlicer). Antes de qualquer trabalho Filuna:
 
 1. Leia `FILUNA/REGISTRO-CONTINUIDADE-ETAPAS.md` (estado: **G0 PASS DOCUMENTAL**; próximo = **Onda 01 Fundação** / `FILUNA/FUND-SPEC-ONDA01-2026-11-05.md` — **não** Identity/Home/tokens)

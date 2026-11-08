@@ -1,0 +1,38 @@
+{
+  "status": "OWNER_REQUIREMENTS_RECORDED_IMPLEMENTATION_AND_TESTS_NOT_RUN",
+  "date_local": "2026-11-08 Europe/Rome",
+  "baseline_commit": "a8d8d4b43b921b835fac01f347afc0e09133ecd5",
+  "literal_owner_messages": {
+    "t36u": "vamos assinar uma versao do filuna conforme regras documentadas, criar uma ligacao do filuna com o servidor  para que meu ciente receba atualizacao automaticas diretamente com fechamento e abertura automatica a atualiçao tem que nascer nativa dessa maneira desde a primeira versao e nunca ser abandonada, cada versao e correcao fica no servidor listada e documentada, e apresentada no filuna um resumo do que esta sendo aplicado, o modelo padrao e como sera feito o filuna esta em documento tecnico ate mesmo com imagens \nprecisa ser interligado desde o começo filuna slicer e servidor apos isso começaremos a retomar a homologacao e criaçao de todas as etapas do filuuna slicer ate obter certificado e homologacao em todos os itens",
+    "t37u": "e ja colocar a 1 versao para download apenas para beta e administrativo no site e cada versao deve ir para o site com limite de 5 versoes removendo as anteriores, update de novos instaladores e compilaçao serao criadas somente se houver necessidade de compilar uma versao nova",
+    "t38u": "a assinatira da priimeira versao sera feita pelo github conforme regras"
+  },
+  "requirements": [
+    "native Slicer/server updates from the first distribution and for every future version",
+    "sign first version through GitHub according to the documented rules; provenance is not automatically Windows code signing or an ECDSA manifest",
+    "show cumulative release notes in the app; preserve confirmation, unsaved work and safe automatic close/reopen",
+    "first download restricted to legitimately authorized beta/admin users, never a hidden public link",
+    "keep no more than five logical installer versions, not five files or five per channel",
+    "preserve documentary history, notes, hashes and audit records even after old installer bytes are pruned",
+    "compile and generate another installer only if a real version change requires it",
+    "resume general implementation/homologation only after native integration is proven; no automatic gate promotion"
+  ],
+  "checkpoint": {
+    "implemented": false,
+    "new_tests_executed": false,
+    "new_build_dispatched": false,
+    "first_integrated_beta_published": false,
+    "remote_database_state": "NOT_REVERIFIED; baseline148 is historical phase04 evidence",
+    "ssh": "old authenticated multiplexed session has an unresponsive transport; a fresh strict-known-host normal connection reaches the same server and requires authentication; no SSH keys/configuration changed",
+    "source_review": "current workflow says unsigned; inspected preset/component updater files do not prove an EXE/helper/save/reopen flow; old installer SHA differs from inspected source",
+    "trust": "no equivalence inferred among GitHub attestation, ECDSA release manifests, identity/entitlement JWS and Windows code signing"
+  },
+  "gates": {
+    "G2": "BLOCKED",
+    "G3": "BLOCKED",
+    "G4": "NOT_RUN",
+    "G5": "BLOCKED",
+    "G6": "BLOCKED"
+  },
+  "next_action": "restore legitimate SSH authentication, read current server masters, implement the private deny-by-default release slice and client integration, then run required real tests before any beta publication"
+}
