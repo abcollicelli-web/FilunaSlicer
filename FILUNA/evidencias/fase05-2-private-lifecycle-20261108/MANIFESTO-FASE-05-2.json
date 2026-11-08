@@ -1,0 +1,101 @@
+{
+  "base_public": "843a1277b6d2f2e83b122abdf4c6d7be7a37be7f",
+  "root": "/srv/filuna-new-site",
+  "tests": "196PASS=173+23; zero FAIL",
+  "schema_operational": "1..5 only;006/007TEMP",
+  "activation": false,
+  "files": {
+    "service/release_lifecycle.py": {
+      "sha256": "5cf7b25bf2e183c6c3580dd8d723fb0f8a5ea8091bd29c61e4483956c6c9d4d2",
+      "size": 27984
+    },
+    "service/releases.py": {
+      "sha256": "ce5ece14a881457b912b50cbd3ea79717733eaa33427f27d43ff0cae1b57e94d",
+      "size": 20791
+    },
+    "tests/test_release_lifecycle.py": {
+      "sha256": "0e0709794217f607ebfd9295faf7a2286e06fb47b76ca8828f23c3dc50ab0eeb",
+      "size": 24112
+    },
+    "tests/test_releases.py": {
+      "sha256": "8de874d47d594bf2519acc82009e7e3a0e4fdd0b60b6fef526cd42f02187ad91",
+      "size": 21655
+    },
+    "migrations/007_release_lifecycle.sql": {
+      "sha256": "699545d7fb384333d775cb718dd9636b8f1eebb0314d4dfc221a4aa8edec211b",
+      "size": 3189
+    },
+    "contracts/release-lifecycle.v1.json": {
+      "sha256": "df33d8c775a736765687494a37546f4bdd0cdc5b498810f2cfe3c21481961ace",
+      "size": 3612
+    },
+    "contracts/releases.v1.json": {
+      "sha256": "990f8ef7756719f06403a9b54108c941385eb1eb57a991644947ee252c68afa2",
+      "size": 6796
+    },
+    "contracts/index.json": {
+      "sha256": "896c655849e18d2749334852ce6840478f6598f9ae1a962fe9d0c45ace05c6ea",
+      "size": 3344
+    },
+    "docs/PLANO-MESTRE-SERVIDOR-WEB.md": {
+      "sha256": "ea5ebac37f1de27a79f617db0443e053170867d8d56c764ed8de1c3341ba6dc0",
+      "size": 49109
+    },
+    "docs/CONTINUIDADE.md": {
+      "sha256": "fd9be26b1887b6656b327625c669eba7112f2c19fc0468c1cbb5156176497af4",
+      "size": 40437
+    },
+    "docs/RELEASE-SPEC-FASE05.md": {
+      "sha256": "5f1e77b2c36628bdb772c125363e2dca1059c8043adf2d17862818632642cf4e",
+      "size": 27092
+    },
+    "docs/NEW-SITE.md": {
+      "sha256": "e89e300e7e0cc0bfdf04be911de496d48c0ef064ac57b0c7dd086dde66882f12",
+      "size": 10027
+    },
+    "docs/MIGRACOES.md": {
+      "sha256": "c3089ed10855be3e85371e167cb505c213ec18419cde9b158c57664894486e5c",
+      "size": 3616
+    },
+    "docs/evidencias/MATRIZ-FASE-05-2.json": {
+      "sha256": "c589e2d6296f4b734cf5390a0f1c8a48844492a3f4d1dddc8c9dfacc1cb49f4a",
+      "size": 4632
+    },
+    "docs/evidencias/RESULTADOS-FASE-05-2.json": {
+      "sha256": "bb3d0e192bf506e2bc9e0d07c4d2741d7e20594a974ccdf543f80933a04472d3",
+      "size": 1610
+    },
+    "docs/evidencias/fase05-2-baseline-tests.txt": {
+      "sha256": "2b707226df40e5f39247ce3799964a599cb9b9d9419ad0fb12c0ae8a3e44d52d",
+      "size": 25937
+    },
+    "docs/evidencias/fase05-2-before.json": {
+      "sha256": "f818bbf58d8d523ac5321ffcd1b2928615d72482ba3b18d569a6f688c026e828",
+      "size": 6979
+    },
+    "docs/evidencias/fase05-2-pip-check.txt": {
+      "sha256": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09",
+      "size": 30
+    },
+    "docs/evidencias/fase05-2-real-crashes.json": {
+      "sha256": "c871338338ed13e7179fb992cd46ebe58aa34a18a099cdbe7949e5ab8051cfde",
+      "size": 1957
+    },
+    "docs/evidencias/fase05-2-tests-first.txt": {
+      "sha256": "6d939dbd819663909b9cb054a80a919934148b782b453b835198c534b74a7251",
+      "size": 25937
+    },
+    "docs/evidencias/fase05-2-tests-second.txt": {
+      "sha256": "29214fb1fe07cc8b2fcbfb82dfd69bb04b2cc715f094791c40c49f56e3f87429",
+      "size": 29063
+    },
+    "docs/evidencias/fase05-2-tests-third.txt": {
+      "sha256": "f8ce6d88c2abee9ae788c27026e084783ec8ae317fff3f2c13dda3c25b5c3493",
+      "size": 29731
+    },
+    "docs/evidencias/fase05-2-tests.txt": {
+      "sha256": "0ca5ad69ca49998540785b99403cd49032a7833306565daa4363013ed1af47ef",
+      "size": 29928
+    }
+  }
+}

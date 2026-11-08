@@ -1,0 +1,78 @@
+{
+  "TEMP_ONLY": true,
+  "cases": [
+    {
+      "point": "after_intent_commit",
+      "child_exit": 91,
+      "max_physical_observed_before_recovery": 5,
+      "after_recovery": 5,
+      "result": "aborted",
+      "head": "r5",
+      "idempotent_second": "aborted"
+    },
+    {
+      "point": "after_retire_rename",
+      "child_exit": 91,
+      "max_physical_observed_before_recovery": 5,
+      "after_recovery": 5,
+      "result": "aborted",
+      "head": "r5",
+      "idempotent_second": "aborted"
+    },
+    {
+      "point": "after_retire_unlink",
+      "child_exit": 91,
+      "max_physical_observed_before_recovery": 5,
+      "after_recovery": 4,
+      "result": "aborted",
+      "head": "r5",
+      "idempotent_second": "aborted"
+    },
+    {
+      "point": "after_prune_commit",
+      "child_exit": 91,
+      "max_physical_observed_before_recovery": 4,
+      "after_recovery": 4,
+      "result": "aborted",
+      "head": "r5",
+      "idempotent_second": "aborted"
+    },
+    {
+      "point": "during_stage_write",
+      "child_exit": 91,
+      "max_physical_observed_before_recovery": 5,
+      "after_recovery": 4,
+      "result": "aborted",
+      "head": "r5",
+      "idempotent_second": "aborted"
+    },
+    {
+      "point": "after_stage_commit",
+      "child_exit": 91,
+      "max_physical_observed_before_recovery": 5,
+      "after_recovery": 4,
+      "result": "aborted",
+      "head": "r5",
+      "idempotent_second": "aborted"
+    },
+    {
+      "point": "after_candidate_rename",
+      "child_exit": 91,
+      "max_physical_observed_before_recovery": 5,
+      "after_recovery": 4,
+      "result": "aborted",
+      "head": "r5",
+      "idempotent_second": "aborted"
+    },
+    {
+      "point": "after_publish_commit",
+      "child_exit": 91,
+      "max_physical_observed_before_recovery": 5,
+      "after_recovery": 5,
+      "result": "committed",
+      "head": "r6",
+      "idempotent_second": "done"
+    }
+  ],
+  "power_loss_test": false
+}

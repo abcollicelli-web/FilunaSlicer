@@ -1,0 +1,144 @@
+{
+  "suite": "196PASS,0FAIL;173baseline+23new",
+  "runtime_seconds": 18.892,
+  "baseline_separate_seconds": 14.323,
+  "cases": [
+    {
+      "test": "test_01_default_deny_missing_auth_trust_non_mfa_forged_role",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_02_sixth_prunes_one_version_twelve_artifacts_history_preserved",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_03_global_cap_across_channels_and_all_pins_deny_before_deletion",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_04_stale_plan_new_reader_or_pin_denies_mutation",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_05_new_pin_and_reader_cannot_race_retirement",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_06_concurrent_publishers_fail_closed_lock_then_retry_plan",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_07_real_http_reader_lease_protects_version_then_pruned_bytes_denied",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_08_downgrade_replay_and_history_are_not_republished",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_09_bad_source_first_pass_preserves_all_five_second_pass_may_leave_four",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_10_root_marker_path_symlink_hardlink_and_foreign_namespace_denied",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_11_symlink_or_hardlink_victim_never_touches_customer_target",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_12_client_text_never_becomes_server_pruning_intent",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_13_intent_and_audit_immutable_unjournaled_entries_fail_closed",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_14_revoked_admin_no_publish_ack_and_recovery_requires_fresh_admin",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_15_real_subprocess_crash_abort_all_boundaries",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_16_resume_complete_staged_and_renamed_candidate_after_crash",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_17_sql_fsync_unlink_faults_no_false_success_then_abort",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_18_schema007_isolated_idempotent_and_operational_not_needed",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_19_real_fsync_failure_recovered_without_false_ack",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_20_actual_sql_publish_abort_rolls_back_heads_then_resume",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_21_subdirectory_symlink_toctou_never_writes_customer_data",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_22_same_instance_threads_and_replaced_lock_fail_closed",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    },
+    {
+      "test": "test_23_internal_delete_helpers_still_require_current_sealed_server_intent",
+      "result": "PASS",
+      "scope": "isolated TEMP only"
+    }
+  ],
+  "NOTRUN": [
+    "Windows native updater/save/consent/helper/close/reopen/rollback",
+    "real GitHub attestation/Authenticode/FilunaQA validation",
+    "operational ECDSA envelope/curve/root",
+    "real installer import/publication/deletion",
+    "physical powerloss",
+    "production DB/DR/scaling",
+    "operational006007/root/config/restart"
+  ],
+  "fault_results": [
+    "10actual subprocess os._exit(91),8abort/finalize+2resume",
+    "real fsync fault afterrename",
+    "real unlink failure midretirement",
+    "real SQL trigger abort onCOMMITTED then resume",
+    "secondpass changedsource fails afterprune,4versions allowed not false rollback",
+    "two independent instances and same-instance threads serialized, stale plan fails"
+  ],
+  "NOT_SIMULATED_AS_REAL": [
+    "ECDSA signature verification is real ephemeral TEST; remaining proof adapters memory fixture only",
+    "process termination is not physical powerloss"
+  ],
+  "operational_mutation_cycles": 0
+}

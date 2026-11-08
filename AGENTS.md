@@ -1,5 +1,10 @@
 # Filuna Slicer — continuidade (fork)
 
+## Estado atual — Fase05.2 ensaiada somente em temporários
+
+08/11/2026 Europe/Rome: retenção/promoção/recuperação privadas implementadas e ensaiadas com 196 testes PASS (173 anteriores reexecutados + 23 novos), incluindo dez interrupções reais de subprocesso. Cinco versões físicas globais, contando staging/trash; histórico integral e versões protegidas preservados. Pode restar quatro após falha posterior à poda: não prometer atomicidade entre filesystem e SQLite. Nenhuma publicação, importação ou exclusão real de instalador; migrações006/007 apenasTEMP, serviço sem restart e configuração operacional ausente. Assinatura real e atualização nativa Windows continuam pendentes. [Evidências atuais](FILUNA/WEB-FASE-05-2-LIFECYCLE-EVIDENCIAS-20261108.md). Estados anteriores abaixo são históricos; nenhum gate foi promovido.
+
+
 ## Estado atual — backend Fase05.1 testado, não ativado
 
 08/11/2026 Europe/Rome: SSH recuperado pelo proprietário; catálogo privado e streaming implementados somente em `/srv/filuna-new-site`, com 173 testes PASS (148 anteriores reexecutados + 25 novos). Migração006 aplicada apenas em bancos temporários; processo operacional não reiniciado, rotas novas não carregadas e configuração de confiança operacional ausente. Retenção de cinco versões tem somente planejador; nenhuma exclusão ou publicação real. Assinatura GitHub/Windows, integração nativa do cliente e primeiro download beta continuam pendentes. Checkpoints anteriores de SSH bloqueado/proposta pura são históricos. [Evidências e limitações](FILUNA/WEB-FASE-05-IMPLEMENTACAO-EVIDENCIAS-20261108.md). Não promover gates nem retomar homologação geral.

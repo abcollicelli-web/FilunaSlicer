@@ -1,0 +1,72 @@
+{
+  "ledger": [
+    [
+      1
+    ],
+    [
+      2
+    ],
+    [
+      3
+    ],
+    [
+      4
+    ],
+    [
+      5
+    ]
+  ],
+  "integrity": "ok",
+  "foreign_keys": [],
+  "counts": {
+    "schema_migrations": 5,
+    "tenants": 0,
+    "catalog_items": 0,
+    "user_state": 0,
+    "mutation_receipts": 0,
+    "accounts": 0,
+    "identities": 0,
+    "tenant_memberships": 0,
+    "platform_roles": 0,
+    "revoked_signing_keys": 0,
+    "revoked_tokens": 0,
+    "entitlement_epochs": 0,
+    "licensed_resources": 0,
+    "content_publications": 0,
+    "account_state": 0,
+    "client_backups": 0,
+    "downloadable_releases": 0,
+    "account_downloads": 0,
+    "file_heads": 0,
+    "file_versions": 0,
+    "file_mutation_receipts": 0,
+    "content_artifact_bindings": 0,
+    "local_credentials": 0,
+    "account_emails": 0,
+    "auth_epochs": 0,
+    "browser_sessions": 0,
+    "auth_one_time": 0,
+    "oauth_flows": 0,
+    "auth_rate_buckets": 0
+  },
+  "date_local": "2026-11-08T17:39:15.019032+01:00",
+  "tests_pass": 196,
+  "tests_fail": 0,
+  "baseline_separate_pass": 173,
+  "new_tests": 23,
+  "pid": "2089150",
+  "pid_uid": 33,
+  "restart": false,
+  "protected_files_unchanged": 46,
+  "root_operational_exists": false,
+  "config_present": {
+    "security-config.json": false,
+    "auth-config.json": false
+  },
+  "operational006007_applied": false,
+  "real_installer_deletions_imports_publications": 0,
+  "production_release_trust": "absent; proof adaptersfixtures not real GitHub/Authenticode",
+  "TEMP_physical_cap_includes_staging_trash": 5,
+  "real_subprocess_crash_cases": 10,
+  "real_powerloss": "NOT_RUN"
+}

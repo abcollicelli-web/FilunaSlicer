@@ -1,5 +1,14 @@
 # FILUNA — REGISTRO DE CONTINUIDADE E ETAPAS REALIZADAS
 
+## Estado mais recente — Fase05.2: lifecycle privado real, SOMENTE TEMP
+
+08/11/2026 Europe/Rome: biblioteca interna de promoção, retenção e recuperação implementada em `/srv/filuna-new-site`; **196 PASS / 0 FAIL = 173 baseline + 23 novos** (baseline também reexecutado separadamente). Dez interrupções reais de processo, concorrência, falhas FS/SQL e HTTP privado em testes isolados. Limite global de **cinco VERSÕES físicas**, inclusive staging/trash, preservando todo histórico; active/rollback/pins/leases protegidos e sexta promoção negada se todas estiverem protegidas. Uma falha após poda pode deixar quatro versões: não há promessa de atomicidade FS+SQL ou restauração de bytes já removidos.
+
+**Nada ativado/publicado/excluído operacionalmente:** DB continua001–005,006/007 apenasTEMP; zero dados reais; processo2089150 UID33 inalterado; sem trust/authconfig/root de releases operacional. Sem novo endpoint HTTP mutante, sem restart/deploy, frontend/app/auth/storage intactos. ECDSA efêmera real deTEST; provas GitHub/Windows/QA continuam fixtures, não validação operacional. Assinatura GitHub não substitui assinatura Windows/Filuna nem manifesto ECDSA. Windows updater/helper/consent/save/close/reopen/rollback e corte físico de energia NOTRUN. GatesG2/G3BLOCKED,G4NOTRUN,G5/G6BLOCKED inalterados. Autoridade continua t36/t37/t38+t43; publicação documental anterior não acrescenta autorização.
+
+[Implementação, evidências, hashes e limites](WEB-FASE-05-2-LIFECYCLE-EVIDENCIAS-20261108.md). Os checkpoints antigos abaixo são históricos e não devem ser lidos como estado atual.
+
+
 ## Estado mais recente — Fase05.1 privada implementada/testada, NÃO ativada
 
 08/11/2026 Europe/Rome, após recuperação autorizada t43 às17:04: código real de catálogo/ledger candidato, bytesstreaming privados e planner retenção existem em `/srv/filuna-new-site`, **173 testesPASS/0FAIL =148baseline+25novos**. As afirmações abaixo de bloqueioSSH/ausência total de implementação são checkpoints HISTÓRICOS, superados somente nesta subfatia. Não foi publicada primeira versão integrada, nem criada confiança operacional;006 só em DBtemporário, processo operacional NÃO reiniciado e domínio estático intacto. [Evidência, rotas efetivas xcarregadas e limitações](WEB-FASE-05-IMPLEMENTACAO-EVIDENCIAS-20261108.md). GatesG2/G3BLOCKED,G4NOTRUN,G5/G6BLOCKED permanecem; nenhuma homologação/assinatura/certificação/updaterWindows inferida.
