@@ -20,6 +20,8 @@ jobs:
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -pedantic -IFILUNA/update FILUNA/update/test_native_update_policy.cpp -o /tmp/filuna-policy
           /tmp/filuna-policy
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic -IFILUNA/update FILUNA/update/test_native_update_flow.cpp -o /tmp/filuna-flow
+          /tmp/filuna-flow
   windows:
     runs-on: windows-2022
     steps:
@@ -36,3 +38,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "TRANSPORT_COMPILE_FAILED" }
           .\filuna-transport.exe
           if ($LASTEXITCODE -ne 0) { throw "TRANSPORT_QA_FAILED" }
+          cl /nologo /std:c++17 /EHsc /W4 /WX /I FILUNA\update FILUNA\update\test_native_update_flow.cpp /Fe:filuna-flow.exe
+          if ($LASTEXITCODE -ne 0) { throw "FLOW_COMPILE_FAILED" }
+          .\filuna-flow.exe
+          if ($LASTEXITCODE -ne 0) { throw "FLOW_QA_FAILED" }
