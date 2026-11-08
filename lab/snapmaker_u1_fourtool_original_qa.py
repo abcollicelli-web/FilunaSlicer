@@ -325,15 +325,16 @@ def build_four_from_core_3mf(seed:Path,out:Path)->dict:
     plate=ET.SubElement(config,"plate")
     ET.SubElement(plate,"metadata",{"key":"plater_id","value":"1"})
     ET.SubElement(plate,"metadata",{"key":"filament_map_mode","value":"Auto For Flush"})
-    locations=[45,100,155,210]
-    for i,x in enumerate(locations):
+    # OEM A 2x2 placement, keyed by the original tool/instance order.
+    locations=[(146.5,147),(146.5,125),(124.5,147),(124.5,125)]
+    for i,(x,y) in enumerate(locations):
         identifier=str(i+1)
         item=copy.deepcopy(template)
         item.attrib["id"]=identifier
         resources.append(item)
         ET.SubElement(build,ns+"item",{
             "objectid":identifier,
-            "transform":f"1 0 0 0 1 0 0 0 1 {x} 135 10",
+            "transform":f"1 0 0 0 1 0 0 0 1 {x} {y} 10",
             "printable":"1"})
         obj_config=ET.SubElement(config,"object",{"id":identifier})
         ET.SubElement(obj_config,"metadata",{"key":"name","value":f"Core QA tool {i+1}"})
