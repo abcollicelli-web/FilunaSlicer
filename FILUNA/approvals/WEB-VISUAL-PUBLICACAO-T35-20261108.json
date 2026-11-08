@@ -1,0 +1,41 @@
+{
+  "id": "FLN-WEB-VISUAL-PUBLISH-T35-20261108",
+  "source": "owner t35u",
+  "literal": "aprove e publique",
+  "date_local": "2026-11-08 16:19 Europe/Rome",
+  "scope": [
+    "home",
+    "Central do cliente",
+    "acesso",
+    "contratar",
+    "assinatura",
+    "backups",
+    "recursos",
+    "downloads",
+    "minimal Nginx public routing"
+  ],
+  "approved_zip_sha256": "874b50d79ba3b1c301f77e19455e452cb03fe808870999fd1985e47307a78839",
+  "release": "web-c-20261108-t35",
+  "published_at_local": "2026-11-08 16:23:45 Europe/Rome",
+  "origin": "https://filuna3d.com",
+  "publication_evidence": "../WEB-PUBLICACAO-C-T35-EVIDENCIAS-20261108.md",
+  "review_scope": "Coordinator reported eight offline pages, three desktop Chrome1280x800/100%, mobile390 home/Central; no complete mobile/accessibility or pixel-diff claim",
+  "not_authorized_or_claimed": [
+    "operational auth/Google/SMTP/payment",
+    "private API activation",
+    "Slicer/engine/hardware changes",
+    "G2-G6 promotion",
+    "100-percent application fidelity",
+    "Filuna award or production DR"
+  ],
+  "supersedes": "t34 visual pending only for this approved web artifact; preserves historical evidence and phase04 backend",
+  "public_desktop_QA_after_publication": {
+    "date_local": "2026-11-08 16:30 Europe/Rome",
+    "status": "DESKTOP_PUBLIC_BROWSER_CHECKED_LIMITED_SCOPE",
+    "scope": "home -> Central -> access; Chrome desktop1280x800/zoom100%; Google not clicked, no credentials",
+    "public_mobile": "NOT_RUN",
+    "manifest": "../evidencias/web-t35-public-20261108/MANIFEST-SHA256.json",
+    "manifest_sha256": "f9680c1019474669fd6ae57c2c4b6f97e5c44f249d0d6fdc119cfdcf064ba790",
+    "not_additional_approval_or_service_activation": true
+  }
+}

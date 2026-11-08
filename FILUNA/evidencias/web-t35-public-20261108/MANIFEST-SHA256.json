@@ -1,0 +1,74 @@
+{
+  "status": "DESKTOP_PUBLIC_BROWSER_CHECKED_LIMITED_SCOPE",
+  "date_local": "2026-11-08 16:30 Europe/Rome",
+  "performed_by": "coordinator public Chrome GUI; reported to executor; raw screenshots inspected by executor",
+  "browser": "Chrome desktop; no mobile emulation; zoom100% confirmed by coordinator",
+  "capture_pixels": [
+    1280,
+    800
+  ],
+  "css_viewport_device_ratio": "NOT_MEASURED; do not infer zoom or pixel-diff equivalence",
+  "tls": "normal HTTPS; no certificate warning observed",
+  "navigation": [
+    "opened https://filuna3d.com/",
+    "clicked Central do cliente -> https://filuna3d.com/conta/",
+    "clicked Acessar conta -> https://filuna3d.com/conta/acesso/"
+  ],
+  "observed": [
+    "original logo and 3D study rendered",
+    "no evident font fallback in observed regions; not an automated font audit",
+    "no overlapping text/buttons in observed regions",
+    "access page shows connection unconfigured and disabled credential fields"
+  ],
+  "not_performed": [
+    "Google button not clicked",
+    "no credentials submitted",
+    "public mobile NOT_RUN",
+    "full-page/all-route public browser QA NOT_RUN",
+    "pixel-diff/accessibility/functional homologation NOT_RUN"
+  ],
+  "http_checks_unchanged": {
+    "passed": 45,
+    "failed_plain_http_box_pingora": 2,
+    "origin_plain_http_redirect": "301 previously checked; no new HTTP measurement counted"
+  },
+  "services": "Google/SMTP/login/payment not activated; no app/hardware/gate promotion",
+  "screenshots": [
+    {
+      "path": "FILUNA/evidencias/web-t35-public-20261108/home-publica.webp",
+      "url": "https://filuna3d.com/",
+      "sha256": "9c276540c9c499ecbc7cf1c4f1ba78aff3d4bbb9a2e5c06db97793873cb47b02",
+      "bytes": 72336,
+      "capture_pixels": [
+        1280,
+        800
+      ],
+      "raw_capture": true,
+      "resized_cropped_masked": false
+    },
+    {
+      "path": "FILUNA/evidencias/web-t35-public-20261108/central-publica.webp",
+      "url": "https://filuna3d.com/conta/",
+      "sha256": "8d44f659ee3f734068e629ba4a5d50f24010369f6f111b0a14fae1e8c04bad4e",
+      "bytes": 85992,
+      "capture_pixels": [
+        1280,
+        800
+      ],
+      "raw_capture": true,
+      "resized_cropped_masked": false
+    },
+    {
+      "path": "FILUNA/evidencias/web-t35-public-20261108/acesso-publico.webp",
+      "url": "https://filuna3d.com/conta/acesso/",
+      "sha256": "05e2a1c2b78d9dab7ee3bc9284f12e5eeb7545ac90d8caae6bdc99ea0455f6cc",
+      "bytes": 67126,
+      "capture_pixels": [
+        1280,
+        800
+      ],
+      "raw_capture": true,
+      "resized_cropped_masked": false
+    }
+  ]
+}

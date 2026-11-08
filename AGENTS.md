@@ -163,3 +163,11 @@ Ler [evidências fase03](FILUNA/WEB-FASE-03-EVIDENCIAS-20261108.md), [contrato](
 
 ## Continuidade web Fase04 — dual login
 Escolha literal t33s249,08/11/2026 15:52 Europe/Rome: «Quero login com e-mail e senha e também com conta Google.» Backend BFF+Argon2id+GoogleOIDC/RS256 implementado/testado148 PASS, auth/trust semconfig e privado fechado, zero dados operacionais. [Evidências/contratos/ativação e limites](FILUNA/WEB-FASE-04-EVIDENCIAS-20261108.md). Front/deploy t35 coordenado separadamente pelo pai; não sobrescrever backend/migrações/dependências nem confundir aceite visual com login/provider operacional. Nada de gates desktop/hardware.
+
+
+## Continuidade obrigatória — visual web publicado t35
+Dono08/11/2026 16:19 Europe/Rome: «aprove e publique». Modelo web aprovado e publicado16:23:45 Europe/Rome em https://filuna3d.com/ e Central canônica; [evidências e limites](FILUNA/WEB-PUBLICACAO-C-T35-EVIDENCIAS-20261108.md), [aceite/hash](FILUNA/approvals/WEB-VISUAL-PUBLICACAO-T35-20261108.json). Não redesenhar composição/paleta/Inter/logo aprovados. Publicação estática não ativa loginGoogle/SMTP/checkout/premium: camposdisabled, APIsdomínio404, admin401; backend148PASS intacto. Design115+11PASS, HTTPS/guards45PASS,2HTTPbox500Pingora com origem301; não alegar47/47PASS. Browser público desktop conferido às16:30Europe/Rome no escopo documentado; mobile público/rollbackexecutadoNOTRUN. Preservar fase04, migração005jáaplicada, dados/engine/gatesdesktop; nenhum segredo/backendprivado no repositório.
+
+
+### QA público desktop t35 registrado
+Chrome público real pelo coordenador,08/11/2026 16:30Europe/Rome: home→Central→acesso,desktop1280×800/zoom100%,HTTPS normal; logo/3D renderizados, sem sobreposições/fallback evidente nas áreas vistas; inputsdisabled. SemGoogle/credenciais/mobile público/teste global.45checksHTTP anteriores e2HTTP500Pingora preservados. [Capturas/hash](FILUNA/evidencias/web-t35-public-20261108/MANIFEST-SHA256.json). Gates/serviços não ativados.

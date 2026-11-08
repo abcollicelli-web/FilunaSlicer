@@ -115,3 +115,16 @@ Ler [evidências fase03](WEB-FASE-03-EVIDENCIAS-20261108.md), [contrato](WEB-SER
 
 ## Continuidade web Fase04 — dual login
 Escolha literal t33s249,08/11/2026 15:52 Europe/Rome: «Quero login com e-mail e senha e também com conta Google.» Backend BFF+Argon2id+GoogleOIDC/RS256 implementado/testado148 PASS, auth/trust semconfig e privado fechado, zero dados operacionais. [Evidências/contratos/ativação e limites](WEB-FASE-04-EVIDENCIAS-20261108.md). Front/deploy t35 coordenado separadamente pelo pai; não sobrescrever backend/migrações/dependências nem confundir aceite visual com login/provider operacional. Nada de gates desktop/hardware.
+
+
+## Visual web aprovado e publicado — t35
+08/11/2026 16:19 Europe/Rome: «aprove e publique». Publicação real16:23:45 Europe/Rome: [home](https://filuna3d.com/), [Central](https://filuna3d.com/conta/), [acesso](https://filuna3d.com/conta/acesso/) e cinco áreas. [Aceite](approvals/WEB-VISUAL-PUBLICACAO-T35-20261108.json) · [evidências/rotas/hashes/rollback](WEB-PUBLICACAO-C-T35-EVIDENCIAS-20261108.md). Publicação VISUAL aprovada, não login/pagamento/premium ativo nem releaseSlicer/hardware. Backend148PASS preservado, design115+11PASS,45checksHTTPS/guardsPASS;2checksHTTPbox500Pingora, origem301, limitação explícita. RegrasC/básicoOrca livre e gates preservados.
+
+
+### QA público desktop posterior — 08/11/2026 16:30 Europe/Rome
+
+O coordenador executou Chrome público real, desktop1280×800/zoom100%, sem emulação e HTTPS normal sem aviso de certificado. Abriu a home, clicou **Central do cliente** para `/conta/` e **Acessar conta** para `/conta/acesso/`. Logo e estudo3D renderizaram; não houve fallback de fonte evidente nem texto/botões sobrepostos nas áreas vistas. Acesso mostrou conexão não configurada e campos desativados. Google não foi clicado, nenhuma credencial submetida. Executor inspecionou as três capturas brutas, sem segredos aparentes.
+
+**Estado atual:** desktop público conferido no escopo acima; mobile público, comparação pixel/diff, auditoriaAA e homologação funcional/global **NOT RUN**. Captura1280×800 não fixa a equivalência CSS/device/DPI. Os45 checksHTTP/HTTPS anteriores continuam45; os2HTTPsimples500Pingora permanecem registrados, sem contarCU como mediçãoHTTP adicional. Não ativaGoogle/SMTP/login/pagamento nem altera gates/aplicativo/hardware.
+
+[Capturas brutas e manifesto SHA256](evidencias/web-t35-public-20261108/MANIFEST-SHA256.json): home, Central e acesso, sem resize/crop/máscara. SHA256 do manifesto `f9680c1019474669fd6ae57c2c4b6f97e5c44f249d0d6fdc119cfdcf064ba790`. NOTRUN anterior do browser é histórico do checkpoint do executor, superado SOMENTE por esta inspeção desktop delimitada.
