@@ -75,9 +75,19 @@ public:
         reason_ = "CONTROLLED_CLOSE_ALLOWED";
         return true;
     }
-    bool helper_handoff(bool helper_signature_and_path_verified) {
+    bool helper_handoff(bool helper_signature_and_path_verified,
+                        bool all_documents_saved, bool no_running_jobs,
+                        bool reliable_rollback_snapshot) {
         if (!is_binary() || phase_ != Phase::CloseReady)
             return fail_without_mutating("HELPER_NOT_READY");
+        // CloseReady is not a lasting authorization: editing, a new job or
+        // loss of the snapshot revokes it. The caller samples these on the
+        // GUI thread immediately before handoff, with new work disabled.
+        if (!all_documents_saved || !no_running_jobs || !reliable_rollback_snapshot) {
+            phase_ = Phase::StagedVerified;
+            reason_ = "SAVE_TASK_OR_ROLLBACK_REQUIRED";
+            return false;
+        }
         if (!helper_signature_and_path_verified) {
             phase_ = Phase::Blocked;
             reason_ = "HELPER_SIGNATURE_FAILED";
