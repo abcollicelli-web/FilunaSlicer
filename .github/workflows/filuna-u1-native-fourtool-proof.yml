@@ -23,12 +23,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Download Type2-instrumented Filuna QA executable (run 42494265076)
+      - name: Download U1 decision-trace Filuna QA executable (run 42645101191)
         uses: actions/download-artifact@v4
         with:
-          name: filuna-qa-windows-exe-fe9c3c8d62c1f52bd1b163c99fbfaaca1070a246
+          name: filuna-qa-windows-exe-bda0a0eb00f2e839d3cab8f1f657c14fcd37bd6e
           repository: abcollicelli-web/FilunaSlicer
-          run-id: 42494265076
+          run-id: 42645101191
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: .filuna-exe
       - name: Download OEM 20-run stress reference (run 42396616586)
