@@ -1778,6 +1778,29 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
 
         const Point start_wipe_pos     = wipe_tower_point_to_object_point(gcodegen, start_pos + plate_origin_2d);
         const bool travel_to_tower_now = should_travel_to_tower || gcodegen.m_need_change_layer_lift_z;
+        // U1 QA: capture the actual Type2 tower-travel decision, without changing G-code.
+        if (!tcr.priming && std::getenv("FILUNA_U1_TRACE_FIRST_TCR") != nullptr) {
+            static bool first_nonpriming_decision_traced = false;
+            static bool first_toolchange_decision_traced = false;
+            const bool first_visit = !first_nonpriming_decision_traced;
+            const bool first_change = tcr.is_tool_change && !first_toolchange_decision_traced;
+            if (first_visit || first_change) {
+                first_nonpriming_decision_traced = true;
+                if (tcr.is_tool_change)
+                    first_toolchange_decision_traced = true;
+                std::fprintf(stderr,
+                    "FILUNA_U1_TCR2_DECISION first_nonpriming=%d first_toolchange=%d is_tool_change=%d "
+                    "is_finish_first=%d force_travel=%d needs_toolchange=%d will_go_down=%d "
+                    "is_ramming=%d tool_change_on_wipe_tower=%d need_change_layer_lift_z=%d "
+                    "should_travel_to_tower=%d travel_to_tower_now=%d current_z=%.6f target_z=%.6f\\n",
+                    int(first_visit), int(first_change), int(tcr.is_tool_change),
+                    int(tcr.is_finish_first), int(tcr.force_travel), int(needs_toolchange),
+                    int(will_go_down), int(is_ramming), int(tool_change_on_wipe_tower),
+                    int(gcodegen.m_need_change_layer_lift_z), int(should_travel_to_tower),
+                    int(travel_to_tower_now), current_z, z);
+                std::fflush(stderr);
+            }
+        }
         if (travel_to_tower_now) {
             // FIXME: It would be better if the wipe tower set the force_travel flag for all toolchanges,
             // then we could simplify the condition and make it more readable.
