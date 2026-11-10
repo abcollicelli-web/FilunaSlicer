@@ -1,0 +1,108 @@
+name: Filuna Snapmaker U1 source-built portable vs official portable G-code parity (NO print, NO network to printers)
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - "lab/snapmaker_source_build_parity.py"
+      - ".github/workflows/filuna-snapmaker-source-build-parity.yml"
+      - "FILUNA/fabricantes/snapmaker/module.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-source-parity
+  cancel-in-progress: false
+jobs:
+  build-oem-portable-and-compare:
+    runs-on: windows-2022
+    timeout-minutes: 360
+    steps:
+      - name: Checkout Filuna (lab scripts, fixtures, pinned U1 presets)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: filuna
+      - name: Read pinned Snapmaker OEM source commit from the module manifest
+        id: pin
+        shell: pwsh
+        run: |
+          $m = Get-Content filuna/FILUNA/fabricantes/snapmaker/module.json | ConvertFrom-Json
+          if ($m.source.repository -ne "https://github.com/Snapmaker/OrcaSlicer") { throw "UNEXPECTED_REPO $($m.source.repository)" }
+          "commit=$($m.source.commit)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "OEM_COMMIT=$($m.source.commit)"
+      - name: Checkout pinned Snapmaker OEM source (full tree for a real build)
+        uses: actions/checkout@v4
+        with:
+          repository: Snapmaker/OrcaSlicer
+          ref: ${{ steps.pin.outputs.commit }}
+          persist-credentials: false
+          path: oem-src
+      - uses: lukka/get-cmake@latest
+      - uses: microsoft/setup-msbuild@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore OEM-source Windows deps cache (optional)
+        id: deps
+        uses: actions/cache/restore@v4
+        with:
+          path: oem-src/deps/build/OrcaSlicer_dep
+          key: snapmaker-oem-src-x64-msvc-deps-${{ steps.pin.outputs.commit }}
+          fail-on-cache-miss: false
+      - name: Build pinned OEM dependencies when cache is unavailable
+        if: steps.deps.outputs.cache-hit != 'true'
+        shell: pwsh
+        working-directory: oem-src
+        run: |
+          $ErrorActionPreference="Stop"
+          $deps=(Join-Path $PWD "deps/build").Replace("\","/")
+          .\build_win.bat -d --arch x64 --deps-dir $deps --msvc --msbuild --jobs 4
+          if ($LASTEXITCODE -ne 0) { throw "OEM_DEPS_BUILD_FAILED exit=$LASTEXITCODE" }
+      - name: Save OEM deps cache (never blocks)
+        if: steps.deps.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: oem-src/deps/build/OrcaSlicer_dep
+          key: snapmaker-oem-src-x64-msvc-deps-${{ steps.pin.outputs.commit }}
+      - name: Build the OEM slicer portable from pinned source (no installer)
+        shell: pwsh
+        working-directory: oem-src
+        run: |
+          $ErrorActionPreference="Stop"
+          $deps=(Join-Path $PWD "deps/build").Replace("\","/")
+          .\build_win.bat -s -i --arch x64 --deps-dir $deps --msvc --msbuild --no-gettext --jobs 4
+          if ($LASTEXITCODE -ne 0) { throw "OEM_PORTABLE_BUILD_FAILED exit=$LASTEXITCODE" }
+          $exe=(Get-ChildItem -Recurse build -Include *.exe | Where-Object { $_.Name -match 'orca|snapmaker' -and $_.FullName -notmatch 'uninstall|setup|update|crash' } | Select-Object -First 1)
+          if (-not $exe) { Get-ChildItem -Recurse build -Filter *.exe | Select-Object FullName; throw "BUILT_EXE_NOT_FOUND" }
+          "BUILT_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "BUILT_EXE=$($exe.FullName)"
+      - name: Restore official Snapmaker 2.4.1 portable cache (optional)
+        uses: actions/cache/restore@v4
+        with:
+          path: filuna/.oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Slice cube with both portables and compare normalized G-code
+        shell: pwsh
+        working-directory: filuna
+        run: |
+          git config --global core.autocrlf false
+          python lab/snapmaker_source_build_parity.py --built-exe "$env:BUILT_EXE" --official-cache .oem-portable-cache --out qa-u1-source-parity
+          $code=$LASTEXITCODE
+          if (Test-Path qa-u1-source-parity/proof.json) { Get-Content qa-u1-source-parity/proof.json | Out-File -Append -FilePath $env:GITHUB_STEP_SUMMARY }
+          if ($code -ne 0) { throw "SOURCE_BUILD_PARITY_SLICE_FAILED exit=$code" }
+      - name: Save official portable cache (never blocks)
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: filuna/.oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Archive proof, G-codes and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-source-build-parity
+          path: filuna/qa-u1-source-parity/
+          retention-days: 30
+          if-no-files-found: warn
