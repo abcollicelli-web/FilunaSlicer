@@ -25,7 +25,8 @@ from pathlib import Path
 from portable_first_qa import OFFICIAL, obtain, extract_executable
 from snapmaker_u1_guard_probe import run_cli
 from snapmaker_u1_inherit import build_effective_original_presets
-from compare_oem_exact_sha import TIMESTAMP
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "FILUNA" / "qa" / "gcode"))
+from compare_oem_exact_sha import TIMESTAMP  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 CUBE = ROOT / "fixtures" / "cube20.stl"
