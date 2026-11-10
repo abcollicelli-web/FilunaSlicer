@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "id": "prusa",
+  "status": "FONTE_FIXADA__INVENTARIO_PRELIMINAR_POR_NOME__MOTOR_NAO_COMPILADO__NAO_HOMOLOGADO",
+  "rule": "FILUNA/REGRA-CANONICA-MODULOS-FABRICANTE-SOB-DEMANDA-20261110.md",
+  "source": {
+    "repository": "https://github.com/prusa3d/PrusaSlicer",
+    "ref": "refs/tags/version_2.9.7",
+    "commit": "450d70dd81c9b8990bc6bc8e690e31f82ddceb11",
+    "license": "AGPL-3.0 (conferir LICENSE da fonte antes de distribuir)",
+    "official_slicer": "PrusaSlicer 2.9.7",
+    "trees": {
+      "src/libslic3r": "63abac19eac4e38b1881a666d9eabfda93332bf0",
+      "src/slic3r": "4ea301b17d03cb8cd3fcf1b2c0777950c2444e3a",
+      "resources/profiles/PrusaResearch": "94f11118396e2e449006d5d9729d30cf87bc64e5",
+      "resources/profiles/PrusaResearchSLA": "7928733d6dae5be1bb79575436791ce7d17c6fa8"
+    },
+    "blobs": {
+      "resources/profiles/PrusaResearch.idx": "d8b4d8bc5b4fc44bc3a2543786419a96faa57918",
+      "resources/profiles/PrusaResearch.ini": "b7872a7c735329153b8508cfa53a3461a3a2bf7d",
+      "resources/profiles/PrusaResearchSLA.idx": "c49b24708f5382ab5298f014852ed32e9873f891",
+      "resources/profiles/PrusaResearchSLA.ini": "595a2afd9956c1bdef658916f25a0a9eccb14fc0"
+    },
+    "note": "PrusaSlicer e a origem da linhagem, nao um fork do Orca; formato de perfis (.ini) e layout diferentes."
+  },
+  "sparse_paths": [
+    "/src/libslic3r/",
+    "/src/slic3r/",
+    "/resources/profiles/",
+    "/version.inc",
+    "/LICENSE.txt",
+    "/LICENSE"
+  ],
+  "delta_vs_filuna": {
+    "engine_source_files": 541,
+    "engine_only_in_oem": 160,
+    "engine_different": 370,
+    "gui_source_files": 416,
+    "gui_only_in_oem": 122,
+    "gui_different": 293,
+    "gui_changed_not_classified": 347
+  },
+  "components": {
+    "engine": {
+      "description": "Motor de fatiamento e G-code do fabricante, clonado inteiro",
+      "trees": [
+        "src/libslic3r"
+      ]
+    },
+    "profiles": {
+      "description": "Perfis oficiais de maquina, filamento e processo",
+      "trees": [
+        "resources/profiles/PrusaResearch",
+        "resources/profiles/PrusaResearchSLA"
+      ],
+      "files": [
+        "resources/profiles/PrusaResearch.idx",
+        "resources/profiles/PrusaResearch.ini",
+        "resources/profiles/PrusaResearchSLA.idx",
+        "resources/profiles/PrusaResearchSLA.ini"
+      ]
+    },
+    "camera": {
+      "description": "Video do dispositivo",
+      "classification": "PRELIMINAR_POR_NOME_DE_ARQUIVO",
+      "files": [],
+      "shared_modified": [
+        "src/slic3r/GUI/CameraUtils.cpp",
+        "src/slic3r/GUI/CameraUtils.hpp"
+      ]
+    },
+    "colors": {
+      "description": "Sistema de cores / multimaterial",
+      "classification": "PRELIMINAR_POR_NOME_DE_ARQUIVO",
+      "files": [
+        "src/slic3r/GUI/ColorUtils.cpp",
+        "src/slic3r/GUI/ColorUtils.hpp",
+        "src/slic3r/GUI/Widgets/UIColors.hpp",
+        "src/slic3r/GUI/Widgets/VirtualExtruderListBox.cpp",
+        "src/slic3r/GUI/Widgets/VirtualExtruderListBox.hpp"
+      ],
+      "shared_modified": [
+        "src/slic3r/GUI/BitmapComboBox.cpp",
+        "src/slic3r/GUI/BitmapComboBox.hpp",
+        "src/slic3r/GUI/GLCanvas3D.cpp",
+        "src/slic3r/GUI/GLCanvas3D.hpp",
+        "src/slic3r/GUI/PresetComboBoxes.cpp",
+        "src/slic3r/GUI/PresetComboBoxes.hpp",
+        "src/slic3r/GUI/Widgets/CheckBox.cpp",
+        "src/slic3r/GUI/Widgets/CheckBox.hpp",
+        "src/slic3r/GUI/Widgets/ComboBox.cpp",
+        "src/slic3r/GUI/Widgets/ComboBox.hpp",
+        "src/slic3r/GUI/Widgets/StateColor.cpp",
+        "src/slic3r/GUI/Widgets/StateColor.hpp",
+        "src/slic3r/GUI/Widgets/StaticBox.cpp",
+        "src/slic3r/GUI/Widgets/StaticBox.hpp",
+        "src/slic3r/Utils/AstroBox.cpp",
+        "src/slic3r/Utils/AstroBox.hpp"
+      ]
+    },
+    "network": {
+      "description": "Descoberta em rede, conexao e envio",
+      "classification": "PRELIMINAR_POR_NOME_DE_ARQUIVO",
+      "files": [
+        "src/slic3r/GUI/ConnectRequestHandler.cpp",
+        "src/slic3r/GUI/ConnectRequestHandler.hpp",
+        "src/slic3r/Utils/PrusaConnect.cpp",
+        "src/slic3r/Utils/PrusaConnect.hpp"
+      ],
+      "shared_modified": [
+        "src/slic3r/GUI/BonjourDialog.cpp",
+        "src/slic3r/GUI/BonjourDialog.hpp",
+        "src/slic3r/GUI/PrintHostDialogs.cpp",
+        "src/slic3r/GUI/PrintHostDialogs.hpp",
+        "src/slic3r/GUI/SendSystemInfoDialog.cpp",
+        "src/slic3r/GUI/SendSystemInfoDialog.hpp",
+        "src/slic3r/Utils/Bonjour.cpp",
+        "src/slic3r/Utils/Bonjour.hpp",
+        "src/slic3r/Utils/Http.cpp",
+        "src/slic3r/Utils/Http.hpp",
+        "src/slic3r/Utils/Moonraker.cpp",
+        "src/slic3r/Utils/Moonraker.hpp",
+        "src/slic3r/Utils/OctoPrint.cpp",
+        "src/slic3r/Utils/OctoPrint.hpp",
+        "src/slic3r/Utils/PrintHost.cpp",
+        "src/slic3r/Utils/PrintHost.hpp",
+        "src/slic3r/Utils/TCPConsole.cpp",
+        "src/slic3r/Utils/TCPConsole.hpp"
+      ]
+    },
+    "control": {
+      "description": "Controle, status e monitoramento",
+      "classification": "PRELIMINAR_POR_NOME_DE_ARQUIVO",
+      "files": [
+        "src/slic3r/GUI/Jobs/ArrangeJob2.cpp",
+        "src/slic3r/GUI/Jobs/ArrangeJob2.hpp",
+        "src/slic3r/GUI/Jobs/CancellableJob.hpp",
+        "src/slic3r/GUI/Jobs/SeqArrangeJob.cpp",
+        "src/slic3r/GUI/Jobs/SeqArrangeJob.hpp"
+      ],
+      "shared_modified": [
+        "src/slic3r/GUI/Jobs/BusyCursorJob.hpp",
+        "src/slic3r/GUI/Jobs/CreateFontNameImageJob.cpp",
+        "src/slic3r/GUI/Jobs/CreateFontNameImageJob.hpp",
+        "src/slic3r/GUI/Jobs/CreateFontStyleImagesJob.cpp",
+        "src/slic3r/GUI/Jobs/CreateFontStyleImagesJob.hpp",
+        "src/slic3r/GUI/Jobs/EmbossJob.cpp",
+        "src/slic3r/GUI/Jobs/EmbossJob.hpp",
+        "src/slic3r/GUI/Jobs/Job.hpp",
+        "src/slic3r/GUI/Jobs/RotoptimizeJob.cpp",
+        "src/slic3r/GUI/Jobs/RotoptimizeJob.hpp",
+        "src/slic3r/GUI/Jobs/SLAImportJob.cpp",
+        "src/slic3r/GUI/Jobs/SLAImportJob.hpp",
+        "src/slic3r/GUI/Mouse3DController.cpp",
+        "src/slic3r/GUI/Mouse3DController.hpp",
+        "src/slic3r/GUI/PhysicalPrinterDialog.cpp",
+        "src/slic3r/GUI/PhysicalPrinterDialog.hpp",
+        "src/slic3r/GUI/ProgressStatusBar.cpp",
+        "src/slic3r/GUI/ProgressStatusBar.hpp"
+      ]
+    }
+  },
+  "pending": [
+    "Revisar a classificacao preliminar de rede/controle/camera/cores lendo o codigo",
+    "Compilar o motor (libslic3r pinado) sem interface no Windows",
+    "Ligar a carga e a troca de modulo no Filuna (Dispositivos e Preparar)",
+    "Prova de G-code identico: motor do modulo x fatiador oficial na mesma versao",
+    "Prova de descoberta e conexao com o codigo clonado"
+  ]
+}

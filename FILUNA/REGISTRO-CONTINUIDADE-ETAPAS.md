@@ -486,3 +486,21 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - **Primeiro módulo — Snapmaker U1:** `FILUNA/fabricantes/snapmaker/module.json` fixa fonte, commit, hashes de árvore e inventário por componente (44 arquivos + 3 árvores). `FILUNA/fabricantes/tools/fetch_oem_source.py` clona e confere; execução local `SOURCE_STATUS=PASS`. Workflow `filuna-module-source-verify.yml` repete a conferência no CI.
 - **Estado:** `SNAPMAKER_MODULE=FONTE_FIXADA_E_INVENTARIADA`; **motor do módulo não compilado, carga/troca de módulo no app não implementada, G-code idêntico NÃO provado, rede NÃO provada.** Nenhuma impressora homologada ainda. Sem merge, release ou deploy.
 - **Próxima ação:** compilar o `libslic3r` pinado do módulo como motor sem interface no Windows e provar G-code idêntico ao Snapmaker Orca 2.4.1 portátil nas fixtures já existentes (cubo mono e quatro ferramentas, variantes OEM A/B).
+
+### Módulos dos 8 fabricantes — fonte oficial fixada e inventário preliminar (10/11/2026)
+- `FILUNA/fabricantes/<id>/module.json` criado para **bambu, elegoo, creality, flashforge, qidi, anycubic, prusa** (snapmaker já existia), gerado por `FILUNA/fabricantes/tools/inventory_oem_source.py` e conferido por `fetch_oem_source.py`: **8/8 `SOURCE_STATUS=PASS`** em execução local.
+
+| id | Fonte fixada | Commit | Motor: arquivos diferentes do Filuna |
+|---|---|---|---|
+| snapmaker | Snapmaker/OrcaSlicer v2.4.1 | `bac6fd5c` | 571 (contagem por diff de diretório) |
+| bambu | bambulab/BambuStudio v02.09.01.70 | `56a57d00` | 515 de 537 |
+| elegoo | elegooofficial/ElegooSlicer v1.5.3.5 | `3f1042e9` | 459 de 501 |
+| creality | CrealityOfficial/CrealityPrint v7.3.1 | `254250c0` | 669 de 699 |
+| flashforge | FlashForge/Orca-Flashforge 1.7.9 | `70f2359b` | 450 de 491 |
+| qidi | QIDITECH/QIDIStudio v2.07.02.73 | `403b619d` | 485 de 507 |
+| anycubic | ANYCUBIC-3D/AnycubicSlicerNext (main) | `6103ed8b` | 434 de 466 |
+| prusa | prusa3d/PrusaSlicer version_2.9.7 | `450d70dd` | 530 de 541 |
+
+- **Leitura:** em todos os fabricantes o motor difere do motor Filuna na grande maioria dos arquivos; confirma a regra canônica (motor do fabricante dentro do módulo).
+- **Limites:** rede/controle/câmera/cores dos 7 novos estão classificados **só por nome de arquivo** (`PRELIMINAR_POR_NOME_DE_ARQUIVO`), sem leitura do código; Snapmaker foi classificado manualmente. **Anycubic:** sem tag de fonte para 2.0.0.6; equivalência fonte × binário não provada. **Bambu:** plugin de rede proprietário fora da fonte. **Prusa:** não é fork do Orca; perfis `.ini`.
+- **Estado:** 8/8 `FONTE_FIXADA`; **0/8 motor compilado, 0/8 G-code idêntico provado, 0/8 homologado.** Sem alteração em `src/`, sem merge, release ou deploy.
