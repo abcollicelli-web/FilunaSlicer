@@ -2,6 +2,10 @@
 
 Filuna Slicer é um fork do **OrcaSlicer**: o motor de fatiamento, os perfis e os protocolos de impressão são os do Orca, sem alterações. Por cima disso fica uma camada visual e de produto Filuna. Ele também traz módulos de fabricante (Elegoo, Anycubic e outros) para envio e controle nativos.
 
+## Guia de implementação da v1 (para o modelo implementador)
+
+**Comece por [guia-v1/00-LEIA-PRIMEIRO.md](guia-v1/00-LEIA-PRIMEIRO.md).** Telas aprovadas, dados interligados com fórmulas e exemplos, servidor/backup e cronograma por fases com teste de aceite.
+
 ## Regra canônica vigente (10/11/2026)
 
 **[REGRA-CANONICA-MODULOS-FABRICANTE-SOB-DEMANDA-20261110.md](REGRA-CANONICA-MODULOS-FABRICANTE-SOB-DEMANDA-20261110.md)** — base Filuna/Orca leve; módulo por fabricante (motor, perfis, rede, controle, câmera, cores) clonado integralmente da fonte oficial e baixado do servidor sob demanda; homologação = G-code idêntico ao oficial + funcionamento nativo pelo módulo. Prevalece sobre documentos anteriores em caso de conflito.
