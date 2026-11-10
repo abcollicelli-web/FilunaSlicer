@@ -26,16 +26,24 @@
     "/version.inc",
     "/LICENSE.txt"
   ],
-  "printers": ["Snapmaker U1"],
+  "printers": [
+    "Snapmaker U1"
+  ],
   "components": {
     "engine": {
       "description": "Motor de fatiamento e G-code do fabricante, clonado inteiro",
-      "trees": ["src/libslic3r"]
+      "trees": [
+        "src/libslic3r"
+      ]
     },
     "profiles": {
       "description": "Perfis oficiais de maquina, filamento e processo",
-      "trees": ["resources/profiles/Snapmaker"],
-      "files": ["resources/profiles/Snapmaker.json"]
+      "trees": [
+        "resources/profiles/Snapmaker"
+      ],
+      "files": [
+        "resources/profiles/Snapmaker.json"
+      ]
     },
     "network": {
       "description": "Descoberta em rede, conexao e envio",
@@ -92,7 +100,9 @@
     },
     "colors": {
       "description": "Sincronizacao e mapeamento de filamentos/cores das quatro ferramentas",
-      "trees": ["src/slic3r/GUI/filamentsync"],
+      "trees": [
+        "src/slic3r/GUI/filamentsync"
+      ],
       "files": [
         "src/slic3r/GUI/FilamentColorDialog.cpp",
         "src/slic3r/GUI/FilamentColorDialog.hpp",
@@ -108,6 +118,17 @@
     "Inventariar resources/web usado pelas telas de dispositivo e pre-impressao",
     "Ligar a carga e a troca de modulo no Filuna (Dispositivos e Preparar)",
     "Prova de G-code identico: motor do modulo x Snapmaker Orca 2.4.1 portatil",
-    "Prova de descoberta e conexao com o codigo clonado"
-  ]
+    "Prova de descoberta e conexao com o codigo clonado",
+    "Decidir caminho de rede/controle nativo da U1 sem o binario fechado (Moonraker/MQTT)"
+  ],
+  "closed_components_excluded": {
+    "snapmaker_control": {
+      "what": "Binario proprietario de conexao/controle (snapmaker_control), baixado pelo build oficial via scripts/packaging/stage_connect_bundle.py",
+      "source_release": "Snapmaker/snapmaker_control releases (lock .github/connect-bundle.lock.json, tag v1.8.5)",
+      "not_open_source": true,
+      "decision": "NAO empacotar. Build do portatil Filuna pula stage_connect_bundle; compila so o motor/GUI AGPL.",
+      "driver_in_open_source": "src/slic3r/Utils/ConnectionProcessManager.* e GUI/ConnectPrinter.* apenas lancam esse binario fechado",
+      "native_open_alternative": "Rede/controle da U1 pelo caminho aberto Moonraker/MQTT (src/slic3r/Utils/MoonRaker.*, MQTT.*), com o mesmo emparelhamento que o oficial pede ao usuario"
+    }
+  }
 }

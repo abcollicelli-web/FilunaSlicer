@@ -51,13 +51,11 @@ jobs:
           fail-on-cache-miss: false
       - name: Build pinned OEM dependencies when cache is unavailable
         if: steps.deps.outputs.cache-hit != 'true'
-        shell: pwsh
+        shell: cmd
         working-directory: oem-src
         run: |
-          $ErrorActionPreference="Stop"
-          $deps=(Join-Path $PWD "deps/build").Replace("\","/")
-          .\build_win.bat -d --arch x64 --deps-dir $deps --msvc --msbuild --jobs 4
-          if ($LASTEXITCODE -ne 0) { throw "OEM_DEPS_BUILD_FAILED exit=$LASTEXITCODE" }
+          call build_release_vs2022.bat deps
+          if errorlevel 1 exit /b 1
       - name: Save OEM deps cache (never blocks)
         if: steps.deps.outputs.cache-hit != 'true'
         continue-on-error: true
@@ -65,15 +63,29 @@ jobs:
         with:
           path: oem-src/deps/build/OrcaSlicer_dep
           key: snapmaker-oem-src-x64-msvc-deps-${{ steps.pin.outputs.commit }}
-      - name: Build the OEM slicer portable from pinned source (no installer)
+      - name: Configure and build the slicer from source WITHOUT the closed connect bundle
+        shell: cmd
+        working-directory: oem-src
+        run: |
+          @echo off
+          set "DEPS=%CD%\deps\build\OrcaSlicer_dep"
+          if not exist build mkdir build
+          cd build
+          REM NOTE: scripts/packaging/stage_connect_bundle.py is intentionally NOT run.
+          REM That step downloads the proprietary Snapmaker/snapmaker_control binary.
+          REM We build only the AGPL engine/GUI from source for a G-code parity proof.
+          cmake .. -G "Visual Studio 17 2022" -A x64 -DBBL_RELEASE_TO_PUBLIC=1 -DORCA_TOOLS=ON -DCMAKE_PREFIX_PATH="%DEPS%/usr/local" -DOPENSSL_ROOT_DIR="%DEPS%/usr/local" -DCMAKE_INSTALL_PREFIX="./Snapmaker_Orca" -DCMAKE_BUILD_TYPE=Release -DWIN10SDK_PATH="%WindowsSdkDir%Include\%WindowsSDKVersion%\"
+          if errorlevel 1 exit /b 1
+          cmake --build . --config Release --target ALL_BUILD -- -m
+          if errorlevel 1 exit /b 1
+          cmake --build . --config Release --target install
+          if errorlevel 1 exit /b 1
+      - name: Locate the source-built portable executable
         shell: pwsh
         working-directory: oem-src
         run: |
-          $ErrorActionPreference="Stop"
-          $deps=(Join-Path $PWD "deps/build").Replace("\","/")
-          .\build_win.bat -s -i --arch x64 --deps-dir $deps --msvc --msbuild --no-gettext --jobs 4
-          if ($LASTEXITCODE -ne 0) { throw "OEM_PORTABLE_BUILD_FAILED exit=$LASTEXITCODE" }
-          $exe=(Get-ChildItem -Recurse build -Include *.exe | Where-Object { $_.Name -match 'orca|snapmaker' -and $_.FullName -notmatch 'uninstall|setup|update|crash' } | Select-Object -First 1)
+          $exe=(Get-ChildItem -Recurse build/Snapmaker_Orca -Filter *.exe -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'orca|snapmaker' -and $_.FullName -notmatch 'uninstall|setup|update|crash|console|validator|profile' } | Select-Object -First 1)
+          if (-not $exe) { $exe=(Get-ChildItem -Recurse build -Filter *.exe | Where-Object { $_.Name -match 'orca|snapmaker' -and $_.FullName -notmatch 'uninstall|setup|update|crash|console|validator|profile' } | Select-Object -First 1) }
           if (-not $exe) { Get-ChildItem -Recurse build -Filter *.exe | Select-Object FullName; throw "BUILT_EXE_NOT_FOUND" }
           "BUILT_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
           Write-Host "BUILT_EXE=$($exe.FullName)"
