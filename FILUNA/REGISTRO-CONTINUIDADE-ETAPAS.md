@@ -528,3 +528,13 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Telas: 9 telas em `FILUNA/design/visual-c/ui/` (HTML/CSS de referência, não é o app compilado).
 - Snapmaker U1: portátil compilado da fonte aberta com sucesso (run 42851665029); comparação de G-code refeita no run 42893583289 após correção de import — veredito pendente.
 - Fatos verificados que o guia registra: servidor só tem conta de administrador; Orca não traz SQLite; Orca 2.5 já tem plugins Python e ilustração em tooltip.
+
+
+### V1 — Fase 0, base Filuna + SQLite (10/11/2026)
+- **Branch de trabalho:** `filuna/v1-f00-base-sqlite-20261110` criada a partir de `filuna/oem-portable-first-qa-20261106`, sem alterar a branch principal.
+- **Implementado:** `src/slic3r/Filuna/FilunaFoundation.{hpp,cpp}`; SQLite amalgamation oficial 3.50.4 em `src/sqlite3/` (CMake, sqlite3.c, sqlite3.h); inclusão em `src/slic3r/CMakeLists.txt` somente na GUI.
+- **Proveniência:** fonte, versão e hashes em `FILUNA/guia-v1/VERIFICACOES.md`. Código de `src/libslic3r/**` intocado.
+- **Workflow:** `filuna-windows-qa-exe.yml` incluído para branch da Fase 0 e alterado para executar `--run-tests`; alteração estritamente necessária para cumprir o aceite com build e CTest na branch de trabalho.
+- **Testado:** compilação isolada de `sqlite3.c` com compilador C Linux, compilação de `FilunaFoundation.cpp` C++17, link e execução com versão esperada `3050004`; CMake/CTest isolado **1/1 PASS**; `git diff --check`.
+- **NÃO TESTADO/AINDA PENDENTE:** build completo Windows, suíte CTest Windows, confirmação de ausência de regressões no executável. **Fase 0 não está aceita até o CI passar.**
+- **Não iniciado:** fases 1 a 11, telas, servidor, contas, sincronização, auto-update, release ou deploy.
