@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><style>
+:root{--magenta:#FF2E8A;--magenta-deep:#C2185B;--orange:#FF6B1A;--deep-purple:#7B4BFF;
+--cream:#FFF8F0;--bg:#EDEBE7;--panel:#FFFFFF;--line:#ECE8E2;--muted:#9A948C;--ink:#2C2A28;--ink2:#6B6660;--pill:#F1EEE9;--good:#1f8f5f;}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink)}
+.page{width:1600px;height:1180px;background:var(--bg);padding:26px 30px;position:relative}
+.app{background:var(--panel);border-radius:22px;height:1128px;box-shadow:0 18px 40px rgba(60,50,40,.06);overflow:hidden;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:20px;padding:16px 22px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}
+.bmark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--magenta),var(--orange));display:flex;align-items:center;justify-content:center}
+.btext{line-height:1}.btext .n{font-weight:800;font-size:20px;letter-spacing:-.02em}.btext .n .d{color:var(--orange)}
+.btext .s{font-size:10px;letter-spacing:.28em;color:var(--muted);font-weight:700}
+.sep{width:1px;height:26px;background:var(--line)}
+.crumbs{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink2);font-weight:500}
+.crumbs .c{display:flex;align-items:center;gap:7px}.crumbs .c.on{color:var(--magenta-deep);font-weight:700}
+.crumbs .chev{color:#cfc9c1}
+.spacer{flex:1}.ic{width:20px;height:20px;color:var(--ink2)}
+.proj{display:flex;align-items:center;gap:10px;height:42px;padding:0 14px;border:1px solid var(--line);border-radius:11px;font-weight:600;font-size:14px}
+.body{flex:1;display:flex;min-height:0}
+.lp{width:330px;border-right:1px solid var(--line);padding:20px;overflow:hidden}
+.sh{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.block{font-size:15px;font-weight:700;margin:18px 0 10px}
+.filecard{border:1.5px dashed #F0B9CE;border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;background:#FFF6FA}
+.ficon{width:44px;height:52px;border:1.5px solid var(--magenta);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--magenta)}
+.fmeta .fn{color:var(--magenta-deep);font-weight:700;font-size:14.5px}.fmeta .fz{color:var(--ink2);font-size:13px;margin-top:2px}
+.chk{margin-left:auto;width:22px;height:22px;border-radius:50%;background:var(--magenta);display:flex;align-items:center;justify-content:center}
+.flabel{font-size:13.5px;color:var(--ink2);margin:16px 0 6px}
+.sel{height:44px;border:1px solid #E7E3DD;border-radius:11px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:14.5px;font-weight:500}
+.slrow{display:flex;align-items:center;gap:12px;margin-top:6px}
+.slider{flex:1;height:6px;border-radius:6px;background:#EADFE4;position:relative}
+.slider i{position:absolute;left:0;top:0;height:100%;width:58%;background:var(--magenta);border-radius:6px}
+.slider b{position:absolute;left:56%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--magenta);box-shadow:0 0 0 3px #fff,0 1px 3px rgba(0,0,0,.2)}
+.selsm{min-width:84px;height:36px;border:1px solid #E7E3DD;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:600}
+.inrow{display:flex;align-items:center;gap:10px}
+.inp{flex:1;height:42px;border:1px solid #E7E3DD;border-radius:10px;display:flex;align-items:center;padding:0 12px;font-size:14.5px;font-weight:600}
+.unit{color:var(--ink2);font-size:14px}.info{width:20px;height:20px;border-radius:50%;border:1px solid #d9d3cb;color:var(--muted);font-size:12px;display:flex;align-items:center;justify-content:center}
+.togrow{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:14.5px}
+.sw{width:46px;height:26px;border-radius:20px;background:#DAD5CE;position:relative;flex:none}
+.sw.on{background:var(--magenta)}
+.sw::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw.on::after{left:23px}
+.run{height:52px;background:var(--magenta-deep);color:#fff;border-radius:13px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:15px;margin-top:20px}
+.proc{margin-top:18px;display:flex;align-items:center;gap:12px}
+.ring{width:26px;height:26px;border-radius:50%;border:3px solid #EADFE4;border-top-color:var(--magenta)}
+.proc .t{font-size:13.5px;color:var(--ink2)}.proc .pb{flex:1;height:6px;background:#EDE8E2;border-radius:6px;overflow:hidden}.proc .pb i{display:block;height:100%;width:62%;background:var(--magenta)}
+.mid{flex:1;display:flex;flex-direction:column;background:#141312;position:relative}
+.midtop{display:flex;align-items:center;justify-content:space-between;padding:16px 20px}
+.midtop .ti{color:#cfc9c1;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.statsel{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);color:#e4e0da;height:40px;padding:0 14px;border-radius:10px;font-size:14px;font-weight:600;margin-top:10px}
+.midicons{display:flex;gap:10px}.midbtn{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:#d8d4ce}
+.scene{flex:1;position:relative;display:flex;align-items:center;justify-content:center}
+.cube3{width:300px;height:260px;position:relative;transform:perspective(1100px) rotateX(16deg) rotateY(-28deg)}
+.cf{position:absolute;background:#8c8882;border:2px solid var(--magenta)}
+.cf.front{width:220px;height:200px;background:linear-gradient(145deg,#9a968f,#7d7972);left:40px;top:40px}
+.cf.top{width:220px;height:70px;background:#b4b0a8;left:40px;top:-18px;transform:skewX(-50deg);transform-origin:bottom}
+.cf.side{width:70px;height:200px;background:#6f6b64;left:258px;top:22px;transform:skewY(-40deg);transform-origin:left}
+.hole{position:absolute;width:52px;height:52px;border-radius:50%;border:2px solid var(--magenta);background:#55524c;left:124px;top:116px}
+.overlay{position:absolute;left:26px;bottom:26px;background:rgba(20,19,18,.85);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 18px;color:#e4e0da;font-size:14px}
+.overlay .h{font-weight:700;margin-bottom:8px}.overlay div{margin-top:4px;color:#c8c3bc}.overlay .dot{color:var(--magenta)}
+.navcube{position:absolute;right:120px;bottom:40px;width:90px;height:90px;background:linear-gradient(145deg,#3a3732,#2b2824);border:1px solid #4a453e;display:flex;align-items:center;justify-content:center;color:#d8d4ce;font-size:12px;font-weight:700;transform:perspective(500px) rotateX(18deg) rotateY(-20deg)}
+.vtool{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:flex;gap:6px;background:rgba(255,255,255,.06);padding:8px;border-radius:12px}
+.vtool .b{width:48px;height:44px;border-radius:9px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:#d8d4ce}
+.rp{width:340px;border-left:1px solid var(--line);padding:20px;overflow:hidden}
+.resultcard{border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;align-items:center;gap:16px;margin-top:12px}
+.rbadge{width:64px;height:64px;border-radius:50%;background:var(--magenta);display:flex;align-items:center;justify-content:center}
+.resultcard .t{font-size:19px;font-weight:800;color:var(--magenta-deep)}.resultcard .s{color:var(--ink2);font-size:13.5px;margin-top:4px}
+.rlist{border:1px solid var(--line);border-radius:16px;padding:6px 18px;margin-top:16px}
+.ri{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #F3EFE9;font-size:15px}
+.ri:last-child{border-bottom:none}.ri b{font-weight:700;color:var(--magenta-deep)}
+.qual{margin-top:16px}.qual .k{font-size:14px;font-weight:600}
+.dots{display:flex;gap:6px;align-items:center;margin-top:10px}.dots i{width:12px;height:12px;border-radius:50%;background:var(--magenta)}.dots .ex{margin-left:auto;color:var(--magenta-deep);font-weight:700}
+.apply{height:52px;background:var(--magenta);color:#fff;border-radius:13px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:15px;margin-top:20px}
+.applynote{text-align:center;color:var(--ink2);font-size:13px;margin-top:12px}
+.foot{height:50px;border-top:1px solid var(--line);display:flex;align-items:center;padding:0 22px;gap:18px;font-size:13.5px;color:var(--ink2)}
+.foot .r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vbar{color:#cfc9c1}
+</style></head><body>
+<div class="page"><div class="app">
+  <div class="top">
+    <div class="brand"><div class="bmark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg></div>
+      <div class="btext"><div class="n">Filuna<span class="d"></span></div><div class="s">SLICER</div></div></div>
+    <div class="sep"></div>
+    <div class="crumbs">
+      <div class="c on"><svg class="ic" style="color:currentColor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15V3m0 0L8 7m4-4l4 4"/><path d="M4 21h16"/></svg>Preparação</div>
+      <span class="chev">›</span>
+      <div class="c"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="5" width="16" height="12" rx="2"/><path d="M8 21h8"/></svg>Dispositivo</div>
+      <span class="chev">›</span>
+      <div class="c on"><svg class="ic" style="color:currentColor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M6 18L18 6"/><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/></svg>Reparação</div>
+      <span class="chev">›</span>
+      <div class="c"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Fatiamento</div>
+    </div>
+    <div class="spacer"></div>
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg>
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7"/><circle cx="12" cy="16.5" r=".6" fill="currentColor"/></svg>
+    <div class="proj"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Projeto: Caixa_Protetora <span style="color:var(--muted)">▾</span></div>
+  </div>
+  <div class="body">
+    <div class="lp">
+      <div class="sh">Upload / Parâmetros</div>
+      <div class="block">1. Arquivo</div>
+      <div class="filecard"><div class="ficon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V8m0 0l-3 3m3-3l3 3"/><path d="M6 20h12"/></svg></div>
+        <div class="fmeta"><div class="fn">caixa_protetora.stl</div><div class="fz">2.48 MB</div></div>
+        <div class="chk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 12l5 5 9-11"/></svg></div></div>
+      <div class="block">2. Reparação</div>
+      <div class="flabel">Modo de reparo</div>
+      <div class="sel">Reparo automático <span style="color:var(--muted)">▾</span></div>
+      <div class="flabel">Sensibilidade</div>
+      <div class="slrow"><div class="slider"><i></i><b></b></div><div class="selsm">Média</div></div>
+      <div class="flabel">Remover ilhas menores que</div>
+      <div class="inrow"><div class="inp">5.0</div><span class="unit">mm³</span><span class="info">i</span></div>
+      <div class="flabel">Preencher furos menores que</div>
+      <div class="inrow"><div class="inp">10.0</div><span class="unit">mm²</span><span class="info">i</span></div>
+      <div class="togrow"><span>Corrigir normalizações</span><div class="sw on"></div></div>
+      <div class="togrow"><span>Fechar cascas abertas</span><div class="sw"></div></div>
+      <div class="run"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M7 5l12 7-12 7z"/></svg>Executar reparo</div>
+      <div class="proc"><div class="ring"></div><div style="flex:1"><div class="t">Processando…</div><div class="pb" style="margin-top:6px"><i></i></div></div><b style="font-size:13px">62%</b></div>
+    </div>
+    <div class="mid">
+      <div class="midtop"><div><div class="ti">Visualização do modelo</div><div class="statsel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2" fill="#141312"/><circle cx="15" cy="16" r="2" fill="#141312"/></svg>Processamento em andamento <span>▾</span></div></div>
+        <div class="midicons"><div class="midbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3"/></svg></div><div class="midbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></div></div></div>
+      <div class="scene">
+        <div class="cube3"><div class="cf top"></div><div class="cf side"></div><div class="cf front"></div><div class="hole"></div></div>
+        <div class="overlay"><div class="h">Detectado e corrigido:</div><div><span class="dot">•</span> Cascas abertas</div><div><span class="dot">•</span> Bordas não-manifold</div><div><span class="dot">•</span> Interseções</div></div>
+        <div class="navcube">TOP</div>
+        <div class="vtool"><div class="b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 1 1 2.3 5.6"/><path d="M4 20v-4h4"/></svg></div><div class="b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3"/></svg></div><div class="b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5M11 8v6M8 11h6"/></svg></div><div class="b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg></div></div>
+      </div>
+    </div>
+    <div class="rp">
+      <div class="sh">Resultados da reparação</div>
+      <div class="resultcard"><div class="rbadge"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M5 12l5 5 9-11"/></svg></div><div><div class="t">Reparo concluído</div><div class="s">Problemas corrigidos no modelo</div></div></div>
+      <div class="rlist">
+        <div class="ri"><span>Cascas abertas</span><b>3</b></div>
+        <div class="ri"><span>Bordas não-manifold</span><b>18</b></div>
+        <div class="ri"><span>Interseções</span><b>7</b></div>
+        <div class="ri"><span>Ilhas pequenas removidas</span><b>2</b></div>
+        <div class="ri"><span>Furos preenchidos</span><b>4</b></div>
+        <div class="ri"><span>Normalizações corrigidas</span><b>Sim</b></div>
+      </div>
+      <div class="qual"><div class="k">Qualidade da malha</div><div class="dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span class="ex">Excelente</span></div></div>
+      <div class="apply"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M5 12l5 5 9-11"/></svg>Aplicar modelo reparado</div>
+      <div class="applynote">O modelo reparado será usado no fatiamento.</div>
+    </div>
+  </div>
+  <div class="foot"><span class="vbar">Malha atual: caixa_protetora.stl</span><span class="vbar">|</span><span class="vbar">248.576 triângulos</span><span class="vbar">|</span><span class="vbar">2.48 MB</span><div class="r"><span>Unidades: mm</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1l-.3-2.5H9.4l-.3 2.5a7 7 0 0 0-1.7 1l-2.3-1-2 3.4L5 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1l.3 2.5h4.2l.3-2.5a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z"/></svg></div></div>
+</div></div></body></html>
