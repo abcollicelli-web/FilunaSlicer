@@ -89,6 +89,7 @@ def main() -> int:
         print("CUBE_FIXTURE_MISSING", CUBE)
         return 2
 
+    ns.official_cache.resolve().mkdir(parents=True, exist_ok=True)
     archive, url = obtain(OFFICIAL["snapmaker"], ns.official_cache.resolve())
     official = extract_executable(archive, OFFICIAL["snapmaker"]["exe"], ns.official_cache.resolve() / "extracted")
 
