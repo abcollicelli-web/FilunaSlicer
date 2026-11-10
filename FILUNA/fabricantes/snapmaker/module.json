@@ -130,5 +130,12 @@
       "driver_in_open_source": "src/slic3r/Utils/ConnectionProcessManager.* e GUI/ConnectPrinter.* apenas lancam esse binario fechado",
       "native_open_alternative": "Rede/controle da U1 pelo caminho aberto Moonraker/MQTT (src/slic3r/Utils/MoonRaker.*, MQTT.*), com o mesmo emparelhamento que o oficial pede ao usuario"
     }
+  },
+  "connectivity": {
+    "path": "Moonraker/MQTT (Klipper nativo)",
+    "status": "DECIDIDO",
+    "closed_excluded": "snapmaker_control",
+    "policy": "FILUNA/REGRA-CANONICA-CONECTIVIDADE-OPEN-20261110.md",
+    "rules": "fonte aberta/SDK aberto; sem componente fechado; sem desvio de autenticacao; homologar por modelo"
   }
 }
