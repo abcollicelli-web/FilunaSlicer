@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.wrap{padding:30px 34px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.02em}.sub{color:var(--ink2);font-size:15px;margin-top:8px}
+.chips{display:flex;gap:10px;margin:22px 0}
+.chip{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:1px solid var(--line);border-radius:11px;font-size:14.5px;font-weight:500}
+.chip.on{background:var(--magenta-deep);color:#fff;border-color:var(--magenta-deep);font-weight:700}.chip.on .ic{color:#fff}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.m{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.m .thumb{height:150px;border-radius:0;color:#B9A9A0}
+.m .b{display:flex;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
+.m .n{font-size:15.5px;font-weight:700}.m .s{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.m .sp{margin-left:auto;color:var(--magenta)}
+.pg{display:flex;align-items:center;margin-top:22px;font-size:14px;color:var(--ink2)}
+.pn{display:flex;gap:8px;margin-left:auto;align-items:center}.pn b{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--ink2)}
+.pn b.on{background:var(--magenta-deep);color:#fff}
+</style></head><body><div class="page"><div class="app">
+<div class="top"><div class="logo"><span class="f">Filuna</span><span class="d">3D</span></div><div class="spacer"></div>
+  <div class="tabs">
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>Início</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-2 5-4 1 2-5z"/></svg>Explorar</div>
+    <div class="tab on"><svg class="ic" viewBox="0 0 24 24" style="color:currentColor"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 15l4-4 4 4 3-3 5 5"/></svg>Paramétricos</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l7 5"/></svg>Meus modelos</div>
+    <div class="tab"><svg class="ic" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.500-7 10-7 10z"/></svg>Favoritos</div>
+  </div><div class="spacer"></div>
+  <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
+  <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.500 18a6 6 0 0 1 11 0"/></svg></div>
+<div class="wrap">
+  <h1>Modelos paramétricos</h1><div class="sub">Personalize cada modelo com parâmetros e gere seu STL na hora.</div>
+  <div class="chips" id="c"></div>
+  <div class="grid" id="g"></div>
+  <div class="pg">Mostrando 1–12 de 48 modelos<div class="pn"><b>‹</b><b class="on">1</b><b>2</b><b>3</b><b>4</b><b>›</b></div></div>
+</div></div></div>
+<script>
+var star='<svg class="ic" viewBox="0 0 24 24" style="color:currentColor"><path d="M12 3l1.800 5.200L19 10l-5.200 1.800L12 17l-1.800-5.200L5 10l5.200-1.800z"/></svg>';
+["Todos","Chaveiros","Organizadores","Vasos","Caixas","Suportes","Decoração","Educativos","Casa"].forEach(function(t,i){
+ document.getElementById('c').insertAdjacentHTML('beforeend','<div class="chip'+(i==0?' on':'')+'">'+(i==0?star:'<svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg>')+t+'</div>');});
+var M=[["Chaveiro Lua","Chaveiro",3,1,'<path d="M15 5a7 7 0 1 0 4 12 8 8 0 0 1-4-12z"/><circle cx="16" cy="4" r="2"/>'],["Organizador de Mesa","Organizador",4,1,'<path d="M3 9l9-4 9 4v8l-9 4-9-4z"/><path d="M12 9v12M3 9l9 4 9-4M7.500 11v8M16.500 11v8"/>'],["Vaso Hexagonal","Vaso",3,0,'<path d="M7 11h10l2 5-3 5H8l-3-5z"/><path d="M12 11c-3-2-3-5 0-7 3 2 3 5 0 7z"/>'],["Caixa Porta-joias Empilhável","Caixa",4,0,'<ellipse cx="12" cy="8" rx="8" ry="3"/><path d="M4 8v9c0 1.700 3.600 3 8 3s8-1.300 8-3V8M4 12.500c0 1.700 3.600 3 8 3s8-1.300 8-3"/>'],["Suporte de Celular","Suporte",3,0,'<path d="M8 4h8l2 14H6z"/><path d="M5 18h14v2H5z"/>'],["Chaveiro Flor","Chaveiro",3,0,'<circle cx="12" cy="13" r="2"/><circle cx="12" cy="8.500" r="3"/><circle cx="16.500" cy="13" r="3"/><circle cx="12" cy="17.500" r="3"/><circle cx="7.500" cy="13" r="3"/>'],["Organizador com Gavetas","Organizador",5,0,'<rect x="4" y="5" width="16" height="14" rx="1"/><path d="M4 12h16M10 8.500h4M10 15.500h4"/>'],["Vaso Canelado","Vaso",3,0,'<path d="M6 11h12l-1.500 9h-9z"/><path d="M9 11v9M12 11v9M15 11v9M12 11c-4-1-4-5-1-7M12 11c4-1 4-5 1-7"/>'],["Caixa de Armazenamento","Caixa",4,0,'<path d="M4 9h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M3 6h18v3H3zM9 7.500h6"/>'],["Enfeite Estrela","Decoração",3,0,'<path d="M12 4l2.400 5 5.600.700-4.100 3.800 1 5.500-4.900-2.700L7.100 19l1-5.500L4 9.700l5.600-.700z"/><circle cx="12" cy="3" r="1"/>'],["Tabuada","Educativo",3,0,'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h.01M12 9h.01M16 9h.01M8 12h.01M12 12h.01M16 12h.01M8 15h.01M12 15h.01M16 15h.01" stroke-width="2.500"/>'],["Organizador de Cabos","Casa",3,0,'<rect x="3" y="9" width="18" height="7" rx="3.500"/><path d="M7 11v3M10.300 11v3M13.600 11v3M17 11v3"/>']];
+M.forEach(function(m){document.getElementById('g').insertAdjacentHTML('beforeend','<div class="m"><div class="thumb"><svg width="84" height="84" viewBox="0 0 24 24" style="stroke-width:1.100">'+m[4]+'</svg></div><div class="b"><div><div class="n">'+m[0]+'</div><div class="s">'+m[1]+' · '+m[2]+' parâmetros</div></div>'+(m[3]?'<span class="sp">'+star+'</span>':'')+'</div></div>');});
+</script></body></html>
