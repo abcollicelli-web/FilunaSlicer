@@ -528,3 +528,7 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Telas: 9 telas em `FILUNA/design/visual-c/ui/` (HTML/CSS de referência, não é o app compilado).
 - Snapmaker U1: portátil compilado da fonte aberta com sucesso (run 42851665029); comparação de G-code refeita no run 42893583289 após correção de import — veredito pendente.
 - Fatos verificados que o guia registra: servidor só tem conta de administrador; Orca não traz SQLite; Orca 2.5 já tem plugins Python e ilustração em tooltip.
+
+### Desenho: geradores e ferramentas no cliente, controle no servidor (11/11/2026)
+- `FILUNA/guia-v1/05-GERADORES-E-FERRAMENTAS.md`: pacote assinado por gerador, execução no fatiador via sistema de plugins Python do Orca + kit base compartilhado, vale de uso assinado emitido pelo servidor, cobrança só após confirmação, cota/créditos/vencimento decididos no servidor, licença offline limitada, migração de computador sem perda. Somente desenho; nada implementado e nada do que roda foi alterado.
+- Snapmaker U1 (comparação fonte×oficial): 3ª falha seguida na etapa de comparação (run 42903680160: presets efetivos não gerados em `qa-u1-source-parity/presets/`). Monitor encerrado conforme regra; não reagendado.

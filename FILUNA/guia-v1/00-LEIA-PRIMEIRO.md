@@ -10,8 +10,9 @@
 2. [01-TELAS.md](01-TELAS.md) — as telas aprovadas e como aplicá-las sem destruí-las.
 3. [02-DADOS-E-FORMULAS.md](02-DADOS-E-FORMULAS.md) — modelo de dados, eventos e todas as fórmulas, com exemplos numéricos.
 4. [03-SERVIDOR-E-BACKUP.md](03-SERVIDOR-E-BACKUP.md) — contas, API, sincronização e vínculo de arquivos.
-5. [04-CRONOGRAMA.md](04-CRONOGRAMA.md) — fases, tarefas, arquivos a tocar e teste de aceite de cada uma.
-6. Regras canônicas já existentes: `../REGRA-CANONICA-MODULOS-FABRICANTE-SOB-DEMANDA-20261110.md`, `../REGRA-CANONICA-CONECTIVIDADE-OPEN-20261110.md`, `../SPEC-V1-BASE-COMPLETA-20261110.md`, `../REGISTRO-CONTINUIDADE-ETAPAS.md`, e `AGENTS.md` na raiz.
+5. [05-GERADORES-E-FERRAMENTAS.md](05-GERADORES-E-FERRAMENTAS.md) — geradores paramétricos e ferramentas: executam no cliente, servidor controla direitos, uso e cobrança.
+6. [04-CRONOGRAMA.md](04-CRONOGRAMA.md) — fases, tarefas, arquivos a tocar e teste de aceite de cada uma.
+7. Regras canônicas já existentes: `../REGRA-CANONICA-MODULOS-FABRICANTE-SOB-DEMANDA-20261110.md`, `../REGRA-CANONICA-CONECTIVIDADE-OPEN-20261110.md`, `../SPEC-V1-BASE-COMPLETA-20261110.md`, `../REGISTRO-CONTINUIDADE-ETAPAS.md`, e `AGENTS.md` na raiz.
 
 ## Os dois repositórios
 
