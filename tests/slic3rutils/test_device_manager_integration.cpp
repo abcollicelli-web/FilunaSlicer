@@ -150,7 +150,9 @@ TEST_CASE("Device manager filters and rehomes devices by printer-agent ownership
     DeviceManager manager(&network, false, &app_config.config);
 
     BBLocalMachine machine;
-    machine.dev_id       = "integration-lan-device";
+    // P1P (C11) discovery requires a serial beginning with 01S.
+    // Keep the ID synthetic, but valid, to reach the agent-rehoming assertions.
+    machine.dev_id       = "01S-integration-lan-device";
     machine.dev_name     = "Integration LAN device";
     machine.dev_ip       = "192.0.2.10";
     machine.printer_type = "C11";
@@ -166,7 +168,7 @@ TEST_CASE("Device manager filters and rehomes devices by printer-agent ownership
 
     manager.on_machine_alive(R"({
         "dev_name":"Rediscovered device",
-        "dev_id":"integration-lan-device",
+        "dev_id":"01S-integration-lan-device",
         "dev_ip":"192.0.2.10",
         "dev_type":"C11",
         "dev_signal":"strong",
