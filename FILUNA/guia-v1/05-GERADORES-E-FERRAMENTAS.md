@@ -90,7 +90,7 @@ licencas_offline(id, cliente_id, dispositivo_id, valida_ate, usos_restantes, ass
    - `bloqueado` → não, como liberar: "Disponível no plano X".
 5. Limite de dispositivos do plano (computadores ativos nos últimos 30 dias).
 
-`fase = previa` com `custo.previa = 0` não consome nada, mas passa pelas verificações 1–3 (gerador de plano vencido não roda nem prévia).
+**Prévia nunca cobra (decisão do dono, 11/11/2026).** `custo.previa` é sempre 0 e o servidor ignora qualquer outro valor. A prévia ainda passa pelas verificações 1–3 (gerador de plano vencido não roda nem prévia).
 
 ## 5. Vale de uso (como o servidor controla algo que roda no cliente)
 
@@ -105,9 +105,34 @@ licencas_offline(id, cliente_id, dispositivo_id, valida_ate, usos_restantes, ass
 4. Deu certo → `POST /usos/{uso_id}/confirmar` com `{triangulos, sha256_resultado, tempo_s}` (nunca o arquivo) → `confirmado`.
    Falhou ou o cliente cancelou → `POST /usos/{uso_id}/cancelar` → `cancelado` e a reserva volta.
    Ninguém respondeu em 30 min → servidor marca `expirado` e devolve a reserva.
-5. Mesmo cliente, mesmo gerador, mesmo `hash_parametros` confirmado nas últimas 24 h → **não cobra de novo** (gerar outra vez a mesma peça é reimpressão, não uso novo).
+5. Mesmo cliente, mesmo gerador, mesmo `hash_parametros` já confirmado antes → **não cobra de novo**, sem limite de tempo: é a recriação de uma peça que o cliente já pagou (§5b).
 
 **Exemplo.** Plano com `cota_mensal = 30` para litofania. No mês: 28 confirmados + 1 reservado = 29 ≤ 30 → libera. Próxima tentativa com o reservado ainda pendente: 28 + 2 = 30 ≤ 30 → libera. Depois: 31 > 30 → bloqueado, "Cota do mês esgotada — use créditos avulsos ou mude de plano".
+
+## 5b. Histórico de gerações: guarda os parâmetros, não o arquivo
+
+**Decisão do dono (11/11/2026):** o servidor guarda **os parâmetros** de cada geração, nunca o arquivo gerado, para não pesar. Para usar de novo uma peça gerada há uma semana, o cliente acha no histórico, o servidor reenvia os parâmetros e o fatiador **recria** a peça localmente.
+
+```sql
+geracoes(id, cliente_id, uso_id, gerador_id, versao, kit,
+         parametros_json, hash_parametros,
+         entradas_json,          -- referências às entradas (imagem, texto, fonte), ver abaixo
+         sha256_resultado, triangulos, criado_em, nome)
+```
+Uma linha por uso **confirmado** (prévias não entram). Tamanho típico: menos de 2 KB.
+
+**Recriar:**
+1. Cliente abre Meu espaço → Histórico de gerações (ou o gerador → "Minhas gerações") e escolhe a peça.
+2. O fatiador baixa a linha: gerador, **versão**, kit e parâmetros.
+3. Recria com **a mesma versão do gerador e do kit** da época. Por isso o servidor mantém todas as versões publicadas de cada pacote (nunca apagar versão que tenha geração registrada): versão nova pode mudar o resultado.
+4. Confere: o SHA-256 da malha recriada deve ser igual a `sha256_resultado`. Igual → "Peça recriada idêntica". Diferente → compara triângulos e volume (tolerância 0,1%) e avisa "recriada com pequena diferença"; nunca troca em silêncio.
+5. Não cobra (§5, item 5). Exige plano vigente (verificações 1–3): plano vencido não recria.
+6. Se o cliente alterar algum parâmetro antes de recriar, é geração nova (novo `hash_parametros`) e cobra normalmente.
+
+**Entradas que não são parâmetro** (imagem da litofania, foto, SVG): sem elas não dá para recriar. **Decisão pendente do dono:**
+- (a) guardar a entrada no servidor, comprimida (foto redimensionada fica em centenas de KB); ou
+- (b) guardar só o vínculo com o arquivo no computador do cliente, como os modelos 3D (03-SERVIDOR §3), com "Localizar arquivo"; em outro computador a recriação pede o arquivo de novo.
+Nos dois casos, guardar o SHA-256 da entrada e conferir na recriação.
 
 ## 6. Sem internet
 
@@ -117,7 +142,7 @@ licencas_offline(id, cliente_id, dispositivo_id, valida_ate, usos_restantes, ass
 
 ## 7. Migrar de computador e o que acontece no vencimento
 
-**Trocar de computador:** login no novo notebook → o servidor já tem plano, créditos, histórico de usos, **receitas** (parâmetros salvos) e favoritos → o catálogo aparece igual → cada gerador é baixado só quando o cliente abre (mais o kit base uma vez). Nada fica preso ao PC antigo. O PC antigo pode ser revogado no site.
+**Trocar de computador:** login no novo notebook → o servidor já tem plano, créditos, histórico de usos, **histórico de gerações** (§5b, recria qualquer peça já gerada), **receitas** (parâmetros salvos) e favoritos → o catálogo aparece igual → cada gerador é baixado só quando o cliente abre (mais o kit base uma vez). Nada fica preso ao PC antigo. O PC antigo pode ser revogado no site.
 
 **Plano vencido:**
 - geradores e ferramentas não executam (nem prévia); a tela mostra o motivo e o botão "Renovar";
@@ -154,8 +179,8 @@ Entra **depois da Fase 6** (contas e sincronização), porque depende de conta d
 ## 12. Decisões do dono antes de implementar
 
 1. Preço por uso, cota por plano e quais geradores cada plano inclui.
-2. Prévia sempre grátis? (este desenho assume que sim)
-3. Horas e usos offline por plano (sugestão: 72 h e 10 usos).
-4. Quantos computadores por conta em cada plano.
-5. Quais geradores ficam **só no servidor** porque a lógica é segredo.
-6. A janela de "não cobrar de novo" é 24 h?
+2. Horas e usos offline por plano (sugestão: 72 h e 10 usos).
+3. Quantos computadores por conta em cada plano.
+4. Quais geradores ficam **só no servidor** porque a lógica é segredo.
+5. Recriar do histórico é sempre grátis? (este desenho assume que sim, por ser peça já paga)
+6. Imagem/foto de entrada: guardar no servidor (a) ou só o vínculo no PC (b)? (§5b)
