@@ -141,12 +141,17 @@ Uma linha por uso **confirmado** (prévias não entram). Tamanho típico: menos 
 - Aviso também ao passar de 80% do limite, no Meu espaço.
 - Geração cuja imagem foi removida fica no histórico como "Imagem não disponível — envie a imagem de novo para recriar"; ao reenviar, o SHA-256 confere se é a mesma.
 
-**Preço do espaço extra — PROPOSTA, aguardando aprovação do dono (11/11/2026):**
-- Base de custo: servidor €25/mês ≈ R$ 140 (euro a ~R$ 5,60), disco de 698 GB (376 GB usados, 322 GB livres, medido em 11/11/2026). Disco puro ≈ R$ 0,20/GB/mês; com cópia de segurança em outro lugar e tráfego, considerar ≈ R$ 0,50/GB/mês.
-- Os 50 MB grátis custam ≈ R$ 0,025/mês por cliente. Reservando 100 GB do disco para imagens: ≈ 2.000 clientes no limite grátis.
-- Pacotes: **+500 MB R$ 2,90/mês · +2 GB R$ 5,90/mês · +5 GB R$ 9,90/mês** (custo real ≈ R$ 0,25 · R$ 1,00 · R$ 2,50).
-- Vender como **adicional do plano** (na mesma cobrança), não como cobrança separada: a taxa fixa do meio de pagamento come quase todo um valor de R$ 2,90 cobrado sozinho.
-- Rever quando as imagens passarem de 100 GB no total ou o euro variar mais de 10%.
+**Onde as imagens ficam e quanto custa de verdade — PROPOSTA revisada (11/11/2026), aguardando o dono:**
+- **Não guardar no servidor do site** (IONOS, €25/mês, 698 GB): ele é o site e o banco; disco cheio derruba tudo. As imagens vão para um **armazenamento de objetos** contratado à parte, com interface S3.
+- **Escolha: Cloudflare R2** para começar. Preço: US$ 0,015 por GB/mês, **10 GB/mês grátis**, 1 milhão de gravações e 10 milhões de leituras grátis por mês, **sem cobrança por download** (importante: o fatiador baixa a imagem toda vez que recria). Alternativas S3 compatíveis (troca sem reescrever): Backblaze B2 (US$ 6,95/TB/mês, 10 GB grátis, download grátis até 3× o armazenado), IONOS Object Storage (mesmo fornecedor do servidor; conferir o preço de download antes).
+- **Custo real** (dólar ≈ R$ 5,00): R2 ≈ **R$ 0,075 por GB/mês** depois dos 10 GB grátis.
+  - 50 MB grátis × 200 clientes = 10 GB → **R$ 0,00/mês**.
+  - 50 MB × 1.000 clientes = 50 GB → 40 GB pagos → **≈ R$ 3,00/mês**.
+  - + 100 clientes com 5 GB extra = 500 GB → **≈ R$ 40/mês**, pagos por esses próprios clientes.
+- **Ligação com o site** (custo de desenvolvimento, uma vez): módulo `site/app/armazenamento_imagens.py` com a biblioteca S3 (`boto3`). O servidor **não recebe o arquivo**: gera um link de envio assinado de 10 minutos e o fatiador envia direto para o R2; para recriar, link de leitura assinado de 10 minutos. Assim a imagem não passa pelo servidor de €25 (nem disco, nem banda). Chave de acesso do R2 no cofre (`credential_vault.py`). Bucket privado; nada público.
+- **Preço proposto ao cliente** (o custo do armazenamento é centavos; o que pesa é a taxa fixa de cada cobrança do meio de pagamento, por isso só como adicional do plano, na mesma fatura):
+  **+1 GB R$ 1,90/mês · +5 GB R$ 4,90/mês · +20 GB R$ 9,90/mês** (custo real ≈ R$ 0,08 · R$ 0,38 · R$ 1,50). Referência para o cliente: Google One Lite 30 GB custa R$ 4,50/mês.
+- Rever se o total passar de 1 TB ou o dólar variar mais de 15%.
 
 **B. Google Drive do próprio cliente (opcional, sem limite Filuna).**
 - O cliente conecta a conta Google uma vez (OAuth 2.0 no site; o fatiador só usa o resultado). Escopo **`https://www.googleapis.com/auth/drive.file`**: o Filuna só enxerga os arquivos que ele mesmo criou, nunca o resto do Drive do cliente.
