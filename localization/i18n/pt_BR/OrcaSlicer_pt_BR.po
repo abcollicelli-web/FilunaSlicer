@@ -6992,6 +6992,16 @@ msgstr "Design"
 msgid "Prepare"
 msgstr "Preparar"
 
+# Filuna: nome da aba principal (Direção Visual C)
+msgctxt "Main tab"
+msgid "Prepare"
+msgstr "Preparação"
+
+# Filuna: nome da aba principal (Direção Visual C)
+msgctxt "Main tab"
+msgid "Preview"
+msgstr "Visualização"
+
 msgid "Preview"
 msgstr "Pré-visualizar"
 

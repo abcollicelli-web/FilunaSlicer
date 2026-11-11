@@ -32,11 +32,7 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
 #endif //__WINDOWS__
 
     wxColour default_btn_bg;
-#ifdef __APPLE__
-    default_btn_bg = wxColour("#3B4446"); // Gradient #414B4E
-#else
-    default_btn_bg = wxColour("#2D2D30"); // Gradient #414B4E
-#endif
+    default_btn_bg = wxColour(255, 253, 251); // Filuna: barra de abas clara (Direção Visual C)
 
    
     SetBackgroundColour(default_btn_bg);
@@ -136,12 +132,11 @@ void ButtonsListCtrl::SetSelection(int sel)
     wxColour selected_btn_bg("#C2185B");    // Gradient #C2185B
     if (m_selection >= 0 && m_selection < static_cast<int>(m_pageButtons.size())) {
         StateColor bg_color = StateColor(
-        std::pair{wxColour(107, 107, 107), (int) StateColor::Hovered},
-        std::pair{wxColour(59, 68, 70), (int) StateColor::Normal});
+        std::pair{wxColour(246, 239, 231), (int) StateColor::Hovered},
+        std::pair{wxColour(255, 253, 251), (int) StateColor::Normal});
         m_pageButtons[m_selection]->SetBackgroundColor(bg_color);
         StateColor text_color = StateColor(
-        std::pair{wxColour(254,254, 254), (int) StateColor::Normal}
-        );
+        std::pair{wxColour(58, 58, 58), (int) StateColor::Normal});
         m_pageButtons[m_selection]->SetTextColor(text_color);
     }
 
@@ -154,13 +149,12 @@ void ButtonsListCtrl::SetSelection(int sel)
     m_selection = sel;
 
     StateColor bg_color = StateColor(
-        std::pair{wxColour(0, 150, 136), (int) StateColor::Hovered},
-        std::pair{wxColour(0,150, 136), (int) StateColor::Normal});
+        std::pair{wxColour(255, 232, 242), (int) StateColor::Hovered},
+        std::pair{wxColour(255, 232, 242), (int) StateColor::Normal});
     m_pageButtons[m_selection]->SetBackgroundColor(bg_color);
 
     StateColor text_color = StateColor(
-        std::pair{wxColour(254, 254, 254), (int) StateColor::Normal}
-        );
+        std::pair{wxColour(179, 18, 92), (int) StateColor::Normal});
     m_pageButtons[m_selection]->SetTextColor(text_color);
     
     Refresh();
@@ -169,7 +163,7 @@ void ButtonsListCtrl::SetSelection(int sel)
 bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /* = false*/, const std::string &bmp_name /* = ""*/, const wxBitmap &bmp /* = wxNullBitmap */)
 {
     Button * btn = new Button(this, text, bmp_name, wxNO_BORDER);
-    btn->SetCornerRadius(0);
+    btn->SetCornerRadius(10); // Filuna: abas em pílula
 
     if (bmp_name.empty() && bmp.IsOk())
         btn->SetIcon(bmp);
@@ -189,12 +183,12 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
     btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 36 * em / 10});
 
     StateColor bg_color = StateColor(
-        std::pair{wxColour(107, 107, 107), (int) StateColor::Hovered},
-        std::pair{wxColour(59, 68, 70), (int) StateColor::Normal});
+        std::pair{wxColour(246, 239, 231), (int) StateColor::Hovered},
+        std::pair{wxColour(255, 253, 251), (int) StateColor::Normal});
 
     btn->SetBackgroundColor(bg_color);
     StateColor text_color = StateColor(
-        std::pair{wxColour(254,254, 254), (int) StateColor::Normal});
+        std::pair{wxColour(58, 58, 58), (int) StateColor::Normal});
     btn->SetTextColor(text_color);
     btn->Bind(wxEVT_BUTTON, [this, btn](wxCommandEvent& event) {
         if (auto it = std::find(m_pageButtons.begin(), m_pageButtons.end(), btn); it != m_pageButtons.end()) {
