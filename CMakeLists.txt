@@ -1385,7 +1385,7 @@ endif ()
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Filuna Slicer - based on OrcaSlicer (AGPL-3.0)")
 set (CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/abcollicelli-web/FilunaSlicer")
 set (CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
-set (CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/images\\\\OrcaSlicer.ico")
+set (CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/images\\\\Filuna.ico")
 set (CPACK_NSIS_MUI_ICON "${CPACK_PACKAGE_ICON}")
 set (CPACK_NSIS_MUI_UNIICON "${CPACK_PACKAGE_ICON}")
 # Relative to the install dir: CPack's NSIS template prefixes $INSTDIR itself.

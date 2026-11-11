@@ -370,7 +370,7 @@ function ShowRecentFileList( pList )
 		let btnPath  = isExist ? sPath : ""; // blank path will disable btn event
 		
 		let sBadge=sPublished? '<span class="FilePublishedBadge">'+T("published_badge", "PUB")+'</span>':'';
-		let sLogoBadge=sPublished? '<img class="FileLogoBadge" src="../../images/OrcaSlicer_gradient_circle.svg" alt="" />':'';
+		let sLogoBadge=sPublished? '<img class="FileLogoBadge" src="../../images/Filuna_brand_mark.png" alt="" />':'';
 
 		let TmpHtml='<div class="FileItem"  fpath="'+sPath+'"  >'+
 						'<a class="FileTip" title="'+sPath+'"></a>'+
