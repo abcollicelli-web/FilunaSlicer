@@ -73,3 +73,35 @@ jobs:
           path: build/OrcaSlicer/
           if-no-files-found: error
           retention-days: 7
+      - name: Generate Filuna NSIS installer (Fase 1 QA only — no release)
+        if: startsWith(github.ref_name, 'filuna/v1-f01-')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "FILUNA_NSIS_INSTALL_TOOL_FAILED exit=$LASTEXITCODE" }
+            $env:PATH = "C:\Program Files (x86)\NSIS;$env:PATH"
+          }
+          Push-Location build
+          try {
+            & cpack -G NSIS -C Release
+            if ($LASTEXITCODE -ne 0) { throw "FILUNA_NSIS_CPACK_FAILED exit=$LASTEXITCODE" }
+          }
+          finally {
+            Pop-Location
+          }
+          $packages = @(Get-ChildItem -Path build -File -Filter "FilunaSlicer_Windows_Installer_V*.exe")
+          if ($packages.Count -eq 0) { throw "FILUNA_NSIS_INSTALLER_MISSING" }
+          foreach ($package in $packages) {
+            Write-Host ("FILUNA_NSIS_QA_INSTALLER " + $package.Name)
+            Get-FileHash -Algorithm SHA256 $package.FullName | Format-List
+          }
+      - name: Upload Filuna installer as QA artifact (not a release)
+        if: startsWith(github.ref_name, 'filuna/v1-f01-')
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-qa-windows-installer-${{ github.sha }}
+          path: build/FilunaSlicer_Windows_Installer_V*.exe
+          if-no-files-found: error
+          retention-days: 7

@@ -252,18 +252,18 @@ ModeSwitchButton::ModeSwitchButton(wxWindow* parent, wxWindowID id)
     border_color = StateColor(
         std::make_pair(wxColour("#D9D9D9"), (int) StateColor::Disabled),
         std::make_pair(wxColour("#D9D9D9"), (int) StateColor::Hovered | ~StateColor::Focused),
-        std::make_pair(wxColour("#26A69A"), (int) StateColor::Focused),
+        std::make_pair(wxColour("#FF2E8A"), (int) StateColor::Focused),
         std::make_pair(wxColour("#D9D9D9"), (int) StateColor::Normal)
     );
     track_background = StateColor(
-        std::make_pair(wxColour("#009688"), (int) StateColor::Disabled),
-        std::make_pair(wxColour("#009688"), (int) StateColor::Normal)
+        std::make_pair(wxColour("#C2185B"), (int) StateColor::Disabled),
+        std::make_pair(wxColour("#C2185B"), (int) StateColor::Normal)
     );
     track_border = StateColor(
         std::make_pair(wxColour("#D9D9D9"), (int) StateColor::Disabled),
-        std::make_pair(wxColour("#009688"), (int) StateColor::Hovered | ~StateColor::Focused),
-        std::make_pair(wxColour("#26A69A"), (int) StateColor::Focused),
-        std::make_pair(wxColour("#009688"), (int) StateColor::Normal)
+        std::make_pair(wxColour("#C2185B"), (int) StateColor::Hovered | ~StateColor::Focused),
+        std::make_pair(wxColour("#FF2E8A"), (int) StateColor::Focused),
+        std::make_pair(wxColour("#C2185B"), (int) StateColor::Normal)
     );
     dot_active = StateColor(
         std::make_pair(wxColour("#FFFEFE"), (int) StateColor::Disabled),
