@@ -59,7 +59,8 @@ using namespace nlohmann;
 
 namespace Slic3r {
 
-static const std::string VERSION_CHECK_URL = "https://check-version.orcaslicer.com/latest";
+// Filuna: o aviso de nova versão vem do site Filuna (mesmo formato de lista de releases do GitHub), não do Orca.
+static const std::string VERSION_CHECK_URL = "https://filuna3d.com/api/slicer/v1/versao";
 static const std::string PROFILE_UPDATE_URL = "https://check-version.orcaslicer.com/profile";
 
 constexpr const char* CONFIG_ORCA_UPDATER_URL = "orca_updater_url";
