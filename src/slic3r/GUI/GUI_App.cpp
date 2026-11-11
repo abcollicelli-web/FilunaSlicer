@@ -8570,6 +8570,9 @@ bool GUI_App::load_language(wxString language, bool initial)
     	// There is a static list of lookup path prefixes in wxWidgets. Add ours.
 	    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(from_u8(localization_dir()));
     	// Get the active language from PrusaSlicer.ini, or empty string if the key does not exist.
+        // Filuna defaults to pt-BR on first launch; keep existing user preferences.
+        if (app_config->get("language").empty())
+            app_config->set("language", "pt_BR");
         language = app_config->get("language");
         if (! language.empty())
         	BOOST_LOG_TRIVIAL(info) << boost::format("language provided by OrcaSlicer.conf: %1%") % language;
