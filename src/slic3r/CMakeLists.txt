@@ -4,6 +4,8 @@ project(libslic3r_gui)
 include(PrecompiledHeader)
 
 set(SLIC3R_GUI_SOURCES
+    Filuna/FilunaFoundation.cpp
+    Filuna/FilunaFoundation.hpp
     GUI/Widgets/AnimaController.hpp
     GUI/Widgets/AnimaController.cpp
     Config/Snapshot.cpp
@@ -881,6 +883,9 @@ if (SLIC3R_CAD)
     )
 endif ()
 
+# Filuna v1 foundation: bundle SQLite independently of the Orca slicing engine.
+add_subdirectory("${CMAKE_SOURCE_DIR}/src/sqlite3" "${CMAKE_BINARY_DIR}/filuna_sqlite3")
+
 add_subdirectory(GUI/DeviceCore)
 add_subdirectory(GUI/DeviceTab)
 
@@ -971,6 +976,7 @@ else()
     set(_opengl_link_lib OpenGL::GL)
 endif()
 
+target_link_libraries(libslic3r_gui filuna_sqlite3)
 target_link_libraries(libslic3r_gui libslic3r cereal::cereal imgui imguizmo minilzo libvgcode md4c-html glad ${_opengl_link_lib} hidapi mdns ${wxWidgets_LIBRARIES} glfw libcurl OpenSSL::SSL OpenSSL::Crypto LibDataChannel::LibDataChannel noise::noise pybind11::embed)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

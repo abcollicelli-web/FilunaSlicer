@@ -1,11 +1,14 @@
 name: Filuna Windows QA executable (NO installer)
 on:
   push:
-    branches: [filuna/oem-portable-first-qa-20261106]
+    branches: [filuna/oem-portable-first-qa-20261106, "filuna/v1-f00-*"]
     paths:
       - ".github/workflows/filuna-windows-qa-exe.yml"
       - "src/libslic3r/**"
       - "CMakeLists.txt"
+      - "src/slic3r/CMakeLists.txt"
+      - "src/slic3r/Filuna/**"
+      - "src/sqlite3/**"
   workflow_dispatch:
 permissions:
   contents: read
@@ -61,7 +64,7 @@ jobs:
         run: |
           $ErrorActionPreference="Stop"
           $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\\","/")
-          .\build_win.bat -s -i --arch x64 --deps-dir $deps --msvc --msbuild --no-gettext --jobs 4
+          .\build_win.bat -s -i --run-tests --arch x64 --deps-dir $deps --msvc --msbuild --no-gettext --jobs 4
           if ($LASTEXITCODE -ne 0) { throw "FILUNA_QA_EXE_BUILD_FAILED exit=$LASTEXITCODE" }
           Get-ChildItem -Recurse build/OrcaSlicer -Filter *.exe | Select-Object FullName
       - uses: actions/upload-artifact@v4
