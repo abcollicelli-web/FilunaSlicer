@@ -1,0 +1,8 @@
+{
+  "wall_loops": {
+    "titulo": "Voltas da parede",
+    "oque": "Define quantas linhas de contorno são impressas ao redor da peça.",
+    "efeito": "Mais voltas podem aumentar a resistência e o tempo de impressão.",
+    "exemplo": "wall_loops.png"
+  }
+}
