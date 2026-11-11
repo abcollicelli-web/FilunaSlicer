@@ -126,13 +126,28 @@ Uma linha por uso **confirmado** (prévias não entram). Tamanho típico: menos 
 2. O fatiador baixa a linha: gerador, **versão**, kit e parâmetros.
 3. Recria com **a mesma versão do gerador e do kit** da época. Por isso o servidor mantém todas as versões publicadas de cada pacote (nunca apagar versão que tenha geração registrada): versão nova pode mudar o resultado.
 4. Confere: o SHA-256 da malha recriada deve ser igual a `sha256_resultado`. Igual → "Peça recriada idêntica". Diferente → compara triângulos e volume (tolerância 0,1%) e avisa "recriada com pequena diferença"; nunca troca em silêncio.
-5. Não cobra (§5, item 5). Exige plano vigente (verificações 1–3): plano vencido não recria.
+5. Não cobra (§5, item 5) — **decisão do dono (11/11/2026): recriar é grátis com plano ativo.** Plano suspenso ou vencido: o histórico de gerações não abre e o botão Gerar fica bloqueado, com a mensagem exata: **"Regularize seu plano para ver suas criações e criar novas."** e o botão **Regularizar plano**. Nada é apagado; tudo volta ao regularizar.
 6. Se o cliente alterar algum parâmetro antes de recriar, é geração nova (novo `hash_parametros`) e cobra normalmente.
 
-**Entradas que não são parâmetro** (imagem da litofania, foto, SVG): sem elas não dá para recriar. **Decisão pendente do dono:**
-- (a) guardar a entrada no servidor, comprimida (foto redimensionada fica em centenas de KB); ou
-- (b) guardar só o vínculo com o arquivo no computador do cliente, como os modelos 3D (03-SERVIDOR §3), com "Localizar arquivo"; em outro computador a recriação pede o arquivo de novo.
-Nos dois casos, guardar o SHA-256 da entrada e conferir na recriação.
+**Imagens de entrada (litofania, foto, SVG) — decisão do dono (11/11/2026):** sem a imagem não dá para recriar, então ela é guardada, em dois lugares possíveis.
+
+**A. Armazenamento Filuna (padrão): 50 MB por cliente.**
+- A imagem sobe **como o cliente enviou** (a qualidade importa para litofania; não recomprimir).
+- Tabela `imagens_entrada(id, cliente_id, sha256, tamanho_bytes, tipo_mime, local TEXT CHECK(local IN ('filuna','drive')), drive_file_id, criado_em, ultimo_uso_em)`. Mesma imagem usada em várias gerações = um arquivo só (deduplicada pelo SHA-256).
+- Ocupado = `Σ tamanho_bytes` das imagens com `local='filuna'` do cliente. Limite = `50 × 1024 × 1024` bytes (valor por plano em `plano_direitos`, para o "contrate mais" funcionar).
+- Ao subir imagem nova e passar do limite: apagar do servidor as imagens de `ultimo_uso_em` **mais antigo** até caber. Por isso ficam "as últimas 5, 6, 7" — quantas couberem conforme o tamanho.
+  **Exemplo:** imagens de 9, 8, 7, 12 e 10 MB = 46 MB. Nova de 8 MB → 54 MB > 50 → apaga a mais antiga (9 MB) → 45 MB, cabe.
+- **Antes de apagar, avisar** (nunca em silêncio): "Seu armazenamento de imagens está cheio. Para guardar esta, a imagem mais antiga (\"foto-praia.jpg\", usada em 2 criações) será removida. Contrate mais espaço com a Filuna ou use seu Google Drive para não perder seus projetos que usam imagens." Botões: **Contratar mais espaço** · **Usar meu Google Drive** · **Continuar e remover**.
+- Aviso também ao passar de 80% do limite, no Meu espaço.
+- Geração cuja imagem foi removida fica no histórico como "Imagem não disponível — envie a imagem de novo para recriar"; ao reenviar, o SHA-256 confere se é a mesma.
+
+**B. Google Drive do próprio cliente (opcional, sem limite Filuna).**
+- O cliente conecta a conta Google uma vez (OAuth 2.0 no site; o fatiador só usa o resultado). Escopo **`https://www.googleapis.com/auth/drive.file`**: o Filuna só enxerga os arquivos que ele mesmo criou, nunca o resto do Drive do cliente.
+- As imagens vão para a pasta **"Filuna — imagens"** no Drive do cliente; o servidor guarda só `drive_file_id` e SHA-256 (`local='drive'`, não conta nos 50 MB).
+- Token de atualização do Google criptografado no cofre do servidor (`credential_vault.py`); nunca no fatiador nem em log.
+- Ao conectar, oferecer "Mover minhas imagens atuais para o Drive" (libera os 50 MB).
+- Recriar: o servidor busca no Drive e entrega ao fatiador (ou entrega um link temporário). Se o cliente apagou o arquivo no Drive ou desconectou a conta: mesma mensagem de "Imagem não disponível".
+- Estado real: o servidor tem só o cadastro de credenciais `google_login` em `integrations_hub.py`, **sem callback Google implementado**. Criar o fluxo (`/api/slicer/v1/drive/conectar`, `/callback`, `/desconectar`) e registrar o app no Google Cloud com o escopo acima. A tela de consentimento do Google precisa ser verificada pelo Google antes de abrir para todos os clientes.
 
 ## 6. Sem internet
 
@@ -182,5 +197,4 @@ Entra **depois da Fase 6** (contas e sincronização), porque depende de conta d
 2. Horas e usos offline por plano (sugestão: 72 h e 10 usos).
 3. Quantos computadores por conta em cada plano.
 4. Quais geradores ficam **só no servidor** porque a lógica é segredo.
-5. Recriar do histórico é sempre grátis? (este desenho assume que sim, por ser peça já paga)
-6. Imagem/foto de entrada: guardar no servidor (a) ou só o vínculo no PC (b)? (§5b)
+5. Preço do espaço extra de imagens (acima de 50 MB).
