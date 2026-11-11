@@ -1,0 +1,61 @@
+name: Filuna pacote rápido (sem recompilar)
+# Imagens, tela inicial, estilos e traduções ficam em resources/ e não precisam de compilação.
+# Este fluxo pega o último executável compilado da base Filuna e troca só esses arquivos: minutos, não horas.
+# Mudança em código C++ continua indo para "Filuna Windows QA executable".
+on:
+  push:
+    branches: ["filuna/v1-base-*"]
+    paths:
+      - "resources/**"
+      - "localization/i18n/**"
+      - ".github/workflows/filuna-pacote-rapido.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: filuna-pacote-rapido-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pacote:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar o último executável compilado da base
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $runs = gh api "repos/${{ github.repository }}/actions/workflows/filuna-windows-qa-exe.yml/runs?status=success&per_page=50" | ConvertFrom-Json
+          $run = $runs.workflow_runs | Where-Object { $_.head_branch -like 'filuna/v1-base-*' } | Select-Object -First 1
+          if (-not $run) { throw "FILUNA_SEM_EXECUTAVEL_BASE: nenhuma compilação completa da base terminou com sucesso" }
+          $arts = gh api "repos/${{ github.repository }}/actions/runs/$($run.id)/artifacts" | ConvertFrom-Json
+          $art = $arts.artifacts | Where-Object { $_.name -like 'filuna-qa-windows-exe-*' } | Select-Object -First 1
+          if (-not $art) { throw "FILUNA_ARTEFATO_AUSENTE run=$($run.id)" }
+          gh run download $run.id -n $art.name -D pacote
+          "Executável da compilação $($run.id) (commit $($run.head_sha)); recursos do commit ${{ github.sha }}." | Out-File -Encoding utf8 pacote/FILUNA-PACOTE.txt
+          Get-Content pacote/FILUNA-PACOTE.txt
+      - name: Trocar recursos e traduções
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (-not (Get-ChildItem pacote -Filter *.exe)) { throw "FILUNA_PACOTE_SEM_EXE" }
+          robocopy resources pacote/resources /E /NFL /NDL /NJH /NJS
+          if ($LASTEXITCODE -ge 8) { throw "FILUNA_ROBOCOPY_FALHOU $LASTEXITCODE" }
+          foreach ($po in Get-ChildItem localization/i18n -Recurse -Filter "OrcaSlicer_*.po") {
+            $lang = $po.BaseName -replace '^OrcaSlicer_', ''
+            $dest = "pacote/resources/i18n/$lang"
+            New-Item -ItemType Directory -Force $dest | Out-Null
+            & .\tools\msgfmt.exe --check-format --check-header -o "$dest/OrcaSlicer.mo" $po.FullName
+            if ($LASTEXITCODE -ne 0) { throw "FILUNA_MSGFMT_FALHOU $lang" }
+          }
+          if (-not (Test-Path pacote/resources/i18n/pt_BR/OrcaSlicer.mo)) { throw "FILUNA_PTBR_MO_MISSING" }
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: filuna-pacote-rapido-${{ github.sha }}
+          path: pacote/
+          if-no-files-found: error
+          retention-days: 14

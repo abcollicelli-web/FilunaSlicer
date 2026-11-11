@@ -1,7 +1,7 @@
 name: Filuna Windows QA executable (NO installer)
 on:
   push:
-    branches: [filuna/oem-portable-first-qa-20261106, "filuna/v1-f00-*", "filuna/v1-f02-*", "filuna/v1-base-*"]
+    branches: [filuna/oem-portable-first-qa-20261106, "filuna/v1-f00-*", "filuna/v1-f02-*"]
     paths:
       - ".github/workflows/filuna-windows-qa-exe.yml"
       - "src/libslic3r/**"
@@ -9,11 +9,17 @@ on:
       - "src/slic3r/CMakeLists.txt"
       - "src/slic3r/Filuna/**"
       - "src/slic3r/GUI/**"
-      - "resources/filuna/**"
-      - "localization/i18n/pt_BR/**"
       - "src/sqlite3/**"
+  # Base Filuna (filuna/v1-base-*) compila pelo PR para o branch da etapa 2, que reaproveita o cache de dependências.
+  # Só código recompila; resources/ e traduções vão pelo "Filuna pacote rápido", sem compilar.
   pull_request:
     branches: ["filuna/v1-f02-*"]
+    paths:
+      - "src/**"
+      - "CMakeLists.txt"
+      - "deps/**"
+      - "build_win.bat"
+      - "version.inc"
   workflow_dispatch:
 permissions:
   contents: read
