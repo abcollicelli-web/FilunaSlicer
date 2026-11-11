@@ -32,6 +32,7 @@ def git_original(relative_path:str,expected_sha:str)->bytes:
 
 def build_effective_original_presets(output:Path)->dict[str,Path]:
  """Returns machine/process/filament JSON paths with upstream inheritance resolved."""
+ output.mkdir(parents=True, exist_ok=True)
  fixture=ROOT/"fixtures/oem/snapmaker/official-profiles"
  lock=json.loads((fixture/"parents.lock.json").read_text(encoding="utf-8-sig"))
  if lock.get("upstream_tag")!=TAG or lock.get("upstream_repository")!=UPSTREAM:
