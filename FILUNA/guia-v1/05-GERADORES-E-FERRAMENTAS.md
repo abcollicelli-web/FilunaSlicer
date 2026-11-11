@@ -141,6 +141,13 @@ Uma linha por uso **confirmado** (prévias não entram). Tamanho típico: menos 
 - Aviso também ao passar de 80% do limite, no Meu espaço.
 - Geração cuja imagem foi removida fica no histórico como "Imagem não disponível — envie a imagem de novo para recriar"; ao reenviar, o SHA-256 confere se é a mesma.
 
+**Preço do espaço extra — PROPOSTA, aguardando aprovação do dono (11/11/2026):**
+- Base de custo: servidor €25/mês ≈ R$ 140 (euro a ~R$ 5,60), disco de 698 GB (376 GB usados, 322 GB livres, medido em 11/11/2026). Disco puro ≈ R$ 0,20/GB/mês; com cópia de segurança em outro lugar e tráfego, considerar ≈ R$ 0,50/GB/mês.
+- Os 50 MB grátis custam ≈ R$ 0,025/mês por cliente. Reservando 100 GB do disco para imagens: ≈ 2.000 clientes no limite grátis.
+- Pacotes: **+500 MB R$ 2,90/mês · +2 GB R$ 5,90/mês · +5 GB R$ 9,90/mês** (custo real ≈ R$ 0,25 · R$ 1,00 · R$ 2,50).
+- Vender como **adicional do plano** (na mesma cobrança), não como cobrança separada: a taxa fixa do meio de pagamento come quase todo um valor de R$ 2,90 cobrado sozinho.
+- Rever quando as imagens passarem de 100 GB no total ou o euro variar mais de 10%.
+
 **B. Google Drive do próprio cliente (opcional, sem limite Filuna).**
 - O cliente conecta a conta Google uma vez (OAuth 2.0 no site; o fatiador só usa o resultado). Escopo **`https://www.googleapis.com/auth/drive.file`**: o Filuna só enxerga os arquivos que ele mesmo criou, nunca o resto do Drive do cliente.
 - As imagens vão para a pasta **"Filuna — imagens"** no Drive do cliente; o servidor guarda só `drive_file_id` e SHA-256 (`local='drive'`, não conta nos 50 MB).
@@ -197,4 +204,4 @@ Entra **depois da Fase 6** (contas e sincronização), porque depende de conta d
 2. Horas e usos offline por plano (sugestão: 72 h e 10 usos).
 3. Quantos computadores por conta em cada plano.
 4. Quais geradores ficam **só no servidor** porque a lógica é segredo.
-5. Preço do espaço extra de imagens (acima de 50 MB).
+5. Aprovar a proposta de preço do espaço extra de imagens (§5b).
