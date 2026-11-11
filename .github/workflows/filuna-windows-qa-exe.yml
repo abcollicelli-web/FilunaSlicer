@@ -1,7 +1,7 @@
 name: Filuna Windows QA executable (NO installer)
 on:
   push:
-    branches: [filuna/oem-portable-first-qa-20261106, "filuna/v1-f00-*", "filuna/v1-f02-*"]
+    branches: [filuna/oem-portable-first-qa-20261106, "filuna/v1-f00-*", "filuna/v1-f02-*", "filuna/v1-base-*"]
     paths:
       - ".github/workflows/filuna-windows-qa-exe.yml"
       - "src/libslic3r/**"
@@ -12,6 +12,8 @@ on:
       - "resources/filuna/**"
       - "localization/i18n/pt_BR/**"
       - "src/sqlite3/**"
+  pull_request:
+    branches: ["filuna/v1-f02-*"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -67,12 +69,48 @@ jobs:
         run: |
           $ErrorActionPreference="Stop"
           $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\\","/")
-          .\build_win.bat -s -i --run-tests --arch x64 --deps-dir $deps --msvc --msbuild --no-gettext --jobs 4
+          .\build_win.bat -s -i --run-tests --arch x64 --deps-dir $deps --msvc --msbuild --jobs 4
           if ($LASTEXITCODE -ne 0) { throw "FILUNA_QA_EXE_BUILD_FAILED exit=$LASTEXITCODE" }
           Get-ChildItem -Recurse build/OrcaSlicer -Filter *.exe | Select-Object FullName
+          # Nunca entregar sem a tradução: o programa só mostra pt-BR se o .mo estiver junto do executável.
+          $mo = Get-ChildItem -Recurse build/OrcaSlicer -Filter OrcaSlicer.mo | Where-Object { $_.FullName -match '[\\/]pt_BR[\\/]' }
+          if (-not $mo) { throw "FILUNA_PTBR_MO_MISSING" }
+          $mo | Select-Object FullName, Length
       - uses: actions/upload-artifact@v4
         with:
           name: filuna-qa-windows-exe-${{ github.sha }}
           path: build/OrcaSlicer/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Generate Filuna NSIS installer (Fase 1 QA only — no release)
+        if: startsWith(github.ref_name, 'filuna/v1-f01-') || startsWith(github.ref_name, 'filuna/v1-base-') || startsWith(github.head_ref, 'filuna/v1-base-')
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "FILUNA_NSIS_INSTALL_TOOL_FAILED exit=$LASTEXITCODE" }
+            $env:PATH = "C:\Program Files (x86)\NSIS;$env:PATH"
+          }
+          Push-Location build
+          try {
+            & cpack -G NSIS -C Release
+            if ($LASTEXITCODE -ne 0) { throw "FILUNA_NSIS_CPACK_FAILED exit=$LASTEXITCODE" }
+          }
+          finally {
+            Pop-Location
+          }
+          $packages = @(Get-ChildItem -Path build -File -Filter "FilunaSlicer_Windows_Installer_V*.exe")
+          if ($packages.Count -eq 0) { throw "FILUNA_NSIS_INSTALLER_MISSING" }
+          foreach ($package in $packages) {
+            Write-Host ("FILUNA_NSIS_QA_INSTALLER " + $package.Name)
+            Get-FileHash -Algorithm SHA256 $package.FullName | Format-List
+          }
+      - name: Upload Filuna installer as QA artifact (not a release)
+        if: startsWith(github.ref_name, 'filuna/v1-f01-') || startsWith(github.ref_name, 'filuna/v1-base-') || startsWith(github.head_ref, 'filuna/v1-base-')
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-qa-windows-installer-${{ github.sha }}
+          path: build/FilunaSlicer_Windows_Installer_V*.exe
           if-no-files-found: error
           retention-days: 7
