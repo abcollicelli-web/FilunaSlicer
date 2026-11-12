@@ -85,7 +85,8 @@ def app_ini(secoes: dict, vendor: str) -> str:
 
 
 def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Path, timeout: int, ini_app: str = "",
-           projeto: bool = False, exportar_3mf: Path | None = None, salvar_config: Path | None = None) -> dict:
+           projeto: bool = False, exportar_3mf: Path | None = None, salvar_config: Path | None = None,
+           carregar: Path | None = None) -> dict:
     if pasta.exists():
         shutil.rmtree(pasta)
     (pasta / "datadir" / "vendor").mkdir(parents=True)
@@ -102,7 +103,7 @@ def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Pa
         acao = ["--export-3mf", "--output", str(exportar_3mf)]
     else:
         acao = ["--export-gcode", "--output", str(out)]
-    cmd = [*cmd_base, "--datadir", str(pasta / "datadir"), *perfis, *acao, str(modelo)]
+    cmd = [*cmd_base, "--datadir", str(pasta / "datadir"), *perfis, *(["--load", str(carregar)] if carregar else []), *acao, str(modelo)]
     t0 = time.time()
     env = dict(os.environ, HOME=str(pasta / "home"))
     with (pasta / "cli.log").open("w", encoding="utf-8", errors="replace") as f:
@@ -138,22 +139,22 @@ def main() -> int:
     base_o = [*shlex.split(ns.prefixo_oficial), ns.oficial]
     base_c = [ns.compilado]
     resultados = []
-    def caso_um(imp, caso, nome, modelo, projeto=False):
+    def caso_um(imp, caso, nome, modelo, projeto=False, carregar=None):
         variantes, execs = {}, []
         for k in range(2):
-            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app, projeto)
+            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app, projeto, carregar=carregar)
             execs.append(x)
             if x["rc"] == 0 and x["gcodes"]:
                 n = normalizado(Path(x["gcodes"][0]))
                 variantes.setdefault(sha(n), n)
         k = 2
         while len(variantes) > 1 and k < ns.max_oficial:
-            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app, projeto)
+            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app, projeto, carregar=carregar)
             if x["rc"] == 0 and x["gcodes"]:
                 n = normalizado(Path(x["gcodes"][0]))
                 variantes.setdefault(sha(n), n)
             k += 1
-        cc = fatiar(base_c, ns.pacote, imp, modelo, caso / f"{nome}-compilado", ns.timeout, ini_app, projeto)
+        cc = fatiar(base_c, ns.pacote, imp, modelo, caso / f"{nome}-compilado", ns.timeout, ini_app, projeto, carregar=carregar)
         c = {"modelo": nome, "oficial": execs[0], "compilado": cc, "variantes_oficiais": len(variantes)}
         if not variantes and cc["rc"] != 0 and execs[0]["rc"] == cc["rc"]:
             c["veredito"] = "MESMA_RECUSA_DO_OFICIAL"
@@ -188,13 +189,9 @@ def main() -> int:
                 fatiar(base_o, ns.pacote, imp, ns.modelo, caso / "semente-config", ns.timeout, ini_app, salvar_config=cfg)
                 try:
                     de_semente_prusa(sem, caso / "cores.3mf")
-                    # a configuração completa do oficial vai para o projeto, no formato que o 3MF da Prusa usa
-                    # ("; chave = valor"); o --export-3mf da CLI não a grava
-                    import zipfile as _z
-                    linhas = [l for l in cfg.read_text(encoding="utf-8").splitlines() if l and not l.startswith("#")]
-                    with _z.ZipFile(caso / "cores.3mf", "a") as z:
-                        z.writestr("Metadata/Slic3r_PE.config", "".join(f"; {l}\n" for l in linhas))
-                    r["casos"].append(caso_um(imp, caso, "cores", caso / "cores.3mf", projeto=True))
+                    # a configuração completa salva pelo oficial entra por --load; o 3MF continua projeto,
+                    # então as extrusoras por objeto são mantidas
+                    r["casos"].append(caso_um(imp, caso, "cores", caso / "cores.3mf", projeto=True, carregar=cfg))
                 except (OSError, AssertionError, KeyError, ValueError) as e:
                     r["casos"].append({"modelo": "cores", "veredito": "OFICIAL_NAO_FATIOU", "detalhe": f"semente: {e}"})
             vs = [c["veredito"] for c in r["casos"]]
