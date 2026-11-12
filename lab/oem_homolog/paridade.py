@@ -118,7 +118,7 @@ def fatiar(exe: Path, trio: dict, modelo: Path, pasta: Path, extra: list[str], t
     n = int(trio.get("n_filamentos") or 1)
     # o 3MF de cores é exportado pelo próprio oficial e grava a versão do app (ex.: Snapmaker 2.4.0.1),
     # que o CLI compara com a versão do motor (01.10.01.50) e recusa como "mais novo"
-    novo = ["--allow-newer-file", "1"] if str(modelo).endswith(".3mf") and b"--allow-newer-file" in ajuda(exe) else []
+    novo = ["--allow-newer-file"] if str(modelo).endswith(".3mf") and b"--allow-newer-file" in ajuda(exe) else []
     cmd = [str(exe), *extra, *novo, *(["--datadir", str(dados)] if aceita_datadir(exe) else []), "--slice", "0",
            "--load-settings", f"{trio['machine']};{trio['process']}",
            "--load-filaments", ";".join([str(trio["filament"])] * n),
