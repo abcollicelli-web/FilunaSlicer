@@ -128,6 +128,8 @@ def main() -> int:
     ap.add_argument("--timeout", type=int, default=300)
     ap.add_argument("--extra", default="", help="argumentos extras da CLI do fabricante (ex.: '--arrange 1')")
     ap.add_argument("--extra-cores", default="--arrange 1", help="argumentos extras só no caso de 4 cores")
+    ap.add_argument("--max-oficial", type=int, default=6, help="execuções do oficial para juntar variantes quando ele não repete")
+    ap.add_argument("--max-oficial-busca", type=int, default=12, help="teto de execuções do oficial procurando a variante do compilado")
     ap.add_argument("--cores-todas", action="store_true",
                     help="caso de 4 cores também em máquinas de 1 extrusora (AMS/CFS/IFS/ACE/Box: troca de filamento)")
     ns = ap.parse_args()
@@ -163,49 +165,68 @@ def main() -> int:
         for nome_m, modelo, n_fil in modelos:
             t = {"machine": trio["machine"], "process": trio["process"], "filament": trio["filament"], "n_filamentos": n_fil}
             ex = extra + (ns.extra_cores.split() if nome_m == "cores" and ns.extra_cores else [])
-            oa = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-A", ex, ns.timeout)
-            ob = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-B", ex, ns.timeout)
+            def ok(x):
+                return x["rc"] == 0 and len(x["gcodes"]) == 1
+
+            oficiais = [fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-{k}", ex, ns.timeout) for k in "AB"]
+            variantes: dict[str, bytes] = {}
+
+            def registra(x):
+                if ok(x):
+                    n = normalizado(Path(x["gcodes"][0]))
+                    variantes.setdefault(sha(n), n)
+
+            for x in oficiais:
+                registra(x)
+            # o próprio oficial variou: junta as variantes que ele produz (regra §5.1 aceita qualquer uma)
+            k = 2
+            while len(variantes) > 1 and k < ns.max_oficial:
+                antes = len(variantes)
+                x = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-{k + 1}", ex, ns.timeout)
+                oficiais.append(x); registra(x); k += 1
+                if len(variantes) == antes and k >= 4:
+                    break
             cc = fatiar(ns.compilado, t, modelo, caso / f"{nome_m}-compilado", ex, ns.timeout)
+            oa, ob = oficiais[0], oficiais[1]
             c = {"modelo": nome_m, "oficial_A": oa, "oficial_B": ob, "compilado": cc}
-            falha_a = oa["rc"] != 0 or len(oa["gcodes"]) != 1
-            falha_c = cc["rc"] != 0 or len(cc["gcodes"]) != 1
+            if ok(cc) and variantes:
+                nc = normalizado(Path(cc["gcodes"][0]))
+                # variante do compilado ainda não vista: dá mais chances ao oficial antes de reprovar
+                while sha(nc) not in variantes and len(variantes) > 1 and k < ns.max_oficial_busca:
+                    x = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-{k + 1}", ex, ns.timeout)
+                    oficiais.append(x); registra(x); k += 1
+            c["execucoes_oficiais"] = len(oficiais)
+            c["variantes_oficiais"] = len(variantes)
+            falha_a = not ok(oa)
+            falha_c = not ok(cc)
             if falha_a and falha_c and oa["rc"] == cc["rc"]:
                 # o binário oficial recusa este caso e o compilado recusa igual: mesmo comportamento
                 c["veredito"] = "MESMA_RECUSA_DO_OFICIAL"
             elif falha_a:
                 c["veredito"] = "OFICIAL_NAO_FATIOU"
-            elif cc["rc"] != 0 or len(cc["gcodes"]) != 1:
+            elif falha_c:
                 c["veredito"] = "COMPILADO_NAO_FATIOU"
             else:
-                na = normalizado(Path(oa["gcodes"][0]))
-                nb = normalizado(Path(ob["gcodes"][0])) if ob["rc"] == 0 and len(ob["gcodes"]) == 1 else None
-                nc = normalizado(Path(cc["gcodes"][0]))
-                variantes = {sha(na)} | ({sha(nb)} if nb is not None else set())
+                na = variantes[next(iter(variantes))]
                 c["sha_oficial"] = sorted(variantes)
                 c["sha_compilado"] = sha(nc)
                 c["bytes"] = len(nc)
-                c["oficial_repete"] = nb is not None and sha(na) == sha(nb)
-                can_o = {canonico(na)} | ({canonico(nb)} if nb is not None else set())
-                c["canonico_oficial"] = sorted(can_o)
+                c["oficial_repete"] = len(variantes) == 1
                 c["canonico_compilado"] = canonico(nc)
+                c["canonico_oficial"] = sorted({canonico(v) for v in variantes.values()})
                 if sha(nc) in variantes:
                     c["veredito"] = "IDENTICO"
-                elif not c["oficial_repete"] and len(can_o) == 1 and canonico(nc) in can_o:
-                    # o próprio oficial não repete bytes (reordena trechos na camada); o compilado
-                    # cai na mesma classe funcional que as duas execuções oficiais
-                    c["veredito"] = "EQUIVALENTE_OFICIAL_NAO_DETERMINISTICO"
                 else:
                     c["veredito"] = "DIVERGE"
-                    c["primeira_diferenca"] = primeira_diferenca(nc, na)
-                # tool changes (sistema de cores) contados no G-code oficial
+                    mais_perto = min(variantes.values(), key=lambda v: abs(len(v) - len(nc)))
+                    c["primeira_diferenca"] = primeira_diferenca(nc, mais_perto)
+                # trocas de ferramenta/filamento (sistema de cores) contadas no G-code oficial
                 c["trocas_ferramenta"] = len(re.findall(rb"^(T\d+|M620 S\d+)\b", na, re.M))
             r["casos"].append(c)
         vs = [c["veredito"] for c in r["casos"]]
-        ok = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL", "EQUIVALENTE_OFICIAL_NAO_DETERMINISTICO")
+        aceitos = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL")
         r["veredito"] = ("IDENTICO" if vs and all(v == "IDENTICO" for v in vs)
-                         else next((v for v in vs if v not in ok), None)
-                         or ("EQUIVALENTE_OFICIAL_NAO_DETERMINISTICO" if "EQUIVALENTE_OFICIAL_NAO_DETERMINISTICO" in vs
-                             else "IDENTICO_COM_RECUSA_OFICIAL"))
+                         else next((v for v in vs if v not in aceitos), "IDENTICO_COM_RECUSA_OFICIAL"))
         resultados.append(r)
         print(f"[{idx}/{len(impressoras)}] {r['veredito']:22} {imp['maquina']}", flush=True)
 
