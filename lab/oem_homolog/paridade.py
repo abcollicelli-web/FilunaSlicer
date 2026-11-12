@@ -97,6 +97,9 @@ def main() -> int:
     ap.add_argument("--limite", type=int, default=0)
     ap.add_argument("--timeout", type=int, default=300)
     ap.add_argument("--extra", default="", help="argumentos extras da CLI do fabricante (ex.: '--arrange 1')")
+    ap.add_argument("--extra-cores", default="--arrange 1", help="argumentos extras só no caso de 4 cores")
+    ap.add_argument("--cores-todas", action="store_true",
+                    help="caso de 4 cores também em máquinas de 1 extrusora (AMS/CFS/IFS/ACE/Box: troca de filamento)")
     ns = ap.parse_args()
 
     out = ns.saida
@@ -124,16 +127,22 @@ def main() -> int:
             resultados.append(r)
             continue
         modelos = [("cubo", ns.modelo, 1)]
-        if ns.modelo_cores and imp.get("extrusoras", 1) >= 2:
-            modelos.append(("cores", ns.modelo_cores, min(4, imp["extrusoras"])))
+        if ns.modelo_cores and (ns.cores_todas or imp.get("extrusoras", 1) >= 2):
+            modelos.append(("cores", ns.modelo_cores, 4))
         r["casos"] = []
         for nome_m, modelo, n_fil in modelos:
             t = {"machine": trio["machine"], "process": trio["process"], "filament": trio["filament"], "n_filamentos": n_fil}
-            oa = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-A", extra, ns.timeout)
-            ob = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-B", extra, ns.timeout)
-            cc = fatiar(ns.compilado, t, modelo, caso / f"{nome_m}-compilado", extra, ns.timeout)
+            ex = extra + (ns.extra_cores.split() if nome_m == "cores" and ns.extra_cores else [])
+            oa = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-A", ex, ns.timeout)
+            ob = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-B", ex, ns.timeout)
+            cc = fatiar(ns.compilado, t, modelo, caso / f"{nome_m}-compilado", ex, ns.timeout)
             c = {"modelo": nome_m, "oficial_A": oa, "oficial_B": ob, "compilado": cc}
-            if oa["rc"] != 0 or len(oa["gcodes"]) != 1:
+            falha_a = oa["rc"] != 0 or len(oa["gcodes"]) != 1
+            falha_c = cc["rc"] != 0 or len(cc["gcodes"]) != 1
+            if falha_a and falha_c and oa["rc"] == cc["rc"]:
+                # o binário oficial recusa este caso e o compilado recusa igual: mesmo comportamento
+                c["veredito"] = "MESMA_RECUSA_DO_OFICIAL"
+            elif falha_a:
                 c["veredito"] = "OFICIAL_NAO_FATIOU"
             elif cc["rc"] != 0 or len(cc["gcodes"]) != 1:
                 c["veredito"] = "COMPILADO_NAO_FATIOU"
@@ -155,7 +164,9 @@ def main() -> int:
                 c["trocas_ferramenta"] = len(re.findall(rb"^T\d+\b", na, re.M))
             r["casos"].append(c)
         vs = [c["veredito"] for c in r["casos"]]
-        r["veredito"] = "IDENTICO" if vs and all(v == "IDENTICO" for v in vs) else next(v for v in vs if v != "IDENTICO")
+        ok = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL")
+        r["veredito"] = ("IDENTICO" if vs and all(v == "IDENTICO" for v in vs)
+                         else next((v for v in vs if v not in ok), "IDENTICO_COM_RECUSA_OFICIAL"))
         resultados.append(r)
         print(f"[{idx}/{len(impressoras)}] {r['veredito']:22} {imp['maquina']}", flush=True)
 
