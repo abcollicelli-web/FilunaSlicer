@@ -70,11 +70,11 @@ std::string make_zip(const std::map<std::string, std::string>& files)
 
 std::string catalog_text(const std::string& pkg_sha)
 {
-    return R"({"schema":1,"chave":"teste","modulos":[)"
-           R"({"id":"snapmaker","nome":"Snapmaker","versao":"2.4.1","estado":"HOMOLOGADO_INTERNO","componentes":[)"
-           R"({"tipo":"profiles","arquivo":"perfis-snapmaker-2.4.1.zip","sha256":")" + pkg_sha +
-           R"(","bytes":1,"url":"/api/slicer/v1/modulos/snapmaker/2.4.1/perfis-snapmaker-2.4.1.zip","impressoras":["Snapmaker U1 (0.4 nozzle)"]}]},)"
-           R"({"id":"bambu","nome":"Bambu Lab","versao":"02.09.01.70","estado":"EM_TESTE","componentes":[]}]})";
+    return R"J({"schema":1,"chave":"teste","modulos":[)J"
+           R"J({"id":"snapmaker","nome":"Snapmaker","versao":"2.4.1","estado":"HOMOLOGADO_INTERNO","componentes":[)J"
+           R"J({"tipo":"profiles","arquivo":"perfis-snapmaker-2.4.1.zip","sha256":")J" + pkg_sha +
+           R"J(","bytes":1,"url":"/api/slicer/v1/modulos/snapmaker/2.4.1/perfis-snapmaker-2.4.1.zip","impressoras":["Snapmaker U1 (0.4 nozzle)"]}]},)J"
+           R"J({"id":"bambu","nome":"Bambu Lab","versao":"02.09.01.70","estado":"EM_TESTE","componentes":[]}]})J";
 }
 
 std::string response(const Key& key, const std::string& text, const std::string& visible = R"(["snapmaker","bambu"])")
