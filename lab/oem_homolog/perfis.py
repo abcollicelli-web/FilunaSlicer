@@ -80,11 +80,61 @@ class Catalogo:
             fil = maq.get("default_filament_profile") or []
             if isinstance(fil, str):
                 fil = [fil]
-            saida.append({"maquina": nome, "processo": proc, "filamento": fil[0] if fil else "",
+            fil0 = fil[0] if fil else ""
+            notas = []
+            # O padrão citado pela máquina às vezes não existe no catálogo do próprio fabricante
+            # (ex.: Snapmaker U1 "0.20 Standard" × arquivo "0.20mm Standard"). O fatiador então
+            # seleciona outro preset compatível; repetimos isso de forma explícita e registrada.
+            if not self._resolve("process", proc):
+                alt = self._compativel("process", nome, proc)
+                notas.append(f"PADRAO_OEM_AUSENTE process '{proc}' -> '{alt}'")
+                proc = alt or ""
+            if not self._resolve("filament", fil0):
+                alt = self._compativel("filament", nome, fil0)
+                notas.append(f"PADRAO_OEM_AUSENTE filament '{fil0}' -> '{alt}'")
+                fil0 = alt or ""
+            saida.append({"maquina": nome, "processo": proc, "filamento": fil0, "notas": notas,
                           "modelo": maq.get("printer_model", ""), "bico": maq.get("nozzle_diameter", [""]),
                           "extrusoras": len(maq.get("nozzle_diameter") or [1]) if isinstance(maq.get("nozzle_diameter"), list) else 1,
                           "arquivo": str(arq.relative_to(self.raiz))})
         return saida
+
+    def _resolve(self, tipo: str, nome: str) -> bool:
+        if not nome:
+            return False
+        try:
+            self.efetivo(tipo, nome)
+            return True
+        except ValueError:
+            return False
+
+    def _compativeis(self, tipo: str) -> dict[str, list[str]]:
+        cache = self.__dict__.setdefault("_cache_compat", {})
+        if tipo not in cache:
+            m = {}
+            for (t, n), (_, d) in self.indice.items():
+                if t != tipo or str(d.get("instantiation", "true")).lower() != "true":
+                    continue
+                try:
+                    ef, _ = self.efetivo(t, n)
+                except ValueError:
+                    continue
+                cp = ef.get("compatible_printers") or []
+                m[n] = cp if isinstance(cp, list) else [cp]
+            cache[tipo] = m
+        return cache[tipo]
+
+    def _compativel(self, tipo: str, maquina: str, pedido: str) -> str | None:
+        cands = sorted(n for n, cp in self._compativeis(tipo).items() if maquina in cp)
+        if not cands:
+            return None
+
+        def chave(x: str) -> str:
+            return "".join(x.lower().replace("mm", "").split())
+        for c in cands:
+            if pedido and chave(c) == chave(pedido):
+                return c
+        return cands[0]
 
     def gravar_trio(self, item: dict, destino: Path) -> dict[str, Path]:
         destino.mkdir(parents=True, exist_ok=True)

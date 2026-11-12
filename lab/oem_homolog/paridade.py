@@ -144,7 +144,7 @@ def main() -> int:
     extra = ns.extra.split() if ns.extra else []
     resultados = []
     for idx, imp in enumerate(impressoras, 1):
-        r = {"maquina": imp["maquina"], "processo": imp.get("processo"), "filamento": imp.get("filamento")}
+        r = {"maquina": imp["maquina"], "processo": imp.get("processo"), "filamento": imp.get("filamento"), "notas": imp.get("notas", [])}
         if imp.get("erro") or not imp.get("processo") or not imp.get("filamento"):
             r["veredito"] = "PERFIL_INCOMPLETO"
             r["detalhe"] = imp.get("erro") or "sem processo/filamento padrão no perfil da máquina"
