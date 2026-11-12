@@ -84,16 +84,20 @@ def app_ini(secoes: dict, vendor: str) -> str:
     return "\n".join(linhas) + "\n"
 
 
-def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Path, timeout: int, ini_app: str = "") -> dict:
+def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Path, timeout: int, ini_app: str = "",
+           projeto: bool = False, exportar_3mf: Path | None = None) -> dict:
     if pasta.exists():
         shutil.rmtree(pasta)
     (pasta / "datadir" / "vendor").mkdir(parents=True)
     shutil.copy2(pacote, pasta / "datadir" / "vendor" / pacote.name)
     (pasta / "datadir" / "PrusaSlicer.ini").write_text(ini_app, encoding="utf-8")
     out = pasta / "saida.gcode"
-    cmd = [*cmd_base, "--datadir", str(pasta / "datadir"), "--printer-profile", imp["maquina"],
-           "--print-profile", imp["processo"], "--material-profile", imp["filamento"],
-           "--export-gcode", "--output", str(out), str(modelo)]
+    # projeto: o 3MF já traz a configuração inteira (gravada pelo oficial) e as extrusoras por objeto;
+    # com perfis na linha de comando o PrusaSlicer carrega só a geometria e perde as extrusoras
+    perfis = [] if projeto else ["--printer-profile", imp["maquina"], "--print-profile", imp["processo"],
+                                 *sum((["--material-profile", imp["filamento"]] for _ in range(max(1, imp.get("extrusoras", 1)))), [])]
+    acao = ["--export-3mf", "--output", str(exportar_3mf)] if exportar_3mf else ["--export-gcode", "--output", str(out)]
+    cmd = [*cmd_base, "--datadir", str(pasta / "datadir"), *perfis, *acao, str(modelo)]
     t0 = time.time()
     env = dict(os.environ, HOME=str(pasta / "home"))
     with (pasta / "cli.log").open("w", encoding="utf-8", errors="replace") as f:
@@ -113,7 +117,7 @@ def main() -> int:
     ap.add_argument("--prefixo-oficial", default="")
     ap.add_argument("--pacote", type=Path, required=True)
     ap.add_argument("--modelo", type=Path, required=True)
-    ap.add_argument("--modelo-cores", type=Path, default=None, help="3MF PrusaSlicer com 4 objetos nas extrusoras 1..4")
+    ap.add_argument("--cores", action="store_true", help="caso de 4 cores nas impressoras com 4+ extrusoras (MMU3, XL 5T)")
     ap.add_argument("--saida", type=Path, required=True)
     ap.add_argument("--limite", type=int, default=0)
     ap.add_argument("--filtro", default="")
@@ -129,22 +133,22 @@ def main() -> int:
     base_o = [*shlex.split(ns.prefixo_oficial), ns.oficial]
     base_c = [ns.compilado]
     resultados = []
-    def caso_um(imp, caso, nome, modelo):
+    def caso_um(imp, caso, nome, modelo, projeto=False):
         variantes, execs = {}, []
         for k in range(2):
-            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app)
+            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app, projeto)
             execs.append(x)
             if x["rc"] == 0 and x["gcodes"]:
                 n = normalizado(Path(x["gcodes"][0]))
                 variantes.setdefault(sha(n), n)
         k = 2
         while len(variantes) > 1 and k < ns.max_oficial:
-            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app)
+            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app, projeto)
             if x["rc"] == 0 and x["gcodes"]:
                 n = normalizado(Path(x["gcodes"][0]))
                 variantes.setdefault(sha(n), n)
             k += 1
-        cc = fatiar(base_c, ns.pacote, imp, modelo, caso / f"{nome}-compilado", ns.timeout, ini_app)
+        cc = fatiar(base_c, ns.pacote, imp, modelo, caso / f"{nome}-compilado", ns.timeout, ini_app, projeto)
         c = {"modelo": nome, "oficial": execs[0], "compilado": cc, "variantes_oficiais": len(variantes)}
         if not variantes and cc["rc"] != 0 and execs[0]["rc"] == cc["rc"]:
             c["veredito"] = "MESMA_RECUSA_DO_OFICIAL"
@@ -170,8 +174,16 @@ def main() -> int:
             r["veredito"] = "PERFIL_INCOMPLETO"
         else:
             r["casos"] = [caso_um(imp, caso, "cubo", ns.modelo)]
-            if ns.modelo_cores and imp.get("extrusoras", 1) >= 4:
-                r["casos"].append(caso_um(imp, caso, "cores", ns.modelo_cores))
+            if ns.cores and imp.get("extrusoras", 1) >= 4:
+                # semente: o PrusaSlicer OFICIAL exporta o projeto desta impressora; viram 4 objetos nas extrusoras 1..4
+                from fixture_cores import de_semente_prusa
+                sem = caso / "semente.3mf"
+                fatiar(base_o, ns.pacote, imp, ns.modelo, caso / "semente", ns.timeout, ini_app, exportar_3mf=sem)
+                try:
+                    de_semente_prusa(sem, caso / "cores.3mf")
+                    r["casos"].append(caso_um(imp, caso, "cores", caso / "cores.3mf", projeto=True))
+                except (OSError, AssertionError, KeyError) as e:
+                    r["casos"].append({"modelo": "cores", "veredito": "OFICIAL_NAO_FATIOU", "detalhe": f"semente: {e}"})
             vs = [c["veredito"] for c in r["casos"]]
             aceitos = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL")
             r["veredito"] = "IDENTICO" if all(v == "IDENTICO" for v in vs) else next((v for v in vs if v not in aceitos), "IDENTICO_COM_RECUSA_OFICIAL")
