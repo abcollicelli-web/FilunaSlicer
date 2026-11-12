@@ -356,19 +356,90 @@ def fabrica_handler(e: Estado):
     return H
 
 
+def creality_extras(e: Estado):
+    """K2/K1 com CFS: GET http://ip/info -> {"model"} (porta 80) e websocket 9999 em "/" que responde
+    {"method":"get","params":{"boxsInfo":1}} no esquema que o CrealityPrintAgent lê."""
+    a = e.a
+
+    class Info(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
+        def log_message(self, *x):
+            pass
+
+        def do_GET(self):
+            if self.path.startswith("/info"):
+                d = json.dumps({"model": a.modelo or "F021", "hostname": a.nome, "version": "1.1.2-emulador"}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(d)))
+                self.end_headers()
+                log_evento(a, "creality_info")
+                return self.wfile.write(d)
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+    threading.Thread(target=ThreadingHTTPServer((a.ip, a.porta_info), Info).serve_forever, daemon=True).start()
+    srv = socket.create_server((a.ip, a.porta_ws))
+
+    def atende(s):
+        try:
+            pedido = b""
+            while b"\r\n\r\n" not in pedido:
+                b = s.recv(4096)
+                if not b:
+                    return
+                pedido += b
+            chave = [l.split(b":", 1)[1].strip() for l in pedido.split(b"\r\n") if l.lower().startswith(b"sec-websocket-key")][0].decode()
+            aceite = base64.b64encode(hashlib.sha1((chave + GUID).encode()).digest()).decode()
+            s.sendall(f"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {aceite}\r\n\r\n".encode())
+            ws_enviar(s, json.dumps({"cfsConnect": 1, "state": 0}))
+            while True:
+                r = ws_ler(s)
+                if r is None or r[0] == 8:
+                    break
+                if r[0] != 1:
+                    continue
+                txt = r[1].decode(errors="replace")
+                if txt.strip() in ("ok", '{"ModeCode":"heart_beat"}'):
+                    continue
+                req = json.loads(txt)
+                log_evento(a, "creality_ws", pedido=req)
+                if req.get("method") == "get" and "boxsInfo" in (req.get("params") or {}):
+                    mats = [{"id": i, "state": 1, "vendor": "Creality", "type": "PLA", "name": "Hyper PLA", "color": "#0" + CORES[i][1:]} for i in range(4)]
+                    ws_enviar(s, json.dumps({"boxsInfo": {"materialBoxs": [{"id": 1, "state": 1, "type": 0, "materials": mats}]}}))
+                elif req.get("method") == "set":
+                    ws_enviar(s, json.dumps({"result": "ok"}))
+        except (OSError, ValueError, IndexError) as x:
+            log_evento(a, "creality_ws_erro", erro=str(x))
+        finally:
+            s.close()
+
+    def laco():
+        while True:
+            c, _ = srv.accept()
+            threading.Thread(target=atende, args=(c,), daemon=True).start()
+    threading.Thread(target=laco, daemon=True).start()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ip", default="127.0.0.1")
     ap.add_argument("--porta", type=int, default=7125)
-    ap.add_argument("--perfil", default="generico", choices=["generico", "snapmaker-u1", "qidi-box", "anycubic-ace", "elegoo-neptune"])
+    ap.add_argument("--perfil", default="generico", choices=["generico", "snapmaker-u1", "qidi-box", "anycubic-ace", "elegoo-neptune", "creality-cfs"])
     ap.add_argument("--modelo", default="Klipper")
     ap.add_argument("--nome", default="emulada-filuna")
     ap.add_argument("--api-key", default="")
     ap.add_argument("--pasta", default="/tmp/moonraker-gcodes")
+    ap.add_argument("--porta-info", type=int, default=80)
+    ap.add_argument("--porta-ws", type=int, default=9999)
     ap.add_argument("--log")
     a = ap.parse_args()
     Path(a.pasta).mkdir(parents=True, exist_ok=True)
     e = Estado(a)
+    if a.perfil == "creality-cfs":
+        creality_extras(e)
     srv = ThreadingHTTPServer((a.ip, a.porta), fabrica_handler(e))
 
     def tique():

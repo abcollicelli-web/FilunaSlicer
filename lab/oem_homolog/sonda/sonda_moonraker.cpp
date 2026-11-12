@@ -5,7 +5,7 @@
 // manda ao agente. Sem a interface: os agentes não acham o preset ativo (wxTheApp nulo) e seguem
 // sem ele, como em qualquer chamada antes da janela principal existir.
 //
-// filuna_sonda_moonraker --agente moonraker|snapmaker|qidi --ip IP --porta 7125 --arquivo X --prova P [--sem-parar]
+// filuna_sonda_moonraker --agente moonraker|snapmaker|qidi|creality --ip IP --porta 7125 --arquivo X --prova P [--sem-parar]
 #include <chrono>
 #include <condition_variable>
 #include <fstream>
@@ -17,6 +17,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "slic3r/Utils/CrealityPrintAgent.hpp"
 #include "slic3r/Utils/MoonrakerPrinterAgent.hpp"
 #include "slic3r/Utils/QidiPrinterAgent.hpp"
 #include "slic3r/Utils/SnapmakerPrinterAgent.hpp"
@@ -49,6 +50,8 @@ int main(int argc, char** argv)
     std::unique_ptr<IPrinterAgent> ag;
     if (a["--agente"] == "snapmaker")
         ag = std::make_unique<SnapmakerPrinterAgent>("");
+    else if (a["--agente"] == "creality")
+        ag = std::make_unique<CrealityPrintAgent>("");
     else if (a["--agente"] == "qidi")
         ag = std::make_unique<QidiPrinterAgent>("");
     else
