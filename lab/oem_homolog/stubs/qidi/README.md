@@ -13,3 +13,9 @@ em `libslic3r` essa opção só muda nomes de pasta de configuração e o SHA do
 
 Não fazem parte de nenhum módulo distribuído: a conexão Filuna com impressoras QIDI é o
 `QidiPrinterAgent` (Moonraker), já homologado contra o emulador.
+
+Na fonte publicada, com `QDT_RELEASE_TO_PUBLIC=0`, vários arquivos da interface ainda usam
+`Box_info`, `P2PManager`, `MakerHttpHandle` e `QIDIDeviceApi`, mas só incluem os cabeçalhos quando
+a opção vale 1. `filuna-qidi.cmake` (por `-DCMAKE_PROJECT_INCLUDE`) acrescenta
+`-include filuna_forca.hpp` aos alvos `libslic3r_gui` e `QIDIStudio`; nenhum arquivo do
+fabricante é editado.
