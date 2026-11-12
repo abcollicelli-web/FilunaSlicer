@@ -88,6 +88,22 @@ int main(int argc, char** argv)
     etapa("estado_websocket", espera(std::chrono::seconds(15), [] { return !ultimo.is_null() && ultimo.contains("gcode_state"); }),
           ultimo.is_null() ? "" : ultimo.value("gcode_state", ""));
 
+    // sistema de cores: o mesmo pedido que a GUI faz ao abrir o mapeamento de filamentos
+    agent.fetch_filament_info(p.dev_id);
+    int bandejas = 0;
+    espera(std::chrono::seconds(15), [] { return ultimo.contains("ams"); });
+    {
+        std::lock_guard<std::mutex> l(mx);
+        if (ultimo.contains("ams") && ultimo["ams"].contains("ams"))
+            for (const auto& u : ultimo["ams"]["ams"])
+                for (const auto& t : u.value("tray", json::array()))
+                    bandejas += t.value("tray_type", std::string()).empty() ? 0 : 1;
+    }
+    if (a["--agente"] == "moonraker" && !a.count("--cores"))
+        prova["nao_suportado_pelo_protocolo"].push_back("sistema_cores (Klipper sem AFC/Happy Hare nesta impressora)");
+    else
+        etapa("sistema_cores", bandejas > 0, std::to_string(bandejas) + " bandejas com filamento");
+
     if (!so_ler) {
         PrintParams pp{};
         pp.dev_id       = p.dev_id;

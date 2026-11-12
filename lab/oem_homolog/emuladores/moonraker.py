@@ -53,9 +53,9 @@ class Estado:
         base = ["print_stats", "virtual_sdcard", "display_status", "heater_bed", "fan", "toolhead", "webhooks", "configfile",
                 "gcode_move", "idle_timeout", *self.extrusoras]
         if self.a.perfil == "snapmaker-u1":
-            base += ["toolchanger", *[f"tool T{i}" for i in range(4)], "filament_detect"]
+            base += ["toolchanger", *[f"tool T{i}" for i in range(4)], "filament_detect", "print_task_config"]
         if self.a.perfil == "qidi-box":
-            base += ["box_extras", "save_variables"]
+            base += ["save_variables", "multi_color_controller", *[f"box_stepper slot{i}" for i in range(4)]]
         if self.a.perfil == "anycubic-ace":
             base += ["ace"]
         return base
@@ -80,12 +80,17 @@ class Estado:
                                  "tool_names": ["T0", "T1", "T2", "T3"]}
             for i in range(4):
                 st[f"tool T{i}"] = {"active": i == 0, "extruder": self.extrusoras[i], "tool_number": i, "mounted": i == 0}
+            st["print_task_config"] = {"filament_exist": [True] * 4, "filament_type": ["PLA"] * 4, "filament_sub_type": ["Basic"] * 4,
+                                       "filament_color_rgba": [c[1:] + "FF" for c in CORES], "filament_vendor": ["Snapmaker"] * 4}
             st["filament_detect"] = {"info": [{"VENDOR": "Snapmaker", "MAIN_TYPE": "PLA", "RGB_1": int(CORES[i][1:], 16),
                                                "HOTEND_MIN_TEMP": 190, "HOTEND_MAX_TEMP": 230} for i in range(4)]}
         if self.a.perfil == "qidi-box":
-            st["box_extras"] = {"slots": [{"slot": i, "loaded": True, "material": "PLA", "color": CORES[i]} for i in range(4)]}
             st["save_variables"] = {"variables": {**{f"filament_slot{i}": 1 for i in range(4)},
-                                                  **{f"color_slot{i}": i + 1 for i in range(4)}, "box_count": 1}}
+                                                  **{f"color_slot{i}": i + 1 for i in range(4)}, **{f"vendor_slot{i}": 0 for i in range(4)},
+                                                  "box_count": 1}}
+            st["multi_color_controller"] = {"box": {}}
+            for i in range(4):
+                st[f"box_stepper slot{i}"] = {"runout_button": 0}
         if self.a.perfil == "anycubic-ace":
             st["ace"] = {"status": "ready", "slots": [{"index": i, "status": "ready", "type": "PLA", "color": [int(CORES[i][j:j + 2], 16) for j in (1, 3, 5)]}
                                                       for i in range(4)]}
@@ -227,7 +232,8 @@ def fabrica_handler(e: Estado):
             if u.path.startswith("/server/files/config/"):
                 nome = u.path.rsplit("/", 1)[-1]
                 if a.perfil == "qidi-box" and nome == "officiall_filas_list.cfg":
-                    corpo = "[filament 1]\nname = QIDI PLA Rapido\ntype = PLA\n[filament 2]\nname = QIDI PETG\ntype = PETG\n".encode()
+                    corpo = ("[colordict]\n" + "".join(f"{i + 1} = {c}\n" for i, c in enumerate(CORES)) +
+                             "[fila1]\nfilament = PLA\nname = QIDI PLA Rapido\n[fila2]\nfilament = PETG\nname = QIDI PETG\n").encode()
                     self.send_response(200)
                     self.send_header("Content-Length", str(len(corpo)))
                     self.end_headers()
