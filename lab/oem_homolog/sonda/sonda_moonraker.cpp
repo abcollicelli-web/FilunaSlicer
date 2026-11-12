@@ -89,15 +89,15 @@ int main(int argc, char** argv)
     etapa("conexao_moonraker", espera(std::chrono::seconds(15), [] { return conexao >= 0; }) && conexao == ConnectStatusOk,
           "estado " + std::to_string(conexao));
     etapa("estado_websocket", espera(std::chrono::seconds(15), [] { return !ultimo.is_null() && ultimo.contains("gcode_state"); }),
-          ultimo.is_null() ? "" : ultimo.value("gcode_state", ""));
+          (ultimo.is_object() ? ultimo.value("gcode_state", std::string()) : std::string()));
 
     // sistema de cores: o mesmo pedido que a GUI faz ao abrir o mapeamento de filamentos
     agent.fetch_filament_info(p.dev_id);
     int bandejas = 0;
-    espera(std::chrono::seconds(15), [] { return ultimo.contains("ams"); });
+    espera(std::chrono::seconds(15), [] { return ultimo.is_object() && ultimo.contains("ams"); });
     {
         std::lock_guard<std::mutex> l(mx);
-        if (ultimo.contains("ams") && ultimo["ams"].contains("ams"))
+        if (ultimo.is_object() && ultimo.contains("ams") && ultimo["ams"].contains("ams"))
             for (const auto& u : ultimo["ams"]["ams"])
                 for (const auto& t : u.value("tray", json::array()))
                     bandejas += t.value("tray_type", std::string()).empty() ? 0 : 1;
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
         }, [] { return false; });
         etapa("envio_e_inicio", rc == BAMBU_NETWORK_SUCCESS, erro);
         auto vira = [&](const char* s) {
-            return espera(std::chrono::seconds(15), [&] { return ultimo.value("gcode_state", "") == s; });
+            return espera(std::chrono::seconds(15), [&] { return ultimo.is_object() && ultimo.value("gcode_state", "") == s; });
         };
         etapa("inicio_impressao", vira("RUNNING"));
         const std::string base = R"({"print":{"sequence_id":"1","command":")";
@@ -134,10 +134,10 @@ int main(int argc, char** argv)
         if (trc == ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED)
             prova["nao_suportado_pelo_protocolo"].push_back("controle_temperatura");
         else
-            etapa("controle_temperatura", espera(std::chrono::seconds(15), [] { return ultimo.value("nozzle_target_temper", 0.0) == 200.0; }));
+            etapa("controle_temperatura", espera(std::chrono::seconds(15), [] { return ultimo.is_object() && ultimo.value("nozzle_target_temper", 0.0) == 200.0; }));
         agent.send_message_to_printer(p.dev_id, base + "stop\"}}", 0, 0);
         etapa("parar", espera(std::chrono::seconds(15), [] {
-                  const std::string s = ultimo.value("gcode_state", "");
+                  const std::string s = ultimo.is_object() ? ultimo.value("gcode_state", "") : std::string();
                   return s == "FAILED" || s == "IDLE" || s == "FINISH";
               }));
     }

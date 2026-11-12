@@ -1310,18 +1310,18 @@ bool MoonrakerPrinterAgent::init_device_info(const std::string& dev_id, const st
 {
     device_info         = MoonrakerDeviceInfo{};
     auto* preset_bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
-    if (!preset_bundle) {
-        return false;
-    }
-
-    auto&       preset      = preset_bundle->printers.get_edited_preset();
-    const auto& printer_cfg = preset.config;
 
     device_info.dev_ip     = dev_ip;
     device_info.api_key    = password;
-    device_info.model_name = printer_cfg.opt_string("printer_model");
-    device_info.model_id   = preset.get_printer_type(preset_bundle);
     device_info.base_url   = normalize_base_url(use_ssl, dev_ip, port);
+    // Filuna: without the GUI (network probe, headless tests) there is no preset to read the model from;
+    // the connection itself does not need it
+    if (preset_bundle) {
+        auto&       preset      = preset_bundle->printers.get_edited_preset();
+        const auto& printer_cfg = preset.config;
+        device_info.model_name  = printer_cfg.opt_string("printer_model");
+        device_info.model_id    = preset.get_printer_type(preset_bundle);
+    }
     device_info.dev_id     = dev_id;
     device_info.version    = "";
     device_info.dev_name   = device_info.dev_id;
