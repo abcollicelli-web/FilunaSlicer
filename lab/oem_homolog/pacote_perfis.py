@@ -32,9 +32,10 @@ def sha_arq(p: Path) -> str:
 
 def arquivos_vendor(raiz: Path, vendor: str) -> dict[str, str]:
     out = {}
-    j = raiz / f"{vendor}.json"
-    if j.is_file():
-        out[j.name] = sha_arq(j)
+    for ext in (".json", ".ini", ".idx"):  # família Orca: .json; PrusaSlicer: .ini (+ índice .idx)
+        j = raiz / f"{vendor}{ext}"
+        if j.is_file():
+            out[j.name] = sha_arq(j)
     d = raiz / vendor
     if d.is_dir():
         for p in sorted(d.rglob("*")):
@@ -72,8 +73,9 @@ def main() -> int:
     ns = ap.parse_args()
     vendors = [v for v in ns.vendor.split(",") if v]
 
-    cat = Catalogo(ns.oficial)
-    pastas = sorted(fechamento(cat, vendors))
+    ini = (ns.oficial / f"{vendors[0]}.ini").is_file() and not (ns.oficial / f"{vendors[0]}.json").is_file()
+    cat = None if ini else Catalogo(ns.oficial)
+    pastas = sorted(vendors) if ini else sorted(fechamento(cat, vendors))
     comparacao, ok = {}, True
     for v in pastas:
         a, b = arquivos_vendor(ns.fonte, v), arquivos_vendor(ns.oficial, v)
@@ -90,10 +92,16 @@ def main() -> int:
                          "identico": not (so_f or so_o or dif)}
         ok &= comparacao[v]["identico"]
 
-    aud = cat.auditoria()
-    imps = cat.impressoras(",".join(vendors))
-    # erros de auditoria só das pastas do pacote
-    erros = [e for e in aud["erros"] if any(e.startswith(f"[{v}]") for v in vendors)]
+    if ini:
+        # PrusaSlicer: impressoras e padrões resolvidos pela herança do próprio .ini
+        from paridade_prusa import impressoras as imps_prusa, ler_ini
+        imps = [i | {"erro": "; ".join(i["notas"]) or None} for i in imps_prusa(ler_ini(ns.oficial / f"{vendors[0]}.ini"))]
+        aud, erros = {"contagem": {"impressoras": len(imps)}, "erros": []}, []
+    else:
+        aud = cat.auditoria()
+        imps = cat.impressoras(",".join(vendors))
+        # erros de auditoria só das pastas do pacote
+        erros = [e for e in aud["erros"] if any(e.startswith(f"[{v}]") for v in vendors)]
 
     ns.saida.mkdir(parents=True, exist_ok=True)
     nome = f"perfis-{ns.id}-{ns.versao}.zip"
