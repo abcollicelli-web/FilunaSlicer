@@ -88,6 +88,23 @@ def primeira_diferenca(a: bytes, b: bytes):
     return None
 
 
+_ACEITA_DATADIR: dict[str, bool] = {}
+
+
+def aceita_datadir(exe: Path) -> bool:
+    """Nem todo CLI de fabricante tem --datadir (QIDI Studio 2.07 não tem); sem ele a pasta de
+    dados nova vem do HOME novo de cada execução."""
+    k = str(exe)
+    if k not in _ACEITA_DATADIR:
+        try:
+            r = subprocess.run([k, "--help"], capture_output=True, timeout=120, check=False,
+                               env=dict(os.environ, HOME="/tmp/filuna-help-home"))
+            _ACEITA_DATADIR[k] = b"--datadir" in (r.stdout + r.stderr)
+        except (OSError, subprocess.TimeoutExpired):
+            _ACEITA_DATADIR[k] = True
+    return _ACEITA_DATADIR[k]
+
+
 def fatiar(exe: Path, trio: dict, modelo: Path, pasta: Path, extra: list[str], timeout: int) -> dict:
     if pasta.exists():
         shutil.rmtree(pasta)
@@ -95,7 +112,7 @@ def fatiar(exe: Path, trio: dict, modelo: Path, pasta: Path, extra: list[str], t
     dados = pasta / "datadir"
     dados.mkdir()
     n = int(trio.get("n_filamentos") or 1)
-    cmd = [str(exe), *extra, "--datadir", str(dados), "--slice", "0",
+    cmd = [str(exe), *extra, *(["--datadir", str(dados)] if aceita_datadir(exe) else []), "--slice", "0",
            "--load-settings", f"{trio['machine']};{trio['process']}",
            "--load-filaments", ";".join([str(trio["filament"])] * n),
            "--outputdir", str(pasta), str(modelo)]

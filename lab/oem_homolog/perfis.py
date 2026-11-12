@@ -103,14 +103,20 @@ class Catalogo:
             # O padrão citado pela máquina às vezes não existe no catálogo do próprio fabricante
             # (ex.: Snapmaker U1 "0.20 Standard" × arquivo "0.20mm Standard"). O fatiador então
             # seleciona outro preset compatível; repetimos isso de forma explícita e registrada.
-            if not self._resolve("process", proc, vend):
-                alt = self._compativel("process", nome, proc, vend)
-                notas.append(f"PADRAO_OEM_AUSENTE process '{proc}' -> '{alt}'")
-                proc = alt or ""
-            if not self._resolve("filament", fil0, vend):
-                alt = self._compativel("filament", nome, fil0, vend)
-                notas.append(f"PADRAO_OEM_AUSENTE filament '{fil0}' -> '{alt}'")
-                fil0 = alt or ""
+            for tipo_p in ("process", "filament"):
+                atual = proc if tipo_p == "process" else fil0
+                motivo = None
+                if not self._resolve(tipo_p, atual, vend):
+                    motivo = "PADRAO_OEM_AUSENTE"
+                elif not self._aceita(tipo_p, atual, nome, vend):
+                    motivo = "PADRAO_OEM_INCOMPATIVEL"
+                if motivo:
+                    alt = self._compativel(tipo_p, nome, atual, vend)
+                    notas.append(f"{motivo} {tipo_p} '{atual}' -> '{alt}'")
+                    if tipo_p == "process":
+                        proc = alt or ""
+                    else:
+                        fil0 = alt or ""
             saida.append({"maquina": nome, "vendor": vend, "processo": proc, "filamento": fil0, "notas": notas,
                           "modelo": maq.get("printer_model", ""), "bico": maq.get("nozzle_diameter", [""]),
                           "extrusoras": len(maq.get("nozzle_diameter") or [1]) if isinstance(maq.get("nozzle_diameter"), list) else 1,
@@ -125,6 +131,14 @@ class Catalogo:
             return True
         except ValueError:
             return False
+
+    def _aceita(self, tipo: str, nome: str, maquina: str, vendor: str | None) -> bool:
+        """O preset declara a máquina como compatível? Lista vazia = compatível com todas;
+        só com condição (expressão) não avaliamos aqui e aceitamos, como no padrão do perfil."""
+        ef, _ = self.efetivo(tipo, nome, vendor)
+        cp = ef.get("compatible_printers") or []
+        cp = cp if isinstance(cp, list) else [cp]
+        return not cp or maquina in cp
 
     def _compativeis(self, tipo: str, vendor: str | None) -> dict[str, list[str]]:
         cache = self.__dict__.setdefault("_cache_compat", {})
