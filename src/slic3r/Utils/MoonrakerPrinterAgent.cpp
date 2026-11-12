@@ -608,16 +608,6 @@ int MoonrakerPrinterAgent::set_queue_on_main_fn(QueueOnMainFn fn)
 void MoonrakerPrinterAgent::build_ams_payload(int ams_count, int max_lane_index, const std::vector<AmsTrayData>& trays)
 {
 
-    // Look up MachineObject via DeviceManager
-    auto* dev_manager = (wxTheApp ? GUI::wxGetApp().getDeviceManager() : nullptr);
-    if (!dev_manager) {
-        return;
-    }
-    MachineObject* obj = dev_manager->get_my_machine(device_info.dev_id);
-    if (!obj) {
-        return;
-    }
-
     // Build BBL-format JSON for DevFilaSystemParser::ParseV1_0
     nlohmann::json ams_json = nlohmann::json::object();
     nlohmann::json ams_array = nlohmann::json::array();
@@ -712,6 +702,21 @@ void MoonrakerPrinterAgent::build_ams_payload(int ams_count, int max_lane_index,
     // Wrap in the expected structure for ParseV1_0
     nlohmann::json print_json = nlohmann::json::object();
     print_json["ams"] = ams_json;
+
+    // Look up MachineObject via DeviceManager
+    auto* dev_manager = (wxTheApp ? GUI::wxGetApp().getDeviceManager() : nullptr);
+    if (!dev_manager) {
+        // Filuna: without the GUI (network probe, headless tests) there is no DeviceManager; hand the same
+        // filament-system payload to the message callback so the colour system can still be observed.
+        nlohmann::json report;
+        report["print"] = {{"command", "push_status"}, {"ams", ams_json}};
+        dispatch_message(device_info.dev_id, report.dump());
+        return;
+    }
+    MachineObject* obj = dev_manager->get_my_machine(device_info.dev_id);
+    if (!obj) {
+        return;
+    }
 
     // Call the parser to populate DevFilaSystem
     DevFilaSystemParser::ParseV1_0(print_json, obj, obj->GetFilaSystem().get(), false);
