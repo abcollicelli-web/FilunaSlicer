@@ -795,6 +795,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/FilunaModuleStore.cpp
     Utils/FilunaMqttClient.cpp
     Utils/FilunaMqttClient.hpp
+    Utils/FilunaPrusaLinkAgent.cpp
+    Utils/FilunaPrusaLinkAgent.hpp
     Utils/FilunaModuleStore.hpp
     Utils/Http.cpp
     Utils/Http.hpp

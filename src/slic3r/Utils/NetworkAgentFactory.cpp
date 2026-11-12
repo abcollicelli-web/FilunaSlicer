@@ -13,6 +13,7 @@
 #include "FilunaBambuLanAgent.hpp"
 #include "FilunaElegooCC2Agent.hpp"
 #include "FilunaFlashforgeAgent.hpp"
+#include "FilunaPrusaLinkAgent.hpp"
 #include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <chrono>
@@ -198,6 +199,8 @@ void NetworkAgentFactory::register_all_agents()
     register_agent<FilunaElegooCC2Agent>();
     // Filuna: Flashforge pela API HTTP local, sem a biblioteca fechada FlashNetwork
     register_agent<FilunaFlashforgeAgent>();
+    // Filuna: Prusa pela API aberta PrusaLink v1
+    register_agent<FilunaPrusaLinkAgent>();
 
     // Keep BBL as a built-in option. Python printer-agent plugins with the
     // same AgentInfo ID are listed separately under the plugin registry key.

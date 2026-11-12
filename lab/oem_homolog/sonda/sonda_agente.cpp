@@ -22,6 +22,7 @@
 #include "slic3r/Utils/FilunaBambuLanAgent.hpp"
 #include "slic3r/Utils/FilunaElegooCC2Agent.hpp"
 #include "slic3r/Utils/FilunaFlashforgeAgent.hpp"
+#include "slic3r/Utils/FilunaPrusaLinkAgent.hpp"
 #include <memory>
 
 using namespace Slic3r;
@@ -57,6 +58,10 @@ int main(int argc, char** argv)
         auto b = std::make_unique<FilunaBambuLanAgent>("");
         b->set_ports({porta("--porta-a", 8883), porta("--porta-b", 990), porta("--porta-c", 2021), true});
         agente = std::move(b);
+    } else if (a["--agente"] == "prusa") {
+        auto pl = std::make_unique<FilunaPrusaLinkAgent>("");
+        pl->set_poll_ms(500);
+        agente = std::move(pl);
     } else if (a["--agente"] == "flashforge") {
         auto f = std::make_unique<FilunaFlashforgeAgent>("");
         f->set_ports({porta("--porta-a", 8898), porta("--porta-b", 48899), porta("--porta-c", 18007), 500});
@@ -67,7 +72,7 @@ int main(int argc, char** argv)
         agente = std::move(e);
     }
     IPrinterAgent& agent = *agente;
-    json prova = {{"fabricante", bambu ? "bambu" : (a["--agente"] == "flashforge" ? "flashforge" : "elegoo")}, {"agente", agent.get_agent_info().id}, {"ip", a["--ip"]}, {"etapas", json::array()}};
+    json prova = {{"fabricante", bambu ? "bambu" : (a["--agente"] == "flashforge" ? "flashforge" : (a["--agente"] == "prusa" ? "prusa" : "elegoo"))}, {"agente", agent.get_agent_info().id}, {"ip", a["--ip"]}, {"etapas", json::array()}};
     bool tudo_ok = true;
     auto etapa = [&](const std::string& nome, bool ok, const std::string& det = {}) {
         prova["etapas"].push_back({{"etapa", nome}, {"ok", ok}, {"detalhe", det}});
@@ -94,13 +99,19 @@ int main(int argc, char** argv)
         }
     });
 
-    // 1. descoberta
-    agent.start_discovery(true, false);
-    const bool achou = espera(std::chrono::seconds(10), [&] { return !descoberto.empty(); });
-    agent.start_discovery(false, false);
-    std::string serial = a["--serial"];
+    const bool prusa = a["--agente"] == "prusa";
+    // 1. descoberta (a PrusaLink só se anuncia por mDNS, que fica com o Bonjour do Orca)
     prova["nao_suportado_pelo_protocolo"] = json::array();
-    if (achou) {
+    bool achou = false;
+    if (!prusa) {
+        agent.start_discovery(true, false);
+        achou = espera(std::chrono::seconds(10), [&] { return !descoberto.empty(); });
+        agent.start_discovery(false, false);
+    } else
+        prova["nao_suportado_pelo_protocolo"].push_back("descoberta (mDNS, Bonjour do Orca, fora desta sonda)");
+    std::string serial = a["--serial"];
+    if (prusa) {
+    } else if (achou) {
         json d = json::parse(descoberto);
         etapa(bambu ? "descoberta_ssdp" : "descoberta_udp", d.value("dev_id", "") == serial || serial.empty(), d.dump());
         if (serial.empty())
@@ -112,7 +123,9 @@ int main(int argc, char** argv)
     p.dev_id = serial;
     p.host   = a["--ip"];
     const bool ff = a["--agente"] == "flashforge";
-    p.port   = std::to_string(porta("--porta-a", bambu ? 8883 : (ff ? 8898 : 1883)));
+    p.port   = std::to_string(porta("--porta-a", bambu ? 8883 : (ff ? 8898 : (prusa ? 80 : 1883))));
+    if (prusa)
+        p.username = "maker";
 
     // 2. código errado é recusado
     p.password = "00000000";
@@ -121,7 +134,7 @@ int main(int argc, char** argv)
     // 3. conexão
     p.password = a["--codigo"];
     const int rc = agent.connect_printer(p);
-    etapa(bambu ? "conexao_mqtt_tls" : (ff ? "conexao_http" : "conexao_mqtt"), rc == BAMBU_NETWORK_SUCCESS && estado_conexao == ConnectStatusOk);
+    etapa(bambu ? "conexao_mqtt_tls" : (ff || prusa ? "conexao_http" : "conexao_mqtt"), rc == BAMBU_NETWORK_SUCCESS && estado_conexao == ConnectStatusOk);
     if (rc != BAMBU_NETWORK_SUCCESS) {
         std::ofstream(a["--prova"]) << prova.dump(1);
         return 1;
@@ -139,7 +152,10 @@ int main(int argc, char** argv)
             for (const auto& u : ultimo["ams"]["ams"])
                 bandejas += int(u.value("tray", json::array()).size());
     }
-    etapa(bambu ? "sistema_cores_ams" : (ff ? "sistema_cores_ifs" : "sistema_cores_canvas"), bandejas > 0, std::to_string(bandejas) + " bandejas");
+    if (prusa)
+        prova["nao_suportado_pelo_protocolo"].push_back("sistema_cores (a PrusaLink não expõe o MMU)");
+    else
+        etapa(bambu ? "sistema_cores_ams" : (ff ? "sistema_cores_ifs" : "sistema_cores_canvas"), bandejas > 0, std::to_string(bandejas) + " bandejas");
 
     if (!so_ler) {
         // 5. envio + início com mapeamento do AMS
@@ -174,7 +190,7 @@ int main(int argc, char** argv)
         else
             etapa("controle_temperatura", espera(std::chrono::seconds(10), [&] { return ultimo.value("nozzle_target_temper", 0.0) == 200.0; }));
         agent.send_message_to_printer(serial, base + "stop\"}}", 0, 0);
-        etapa("parar", estado_vira(bambu || ff ? "FAILED" : "IDLE"));
+        etapa("parar", estado_vira(bambu || ff || prusa ? "FAILED" : "IDLE"));
     }
     agent.disconnect_printer();
     prova["aprovado"] = tudo_ok;
