@@ -116,7 +116,11 @@ def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Pa
             rc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, timeout=timeout, env=env, check=False).returncode
         except subprocess.TimeoutExpired:
             rc = 124
-    return {"rc": rc, "segundos": round(time.time() - t0, 1), "gcodes": [str(out)] if out.is_file() else []}
+    r = {"rc": rc, "segundos": round(time.time() - t0, 1), "gcodes": [str(out)] if out.is_file() else []}
+    # falta de recurso da máquina de teste não é recusa do fatiador: o caso não vale
+    if "Resource temporarily unavailable" in (pasta / "cli.log").read_text(encoding="utf-8", errors="replace"):
+        r["erro_ambiente"] = True
+    return r
 
 
 def compativeis(base_o: list[str], pacote: Path, ini_app: str, maquina: str, pasta: Path, timeout: int) -> dict[str, list[str]]:
@@ -199,7 +203,9 @@ def main() -> int:
             k += 1
         cc = fatiar(base_c, ns.pacote, imp, modelo, caso / f"{nome}-compilado", ns.timeout, ini_app, projeto, carregar=carregar, extra=extra)
         c = {"modelo": nome, "oficial": execs[0], "compilado": cc, "variantes_oficiais": len(variantes)}
-        if not variantes and cc["rc"] != 0 and execs[0]["rc"] == cc["rc"]:
+        if any(x.get("erro_ambiente") for x in (*execs, cc)):
+            c["veredito"] = "ERRO_DE_AMBIENTE"
+        elif not variantes and cc["rc"] != 0 and execs[0]["rc"] == cc["rc"]:
             c["veredito"] = "MESMA_RECUSA_DO_OFICIAL"
         elif not variantes:
             c["veredito"] = "OFICIAL_NAO_FATIOU"
