@@ -86,6 +86,33 @@ def canonico(b: bytes) -> str:
     return h.hexdigest()
 
 
+def camadas(b: bytes) -> list[bytes]:
+    """Texto exato de cada camada, sem as linhas de estimativa (tempo/progresso/totais)."""
+    out, atual = [], []
+    for ln in b.split(b"\n"):
+        if ESTIMATIVA.match(ln):
+            continue
+        if CAMADA.match(ln):
+            out.append(b"\n".join(atual))
+            atual = []
+        atual.append(ln)
+    out.append(b"\n".join(atual))
+    return out
+
+
+def por_camada(compilado: bytes, variantes: list[bytes]) -> tuple[bool, int | None]:
+    """Cada camada do compilado é, byte a byte, a mesma camada de alguma execução oficial.
+    Só usado quando o próprio oficial não se repete entre execuções."""
+    cc = camadas(compilado)
+    vs = [camadas(v) for v in variantes]
+    if any(len(v) != len(cc) for v in vs):
+        return False, None
+    for i, c in enumerate(cc):
+        if all(v[i] != c for v in vs):
+            return False, i
+    return True, None
+
+
 def sha(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
 
@@ -254,15 +281,20 @@ def main() -> int:
                 c["canonico_oficial"] = sorted({canonico(v) for v in variantes.values()})
                 if sha(nc) in variantes:
                     c["veredito"] = "IDENTICO"
+                elif len(variantes) > 1 and por_camada(nc, list(variantes.values()))[0]:
+                    # o oficial muda de uma execução para outra (Bambu/QIDI); o compilado não traz
+                    # nenhuma camada que o oficial não tenha produzido
+                    c["veredito"] = "IDENTICO_POR_CAMADA"
                 else:
                     c["veredito"] = "DIVERGE"
+                    c["camada_divergente"] = por_camada(nc, list(variantes.values()))[1]
                     mais_perto = min(variantes.values(), key=lambda v: abs(len(v) - len(nc)))
                     c["primeira_diferenca"] = primeira_diferenca(nc, mais_perto)
                 # trocas de ferramenta/filamento (sistema de cores) contadas no G-code oficial
                 c["trocas_ferramenta"] = len(re.findall(rb"^(T\d+|M620 S\d+)\b", na, re.M))
             r["casos"].append(c)
         vs = [c["veredito"] for c in r["casos"]]
-        aceitos = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL")
+        aceitos = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL", "IDENTICO_POR_CAMADA")
         r["veredito"] = ("IDENTICO" if vs and all(v == "IDENTICO" for v in vs)
                          else next((v for v in vs if v not in aceitos), "IDENTICO_COM_RECUSA_OFICIAL"))
         resultados.append(r)

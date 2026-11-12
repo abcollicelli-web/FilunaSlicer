@@ -168,6 +168,17 @@ class Catalogo:
         for c in cands:
             if pedido and chave(c) == chave(pedido):
                 return c
+        # o fatiador prefere a variante do mesmo preset para a máquina ("Snapmaker PLA" ->
+        # "Snapmaker PLA @U1 ..."), depois o mesmo material; só então o primeiro em ordem
+        base = pedido.split("@")[0].strip().lower() if pedido else ""
+        for c in cands:
+            if base and c.lower().startswith(base):
+                return c
+        for mat in ("pla", "petg", "abs"):
+            if mat in base.split():
+                for c in cands:
+                    if mat in c.lower().split("@")[0].split():
+                        return c
         return cands[0]
 
     def gravar_trio(self, item: dict, destino: Path) -> dict[str, Path]:
