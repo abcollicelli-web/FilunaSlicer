@@ -48,7 +48,8 @@ def estado_motor(prova: Path, modelo: str) -> dict:
             resumo["PERFIL_INCOMPLETO_DO_FABRICANTE"] = resumo.get("PERFIL_INCOMPLETO_DO_FABRICANTE", 0) + 1
             continue
         for c in casos:
-            if c.get("modelo") != modelo:
+            # variantes do caso contam no mesmo grupo ("cores-sem-torre" é sistema de cores)
+            if (c.get("modelo") or "").split("-")[0] != modelo:
                 continue
             n += 1
             resumo[c["veredito"]] = resumo.get(c["veredito"], 0) + 1

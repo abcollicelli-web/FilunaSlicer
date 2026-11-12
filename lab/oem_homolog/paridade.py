@@ -16,6 +16,7 @@ Uso (dentro do contêiner com as bibliotecas de execução):
 """
 from __future__ import annotations
 
+import bgcode  # noqa: E402  (mesmo diretório)
 import argparse
 import hashlib
 import json
@@ -50,7 +51,8 @@ def normalizado(p: Path) -> bytes:
         n = ordem.setdefault(m.group(2), len(ordem) + 1)
         return m.group(1) + b"obj" + str(n).encode()
 
-    for ln in p.read_bytes().splitlines():
+    # G-code binário (Prusa, binary_gcode=1) é aberto para texto antes de normalizar
+    for ln in bgcode.texto(p.read_bytes()).splitlines():
         if CABECALHO.match(ln) or DATA_LIVRE.match(ln) or UUID_LIVRE.match(ln):
             linhas.append(b"; <cabecalho-normalizado>")
         else:
