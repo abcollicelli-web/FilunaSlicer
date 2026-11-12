@@ -10,7 +10,14 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
-#include <curl/curl.h>
+#include <fstream>
+#include <stdexcept>
+#include <vector>
+
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/asio/write.hpp>
 #include <nlohmann/json.hpp>
 
 #include "FilunaMqttClient.hpp"
@@ -18,36 +25,6 @@
 namespace Slic3r {
 
 namespace {
-
-struct UploadCtx
-{
-    std::FILE*       file = nullptr;
-    curl_off_t       total = 0;
-    OnUpdateStatusFn update;
-    WasCancelledFn   cancelled;
-    int              last_percent = -1;
-};
-
-size_t read_cb(char* buf, size_t size, size_t n, void* user)
-{
-    auto* c = static_cast<UploadCtx*>(user);
-    return std::fread(buf, size, n, c->file);
-}
-
-int progress_cb(void* user, curl_off_t, curl_off_t, curl_off_t, curl_off_t ulnow)
-{
-    auto* c = static_cast<UploadCtx*>(user);
-    if (c->cancelled && c->cancelled())
-        return 1;
-    if (c->update && c->total > 0) {
-        const int p = int(ulnow * 100 / c->total);
-        if (p != c->last_percent) {
-            c->last_percent = p;
-            c->update(PrintingStageUpload, p, "");
-        }
-    }
-    return 0;
-}
 
 std::string header(const std::string& datagram, const std::string& name)
 {
@@ -313,50 +290,133 @@ int FilunaBambuLanAgent::set_user_selected_machine(std::string dev_id) { std::lo
 bool FilunaBambuLanAgent::upload_ftps(const PrintParams& p, const std::string& local_path, const std::string& remote_name,
                                       OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, std::string& error)
 {
-    boost::system::error_code ec;
-    const auto                size = boost::filesystem::file_size(local_path, ec);
-    if (ec) {
-        error = "arquivo para enviar não encontrado: " + local_path;
-        return false;
-    }
-    UploadCtx ctx;
-    ctx.file      = std::fopen(local_path.c_str(), "rb");
-    ctx.total     = curl_off_t(size);
-    ctx.update    = update_fn;
-    ctx.cancelled = cancel_fn;
-    if (!ctx.file) {
-        error = "não foi possível abrir " + local_path;
-        return false;
-    }
-    CURL* curl = curl_easy_init();
-    std::string ip, code;
+    // Cliente FTPS próprio: o libcurl 7.75 das dependências trunca envios FTPS grandes (prova da
+    // sonda: 3,4 MB enviados, 2 MiB recebidos) e a impressora exige reaproveitar a sessão TLS do
+    // canal de controle no canal de dados, como o ftplib do ha-bambulab faz.
+    namespace net = boost::asio;
+    namespace ssl = boost::asio::ssl;
+    using tcp     = net::ip::tcp;
+    std::string ip, code, user;
     {
         std::lock_guard<std::recursive_mutex> lock(m_mutex);
         ip   = p.dev_ip.empty() ? m_dev_ip : p.dev_ip;
         code = p.password.empty() ? m_access_code : p.password;
     }
-    // ftps:// no curl = TLS implícito (a Bambu abre o TLS antes do banner FTP, porta 990)
-    const std::string url = std::string(m_ports.tls ? "ftps://" : "ftp://") + ip + ":" + std::to_string(m_ports.ftps) + "/" + remote_name;
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_USERNAME, (p.username.empty() ? std::string("bblp") : p.username).c_str());
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, code.c_str());
-    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-    curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_cb);
-    curl_easy_setopt(curl, CURLOPT_READDATA, &ctx);
-    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, ctx.total);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L); // certificado próprio da impressora
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(curl, CURLOPT_FTP_SKIP_PASV_IP, 1L);
-    curl_easy_setopt(curl, CURLOPT_FTP_USE_EPSV, 0L);
-    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_cb);
-    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &ctx);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
-    const CURLcode rc = curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-    std::fclose(ctx.file);
-    if (rc != CURLE_OK) {
-        error = rc == CURLE_ABORTED_BY_CALLBACK ? "envio cancelado" : std::string("falha no envio FTPS: ") + curl_easy_strerror(rc);
+    user = p.username.empty() ? std::string("bblp") : p.username;
+    std::ifstream in(local_path, std::ios::binary);
+    if (!in) {
+        error = "não foi possível abrir " + local_path;
+        return false;
+    }
+    in.seekg(0, std::ios::end);
+    const std::uint64_t total = std::uint64_t(in.tellg());
+    in.seekg(0);
+    try {
+        net::io_context ioc;
+        ssl::context    ctx(ssl::context::tls_client);
+        ctx.set_verify_mode(ssl::verify_none); // certificado próprio da impressora
+        tcp::resolver res(ioc);
+        const auto    ends = res.resolve(ip, std::to_string(m_ports.ftps));
+
+        using Stream = ssl::stream<tcp::socket>;
+        Stream ctl(ioc, ctx);
+        net::connect(ctl.next_layer(), ends);
+        const bool tls = m_ports.tls;
+        if (tls)
+            ctl.handshake(ssl::stream_base::client);
+        std::string pend;
+        auto read_line = [&]() -> std::string {
+            for (;;) {
+                const auto nl = pend.find("\r\n");
+                if (nl != std::string::npos) {
+                    std::string l = pend.substr(0, nl);
+                    pend.erase(0, nl + 2);
+                    return l;
+                }
+                char        b[512];
+                std::size_t n = tls ? ctl.read_some(net::buffer(b)) : ctl.next_layer().read_some(net::buffer(b));
+                pend.append(b, n);
+            }
+        };
+        auto reply = [&]() -> std::string { // resposta completa (multilinha "123-" ... "123 ")
+            std::string l = read_line();
+            if (l.size() >= 4 && l[3] == '-') {
+                const std::string code3 = l.substr(0, 3) + " ";
+                std::string       m;
+                while ((m = read_line()).compare(0, 4, code3) != 0) {}
+                return m;
+            }
+            return l;
+        };
+        auto cmd = [&](const std::string& c) -> std::string {
+            const std::string line = c + "\r\n";
+            tls ? net::write(ctl, net::buffer(line)) : net::write(ctl.next_layer(), net::buffer(line));
+            return reply();
+        };
+        auto expect = [&](const std::string& r, char first, const char* what) {
+            if (r.empty() || r[0] != first)
+                throw std::runtime_error(std::string(what) + ": " + r);
+        };
+        expect(reply(), '2', "banner");
+        const std::string u = cmd("USER " + user);
+        if (u[0] == '3')
+            expect(cmd("PASS " + code), '2', "login recusado");
+        else
+            expect(u, '2', "login");
+        if (tls) {
+            expect(cmd("PBSZ 0"), '2', "PBSZ");
+            expect(cmd("PROT P"), '2', "PROT");
+        }
+        expect(cmd("TYPE I"), '2', "TYPE");
+        const std::string pasv = cmd("PASV");
+        expect(pasv, '2', "PASV");
+        const auto     l = pasv.find('('), r = pasv.find(')');
+        int            h[6]{};
+        if (l == std::string::npos || r == std::string::npos ||
+            std::sscanf(pasv.substr(l + 1, r - l - 1).c_str(), "%d,%d,%d,%d,%d,%d", &h[0], &h[1], &h[2], &h[3], &h[4], &h[5]) != 6)
+            throw std::runtime_error("resposta PASV inválida: " + pasv);
+        const unsigned short dport = static_cast<unsigned short>(h[4] * 256 + h[5]);
+        Stream data(ioc, ctx);
+        // IP do controle (a resposta PASV pode trazer endereço interno)
+        data.next_layer().connect(tcp::endpoint(ctl.next_layer().remote_endpoint().address(), dport));
+        const std::string line = "STOR " + remote_name + "\r\n";
+        tls ? net::write(ctl, net::buffer(line)) : net::write(ctl.next_layer(), net::buffer(line));
+        if (tls) {
+            SSL_SESSION* sess = SSL_get1_session(ctl.native_handle());
+            if (sess) {
+                SSL_set_session(data.native_handle(), sess);
+                SSL_SESSION_free(sess);
+            }
+            data.handshake(ssl::stream_base::client);
+        }
+        expect(reply(), '1', "STOR");
+        std::vector<char> buf(256 * 1024);
+        std::uint64_t     sent = 0;
+        int               last = -1;
+        while (in) {
+            in.read(buf.data(), std::streamsize(buf.size()));
+            const std::size_t n = std::size_t(in.gcount());
+            if (n == 0)
+                break;
+            tls ? net::write(data, net::buffer(buf.data(), n)) : net::write(data.next_layer(), net::buffer(buf.data(), n));
+            sent += n;
+            if (cancel_fn && cancel_fn())
+                throw std::runtime_error("envio cancelado");
+            const int pct = total ? int(sent * 100 / total) : 100;
+            if (update_fn && pct != last)
+                update_fn(PrintingStageUpload, last = pct, "");
+        }
+        boost::system::error_code ec;
+        if (tls)
+            data.shutdown(ec); // close_notify: a impressora só fecha o arquivo depois dele
+        data.next_layer().shutdown(tcp::socket::shutdown_both, ec);
+        data.next_layer().close(ec);
+        expect(reply(), '2', "fim do envio");
+        cmd("QUIT");
+        if (sent != total)
+            throw std::runtime_error("enviados " + std::to_string(sent) + " de " + std::to_string(total) + " bytes");
+    } catch (const std::exception& e) {
+        error = std::string("falha no envio FTPS: ") + e.what();
         return false;
     }
     return true;
