@@ -185,8 +185,21 @@ def main() -> int:
                 from fixture_cores import de_semente_prusa
                 sem = caso / "semente.3mf"
                 fatiar(base_o, ns.pacote, imp, ns.modelo, caso / "semente", ns.timeout, ini_app, exportar_3mf=sem)
+                # configuração efetiva desta impressora = bloco "; prusaslicer_config" do G-code do cubo
+                # que o oficial acabou de fatiar com os perfis (o --save da CLI grava só os padrões)
                 cfg = caso / "projeto.ini"
-                fatiar(base_o, ns.pacote, imp, ns.modelo, caso / "semente-config", ns.timeout, ini_app, salvar_config=cfg)
+                g = caso / "cubo-oficial-0" / "saida.gcode"
+                if g.is_file():
+                    bloco, dentro = [], False
+                    for l in g.read_text(encoding="utf-8", errors="replace").splitlines():
+                        if l.startswith("; prusaslicer_config = begin"):
+                            dentro = True
+                            continue
+                        if l.startswith("; prusaslicer_config = end"):
+                            break
+                        if dentro and l.startswith("; "):
+                            bloco.append(l[2:])
+                    cfg.write_text("\n".join(bloco) + "\n", encoding="utf-8")
                 try:
                     de_semente_prusa(sem, caso / "cores.3mf")
                     # a configuração completa salva pelo oficial entra por --load; o 3MF continua projeto,
