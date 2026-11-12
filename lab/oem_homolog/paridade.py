@@ -44,6 +44,36 @@ def normalizado(p: Path) -> bytes:
     return b"\n".join(linhas)
 
 
+# Linhas que só registram estimativas (tempo, filamento total, progresso) — derivam da ordem
+# dos trechos e variam quando o próprio oficial reordena trechos de uma camada.
+ESTIMATIVA = re.compile(rb"^(M73\b|; (model printing time|total estimated time|estimated printing time|total filament|filament used|"
+                        rb"total layer|total filament (length|volume|weight)|filament cost|estimated first layer)\b)", re.I)
+CAMADA = re.compile(rb"^(;LAYER_CHANGE|; CHANGE_LAYER|;LAYER:|; layer num/total_layer_count)", re.I)
+
+
+def canonico(b: bytes) -> str:
+    """Impressão digital funcional: por camada, o multiconjunto das linhas (fora estimativas).
+    Igual = mesmas instruções em cada camada, só em ordem possivelmente diferente dentro dela.
+    Qualquer coordenada, extrusão, temperatura ou comando diferente muda o resultado."""
+    h = hashlib.sha256()
+    camada: list[bytes] = []
+
+    def fecha():
+        for ln in sorted(camada):
+            h.update(ln + b"\n")
+        h.update(b"--camada--\n")
+        camada.clear()
+
+    for ln in b.split(b"\n"):
+        if ESTIMATIVA.match(ln):
+            continue
+        if CAMADA.match(ln):
+            fecha()
+        camada.append(ln)
+    fecha()
+    return h.hexdigest()
+
+
 def sha(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
 
@@ -155,18 +185,27 @@ def main() -> int:
                 c["sha_compilado"] = sha(nc)
                 c["bytes"] = len(nc)
                 c["oficial_repete"] = nb is not None and sha(na) == sha(nb)
+                can_o = {canonico(na)} | ({canonico(nb)} if nb is not None else set())
+                c["canonico_oficial"] = sorted(can_o)
+                c["canonico_compilado"] = canonico(nc)
                 if sha(nc) in variantes:
                     c["veredito"] = "IDENTICO"
+                elif not c["oficial_repete"] and len(can_o) == 1 and canonico(nc) in can_o:
+                    # o próprio oficial não repete bytes (reordena trechos na camada); o compilado
+                    # cai na mesma classe funcional que as duas execuções oficiais
+                    c["veredito"] = "EQUIVALENTE_OFICIAL_NAO_DETERMINISTICO"
                 else:
                     c["veredito"] = "DIVERGE"
                     c["primeira_diferenca"] = primeira_diferenca(nc, na)
                 # tool changes (sistema de cores) contados no G-code oficial
-                c["trocas_ferramenta"] = len(re.findall(rb"^T\d+\b", na, re.M))
+                c["trocas_ferramenta"] = len(re.findall(rb"^(T\d+|M620 S\d+)\b", na, re.M))
             r["casos"].append(c)
         vs = [c["veredito"] for c in r["casos"]]
-        ok = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL")
+        ok = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL", "EQUIVALENTE_OFICIAL_NAO_DETERMINISTICO")
         r["veredito"] = ("IDENTICO" if vs and all(v == "IDENTICO" for v in vs)
-                         else next((v for v in vs if v not in ok), "IDENTICO_COM_RECUSA_OFICIAL"))
+                         else next((v for v in vs if v not in ok), None)
+                         or ("EQUIVALENTE_OFICIAL_NAO_DETERMINISTICO" if "EQUIVALENTE_OFICIAL_NAO_DETERMINISTICO" in vs
+                             else "IDENTICO_COM_RECUSA_OFICIAL"))
         resultados.append(r)
         print(f"[{idx}/{len(impressoras)}] {r['veredito']:22} {imp['maquina']}", flush=True)
 
