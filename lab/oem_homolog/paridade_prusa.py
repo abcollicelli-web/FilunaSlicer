@@ -85,7 +85,7 @@ def app_ini(secoes: dict, vendor: str) -> str:
 
 
 def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Path, timeout: int, ini_app: str = "",
-           projeto: bool = False, exportar_3mf: Path | None = None) -> dict:
+           projeto: bool = False, exportar_3mf: Path | None = None, salvar_config: Path | None = None) -> dict:
     if pasta.exists():
         shutil.rmtree(pasta)
     (pasta / "datadir" / "vendor").mkdir(parents=True)
@@ -96,7 +96,12 @@ def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Pa
     # com perfis na linha de comando o PrusaSlicer carrega só a geometria e perde as extrusoras
     perfis = [] if projeto else ["--printer-profile", imp["maquina"], "--print-profile", imp["processo"],
                                  *sum((["--material-profile", imp["filamento"]] for _ in range(max(1, imp.get("extrusoras", 1)))), [])]
-    acao = ["--export-3mf", "--output", str(exportar_3mf)] if exportar_3mf else ["--export-gcode", "--output", str(out)]
+    if salvar_config:
+        acao = ["--save", str(salvar_config)]
+    elif exportar_3mf:
+        acao = ["--export-3mf", "--output", str(exportar_3mf)]
+    else:
+        acao = ["--export-gcode", "--output", str(out)]
     cmd = [*cmd_base, "--datadir", str(pasta / "datadir"), *perfis, *acao, str(modelo)]
     t0 = time.time()
     env = dict(os.environ, HOME=str(pasta / "home"))
@@ -179,10 +184,18 @@ def main() -> int:
                 from fixture_cores import de_semente_prusa
                 sem = caso / "semente.3mf"
                 fatiar(base_o, ns.pacote, imp, ns.modelo, caso / "semente", ns.timeout, ini_app, exportar_3mf=sem)
+                cfg = caso / "projeto.ini"
+                fatiar(base_o, ns.pacote, imp, ns.modelo, caso / "semente-config", ns.timeout, ini_app, salvar_config=cfg)
                 try:
                     de_semente_prusa(sem, caso / "cores.3mf")
+                    # a configuração completa do oficial vai para o projeto, no formato que o 3MF da Prusa usa
+                    # ("; chave = valor"); o --export-3mf da CLI não a grava
+                    import zipfile as _z
+                    linhas = [l for l in cfg.read_text(encoding="utf-8").splitlines() if l and not l.startswith("#")]
+                    with _z.ZipFile(caso / "cores.3mf", "a") as z:
+                        z.writestr("Metadata/Slic3r_PE.config", "".join(f"; {l}\n" for l in linhas))
                     r["casos"].append(caso_um(imp, caso, "cores", caso / "cores.3mf", projeto=True))
-                except (OSError, AssertionError, KeyError) as e:
+                except (OSError, AssertionError, KeyError, ValueError) as e:
                     r["casos"].append({"modelo": "cores", "veredito": "OFICIAL_NAO_FATIOU", "detalhe": f"semente: {e}"})
             vs = [c["veredito"] for c in r["casos"]]
             aceitos = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL")
