@@ -57,9 +57,15 @@ def estado_motor(prova: Path, modelo: str) -> dict:
     if not n:
         return {"estado": "PENDENTE", "motivo": f"sem caso '{modelo}' na prova"}
     ok = sum(v for k, v in resumo.items() if k in ACEITOS_CASO)
-    out = {"estado": "HOMOLOGADO" if ok == n else "REPROVADO", "casos": n, "aceitos": ok, "resumo": resumo, "prova_sha256": sha(prova)}
+    estado = "HOMOLOGADO" if ok == n else "REPROVADO"
+    if modelo == "cores" and estado == "HOMOLOGADO" and trocas == 0:
+        # o caso de cores só prova o sistema de cores se o oficial de fato trocou de filamento
+        estado = "PENDENTE"
+    out = {"estado": estado, "casos": n, "aceitos": ok, "resumo": resumo, "prova_sha256": sha(prova)}
     if modelo == "cores":
         out["maquinas_com_troca_de_cor"] = trocas
+        if estado == "PENDENTE":
+            out["motivo"] = "a fixture de 4 cores não gerou troca de filamento neste fatiador"
     return out
 
 
