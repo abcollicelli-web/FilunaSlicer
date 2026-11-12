@@ -40,6 +40,11 @@ class Catalogo:
                 if not isinstance(dados, dict):
                     continue
                 tipo, nome = dados.get("type"), dados.get("name")
+                if not tipo:
+                    # alguns presets oficiais (Flashforge C5) não trazem "type"; o fatiador o tira
+                    # da lista do <Vendor>.json, que aponta para a pasta process/filament/machine
+                    partes = arq.relative_to(pasta).parts
+                    tipo = next((t for t in ("process", "filament", "machine") if t in partes), None)
                 if tipo not in ("machine", "process", "filament", "machine_model") or not nome:
                     continue
                 self.por_vendor.setdefault((vendor, tipo, nome), (arq, dados))
