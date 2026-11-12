@@ -26,6 +26,14 @@ public:
     // Calls Filuna._evento(name, data) in the page.
     void send_event(const std::string& name, const nlohmann::json& data = nlohmann::json::object());
 
+    // One Filuna account for the whole program: called whenever the device token changes (login or logout in
+    // the home page or in any Filuna page). Every page gets the "conta" event and the home page is told too.
+    static void account_changed(const std::string& token, const FilunaPanel* source = nullptr);
+
+    // Opens a tab and, for Meu espaço, one of its sections ("estoque", "loja"…). The section is also kept until
+    // the page asks for it ("secao.pendente"), so it works when the page is built only now.
+    static void open_tab(const std::string& tab, const std::string& section = std::string());
+
 private:
     void create_browser();
     void on_script_message(wxWebViewEvent& evt);

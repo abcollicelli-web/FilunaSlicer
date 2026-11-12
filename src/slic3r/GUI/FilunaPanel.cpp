@@ -40,6 +40,7 @@
 #include "PartPlate.hpp"
 #include "Plater.hpp"
 #include "Tab.hpp"
+#include "WebViewDialog.hpp"
 #include "Widgets/WebView.hpp"
 
 using json = nlohmann::json;
@@ -53,6 +54,13 @@ std::set<FilunaPanel*>& panels()
 {
     static std::set<FilunaPanel*> all;
     return all;
+}
+
+// Section asked for by aba.abrir, kept until the page reads it with "secao.pendente".
+std::string& pending_section()
+{
+    static std::string section;
+    return section;
 }
 
 // Only these app_config keys are reachable from the pages.
@@ -377,6 +385,30 @@ void FilunaPanel::reply(const std::string& id, bool ok, const json& data)
                                                      data.dump() + ");"));
 }
 
+void FilunaPanel::open_tab(const std::string& tab, const std::string& section)
+{
+    MainFrame* frame = wxGetApp().mainframe;
+    if (frame == nullptr)
+        return;
+    pending_section() = section;
+    frame->select_filuna_tab(tab);
+    if (!section.empty())
+        for (FilunaPanel* p : panels())
+            p->send_event("secao", {{"secao", section}});
+}
+
+void FilunaPanel::account_changed(const std::string& token, const FilunaPanel* source)
+{
+    for (FilunaPanel* p : panels())
+        if (p != source)
+            p->send_event("conta", {{"token", token}});
+    if (source != nullptr)
+        if (WebViewPanel* home = WebViewPanel::if_built()) {
+            const std::string js = "if (window.FlTokenDeFora) FlTokenDeFora(" + json(token).dump() + ");";
+            home->RunScript(wxString::FromUTF8(js));
+        }
+}
+
 void FilunaPanel::on_script_message(wxWebViewEvent& evt)
 {
     json msg;
@@ -411,19 +443,42 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         const std::string key = d.value("chave", std::string());
         if (!allowed_config_key(key))
             throw std::runtime_error("Chave não permitida.");
-        cfg->set(key, d.value("valor", std::string()));
+        const std::string value = d.value("valor", std::string());
+        const bool account = key == "filuna_token" && cfg->get(key) != value;
+        cfg->set(key, value);
         cfg->save();
+        if (account)
+            account_changed(value, this);
         return json::object();
     }
     if (action == "aba.abrir") {
         const std::string tab = d.value("aba", std::string()), section = d.value("secao", std::string());
-        CallAfter([tab, section] {
-            if (MainFrame* frame = wxGetApp().mainframe) {
-                frame->select_filuna_tab(tab);
-                if (!section.empty())
-                    for (FilunaPanel* p : panels())
-                        p->send_event("secao", {{"secao", section}});
-            }
+        CallAfter([tab, section] { open_tab(tab, section); });
+        return json::object();
+    }
+    if (action == "secao.pendente") {
+        const std::string section = pending_section();
+        pending_section().clear();
+        return {{"secao", section}};
+    }
+    if (action == "perfis.salvos") {
+        // The user's own process presets (the ones made with "Salvar" in Preparação), for Meu espaço.
+        json list = json::array();
+        if (PresetBundle* bundle = wxGetApp().preset_bundle) {
+            const std::string current = bundle->prints.get_selected_preset_name();
+            for (const Preset& preset : bundle->prints)
+                if (preset.is_user() && preset.is_visible)
+                    list.push_back({{"nome", preset.name}, {"base", preset.inherits()}, {"atual", preset.name == current}});
+        }
+        return {{"perfis", list}};
+    }
+    if (action == "perfil.usar") {
+        const std::string name = d.value("nome", std::string());
+        CallAfter([name] {
+            if (MainFrame* frame = wxGetApp().mainframe)
+                frame->select_filuna_tab(TAB_ID_PREPARE);
+            if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT))
+                tab->select_preset(name);
         });
         return json::object();
     }

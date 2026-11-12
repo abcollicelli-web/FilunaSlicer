@@ -44,6 +44,8 @@ public:
     bool SetPageImage(size_t n, const std::string& bmp_name) const;
     void SetPageText(size_t n, const wxString& strText);
     void SetCompact(size_t n, bool compact); // ORCA
+    // Filuna: keeps the page in the book but takes its button off the tab bar.
+    void ShowPageButton(size_t n, bool show);
     wxString GetPageText(size_t n) const;
     // ORCA: the full page label, unaffected by SetCompact() blanking the button text.
     wxString GetPageLabel(size_t n) const;

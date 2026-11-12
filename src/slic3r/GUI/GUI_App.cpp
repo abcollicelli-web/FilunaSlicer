@@ -15,6 +15,7 @@
 #include "PresetBundleDialog.hpp"
 #include "WebUserLoginDialog.hpp"
 #include "WebViewDialog.hpp"
+#include "FilunaPanel.hpp"
 #include "slic3r/Utils/BBLCloudServiceAgent.hpp"
 #include "slic3r/Utils/CloudDeleteQueue.hpp"
 #include "slic3r/Utils/NetworkAgent.hpp"
@@ -5546,13 +5547,17 @@ std::string GUI_App::handle_web_request(std::string cmd)
             std::string command_str = command.value();
             // Filuna: the home page shares the device token with the Filuna pages through app_config.
             if (command_str == "filuna_token") {
-                app_config->set("filuna_token", root.get<std::string>("token", ""));
-                app_config->save();
+                const std::string token = root.get<std::string>("token", "");
+                if (app_config->get("filuna_token") != token) {
+                    app_config->set("filuna_token", token);
+                    app_config->save();
+                    CallAfter([token] { FilunaPanel::account_changed(token); });
+                }
                 return "";
             }
             if (command_str == "filuna_aba") {
-                const std::string tab = root.get<std::string>("aba", "");
-                CallAfter([this, tab] { if (mainframe) mainframe->select_filuna_tab(tab); });
+                const std::string tab = root.get<std::string>("aba", ""), section = root.get<std::string>("secao", "");
+                CallAfter([tab, section] { FilunaPanel::open_tab(tab, section); });
                 return "";
             }
             static const std::unordered_set<std::string> stealth_blocked_info_commands = {

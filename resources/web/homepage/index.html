@@ -55,7 +55,9 @@
 			<button type="button" class="FlLink" id="FlBtnSair">Sair desta conta</button>
 		</div>
 	</div>
-	<div id="LoginArea">
+	<!-- Filuna: as contas Orca Cloud e Bambu Cloud saem da tela; a conta é a Filuna (acima). O bloco continua no
+	     código porque home.js o usa. -->
+	<div id="LoginArea" hidden style="display:none">
 
 		<!-- Orca Cloud account -->
 		<div id="OrcaAccount" class="AccountRow" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false"
@@ -128,7 +130,7 @@
 			<div>Farm</div>
 			<div class="FlContador" id="FlMenuAvisos" hidden></div>
 		</div>
-		<div menu="filuna_estoque" class="BtnItem FlSoLigado" onClick="GotoMenu('filuna_estoque'); FlAtualizar();" hidden>
+		<div class="BtnItem" onClick="FlAbrirAba('filuna.espaco', 'estoque')">
 			<div>Estoque</div>
 			<div class="NavArrow icon16"></div>
 		</div>
@@ -140,13 +142,9 @@
 			<div>Calibração</div>
 			<div class="NavArrow icon16"></div>
 		</div>
-		<div menu="orca_cloud" class="BtnItem" onClick="GotoCloud()">
-			<div>OrcaCloud</div>
+		<div class="BtnItem" onClick="FlAbrirAba('filuna.espaco', 'loja')">
+			<div>Minha loja</div>
 			<div class="NavArrow icon16"></div>
-		</div>
-		<div class="BtnItem" onClick="OpenUrlInLocalBrowser('https://orcaslicer.com/wiki')">
-			<div>Wiki</div>
-			<div class="ShortcutIcon icon16"></div>
 		</div>
 	</div>
 </div>

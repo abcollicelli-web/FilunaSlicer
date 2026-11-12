@@ -255,6 +255,15 @@ void ButtonsListCtrl::SetPageText(size_t n, const wxString& strText)
         m_pageLabels[n] = strText;
 }
 
+// Filuna
+void ButtonsListCtrl::ShowPageButton(size_t n, bool show)
+{
+    if (n >= m_pageButtons.size() || m_pageButtons[n]->IsShown() == show)
+        return;
+    m_pageButtons[n]->Show(show);
+    Layout();
+}
+
 // ORCA
 void ButtonsListCtrl::SetCompact(size_t n, bool compact)
 {

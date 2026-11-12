@@ -46,6 +46,12 @@
 .rodape{min-height:50px;border-top:1px solid var(--line);display:flex;align-items:center;padding:0 24px;gap:24px;font-size:14px;color:var(--ink2);flex-wrap:wrap}
 .rodape a{color:var(--ink2);font-weight:500}.rodape .r{margin-left:auto;color:var(--muted)}
 .aviso{margin:14px 24px 0;padding:12px 14px;border-radius:12px;background:#F3EEFF;color:#4b2fb0;display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.hri svg,.head .btn svg{width:18px;height:18px}
+.temps{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.temps .v{font-size:44px;font-weight:800;line-height:1.05;margin-top:6px}.temps .a{font-size:13px;color:var(--ink2);margin-top:4px}
+.trava{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--ink2)}
+.diag{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-weight:600;cursor:pointer}
+.perfil-aviso{margin-top:6px;font-size:13px;color:var(--warn)}.perfil-aviso a{margin-left:6px}
 </style>
 </head>
 <body>
@@ -79,7 +85,7 @@ function desenhar() {
 		ligarComuns(app); return;
 	}
 	var i = estado.imps.filter(function (x) { return x.id == estado.sel; })[0];
-	var lista = '<div class="lista"><div class="lbl" style="padding:0 6px 8px">Minhas impressoras</div>' +
+	var lista = estado.imps.length < 2 ? "" : '<div class="lista"><div class="lbl" style="padding:0 6px 8px">Minhas impressoras</div>' +
 		(estado.imps.length ? estado.imps.map(function (x) {
 			return '<div class="imp' + (x.id == estado.sel ? " on" : "") + '" data-imp="' + E(x.id) + '"><span class="estado e-' + E(x.estado) + '"></span><div><div class="n">' + E(x.nome) +
 				'</div><div class="s">' + E(NOMES[x.estado] || x.estado) + (x.na_fila ? " · " + x.na_fila + " na fila" : "") + "</div></div></div>";
@@ -93,13 +99,13 @@ function desenhar() {
 	}
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
 	var foto = i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
-	var passos = ["Na fila", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
+	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
 	var html = cabecalho(i.nome, i.estado, i.modelo || "", local) +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
 		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
 		'<div class="view">' + foto + '<div class="vtag">' + (i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
 		'<div class="vbase"><div><div class="vk">Vista da impressão</div><div class="vv">' + (t ? "Mesa " + E(t.mesa || 1) + " de " + E(t.mesas || 1) : "Sem impressão agora") + "</div></div>" +
-		'<button class="vbtn" data-aba="monitor">Abrir painel da impressora</button></div></div>' +
+		'<button class="vbtn" data-aba="monitor">' + (i.camera_em ? "Abrir câmera local" : "Abrir painel da impressora") + "</button></div></div>" +
 		'<div class="direita"><div class="lbl">Trabalho atual</div>' +
 		(t ? '<div class="titulo">' + E(t.descricao || "Pedido " + (t.pedido || "")) + '</div><div class="arq">' + E(t.arquivo || "") + (t.quantidade ? " · " + t.quantidade + " peça(s)" : "") + "</div>" +
 			'<div class="pctrow"><div class="pct">' + prog + '<small>%</small></div><div class="eta">' + Filuna.tempo(t.resta_s) + '<div class="s">restante</div></div></div>' +
@@ -107,11 +113,16 @@ function desenhar() {
 			'<div class="barrow"><span><span class="dot" style="width:10px;height:10px;background:' + E(t.cor || "#ccc") + '"></span> ' + E((t.material || "") + " " + (t.cor_nome || "")) + "</span><span>" + Filuna.tempo(t.tempo_s) + " total</span></div>"
 			: '<div class="titulo" style="color:var(--muted)">Nada imprimindo</div><div class="arq">' + (i.na_fila ? i.na_fila + " mesa(s) esperando na fila · " + Filuna.tempo(i.carga_s) : "Fila vazia") + "</div>") +
 		'<div class="passos">' + passos.map(function (p, k) { return '<div class="passo' + (k > nivel ? " off" : "") + '"><div class="d"></div>' + p + "</div>"; }).join("") + "</div>" +
-		'<div class="ctl"><h4>Controle</h4><p>O pedido vai pela sua conta até a impressora. Nada é feito sem você confirmar.</p><div class="btns">' +
-		(i.estado == "pausada" ? '<button class="btn" data-cmd="retomar">Retomar</button>' : '<button class="btn" data-cmd="pausar"' + (i.estado != "imprimindo" ? " disabled" : "") + ">Pausar</button>") +
-		'<button class="btn" data-cmd="cancelar"' + (["imprimindo", "pausada"].indexOf(i.estado) < 0 ? " disabled" : "") + ">Cancelar</button></div>" +
+		// A Farm ainda não recebe as temperaturas da impressora: mostra "sem dado" em vez de inventar números.
+		'<div class="temps"><div><div class="lbl">Bico</div><div class="v">—</div><div class="a">sem dado da impressora</div></div>' +
+		'<div><div class="lbl">Mesa</div><div class="v">—</div><div class="a">sem dado da impressora</div></div></div>' +
+		'<div class="ctl"><h4>Controle local</h4><p>O pedido vai pela sua conta até a impressora. Nada é feito sem você confirmar.</p><div class="btns">' +
+		(i.estado == "pausada" ? '<button class="btn" data-cmd="retomar">Revisar retomada</button>' : '<button class="btn" data-cmd="pausar"' + (i.estado != "imprimindo" ? " disabled" : "") + ">Revisar pausa</button>") +
+		'<button class="btn" data-cmd="cancelar"' + (["imprimindo", "pausada"].indexOf(i.estado) < 0 ? " disabled" : "") + ">Revisar cancelamento</button></div>" +
+		'<div class="trava"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>Ação específica só após confirmação do titular.</div>' +
 		(estado.confirmar ? '<div class="conf">Confirmar <b>' + E(estado.confirmar) + '</b> em ' + E(i.nome) + '? <button class="btn primario peq" id="sim">Confirmar</button> <button class="btn peq" id="nao">Voltar</button></div>' : "") +
-		(estado.msg ? '<div class="okmsg">' + E(estado.msg) + "</div>" : "") + "</div></div></div>" +
+		(estado.msg ? '<div class="okmsg">' + E(estado.msg) + "</div>" : "") +
+		'<div class="diag" data-aba="monitor"><span>Diagnóstico e permissões</span><span>›</span></div>' + "</div></div></div>" +
 		'<div class="mats"><div class="lbl">Materiais</div>' + materiais(i) + "</div></div></div>" + rodape();
 	app.innerHTML = html;
 	if (i.camera_em) camera(i.id);
@@ -129,15 +140,32 @@ function desenhar() {
 	ligarComuns(app);
 }
 
+// O perfil da Preparação é desta impressora? Compara o modelo da impressora com o modelo do perfil (sem acentos e espaços).
+function mesmoModelo(a, b) {
+	var n = function (x) { return String(x || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, ""); };
+	a = n(a); b = n(b);
+	return !a || !b || a.indexOf(b) >= 0 || b.indexOf(a) >= 0;
+}
+
 function cabecalho(nome, est, modelo, local) {
-	return '<div class="head"><div><div class="lbl">Dispositivo</div><div class="h1">' + E(nome) +
+	var perfil = local.impressora || "", confere = mesmoModelo(modelo, local.modelo || perfil);
+	var ic = function (d) { return '<svg viewBox="0 0 24 24">' + d + "</svg>"; };
+	return '<div class="head"><div><div class="lbl">Dispositivo local</div><div class="h1">' + E(nome) +
 		(est ? ' <span class="pill ' + (TONS[est] || "") + '">' + E(NOMES[est] || est) + "</span>" : "") + "</div>" +
-		'<div class="sub">' + E(modelo) + (local.bico ? " · bico " + E(String(local.bico).replace(".", ",")) + " mm" : "") + "</div></div>" +
-		'<div class="hr">' + (local.impressora ? '<span class="hri">No Filuna: <b>' + E(local.impressora) + "</b></span>" : "") +
-		'<button class="btn" data-aba="monitor">Painel da impressora</button><button class="btn" data-aba="prepare">Preparar envio</button></div></div>';
+		'<div class="sub">' + E(modelo) + (perfil ? " · Perfil " + E(perfil) : "") + "</div>" +
+		(perfil && modelo && !confere ? '<div class="perfil-aviso">O perfil na Preparação não é desta impressora.<a data-aba="prepare">Escolher o perfil certo</a></div>' : "") + "</div>" +
+		'<div class="hr"><span class="hri">' + ic('<path d="M3.5 9.5a12 12 0 0 1 17 0M6.5 12.5a7.5 7.5 0 0 1 11 0M9.5 15.5a3 3 0 0 1 5 0"/><circle cx="12" cy="18.5" r=".8"/>') + "LAN local</span>" +
+		'<span class="hri">' + ic('<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>') + (Filuna.temToken() ? "Sessão do titular" : "Sem conta Filuna") + "</span>" +
+		'<button class="btn" data-aba="monitor">' + ic('<path d="M12 3.5 19 6v5.5c0 4.2-3 7.6-7 9-4-1.4-7-4.8-7-9V6z"/><path d="m9 12 2 2 4-4"/>') + "Capacidades e saúde</button>" +
+		'<button class="btn" data-aba="prepare">Revisar envio</button><button class="btn" data-aba="monitor">Configurar unidade</button></div></div>';
 }
 
 function materiais(i) {
+	var slots = (i.slots || []).filter(function (x) { return x.material || x.cor; });
+	if (slots.length) return slots.map(function (x) {
+		return '<div class="mat"><span class="dot" style="width:18px;height:18px;background:' + E(x.cor || "#ccc") + '"></span><div><div class="n">' + E((x.material || "") + (x.cor_nome ? " · " + x.cor_nome : "")) +
+			'</div><div class="s">Slot ' + E(x.posicao) + (x.bobina_restante_g != null ? " · restam " + Filuna.gramas(x.bobina_restante_g) : "") + "</div></div></div>";
+	}).join("") + (i.mesa && i.mesa.w ? '<div class="mat"><div><div class="n">Mesa</div><div class="s">' + E(i.mesa.w + " × " + i.mesa.d + " mm") + "</div></div></div>" : "");
 	var b = estado.bobinas.filter(function (x) { return x.na_impressora && x.na_impressora == i.nome; });
 	if (!b.length) return '<span class="ajuda">Nenhuma bobina associada a esta impressora no estoque.</span>';
 	return b.map(function (x) {
@@ -147,12 +175,12 @@ function materiais(i) {
 }
 
 function rodape() {
-	return '<div class="rodape"><a data-aba="filuna.espaco">Estoque</a><a data-aba="filuna.espaco">Fila e histórico</a><a data-aba="filuna.calibracao">Calibração</a>' +
-		'<span class="r">Pausar e cancelar sempre pedem confirmação.</span></div>';
+	return '<div class="rodape"><a style="color:var(--magenta-deep);font-weight:700">Impressoras</a><a data-aba="filuna.espaco" data-secao="estoque">Filamentos</a><a data-aba="filuna.espaco" data-secao="fila">Fila e histórico</a>' +
+		'<span class="r">Envio, fila e agenda não iniciam impressão.</span></div>';
 }
 
 function ligarComuns(app) {
-	app.querySelectorAll("[data-aba]").forEach(function (b) { b.onclick = function () { Filuna.nativo("aba.abrir", { aba: b.dataset.aba }); }; });
+	app.querySelectorAll("[data-aba]").forEach(function (b) { b.onclick = function () { Filuna.nativo("aba.abrir", { aba: b.dataset.aba, secao: b.dataset.secao || "" }); }; });
 }
 
 function camera(iid) {

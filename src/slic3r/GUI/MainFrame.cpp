@@ -48,6 +48,9 @@
 #include <wx/base64.h>
 #include <ctime>
 #include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <wx/image.h>
+#include <wx/statbmp.h>
 #include "slic3r/GUI/calib_dlg.hpp"
 #include "slic3r/GUI/ParamsPanel.hpp"
 #include "slic3r/GUI/UnsavedChangesDialog.hpp"
@@ -1500,6 +1503,21 @@ void MainFrame::init_tabpanel() {
                               wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
     m_tabpanel->SetBackgroundColour(*wxWHITE);
 
+    // Filuna: the "Filuna 3D" logo opens the tab bar, as in the approved Direção Visual C screens.
+    {
+        wxImage logo;
+        const wxString logo_path = wxString::FromUTF8((boost::filesystem::path(resources_dir()) / "images" / "Filuna_horizontal_light.png").string());
+        if (logo.LoadFile(logo_path, wxBITMAP_TYPE_PNG) && logo.GetHeight() > 0) {
+            const int h = FromDIP(30);
+            logo.Rescale(std::max(1, logo.GetWidth() * h / logo.GetHeight()), h, wxIMAGE_QUALITY_HIGH);
+            ButtonsListCtrl* tabs = m_tabpanel->GetBtnsListCtrl();
+            auto* mark = new wxStaticBitmap(tabs, wxID_ANY, wxBitmap(logo));
+            mark->SetToolTip(_L("Home"));
+            mark->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent&) { select_tab(TAB_ID_HOME); });
+            tabs->GetSizer()->Insert(0, mark, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, FromDIP(14));
+        }
+    }
+
 #ifndef __WXOSX__ // Don't call SetFont under OSX to avoid name cutting in ObjectList
     m_tabpanel->SetFont(Slic3r::GUI::wxGetApp().normal_font());
 #endif
@@ -1823,7 +1841,17 @@ bool MainFrame::is_prepare_or_preview_tab() const
 
 void MainFrame::fit_tab_labels()
 {
-    if (!m_tabpanel || !m_slice_option_btn) // ignore layout change while slice/print buttons not visible
+    if (!m_tabpanel)
+        return;
+
+    // Filuna: the tab bar is Início · Preparação · Visualização · Dispositivo · Projeto · Calibração · Meu espaço.
+    // Orca's device, multi-device and calibration pages and Minha loja stay in the book, opened from the
+    // Filuna pages (Dispositivo › Painel da impressora, Meu espaço › Minha loja), but get no button here.
+    for (const char* id : {TAB_ID_MONITOR, TAB_ID_MONITOR_WEB, TAB_ID_MULTI_DEVICE, TAB_ID_CALIBRATION, TAB_ID_FILUNA_STORE})
+        if (const int idx = m_tabpanel->FindPageByName(id); idx != wxNOT_FOUND)
+            m_tabpanel->GetBtnsListCtrl()->ShowPageButton(size_t(idx), false);
+
+    if (!m_slice_option_btn) // ignore layout change while slice/print buttons not visible
         return;
 
     auto* ctrl  = m_tabpanel->GetBtnsListCtrl();
@@ -1839,7 +1867,8 @@ void MainFrame::fit_tab_labels()
     // Compact (last to first)
     for (size_t i = count - 1; i >= 1; --i) {
         int right = ScreenToClient(m_slice_option_btn->ClientToScreen({})).x;
-        int left  = sizer->GetSize().GetWidth();
+        // Filuna: the logo sits before the tab buttons, so count from where the buttons start.
+        int left  = sizer->GetPosition().x + sizer->GetSize().GetWidth();
         // The overflow button sits between the tab buttons and the side tools, so it is not free space.
         if (const wxWindow* overflow = ctrl->GetOverflowButton())
             left += overflow->GetSize().GetWidth();

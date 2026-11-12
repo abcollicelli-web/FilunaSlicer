@@ -23,6 +23,7 @@ table.l input{width:96px;padding:6px 8px}
 <body>
 <div class="tela"><div class="app"><div class="corpo">
 	<div class="side">
+		<button class="nav" id="voltar" style="color:var(--ink2);margin-bottom:8px">‹ Meu espaço</button>
 		<div class="lbl" style="padding:0 6px 8px">Minha loja</div>
 		<div id="menu"></div>
 		<div style="margin-top:auto" class="ajuda">Tudo das suas lojas aqui: anúncios, vendas, perguntas e etiquetas. Para anunciar, use a aba Projeto.</div>
@@ -159,6 +160,7 @@ function listaLojas() {
 function lojas() { el().innerHTML = cab("Integrações", "Lojas conectadas", "A conexão é feita no navegador, direto com a loja; o Filuna nunca vê sua senha.") + listaLojas(); ligarLojas(); }
 function ligarLojas() { el().querySelectorAll("[data-con]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(b.dataset.con); st.msg = "Conclua a conexão no navegador. Esta tela atualiza em seguida."; desenhar(); setTimeout(carregar, 20000); }; }); }
 
+document.getElementById("voltar").onclick = function () { location.href = "meu-espaco.html"; };
 Filuna.iniciar().then(carregar);
 Filuna.ouvir("mostrar", function () { if (st.ml) carregar(); });
 </script>

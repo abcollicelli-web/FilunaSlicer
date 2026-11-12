@@ -3655,11 +3655,6 @@ Sidebar::Sidebar(Plater *parent)
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(p->scrolled, 1, wxEXPAND);
-    // Filuna footer: sale suggestion (same calculation as the filuna3d.com calculator), weight, cost,
-    // time, IA Filuna and the Autoajuda switch. Fixed height so the settings above keep their space.
-    auto* filuna_footer = new FilunaPanel(this, "rodape.html");
-    filuna_footer->SetMinSize(wxSize(-1, FromDIP(252)));
-    sizer->Add(filuna_footer, 0, wxEXPAND);
     SetSizer(sizer);
 }
 
@@ -8001,6 +7996,25 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     // Orca: Make sidebar dockable
     m_aui_mgr.AddPane(sidebar, AuiMgr::sidebar_pane_info());
 
+    // Filuna footer bar under the sidebar and the 3D view, as in the approved Preparação screen: sale suggestion
+    // (same calculation as the filuna3d.com calculator), weight, cost, time, IA Filuna and the Autoajuda switch.
+    // Outer layer, so it spans the whole width; not dockable, so a saved layout can't move it.
+    auto* filuna_footer = new FilunaPanel(q, "rodape.html");
+    m_aui_mgr.AddPane(filuna_footer, wxAuiPaneInfo()
+                                         .Name("filuna_footer")
+                                         .Bottom()
+                                         .Layer(2)
+                                         .CaptionVisible(false)
+                                         .PaneBorder(false)
+                                         .CloseButton(false)
+                                         .Gripper(false)
+                                         .Floatable(false)
+                                         .Movable(false)
+                                         .Dockable(false)
+                                         .Resizable(false)
+                                         .MinSize(wxSize(-1, q->FromDIP(68)))
+                                         .BestSize(wxSize(-1, q->FromDIP(68))));
+
     // The UV editor pane is added by make_uv_editor().
     // Closing the pane with its own X has to reach the gizmo, or its next update would simply show the pane again.
     q->Bind(wxEVT_AUI_PANE_CLOSE, [this](wxAuiManagerEvent &evt) {
@@ -8057,6 +8071,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         // Keep tracking the current sidebar size, by storing it using `best_size`, which will be stored
         // in the config and re-applied when the app is opened again.
         m_aui_mgr.track_docked_size(this->sidebar);
+
+        // Filuna: layouts saved before the footer existed would leave it hidden; it is always shown, at the bottom.
+        m_aui_mgr.GetPane("filuna_footer").Show().Bottom().Layer(2);
 
         // Hide sidebar initially, will re-show it after initialization when we got proper window size
         sidebar.Hide();

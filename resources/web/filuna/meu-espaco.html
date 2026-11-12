@@ -35,12 +35,67 @@
 .proj:hover{border-color:#d9d2c8}.proj .th{width:56px;height:56px;border-radius:10px;background:linear-gradient(145deg,#F6F2EC,#ECE7E0);flex:none;object-fit:cover}
 table.l{width:100%;border-collapse:collapse}table.l td,table.l th{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13.5px}
 table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+
+/* Direção Visual C — Meu espaço e Estoque (FILUNA/design/visual-c/ui/meu-espaco.html e estoque.html) */
+.side .sep{height:1px;background:var(--line);margin:10px 6px}
+.side .grupo-lbl{padding:10px 6px 6px}
+.selcard{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:11px 12px;margin-bottom:10px;cursor:pointer;width:100%;text-align:left}
+.selcard:hover{border-color:#d9d2c8}.selcard .n{font-weight:700;font-size:14px}.selcard .s{font-size:12px;color:var(--muted)}
+.selcard .av{width:30px;height:30px;border-radius:50%;background:var(--magenta-deep);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none;padding:0;border:0}
+.status{padding:10px 8px 2px;font-size:13px}.status b{display:flex;align-items:center;gap:8px}.status b:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
+.status.off b:before{background:#CFC8BE}.status span{display:block;color:var(--muted);margin:2px 0 0 16px}
+.me{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;margin-top:18px}
+@media(max-width:1100px){.me{grid-template-columns:1fr}}
+.me .col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.bloco{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
+.bloco .bh{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
+.bloco .bh .lbl{color:var(--ink);display:flex;align-items:center;gap:10px}
+.bloco .bb{padding:14px 18px}
+.atv{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);cursor:pointer}.atv:last-child{border-bottom:0}
+.atv .ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;flex:none}
+.atv .t{font-weight:600}.atv .s{font-size:12.5px;color:var(--muted)}.atv .e{margin-left:auto;font-size:13px;color:var(--ink2);white-space:nowrap}
+.projs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.pj{border:1px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;min-width:0}.pj:hover{border-color:#d9d2c8}
+.pj .th{height:120px;border-radius:10px;background:#F2EEE8;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#bdb5aa}
+.pj .th img{width:100%;height:100%;object-fit:cover}.pj .n{font-weight:700;margin-top:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pj .s{font-size:12.5px;color:var(--muted)}
+.pf{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.pf .ico{width:40px;height:40px;border-radius:11px;background:#F2EEE8;display:flex;align-items:center;justify-content:center;flex:none;color:var(--ink2)}
+.pf .t{font-weight:700}.pf .s{font-size:12.5px;color:var(--muted)}.pf .tag{margin-left:auto;white-space:nowrap}
+.tracejado{display:block;width:calc(100% - 36px);margin:12px 18px 14px;border:1px dashed #DCD5CC;border-radius:12px;padding:10px;text-align:center;color:var(--ink2);font-weight:600;background:none}
+.tracejado:hover{border-color:var(--magenta-deep);color:var(--magenta-deep)}
+.fils{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.fil{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.fil .reel{width:38px;height:38px;border-width:8px}.fil .n{font-size:12.5px;font-weight:700;line-height:1.25}.fil .s{font-size:11.5px;color:var(--muted)}
+.dois2{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:18px}
+.kv{display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:14px}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.links button{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px;font-weight:600;text-align:left}
+.links button:hover{border-color:#d9d2c8}
+/* Estoque de filamentos */
+.etop{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.etab{border:1px solid var(--line);border-radius:16px;background:#fff;margin-top:20px;overflow:hidden}
+.etab table{width:100%;border-collapse:collapse}
+.etab th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;text-align:left;padding:16px 20px;border-bottom:1px solid var(--line)}
+.etab td{padding:18px 20px;border-bottom:1px solid var(--line);vertical-align:middle}
+.etab .fn{display:flex;gap:12px;align-items:flex-start}.etab .fn .dot{width:18px;height:18px;margin-top:3px}
+.etab .fn b{font-size:16px}.etab .fn .s{color:var(--ink2);font-size:13px;margin:2px 0 6px}
+.etab .mat{display:inline-block;background:var(--rose);color:var(--magenta-deep);font-size:11.5px;font-weight:800;border-radius:7px;padding:3px 9px}
+.etab .loc b{display:block}.etab .loc span{color:var(--ink2);font-size:13px}
+.etab .peso .bar{width:170px;margin-bottom:8px}.etab .peso span{display:block;color:var(--ink2);font-size:12.5px}
+.etab .custo b{font-size:16px;display:block}.etab .custo span{color:var(--ink2);font-size:12.5px}
+.etab .baixo{color:var(--warn);font-weight:600;font-size:13.5px}
+.etab .pe{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;color:var(--ink2)}
+.ekpis{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:16px;background:#fff;margin-top:20px}
+@media(max-width:1000px){.ekpis{grid-template-columns:1fr 1fr}}
+.ekpis>div{padding:20px 24px;border-right:1px solid var(--line)}.ekpis>div:last-child{border-right:0}
+.ekpis span{font-size:13px;font-weight:600}.ekpis b{display:block;font-size:28px;font-weight:800;margin:4px 0}.ekpis small{color:var(--ink2);font-size:12.5px}
 </style>
 </head>
 <body>
 <div class="tela"><div class="app"><div class="corpo">
 	<div class="side">
-		<div class="lbl" style="padding:0 6px 8px">Meu espaço</div>
+		<div class="lbl" style="padding:0 6px 8px">Perfis</div>
+		<div id="topo"></div>
 		<div id="menu"></div>
 		<div style="margin-top:auto" id="conta"></div>
 	</div>
@@ -49,17 +104,40 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 <script src="ponte.js"></script>
 <script>
 var E = Filuna.esc;
-var SECOES = [["visao", "Visão geral"], ["estoque", "Estoque"], ["fila", "Fila da Farm"], ["modelos", "Modelos 3D"], ["reparacao", "Reparação"],
-	["ofertas", "Ofertas"], ["ia", "IA Filuna"], ["config", "Configurações"]];
+// Menu da referência (Meu espaço, Projetos, Perfis de impressão, Filamentos, Configurações) e, abaixo, as ferramentas Filuna.
+var SECOES = [["visao", "Meu espaço"], ["modelos", "Projetos"], ["perfis", "Perfis de impressão"], ["estoque", "Filamentos"], ["config", "Configurações"]];
+var FERRAMENTAS = [["fila", "Fila da Farm"], ["reparacao", "Reparação"], ["ofertas", "Ofertas"], ["ia", "IA Filuna"], ["loja", "Minha loja"]];
 var st = { secao: "visao", prefs: null, catalogo: [], opcoes: {}, conversa: [] };
 try { var h = (location.hash || "").slice(1); if (h) st.secao = h; } catch (e) {}
 
+function botoes(l) {
+	return l.map(function (s) { return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1]) + "</button>"; }).join("");
+}
 function menu() {
-	document.getElementById("menu").innerHTML = SECOES.map(function (s) {
-		return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1]) + "</button>"; }).join("");
-	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; desenhar(); }; });
-	document.getElementById("conta").innerHTML = Filuna.temToken() ? '<div class="card" style="padding:12px"><div class="ajuda">Conectado ao filuna3d.com</div><div id="nomeConta" style="font-weight:700;margin:4px 0 8px"></div><button class="btn peq" id="sair">Sair</button></div>' : "";
+	document.getElementById("menu").innerHTML = botoes(SECOES) + '<div class="sep"></div><div class="lbl grupo-lbl">Ferramentas Filuna</div>' + botoes(FERRAMENTAS);
+	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { abrirSecao(b.dataset.s); }; });
+	var imp = st.local || {};
+	document.getElementById("topo").innerHTML =
+		'<button class="selcard" id="perfilAtual"><span class="av">' + E(((st.conta && st.conta.nome) || "F").charAt(0).toUpperCase()) + '</span><span style="min-width:0"><span class="n" style="display:block">' +
+		E(st.perfilAtual || "Perfil de impressão") + '</span><span class="s">Perfil em uso na Preparação</span></span></button>' +
+		'<button class="selcard" id="impAtual"><span style="min-width:0;flex:1"><span class="n" style="display:block">' + E(imp.impressora || "Impressora") +
+		'</span><span class="s">Impressora 3D</span></span><span class="s">›</span></button>';
+	document.getElementById("perfilAtual").onclick = function () { abrirSecao("perfis"); };
+	document.getElementById("impAtual").onclick = function () { Filuna.nativo("aba.abrir", { aba: "prepare" }); };
+	document.getElementById("conta").innerHTML = Filuna.temToken()
+		? '<div class="status"><b>Conectado</b><span id="nomeConta">' + E((st.conta && st.conta.nome) || "filuna3d.com") + '</span></div><button class="nav" id="sair" style="margin-top:4px;color:var(--ink2)">Sair desta conta</button>'
+		: '<div class="status off"><b>Sem conta</b><span>Entre para ver seus dados</span></div>';
 	var s = document.getElementById("sair"); if (s) s.onclick = function () { Filuna.sair().then(desenhar); };
+}
+function abrirSecao(id) {
+	if (id == "loja") { location.href = "loja.html"; return; }
+	st.secao = id; desenhar();
+}
+function iniciais() {
+	return Promise.all([
+		Filuna.nativo("impressora.atual").then(function (r) { st.local = r; }).catch(function () {}),
+		Filuna.nativo("perfis.salvos").then(function (r) { st.perfis = r.perfis || []; var a = st.perfis.filter(function (p) { return p.atual; })[0]; st.perfilAtual = a ? a.nome : ""; }).catch(function () { st.perfis = []; })
+	]);
 }
 
 function el() { return document.getElementById("tela"); }
@@ -75,28 +153,100 @@ function prefs() {
 }
 
 function desenhar() {
+	if (st.secao == "loja") { location.href = "loja.html"; return; }
 	menu();
-	({ visao: visao, estoque: estoque, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia, config: config }[st.secao] || visao)();
+	({ visao: visao, estoque: estoque, perfis: perfis, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia, config: config }[st.secao] || visao)();
 }
 
+var ICONE = {
+	caixa: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>',
+	relogio: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+	pasta: '<svg class="ic" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>',
+	linhas: '<svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h13"/></svg>',
+	bobina: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/></svg>',
+	pessoa: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1-3.5 4-5 7-5s6 1.5 7 5"/></svg>',
+	hex: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5l7.5 4.25v8.5L12 20.5l-7.5-4.25v-8.5z"/></svg>',
+	mais: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+	baixar: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg>',
+	engrenagem: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5M6 6l1.8 1.8M16.2 16.2 18 18M6 18l1.8-1.8M16.2 7.8 18 6"/></svg>',
+	loja: '<svg class="ic" viewBox="0 0 24 24"><path d="M4.5 9.5 6 4.5h12l1.5 5M4.5 9.5h15v10h-15zM9 19.5v-5h6v5"/></svg>'
+};
+var CORES_ATV = ["#7B4BFF", "#C2185B", "#2F6FE4", "#FF6B1A"];
+
 function visao() {
-	if (precisaConta("Seu espaço reúne Farm, estoque, ofertas e IA — os mesmos dados do filuna3d.com.")) return;
-	el().innerHTML = titulo("Meu espaço", "Bem-vindo(a)", "Seu espaço de trabalho, sincronizado com o site.") + '<div id="r" class="carregando">Carregando…</div>';
+	el().innerHTML = '<div class="h1">Meu espaço</div><div class="sub">Bem-vindo(a) ao seu espaço de trabalho pessoal.</div>' +
+		'<div class="me"><div class="col">' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.relogio + 'Atividade recente</span><a data-s="modelos">Ver tudo</a></div><div id="atv"><div class="carregando">Carregando…</div></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.pasta + 'Meus projetos</span><a data-s="modelos">Ver todos os projetos</a></div><div class="bb"><div id="projs" class="projs"></div></div></div>' +
+		'</div><div class="col">' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.linhas + 'Perfis salvos</span><a data-s="perfis">Gerenciar</a></div><div id="pfs"></div>' +
+		'<button class="tracejado" id="novoPerfil">+ Novo perfil</button></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.bobina + 'Biblioteca de filamentos</span><a data-s="estoque">Ver estoque</a></div><div class="bb"><div id="fils" class="fils"></div></div>' +
+		'<button class="tracejado" id="novaBobina">+ Adicionar filamento</button></div>' +
+		'<div class="dois2"><div class="bloco"><div class="bh"><span class="lbl">' + ICONE.pessoa + 'Status da conta</span></div><div class="bb" id="contaBox"></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">Links rápidos</span></div><div class="bb"><div class="links">' +
+		'<button id="lNovo">' + ICONE.pasta + 'Novo projeto</button><button id="lImp">' + ICONE.baixar + 'Importar modelo</button>' +
+		'<button data-s="config">' + ICONE.engrenagem + 'Configurações</button><button data-s="loja">' + ICONE.loja + 'Minha loja</button></div></div></div></div>' +
+		"</div></div>";
+	el().querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { abrirSecao(b.dataset.s); }; });
+	document.getElementById("lNovo").onclick = function () { Filuna.nativo("aba.abrir", { aba: "prepare" }); };
+	document.getElementById("lImp").onclick = function () { Filuna.nativo("projeto.importar"); };
+	document.getElementById("novoPerfil").onclick = function () { Filuna.nativo("aba.abrir", { aba: "prepare" }); };
+	document.getElementById("novaBobina").onclick = function () { Filuna.abrirLink("https://filuna3d.com/farm/estoque"); };
+
+	Filuna.nativo("projetos.recentes").then(function (r) {
+		var l = r.projetos || [];
+		document.getElementById("atv").innerHTML = l.length ? l.slice(0, 4).map(function (p, k) {
+			return '<div class="atv" data-k="' + k + '"><span class="ico" style="background:' + CORES_ATV[k % 4] + '">' + ICONE.caixa + '</span><div style="min-width:0"><div class="t">Projeto “' + E(p.nome) +
+				'” aberto</div><div class="s">' + E(p.quando || "") + "</div></div></div>"; }).join("")
+			: '<div class="vazio" style="margin:14px 18px">Nenhuma atividade ainda. Abra ou importe um modelo para começar.</div>';
+		document.getElementById("projs").innerHTML = l.length ? l.slice(0, 3).map(function (p, k) {
+			return '<div class="pj" data-k="' + k + '"><div class="th">' + (p.imagem ? '<img src="' + E(p.imagem) + '" alt="">' : ICONE.caixa.replace('class="ic"', 'style="width:56px;height:56px"')) +
+				'</div><div class="n">' + E(p.nome) + '</div><div class="s">' + E(p.quando || "") + "</div></div>"; }).join("")
+			: '<div class="vazio" style="grid-column:1/-1">Nenhum projeto aberto ainda.</div>';
+		el().querySelectorAll("[data-k]").forEach(function (b) { b.onclick = function () { Filuna.nativo("projeto.abrir", { caminho: l[+b.dataset.k].caminho }); }; });
+	}, function () { document.getElementById("atv").innerHTML = '<div class="vazio" style="margin:14px 18px">Abra o Filuna Slicer para ver sua atividade.</div>'; });
+
+	var pf = st.perfis || [];
+	document.getElementById("pfs").innerHTML = pf.length ? pf.slice(0, 3).map(function (p, k) {
+		return '<div class="pf"><span class="ico">' + ICONE.hex + '</span><div style="min-width:0"><div class="t">' + E(p.nome) + '</div><div class="s">' + E(p.base ? "Baseado em " + p.base : "Perfil próprio") +
+			'</div></div><span class="tag">' + (p.atual ? "Em uso" : "Personalizado") + "</span></div>"; }).join("")
+		: '<div class="vazio" style="margin:14px 18px 0">Nenhum perfil salvo. Ajuste a impressão na Preparação e clique em salvar.</div>';
+
+	var cx = document.getElementById("contaBox"), fs = document.getElementById("fils");
+	if (!Filuna.temToken()) {
+		cx.innerHTML = '<div class="ajuda" style="margin-bottom:10px">Entre na sua conta Filuna para ver plano, estoque e Farm.</div><button class="btn primario peq" id="entrarAqui">Entrar</button>';
+		document.getElementById("entrarAqui").onclick = function () { el().innerHTML = '<div id="lg"></div>'; Filuna.telaLogin(el().querySelector("#lg"), function () { location.reload(); }); };
+		fs.innerHTML = '<div class="vazio" style="grid-column:1/-1">Entre na conta para ver suas bobinas.</div>';
+		return;
+	}
 	Filuna.api("GET", "/resumo").then(function (r) {
-		var f = r.farm || {}, n = document.getElementById("nomeConta"); if (n) n.textContent = r.conta.nome;
-		var h = '<div class="kpis"><div class="kpi"><span class="ajuda">Plano</span><b style="font-size:18px">' + E(r.conta.plano) + "</b></div>" +
-			'<div class="kpi"><span class="ajuda">Impressoras</span><b>' + (f.impressoras || 0) + "</b></div>" +
-			'<div class="kpi"><span class="ajuda">Imprimindo</span><b>' + (f.imprimindo || 0) + "</b></div>" +
-			'<div class="kpi"><span class="ajuda">Mesas na fila</span><b>' + (f.mesas_na_fila || 0) + "</b></div>" +
-			'<div class="kpi"><span class="ajuda">Peças na fila</span><b>' + (f.pecas_na_fila || 0) + "</b></div></div>" +
-			'<div class="dois"><div class="card"><div class="ch"><span class="lbl">Precisa de você</span></div>' +
-			((r.avisos || []).length ? r.avisos.map(function (a) { return '<div class="av"><span class="dot" style="margin-top:4px;background:' + (a.tipo == "limpar" ? "var(--violeta)" : "var(--orange)") + '"></span><div><div class="t">' + E(a.titulo) + '</div><div class="s">' + E(a.texto) + "</div></div></div>"; }).join("")
-				: '<div class="vazio">Tudo certo por aqui.</div>') + "</div>" +
-			'<div class="card"><div class="ch"><span class="lbl">Projetos recentes</span><a data-s="modelos">Ver todos</a></div><div id="rec" class="grade" style="grid-template-columns:1fr"></div></div></div>';
-		document.getElementById("r").outerHTML = h;
-		el().querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; desenhar(); }; });
-		recentes(document.getElementById("rec"), 4);
-	}, function (e) { if (e.status == 401) Filuna.sair(); document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+		st.conta = r.conta; var n = document.getElementById("nomeConta"); if (n) n.textContent = r.conta.nome;
+		var f = r.farm || {};
+		cx.innerHTML = '<div class="kv"><span>Plano <b>' + E(r.conta.plano) + '</b></span><button class="btn peq" id="gerPlano">Gerenciar</button></div>' +
+			'<div class="kv"><span>Impressoras na Farm</span><b>' + (f.impressoras || 0) + (f.limite ? " / " + f.limite : "") + "</b></div>" +
+			'<div class="kv"><span>Mesas na fila</span><b>' + (f.mesas_na_fila || 0) + "</b></div>";
+		document.getElementById("gerPlano").onclick = function () { Filuna.abrirLink("https://filuna3d.com/planos"); };
+	}, function (e) { if (e.status == 401) Filuna.sair(); cx.innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+	Filuna.api("GET", "/estoque").then(function (r) {
+		var b = r.bobinas || [];
+		fs.innerHTML = b.length ? b.slice(0, 4).map(function (x) {
+			return '<div class="fil"><span class="reel" style="border-color:' + E(x.cor) + '"></span><div style="min-width:0"><div class="n">' + E((x.marca ? x.marca + " " : "") + x.material) +
+				'</div><div class="s">' + E(x.cor_nome) + "</div></div></div>"; }).join("")
+			: '<div class="vazio" style="grid-column:1/-1">Nenhuma bobina cadastrada.</div>';
+	}, function (e) { fs.innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+
+function perfis() {
+	el().innerHTML = '<div class="h1">Perfis de impressão</div><div class="sub">Os perfis que você salvou na Preparação. Clique em Usar para aplicar.</div><div class="bloco" style="margin-top:18px" id="lista"></div>';
+	Filuna.nativo("perfis.salvos").then(function (r) {
+		var pf = r.perfis || [];
+		document.getElementById("lista").innerHTML = pf.length ? pf.map(function (p, k) {
+			return '<div class="pf"><span class="ico">' + ICONE.hex + '</span><div style="min-width:0"><div class="t">' + E(p.nome) + '</div><div class="s">' + E(p.base ? "Baseado em " + p.base : "Perfil próprio") + "</div></div>" +
+				(p.atual ? '<span class="pill rosa" style="margin-left:auto">Em uso</span>' : '<button class="btn peq" style="margin-left:auto" data-u="' + k + '">Usar</button>') + "</div>"; }).join("")
+			: '<div class="vazio" style="margin:18px">Nenhum perfil salvo ainda. Ajuste a impressão na Preparação e use o botão de salvar perfil.</div>';
+		el().querySelectorAll("[data-u]").forEach(function (b) { b.onclick = function () { Filuna.nativo("perfil.usar", { nome: pf[+b.dataset.u].nome }); }; });
+	}, function () { document.getElementById("lista").innerHTML = '<div class="vazio" style="margin:18px">Abra no Filuna Slicer para ver seus perfis.</div>'; });
 }
 
 function recentes(alvo, max) {
@@ -112,21 +262,42 @@ function recentes(alvo, max) {
 
 function estoque() {
 	if (precisaConta("Entre para ver seu estoque de filamento.")) return;
-	el().innerHTML = titulo("Estoque", "Minhas bobinas", "O mesmo estoque do site. A Farm dá baixa sozinha ao concluir cada impressão.") + '<div id="r" class="carregando">Carregando…</div>';
+	el().innerHTML = '<div class="etop"><div><div class="h1">Estoque de filamentos</div><div class="sub">Gerencie seus filamentos, quantidades e custos. A baixa é automática ao fim de cada impressão.</div></div>' +
+		'<button class="btn primario" id="novo" style="height:46px;padding:0 20px">+ Adicionar filamento</button></div><div id="r" class="carregando">Carregando…</div>';
+	document.getElementById("novo").onclick = function () { Filuna.abrirLink("https://filuna3d.com/farm/estoque"); };
 	Promise.all([Filuna.api("GET", "/estoque"), prefs()]).then(function (r) {
-		var b = r[0].bobinas || [], lim = r[1]["estoque.limite_baixo_g"], alerta = r[1]["estoque.alerta_baixo"];
-		document.getElementById("r").outerHTML = '<div class="linha" style="margin:14px 0"><button class="btn" id="novo">+ Adicionar bobina no site</button>' +
-			'<span class="ajuda">' + (alerta ? "Alerta quando restar menos de " + lim + " g (mude em Configurações)." : "Alerta de bobina acabando desligado.") + "</span></div>" +
-			(b.length ? '<div class="grade">' + b.map(function (x) {
-				var pct = x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0, baixo = alerta && x.restante_g < lim;
-				return '<div class="bob"><span class="reel" style="border-color:' + E(x.cor) + '"></span><div style="flex:1;min-width:0"><div style="font-weight:700">' + E(x.material + " · " + x.cor_nome) +
-					'</div><div class="ajuda">nº ' + E(x.numero) + (x.marca ? " · " + E(x.marca) : "") + (x.na_impressora ? " · na " + E(x.na_impressora) : "") + "</div>" +
-					'<div class="bar" style="margin:8px 0 4px"><i style="width:' + pct + "%;background:" + (baixo ? "var(--warn)" : "var(--magenta-deep)") + '"></i></div>' +
-					'<div class="ajuda">Restam <b>' + Filuna.gramas(x.restante_g) + "</b>" + (x.na_fila_g ? " · fila usa " + Filuna.gramas(x.na_fila_g) : "") + "</div>" +
-					(x.insuficiente ? '<span class="pill alerta" style="margin-top:6px;display:inline-block">Não basta para a fila</span>' : baixo ? '<span class="pill alerta" style="margin-top:6px;display:inline-block">Acabando</span>' : "") + "</div></div>";
-			}).join("") + "</div>" : '<div class="vazio">Nenhuma bobina cadastrada.</div>');
-		document.getElementById("novo").onclick = function () { Filuna.abrirLink("https://filuna3d.com/farm/estoque"); };
+		st.bobinas = r[0].bobinas || []; st.lim = r[1]["estoque.limite_baixo_g"]; st.alerta = r[1]["estoque.alerta_baixo"];
+		tabelaEstoque();
 	}, function (e) { document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+function tabelaEstoque() {
+	var b = (st.bobinas || []).slice(), ord = st.ordem || "nome", lim = st.lim, alerta = st.alerta;
+	var nome = function (x) { return (x.material + " " + x.cor_nome).toLowerCase(); };
+	b.sort(function (a, c) { return ord == "peso" ? a.restante_g - c.restante_g : ord == "numero" ? a.numero - c.numero : nome(a) < nome(c) ? -1 : nome(a) > nome(c) ? 1 : 0; });
+	var custo = function (x) { return x.preco_kg ? x.restante_g / 1000 * x.preco_kg : null; };
+	var baixo = function (x) { return alerta && x.restante_g < lim; };
+	var naImp = b.filter(function (x) { return x.na_impressora; }).length, total = 0, inicial = 0, valor = 0, temValor = false, nBaixo = 0;
+	b.forEach(function (x) { total += x.restante_g; inicial += x.peso_inicial_g || 0; var c = custo(x); if (c != null) { valor += c; temValor = true; } if (baixo(x)) nBaixo++; });
+	var linhas = b.map(function (x) {
+		var pct = x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0, c = custo(x);
+		return "<tr><td><div class='fn'><span class='dot' style='background:" + E(x.cor) + "'></span><div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" +
+			E((x.marca ? x.marca + " · " : "") + "Bobina nº " + x.numero + (x.nova ? " · nova" : "")) + "</div><span class='mat'>" + E(x.material) + "</span></div></div></td>" +
+			"<td class='loc'>" + (x.na_impressora ? "<b>Na impressora</b><span>" + E(x.na_impressora) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>") + "</td>" +
+			"<td class='peso'><div class='bar'><i style='width:" + pct + "%;background:" + E(x.cor || "#C2185B") + "'></i></div>" + Filuna.gramas(x.restante_g) + " / " + Filuna.gramas(x.peso_inicial_g) +
+			"<span>" + Math.round(pct) + "% restante" + (x.na_fila_g ? " · a fila usa " + Filuna.gramas(x.na_fila_g) : "") + "</span></td>" +
+			"<td class='custo'>" + (c != null ? "<b>" + Filuna.reais(c) + "</b><span>" + Filuna.reais(x.preco_kg / 1000) + " /g</span>" : "<b>—</b><span>sem preço cadastrado</span>") + "</td>" +
+			"<td>" + (x.insuficiente ? "<span class='baixo'>Não basta para a fila</span>" : baixo(x) ? "<span class='baixo'>Estoque baixo<br>&lt; " + E(lim) + " g</span>" : "") + "</td></tr>";
+	}).join("");
+	document.getElementById("r").outerHTML = '<div id="r">' + (b.length ?
+		'<div class="etab"><table><tr><th>Filamento</th><th>Localização</th><th>Peso restante</th><th>Custo</th><th></th></tr>' + linhas + "</table>" +
+		'<div class="pe"><span>' + b.length + (b.length == 1 ? " filamento encontrado" : " filamentos encontrados") + '</span><label class="linha" style="gap:8px">Ordenar por: <select id="ordem" style="width:auto">' +
+		[["nome", "Nome"], ["peso", "Peso restante"], ["numero", "Número da bobina"]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] == ord ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></label></div></div>" +
+		'<div class="ekpis"><div><span>Total de filamentos</span><b>' + b.length + "</b><small>" + naImp + " na impressora · " + (b.length - naImp) + " guardada(s)</small></div>" +
+		"<div><span>Peso total restante</span><b>" + Filuna.gramas(total) + "</b><small>de " + Filuna.gramas(inicial) + "</small></div>" +
+		"<div><span>Valor total estimado</span><b>" + (temValor ? Filuna.reais(valor) : "—") + "</b><small>" + (temValor ? "pelo preço por kg das bobinas" : "cadastre o preço por kg no site") + "</small></div>" +
+		"<div><span>Alerta de estoque baixo</span><b" + (nBaixo ? " style='color:var(--warn)'" : "") + ">" + (alerta ? nBaixo : "—") + "</b><small>" + (alerta ? "abaixo de " + E(lim) + " g" : "alerta desligado em Configurações") + "</small></div></div>"
+		: '<div class="vazio" style="margin-top:20px">Nenhuma bobina cadastrada. Use “Adicionar filamento”.</div>') + "</div>";
+	var o = document.getElementById("ordem"); if (o) o.onchange = function () { st.ordem = o.value; tabelaEstoque(); };
 }
 
 function fila() {
@@ -146,7 +317,7 @@ function fila() {
 }
 
 function modelos() {
-	el().innerHTML = titulo("Modelos 3D", "Meus projetos", "Os projetos ficam no seu computador; nada sobe para o site.") +
+	el().innerHTML = titulo("Projetos", "Meus projetos", "Os projetos ficam no seu computador; nada sobe para o site.") +
 		'<div class="linha" style="margin:14px 0"><button class="btn primario" id="abrir">Abrir ou importar modelo</button></div><div id="rec" class="grade"></div>';
 	document.getElementById("abrir").onclick = function () { Filuna.nativo("projeto.importar"); };
 	recentes(document.getElementById("rec"));
@@ -244,8 +415,11 @@ function gravar(x) {
 	}, function (e) { document.getElementById("salvo").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
 }
 
-Filuna.iniciar().then(desenhar);
-Filuna.ouvir("secao", function (d) { if (d.secao) { st.secao = d.secao; desenhar(); } });
+Filuna.iniciar().then(function () {
+	return Promise.all([iniciais(), Filuna.nativo("secao.pendente").then(function (r) { if (r.secao) st.secao = r.secao; }).catch(function () {})]);
+}).then(desenhar);
+Filuna.ouvir("secao", function (d) { if (d.secao) { Filuna.nativo("secao.pendente").catch(function () {}); st.secao = d.secao; desenhar(); } });
+Filuna.ouvir("mostrar", function () { iniciais().then(function () { if (st.secao == "visao" || st.secao == "perfis") desenhar(); else menu(); }); });
 </script>
 </body>
 </html>

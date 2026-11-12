@@ -25,8 +25,17 @@ function FlAvisaFiluna(t) {
 	try { window.wx.postMessage(JSON.stringify({ command: "filuna_token", token: t || "" })); } catch (e) { }
 }
 
-function FlAbrirAba(aba) {
-	try { window.wx.postMessage(JSON.stringify({ command: "filuna_aba", aba: aba })); } catch (e) { }
+function FlAbrirAba(aba, secao) {
+	try { window.wx.postMessage(JSON.stringify({ command: "filuna_aba", aba: aba, secao: secao || "" })); } catch (e) { }
+}
+
+// Entrou ou saiu em outra tela do Filuna: a conta é uma só, esta tela acompanha.
+function FlTokenDeFora(t) {
+	try {
+		if (t) window.localStorage.setItem(FL_CHAVE, t);
+		else window.localStorage.removeItem(FL_CHAVE);
+	} catch (e) { }
+	if (t) { FlMostrar(true); FlAtualizar(); } else FlMostrar(false);
 }
 setTimeout(function () { if (FlToken()) FlAvisaFiluna(FlToken()); }, 500);
 

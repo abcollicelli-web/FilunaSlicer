@@ -41,12 +41,12 @@ var Filuna = (function () {
 	}
 
 	function iniciar() {
+		// O Filuna Slicer guarda a conta; o armazenamento da página só vale fora do programa.
 		return nativo("config.ler", { chave: "filuna_token" }).then(function (r) {
 			token = r.valor || "";
-		}).catch(function () {
+			return token;
+		}, function () {
 			try { token = localStorage.getItem("filuna_token") || ""; } catch (e) {}
-		}).then(function () {
-			if (!token) { try { token = localStorage.getItem("filuna_token") || ""; } catch (e) {} }
 			return token;
 		});
 	}
@@ -99,6 +99,21 @@ var Filuna = (function () {
 			});
 		};
 	}
+
+	// Uma conta só para o programa inteiro: entrar ou sair em qualquer tela (Início incluído) recarrega as outras.
+	ouvir("conta", function (d) {
+		var t = (d && d.token) || "";
+		if (t === token) return;
+		token = t;
+		try { if (t) localStorage.setItem("filuna_token", t); else localStorage.removeItem("filuna_token"); } catch (e) {}
+		location.reload();
+	});
+	// Ao voltar para a tela, confere se a conta mudou enquanto ela estava escondida.
+	ouvir("mostrar", function () {
+		nativo("config.ler", { chave: "filuna_token" }).then(function (r) {
+			if ((r.valor || "") !== token) _evento("conta", { token: r.valor || "" });
+		}).catch(function () {});
+	});
 
 	return { nativo: nativo, api: api, iniciar: iniciar, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
 		temToken: function () { return !!token; }, esc: esc, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, telaLogin: telaLogin };
