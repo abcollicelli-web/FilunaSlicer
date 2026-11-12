@@ -43,10 +43,8 @@ def estado_motor(prova: Path, modelo: str) -> dict:
         return {"estado": "PENDENTE", "motivo": "só régua oficial × oficial"}
     resumo, n, trocas = {}, 0, 0
     for r in d.get("resultados", []):
-        casos = r.get("casos")
-        if casos is None:  # régua Prusa: um caso por impressora
-            casos = [{"modelo": "cubo", "veredito": r.get("veredito")}] if modelo == "cubo" else []
-        if r.get("veredito") == "PERFIL_INCOMPLETO" and not r.get("casos"):
+        casos = r.get("casos") or []
+        if r.get("veredito") == "PERFIL_INCOMPLETO" and not casos:
             resumo["PERFIL_INCOMPLETO_DO_FABRICANTE"] = resumo.get("PERFIL_INCOMPLETO_DO_FABRICANTE", 0) + 1
             continue
         for c in casos:
@@ -120,8 +118,7 @@ def main() -> int:
                         "nota": None if perfis["fonte_igual_oficial"] else
                         "perfis publicados na fonte diferem do binário oficial; o pacote leva os do binário oficial"}
                        if perfis else {"estado": "PENDENTE"}),
-            "cores": (estado_motor(ns.provas / f"paridade-{fid}" / "prova.json", "cores") if fid != "prusa"
-                      else {"estado": "PENDENTE", "motivo": "régua de 4 cores da Prusa (MMU3/XL) ainda não feita"}),
+            "cores": estado_motor(ns.provas / f"paridade-{fid}" / "prova.json", "cores"),
             "rede": estado_rede(ns.provas, fid),
             "preparar_enviar_controlar": estado_rede(ns.provas, fid),
             "impressao_fisica": {"estado": "PENDENTE_TESTE_DO_PROPRIETARIO"},

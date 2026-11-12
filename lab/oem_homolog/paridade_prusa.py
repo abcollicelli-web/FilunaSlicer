@@ -17,6 +17,7 @@ import argparse
 import configparser
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -112,6 +113,7 @@ def main() -> int:
     ap.add_argument("--prefixo-oficial", default="")
     ap.add_argument("--pacote", type=Path, required=True)
     ap.add_argument("--modelo", type=Path, required=True)
+    ap.add_argument("--modelo-cores", type=Path, default=None, help="3MF PrusaSlicer com 4 objetos nas extrusoras 1..4")
     ap.add_argument("--saida", type=Path, required=True)
     ap.add_argument("--limite", type=int, default=0)
     ap.add_argument("--filtro", default="")
@@ -127,43 +129,52 @@ def main() -> int:
     base_o = [*shlex.split(ns.prefixo_oficial), ns.oficial]
     base_c = [ns.compilado]
     resultados = []
+    def caso_um(imp, caso, nome, modelo):
+        variantes, execs = {}, []
+        for k in range(2):
+            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app)
+            execs.append(x)
+            if x["rc"] == 0 and x["gcodes"]:
+                n = normalizado(Path(x["gcodes"][0]))
+                variantes.setdefault(sha(n), n)
+        k = 2
+        while len(variantes) > 1 and k < ns.max_oficial:
+            x = fatiar(base_o, ns.pacote, imp, modelo, caso / f"{nome}-oficial-{k}", ns.timeout, ini_app)
+            if x["rc"] == 0 and x["gcodes"]:
+                n = normalizado(Path(x["gcodes"][0]))
+                variantes.setdefault(sha(n), n)
+            k += 1
+        cc = fatiar(base_c, ns.pacote, imp, modelo, caso / f"{nome}-compilado", ns.timeout, ini_app)
+        c = {"modelo": nome, "oficial": execs[0], "compilado": cc, "variantes_oficiais": len(variantes)}
+        if not variantes and cc["rc"] != 0 and execs[0]["rc"] == cc["rc"]:
+            c["veredito"] = "MESMA_RECUSA_DO_OFICIAL"
+        elif not variantes:
+            c["veredito"] = "OFICIAL_NAO_FATIOU"
+        elif cc["rc"] != 0 or not cc["gcodes"]:
+            c["veredito"] = "COMPILADO_NAO_FATIOU"
+        else:
+            nc = normalizado(Path(cc["gcodes"][0]))
+            c["sha_compilado"], c["sha_oficial"] = sha(nc), sorted(variantes)
+            c["trocas_ferramenta"] = len(re.findall(rb"^T\d+\b", next(iter(variantes.values())), re.M))
+            if sha(nc) in variantes:
+                c["veredito"] = "IDENTICO"
+            else:
+                c["veredito"] = "DIVERGE"
+                c["primeira_diferenca"] = primeira_diferenca(nc, next(iter(variantes.values())))
+        return c
+
     for i, imp in enumerate(imps, 1):
         caso = ns.saida / "casos" / f"{i:03d}"
         r = dict(imp)
         if imp["notas"]:
             r["veredito"] = "PERFIL_INCOMPLETO"
         else:
-            variantes, execs = {}, []
-            for k in range(2):
-                x = fatiar(base_o, ns.pacote, imp, ns.modelo, caso / f"oficial-{k}", ns.timeout, ini_app)
-                execs.append(x)
-                if x["rc"] == 0 and x["gcodes"]:
-                    n = normalizado(Path(x["gcodes"][0]))
-                    variantes.setdefault(sha(n), n)
-            k = 2
-            while len(variantes) > 1 and k < ns.max_oficial:
-                x = fatiar(base_o, ns.pacote, imp, ns.modelo, caso / f"oficial-{k}", ns.timeout, ini_app)
-                if x["rc"] == 0 and x["gcodes"]:
-                    n = normalizado(Path(x["gcodes"][0]))
-                    variantes.setdefault(sha(n), n)
-                k += 1
-            cc = fatiar(base_c, ns.pacote, imp, ns.modelo, caso / "compilado", ns.timeout, ini_app)
-            r["oficial"], r["compilado"] = execs[0], cc
-            r["variantes_oficiais"] = len(variantes)
-            if not variantes and cc["rc"] != 0 and execs[0]["rc"] == cc["rc"]:
-                r["veredito"] = "MESMA_RECUSA_DO_OFICIAL"
-            elif not variantes:
-                r["veredito"] = "OFICIAL_NAO_FATIOU"
-            elif cc["rc"] != 0 or not cc["gcodes"]:
-                r["veredito"] = "COMPILADO_NAO_FATIOU"
-            else:
-                nc = normalizado(Path(cc["gcodes"][0]))
-                r["sha_compilado"], r["sha_oficial"] = sha(nc), sorted(variantes)
-                if sha(nc) in variantes:
-                    r["veredito"] = "IDENTICO"
-                else:
-                    r["veredito"] = "DIVERGE"
-                    r["primeira_diferenca"] = primeira_diferenca(nc, next(iter(variantes.values())))
+            r["casos"] = [caso_um(imp, caso, "cubo", ns.modelo)]
+            if ns.modelo_cores and imp.get("extrusoras", 1) >= 4:
+                r["casos"].append(caso_um(imp, caso, "cores", ns.modelo_cores))
+            vs = [c["veredito"] for c in r["casos"]]
+            aceitos = ("IDENTICO", "MESMA_RECUSA_DO_OFICIAL")
+            r["veredito"] = "IDENTICO" if all(v == "IDENTICO" for v in vs) else next((v for v in vs if v not in aceitos), "IDENTICO_COM_RECUSA_OFICIAL")
         resultados.append(r)
         print(f"[{i}/{len(imps)}] {r['veredito']:22} {imp['maquina']}", flush=True)
     resumo = {}

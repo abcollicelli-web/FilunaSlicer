@@ -137,13 +137,63 @@ def de_semente(semente: Path, destino: Path) -> dict:
             "vetores_estendidos": len(estendidos)}
 
 
+def de_semente_prusa(semente: Path, destino: Path, centro: tuple[float, float] = (110.0, 110.0)) -> dict:
+    """PrusaSlicer exporta 4 STLs como um objeto só; a partir do 3MF dele (1 objeto) faz 4 objetos
+    com a mesma malha, lado a lado, e grava a extrusora 1..4 de cada um em Slic3r_PE_model.config,
+    no formato que o próprio PrusaSlicer lê. O resto do arquivo fica como o oficial gravou."""
+    import copy
+    import re
+    with zipfile.ZipFile(semente) as z:
+        dados = {i.filename: z.read(i.filename) for i in z.infolist()}
+    ns = {"m": CORE}
+    ET.register_namespace("", CORE)
+    raiz = ET.fromstring(dados["3D/3dmodel.model"])
+    res, build = raiz.find("m:resources", ns), raiz.find("m:build", ns)
+    objs = res.findall("m:object", ns)
+    if len(objs) != 1:
+        raise AssertionError("SEMENTE_PRUSA_SEM_1_OBJETO")
+    modelo = objs[0]
+    for el in list(build):
+        build.remove(el)
+    res.remove(modelo)
+    passo = 30.0
+    for i, (dx, dy) in enumerate([(-1, 1), (1, 1), (-1, -1), (1, -1)]):
+        o = copy.deepcopy(modelo)
+        o.attrib["id"] = str(i + 1)
+        res.append(o)
+        x, y = centro[0] + dx * passo / 2, centro[1] + dy * passo / 2
+        ET.SubElement(build, f"{{{CORE}}}item", {"objectid": str(i + 1), "transform": f"1 0 0 0 1 0 0 0 1 {x:g} {y:g} 10"})
+    dados["3D/3dmodel.model"] = _xml(raiz)
+    cfg = dados["Metadata/Slic3r_PE_model.config"].decode()
+    m = re.search(r'( <object id="1".*?</object>\n)', cfg, re.S)
+    if not m:
+        raise AssertionError("SEMENTE_PRUSA_SEM_CONFIG_DE_OBJETO")
+    bloco, novos = m.group(1), []
+    for i in range(4):
+        b = bloco.replace('<object id="1"', f'<object id="{i + 1}"', 1)
+        b = b.replace('<metadata type="object" key="name"', f'<metadata type="object" key="extruder" value="{i + 1}"/>\n  <metadata type="object" key="name"', 1)
+        novos.append(b)
+    dados["Metadata/Slic3r_PE_model.config"] = cfg.replace(bloco, "".join(novos)).encode()
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(destino, "w", compression=zipfile.ZIP_DEFLATED) as z:
+        for nome, d in dados.items():
+            info = zipfile.ZipInfo(nome, date_time=(2026, 11, 12, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            z.writestr(info, d)
+    return {"sha256": hashlib.sha256(destino.read_bytes()).hexdigest(), "extrusoras": [1, 2, 3, 4], "formato": "PrusaSlicer"}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("destino", type=Path)
     ap.add_argument("--lado", type=float, default=15.0)
     ap.add_argument("--semente", type=Path, help="3MF de 4 objetos exportado pelo binário oficial")
+    ap.add_argument("--semente-prusa", type=Path, help="3MF de 1 objeto exportado pelo PrusaSlicer oficial")
     ns = ap.parse_args()
-    print(de_semente(ns.semente, ns.destino) if ns.semente else gerar(ns.destino, ns.lado))
+    if ns.semente_prusa:
+        print(de_semente_prusa(ns.semente_prusa, ns.destino))
+    else:
+        print(de_semente(ns.semente, ns.destino) if ns.semente else gerar(ns.destino, ns.lado))
     return 0
 
 
