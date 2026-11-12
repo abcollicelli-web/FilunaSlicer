@@ -128,13 +128,15 @@ def primeira_diferenca(a: bytes, b: bytes):
 
 
 _AJUDA: dict[str, bytes] = {}
+# argumentos que vêm antes de tudo no CLI do fabricante (CrealityPrint 7 só entra no modo CLI com --cli)
+PREFIXO: list[str] = []
 
 
 def ajuda(exe: Path) -> bytes:
     k = str(exe)
     if k not in _AJUDA:
         try:
-            r = subprocess.run([k, "--help"], capture_output=True, timeout=120, check=False,
+            r = subprocess.run([k, *PREFIXO, "--help"], capture_output=True, timeout=120, check=False,
                                env=dict(os.environ, HOME="/tmp/filuna-help-home"))
             _AJUDA[k] = r.stdout + r.stderr
         except (OSError, subprocess.TimeoutExpired):
@@ -158,7 +160,7 @@ def fatiar(exe: Path, trio: dict, modelo: Path, pasta: Path, extra: list[str], t
     # o 3MF de cores é exportado pelo próprio oficial e grava a versão do app (ex.: Snapmaker 2.4.0.1),
     # que o CLI compara com a versão do motor (01.10.01.50) e recusa como "mais novo"
     novo = ["--allow-newer-file"] if str(modelo).endswith(".3mf") and b"--allow-newer-file" in ajuda(exe) else []
-    cmd = [str(exe), *extra, *novo, *(["--datadir", str(dados)] if aceita_datadir(exe) else []), "--slice", "0",
+    cmd = [str(exe), *PREFIXO, *extra, *novo, *(["--datadir", str(dados)] if aceita_datadir(exe) else []), "--slice", "0",
            "--load-settings", f"{trio['machine']};{trio['process']}",
            "--load-filaments", ";".join([str(trio["filament"])] * n),
            "--outputdir", str(pasta), str(modelo)]
@@ -190,6 +192,7 @@ def main() -> int:
     ap.add_argument("--limite", type=int, default=0)
     ap.add_argument("--timeout", type=int, default=300)
     ap.add_argument("--extra", default="", help="argumentos extras da CLI do fabricante (ex.: '--arrange 1')")
+    ap.add_argument("--prefixo", default="", help="argumentos obrigatórios antes de todos (CrealityPrint: --cli)")
     ap.add_argument("--extra-cores", default="--arrange 1", help="argumentos extras só no caso de 4 cores")
     ap.add_argument("--max-oficial", type=int, default=6, help="execuções do oficial para juntar variantes quando ele não repete")
     ap.add_argument("--max-oficial-busca", type=int, default=12, help="teto de execuções do oficial procurando a variante do compilado")
@@ -197,6 +200,7 @@ def main() -> int:
                     help="caso de 4 cores também em máquinas de 1 extrusora (AMS/CFS/IFS/ACE/Box: troca de filamento)")
     ns = ap.parse_args()
 
+    PREFIXO[:] = ns.prefixo.split() if ns.prefixo else []
     out = ns.saida
     out.mkdir(parents=True, exist_ok=True)
     cat = Catalogo(ns.perfis)
