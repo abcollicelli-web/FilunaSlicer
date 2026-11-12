@@ -69,7 +69,7 @@ class Catalogo:
         for (tipo, nome), (arq, dados) in sorted(self.indice.items()):
             if tipo != "machine" or str(dados.get("instantiation", "true")).lower() != "true":
                 continue
-            if vendor and self.vendor_de.get((tipo, nome)) != vendor:
+            if vendor and self.vendor_de.get((tipo, nome)) not in vendor.split(","):
                 continue
             try:
                 maq, _ = self.efetivo("machine", nome)
