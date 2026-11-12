@@ -72,11 +72,23 @@ def impressoras(secoes: dict, filtro: str = "") -> list[dict]:
     return sorted(out, key=lambda x: x["maquina"])
 
 
-def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Path, timeout: int) -> dict:
+def app_ini(secoes: dict, vendor: str) -> str:
+    """PrusaSlicer.ini mínimo com todos os modelos do pacote instalados, como o assistente grava."""
+    linhas = [f"[vendor:{vendor}]"]
+    for s, d in secoes.items():
+        if s.startswith("printer_model:"):
+            var = d.get("variants", "")
+            if var:
+                linhas.append(f"{s.split(':', 1)[1]} = {var}")
+    return "\n".join(linhas) + "\n"
+
+
+def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Path, timeout: int, ini_app: str = "") -> dict:
     if pasta.exists():
         shutil.rmtree(pasta)
     (pasta / "datadir" / "vendor").mkdir(parents=True)
     shutil.copy2(pacote, pasta / "datadir" / "vendor" / pacote.name)
+    (pasta / "datadir" / "PrusaSlicer.ini").write_text(ini_app, encoding="utf-8")
     out = pasta / "saida.gcode"
     cmd = [*cmd_base, "--datadir", str(pasta / "datadir"), "--printer-profile", imp["maquina"],
            "--print-profile", imp["processo"], "--material-profile", imp["filamento"],
@@ -111,6 +123,7 @@ def main() -> int:
     imps = impressoras(secoes, ns.filtro)
     if ns.limite:
         imps = imps[: ns.limite]
+    ini_app = app_ini(secoes, ns.pacote.stem)
     base_o = [*shlex.split(ns.prefixo_oficial), ns.oficial]
     base_c = [ns.compilado]
     resultados = []
@@ -122,19 +135,19 @@ def main() -> int:
         else:
             variantes, execs = {}, []
             for k in range(2):
-                x = fatiar(base_o, ns.pacote, imp, ns.modelo, caso / f"oficial-{k}", ns.timeout)
+                x = fatiar(base_o, ns.pacote, imp, ns.modelo, caso / f"oficial-{k}", ns.timeout, ini_app)
                 execs.append(x)
                 if x["rc"] == 0 and x["gcodes"]:
                     n = normalizado(Path(x["gcodes"][0]))
                     variantes.setdefault(sha(n), n)
             k = 2
             while len(variantes) > 1 and k < ns.max_oficial:
-                x = fatiar(base_o, ns.pacote, imp, ns.modelo, caso / f"oficial-{k}", ns.timeout)
+                x = fatiar(base_o, ns.pacote, imp, ns.modelo, caso / f"oficial-{k}", ns.timeout, ini_app)
                 if x["rc"] == 0 and x["gcodes"]:
                     n = normalizado(Path(x["gcodes"][0]))
                     variantes.setdefault(sha(n), n)
                 k += 1
-            cc = fatiar(base_c, ns.pacote, imp, ns.modelo, caso / "compilado", ns.timeout)
+            cc = fatiar(base_c, ns.pacote, imp, ns.modelo, caso / "compilado", ns.timeout, ini_app)
             r["oficial"], r["compilado"] = execs[0], cc
             r["variantes_oficiais"] = len(variantes)
             if not variantes and cc["rc"] != 0 and execs[0]["rc"] == cc["rc"]:
