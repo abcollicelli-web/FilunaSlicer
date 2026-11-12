@@ -16,9 +16,9 @@
 	{"#EEEEEE", "#4C4C55"} sidebar
 	{"#FEFFFF", "#242428"} bg color-
 	*/
-	--main-color			: #D6186F;
+	--main-color			: #C2185B;
 	--main-color-hover		: #E8559A;
-	--main-color-fixed		: #D6186F;
+	--main-color-fixed		: #C2185B;
 	--bg-color				: #FFFFFF;
 	--bg-color-secondary	: #F4F4F4;
 	--bg-color-alt			: #F0F0F0;
@@ -50,7 +50,7 @@
 :root {
 	--main-color			: #8A0E47;
 	--main-color-hover		: #8A0E47;
-	--main-color-fixed		: #D6186F;
+	--main-color-fixed		: #C2185B;
 	--bg-color				: #2D2D31;
 	--bg-color-secondary	: #36363B;
 	--bg-color-alt			: #242428;

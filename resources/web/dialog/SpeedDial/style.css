@@ -76,7 +76,7 @@ body {
 }
 
 .fav-tile.sel {
-    outline: 2px solid var(--main-color, var(--orca-accent, #D6186F));
+    outline: 2px solid var(--main-color, var(--orca-accent, #C2185B));
     outline-offset: 2px;
 }
 
@@ -183,7 +183,7 @@ body {
 }
 
 .plugin-search:focus-within {
-    border-color: var(--main-color, var(--orca-accent, #D6186F));
+    border-color: var(--main-color, var(--orca-accent, #C2185B));
     box-shadow: 0 0 0 2px rgba(214, 24, 111, .25);
 }
 
@@ -466,7 +466,7 @@ body {
 
 .pin.on {
     opacity: 1;
-    color: var(--main-color, var(--orca-accent, #D6186F));
+    color: var(--main-color, var(--orca-accent, #C2185B));
 }
 
 .pin:hover {
@@ -519,7 +519,7 @@ body {
     background: transparent;
     font: inherit;
     font-size: 11px;
-    color: var(--main-color, var(--orca-accent, #D6186F));
+    color: var(--main-color, var(--orca-accent, #C2185B));
     cursor: pointer;
     white-space: nowrap;
 }

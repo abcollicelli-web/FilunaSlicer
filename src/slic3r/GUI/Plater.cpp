@@ -1,4 +1,5 @@
 #include "Plater.hpp"
+#include "FilunaPanel.hpp"
 #include "DeviceCore/FilunaOEMOverlay.hpp"
 #include "../../../FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp"
 #include "DeviceCore/FilunaVendorRegistry.hpp"
@@ -3654,6 +3655,11 @@ Sidebar::Sidebar(Plater *parent)
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(p->scrolled, 1, wxEXPAND);
+    // Filuna footer: sale suggestion (same calculation as the filuna3d.com calculator), weight, cost,
+    // time, IA Filuna and the Autoajuda switch. Fixed height so the settings above keep their space.
+    auto* filuna_footer = new FilunaPanel(this, "rodape.html");
+    filuna_footer->SetMinSize(wxSize(-1, FromDIP(252)));
+    sizer->Add(filuna_footer, 0, wxEXPAND);
     SetSizer(sizer);
 }
 

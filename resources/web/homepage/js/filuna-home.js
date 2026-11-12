@@ -17,7 +17,18 @@ function FlGuardaToken(t) {
 		if (t) window.localStorage.setItem(FL_CHAVE, t);
 		else window.localStorage.removeItem(FL_CHAVE);
 	} catch (e) { }
+	FlAvisaFiluna(t);
 }
+
+// As telas Filuna (Dispositivo, Calibração, Meu espaço, rodapé) leem o mesmo token pelo Filuna Slicer.
+function FlAvisaFiluna(t) {
+	try { window.wx.postMessage(JSON.stringify({ command: "filuna_token", token: t || "" })); } catch (e) { }
+}
+
+function FlAbrirAba(aba) {
+	try { window.wx.postMessage(JSON.stringify({ command: "filuna_aba", aba: aba })); } catch (e) { }
+}
+setTimeout(function () { if (FlToken()) FlAvisaFiluna(FlToken()); }, 500);
 
 function FlChamar(metodo, caminho, corpo) {
 	var cab = { "Content-Type": "application/json" };

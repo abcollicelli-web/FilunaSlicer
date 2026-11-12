@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calibração</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.passos{display:flex;gap:10px;margin:18px 0}
+.ps{flex:1;padding:12px 14px;border-radius:12px;background:var(--pill);color:var(--muted);font-weight:600;font-size:13.5px}
+.ps b{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.ps.on{background:var(--rose);color:var(--magenta-deep)}.ps.feito{background:var(--good-bg);color:var(--good)}
+.dois{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}
+@media(max-width:900px){.dois{grid-template-columns:1fr}}
+.atual{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.atual div{background:var(--side);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.atual b{display:block;font-size:19px;margin-top:2px}
+.blocos{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.bloco{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:64px;text-align:center;cursor:pointer;background:#fff;font-weight:700}
+.bloco.on{border-color:var(--magenta-deep);background:var(--rose);color:var(--magenta-deep)}
+.porque{background:var(--cream);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--ink2);margin-top:12px;line-height:1.5}
+.hist td,.hist th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13.5px}
+.hist th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.resultado{font-size:30px;font-weight:800;color:var(--magenta-deep)}
+</style>
+</head>
+<body>
+<div class="tela"><div class="app"><div class="corpo">
+	<div class="side">
+		<div class="lbl" style="padding:0 6px 8px">Calibrações</div>
+		<div id="menu"></div>
+		<div style="margin-top:auto;padding:10px 6px" class="ajuda">Cada teste usa a impressora e o filamento escolhidos na Preparação. O resultado vai para o filamento e fica salvo na sua conta.</div>
+	</div>
+	<div class="principal" id="tela"></div>
+</div></div></div>
+<script src="ponte.js"></script>
+<script>
+var E = Filuna.esc;
+var TIPOS = {
+	fluxo: { nome: "Fluxo (vazão)", unidade: "", opcao: "filament_flow_ratio",
+		porque: "Se sai plástico demais, a superfície fica com rebarbas e as medidas crescem; se sai de menos, aparecem buracos entre as linhas. O teste imprime blocos com fluxos diferentes — você escolhe o mais liso.",
+		parametros: [{ id: "passe", rotulo: "Etapa", tipo: "escolha", opcoes: { "1": "1ª etapa (grossa: −20% a +20%)", "2": "2ª etapa (fina: −9% a 0%)" }, padrao: "1" },
+			{ id: "padrao", rotulo: "Superfície do bloco", tipo: "escolha", opcoes: { "0": "Arquimediana (recomendada)", "1": "Monotônica" }, padrao: "0" }],
+		blocos: function (p) { var v = [], i; if (p.passe == "2") for (i = -9; i <= 0; i++) v.push(i); else for (i = -20; i <= 20; i += 5) v.push(i); return v; },
+		pergunta: "Qual bloco ficou mais liso, sem buracos e sem rebarba?",
+		calcula: function (atual, bloco) { return Math.round(atual * (100 + bloco) / 100 * 1000) / 1000; }, formato: function (v) { return Filuna.num(v, 3); } },
+	pa: { nome: "Pressure advance", unidade: "", opcao: "pressure_advance",
+		porque: "Compensa a pressão dentro do bico: sem ele, os cantos ficam inchados e o começo das linhas falha. O teste imprime linhas com valores crescentes — você escolhe a mais uniforme.",
+		parametros: [{ id: "modo", rotulo: "Tipo de teste", tipo: "escolha", opcoes: { "1": "Linhas (rápido)", "2": "Padrão em V (cantos)", "3": "Torre" }, padrao: "1" },
+			{ id: "inicio", rotulo: "Valor inicial", tipo: "numero", padrao: 0 }, { id: "fim", rotulo: "Valor final", tipo: "numero", padrao: 0.1 },
+			{ id: "passo", rotulo: "Passo", tipo: "numero", padrao: 0.002 }],
+		pergunta: "Em qual valor a linha (ou o canto) ficou mais uniforme?", entrada: true, formato: function (v) { return Filuna.num(v, 3); } },
+	temperatura: { nome: "Temperatura", unidade: "°C", opcao: "nozzle_temperature",
+		porque: "Cada filamento tem sua temperatura ideal: quente demais dá fios e escorrimento, fria demais dá camadas soltas. A torre muda a temperatura a cada andar.",
+		parametros: [{ id: "inicio", rotulo: "Mais quente (°C)", tipo: "numero", padrao: 230 }, { id: "fim", rotulo: "Mais fria (°C)", tipo: "numero", padrao: 190 },
+			{ id: "passo", rotulo: "Passo (°C)", tipo: "numero", padrao: 5 }],
+		blocos: function (p) { var v = [], a = +p.inicio, b = +p.fim, s = Math.abs(+p.passo || 5); for (var t = a; a >= b ? t >= b : t <= b; t += a >= b ? -s : s) v.push(t); return v; },
+		pergunta: "Qual andar ficou melhor (sem fios, ponte firme, camadas bem unidas)?", calcula: function (atual, bloco) { return bloco; }, formato: function (v) { return Math.round(v) + " °C"; } },
+	vazao_max: { nome: "Velocidade volumétrica máxima", unidade: "mm³/s", opcao: "filament_max_volumetric_speed",
+		porque: "Diz quanto plástico o bico consegue derreter por segundo. Acima disso a peça fica fraca e falhada. A torre aumenta a velocidade até falhar.",
+		parametros: [{ id: "inicio", rotulo: "Início (mm³/s)", tipo: "numero", padrao: 5 }, { id: "fim", rotulo: "Fim (mm³/s)", tipo: "numero", padrao: 20 },
+			{ id: "passo", rotulo: "Passo", tipo: "numero", padrao: 0.5 }],
+		pergunta: "Até que valor a torre saiu boa? (meça a altura onde começou a falhar e use o valor dessa altura)", entrada: true, formato: function (v) { return Filuna.num(v, 1) + " mm³/s"; } },
+	retracao: { nome: "Retração", unidade: "mm", opcao: "retraction_length",
+		porque: "Puxa o filamento de volta nas viagens para não deixar fios. A torre aumenta a retração a cada andar; escolha o menor valor que já não deixa fios.",
+		parametros: [{ id: "inicio", rotulo: "Início (mm)", tipo: "numero", padrao: 0 }, { id: "fim", rotulo: "Fim (mm)", tipo: "numero", padrao: 2 },
+			{ id: "passo", rotulo: "Passo (mm)", tipo: "numero", padrao: 0.1 }],
+		pergunta: "Qual o menor valor sem fios?", entrada: true, formato: function (v) { return Filuna.num(v, 2) + " mm"; } }
+};
+var st = { tipo: "fluxo", etapa: 1, p: {}, bloco: null, valor: null, atual: {}, hist: [], msg: "", erro: "" };
+
+function menu() {
+	document.getElementById("menu").innerHTML = Object.keys(TIPOS).map(function (k) {
+		return '<button class="nav' + (k == st.tipo ? " on" : "") + '" data-t="' + k + '">' + E(TIPOS[k].nome) + "</button>";
+	}).join("") + '<button class="nav' + (st.tipo == "historico" ? " on" : "") + '" data-t="historico">Histórico</button>';
+	document.querySelectorAll("#menu [data-t]").forEach(function (b) { b.onclick = function () { escolher(b.dataset.t); }; });
+}
+
+function escolher(t) {
+	st.tipo = t; st.etapa = 1; st.bloco = null; st.valor = null; st.msg = st.erro = ""; st.p = {};
+	if (TIPOS[t]) TIPOS[t].parametros.forEach(function (x) { st.p[x.id] = x.padrao; });
+	Filuna.nativo("filamento.atual").then(function (r) { st.atual = r; desenhar(); }).catch(function () { desenhar(); });
+	desenhar();
+}
+
+function desenhar() {
+	menu();
+	var el = document.getElementById("tela");
+	if (st.tipo == "historico") return historico(el);
+	var T = TIPOS[st.tipo], a = st.atual || {};
+	var valorAtual = a[T.opcao];
+	var etapas = ["Configurar", "Imprimir o teste", "Escolher e aplicar"];
+	var h = '<div class="lbl">Calibração interativa</div><div class="h1" style="margin-top:6px">' + E(T.nome) + "</div>" +
+		'<div class="passos">' + etapas.map(function (n, k) { return '<div class="ps' + (k + 1 == st.etapa ? " on" : k + 1 < st.etapa ? " feito" : "") + '"><b>Passo ' + (k + 1) + "</b>" + n + "</div>"; }).join("") + "</div>" +
+		'<div class="dois"><div class="card">';
+	if (st.etapa == 1) {
+		h += '<div class="lbl" style="margin-bottom:10px">Como vai ser o teste</div>' + T.parametros.map(function (x) {
+			if (x.tipo == "escolha") return '<div class="campo"><label>' + E(x.rotulo) + '</label><select data-p="' + x.id + '">' + Object.keys(x.opcoes).map(function (o) {
+				return '<option value="' + o + '"' + (String(st.p[x.id]) == o ? " selected" : "") + ">" + E(x.opcoes[o]) + "</option>"; }).join("") + "</select></div>";
+			return '<div class="campo"><label>' + E(x.rotulo) + '</label><input type="number" step="any" data-p="' + x.id + '" value="' + E(st.p[x.id]) + '"></div>';
+		}).join("") + '<div class="porque"><b>Por quê:</b> ' + E(T.porque) + "</div>" +
+			'<div class="linha" style="margin-top:14px"><button class="btn primario" id="gerar">Gerar o teste na mesa</button><span class="ajuda">Abre um projeto novo com o teste, na Preparação.</span></div>';
+	} else if (st.etapa == 2) {
+		h += '<div class="lbl">Teste pronto</div><p class="sub" style="margin:8px 0 14px">O teste está na Preparação. Fatie, envie para a impressora e espere terminar. Depois volte aqui para escolher o resultado.</p>' +
+			'<div class="linha"><button class="btn" data-aba="prepare">Ver na Preparação</button><button class="btn primario" id="imprimi">Já imprimi, escolher resultado</button></div>';
+	} else {
+		h += '<div class="lbl">' + E(T.pergunta) + "</div>";
+		if (T.blocos) h += '<div class="blocos">' + T.blocos(st.p).map(function (b) {
+			return '<div class="bloco' + (st.bloco === b ? " on" : "") + '" data-b="' + b + '">' + (st.tipo == "fluxo" ? (b > 0 ? "+" : "") + b : b) + "</div>"; }).join("") + "</div>";
+		if (T.entrada) h += '<div class="campo" style="margin-top:10px"><label>Valor escolhido ' + E(T.unidade) + '</label><input type="number" step="any" id="valorDigitado" value="' + E(st.valor == null ? "" : st.valor) + '"></div>';
+		if (st.valor != null) h += '<div style="margin-top:16px"><div class="lbl">Novo valor</div><div class="resultado">' + E(T.formato(st.valor)) + "</div>" +
+			(valorAtual != null ? '<div class="ajuda">Antes: ' + E(T.formato(valorAtual)) + "</div>" : "") + "</div>";
+		h += '<div class="linha" style="margin-top:14px"><button class="btn primario" id="aplicar"' + (st.valor == null ? " disabled" : "") + '>Aplicar no filamento</button><button class="btn" id="refazer">Refazer</button></div>';
+	}
+	if (st.msg) h += '<div class="okmsg">' + E(st.msg) + "</div>";
+	if (st.erro) h += '<div class="erro">' + E(st.erro) + "</div>";
+	h += '</div><div class="card"><div class="lbl" style="margin-bottom:10px">Agora na Preparação</div><div class="atual">' +
+		'<div><span class="ajuda">Impressora</span><b style="font-size:14px">' + E(a.impressora || "—") + "</b></div>" +
+		'<div><span class="ajuda">Filamento</span><b style="font-size:14px">' + E(a.filamento || "—") + "</b></div>" +
+		'<div><span class="ajuda">Valor atual</span><b>' + (valorAtual != null ? E(T.formato(valorAtual)) : "—") + "</b></div>" +
+		'<div><span class="ajuda">Material</span><b>' + E(a.material || "—") + "</b></div></div>" +
+		'<div class="porque">Dica: calibre nesta ordem — temperatura, fluxo, pressure advance, retração e velocidade máxima. Cada um depende do anterior.</div></div></div>';
+	el.innerHTML = h;
+	el.querySelectorAll("[data-p]").forEach(function (x) { x.onchange = function () { st.p[x.dataset.p] = x.value; if (x.tagName == "SELECT") desenhar(); }; });
+	el.querySelectorAll("[data-aba]").forEach(function (b) { b.onclick = function () { Filuna.nativo("aba.abrir", { aba: b.dataset.aba }); }; });
+	el.querySelectorAll("[data-b]").forEach(function (b) { b.onclick = function () {
+		st.bloco = Number(b.dataset.b); var base = valorAtual != null ? Number(valorAtual) : 1;
+		st.valor = T.calcula ? T.calcula(base, st.bloco) : st.bloco; desenhar(); }; });
+	var vd = el.querySelector("#valorDigitado"); if (vd) vd.onchange = function () { st.valor = vd.value === "" ? null : Number(vd.value.replace(",", ".")); desenhar(); };
+	var g = el.querySelector("#gerar"); if (g) g.onclick = function () {
+		g.disabled = true; st.erro = st.msg = "";
+		Filuna.nativo("calibracao.gerar", { tipo: st.tipo, parametros: st.p }).then(function () { st.etapa = 2; desenhar(); }, function (e) { st.erro = e.message; desenhar(); });
+	};
+	var im = el.querySelector("#imprimi"); if (im) im.onclick = function () { st.etapa = 3; desenhar(); };
+	var rf = el.querySelector("#refazer"); if (rf) rf.onclick = function () { escolher(st.tipo); };
+	var ap = el.querySelector("#aplicar"); if (ap) ap.onclick = function () {
+		ap.disabled = true;
+		Filuna.nativo("calibracao.aplicar", { tipo: st.tipo, opcao: T.opcao, valor: st.valor }).then(function (r) {
+			st.msg = "Aplicado em " + (r.filamento || "filamento") + ". Salve o perfil do filamento para manter.";
+			if (Filuna.temToken()) Filuna.api("POST", "/calibracoes", { tipo: st.tipo, valor: st.valor, unidade: T.unidade, impressora: a.impressora, filamento: a.filamento, material: a.material, aplicado: true }).catch(function () {});
+			Filuna.nativo("filamento.atual").then(function (x) { st.atual = x; desenhar(); });
+		}, function (e) { st.erro = e.message; desenhar(); });
+	};
+}
+
+function historico(el) {
+	el.innerHTML = '<div class="lbl">Sua conta</div><div class="h1" style="margin:6px 0 16px">Histórico de calibrações</div><div class="card" id="h"><div class="carregando">Carregando…</div></div>';
+	if (!Filuna.temToken()) return Filuna.telaLogin(el.querySelector("#h"), function () { historico(el); }, "Entre para guardar e ver suas calibrações em qualquer computador.");
+	Filuna.api("GET", "/calibracoes").then(function (r) {
+		var l = r.calibracoes || [];
+		el.querySelector("#h").innerHTML = l.length ? '<table class="hist" style="width:100%;border-collapse:collapse"><tr><th>Quando</th><th>Teste</th><th>Filamento</th><th>Impressora</th><th>Valor</th></tr>' +
+			l.map(function (c) { var T = TIPOS[c.tipo]; return "<tr><td>" + E((c.em || "").slice(0, 10).split("-").reverse().join("/")) + "</td><td>" + E(T ? T.nome : c.tipo) + "</td><td>" + E(c.filamento) + "</td><td>" + E(c.impressora) + "</td><td><b>" + E(T ? T.formato(c.valor) : c.valor) + "</b></td></tr>"; }).join("") + "</table>"
+			: '<div class="vazio">Nenhuma calibração salva ainda.</div>';
+	}, function (e) { el.querySelector("#h").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+
+Filuna.iniciar().then(function () { escolher("fluxo"); });
+Filuna.ouvir("mostrar", function () { Filuna.nativo("filamento.atual").then(function (r) { st.atual = r; desenhar(); }); });
+</script>
+</body>
+</html>

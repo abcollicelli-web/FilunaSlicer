@@ -11,8 +11,7 @@ static bool gDarkMode = false;
 static bool operator<(wxColour const &l, wxColour const &r) { return l.GetRGBA() < r.GetRGBA(); }
 
 static std::map<wxColour, wxColour> gDarkColors{
-    {"#D6186F", "#8A0E47"}, // Filuna: cor de ação (era o verde-água do Orca)
-    {"#C2185B", "#8E1243"}, // Filuna: framboesa
+    {"#C2185B", "#8A0E47"}, // Filuna: cor de ação (era o verde-água do Orca)
     {"#1F8EEA", "#2778D2"}, // rgb(31, 142, 234)   ???
     {"#FF6F00", "#D15B00"}, // rgb(255, 111, 0)    Secondary color
     {"#D01B1B", "#BB2A3A"}, // rgb(208, 27, 27)    ???

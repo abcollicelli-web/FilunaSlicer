@@ -1,4 +1,5 @@
 #include "MainFrame.hpp"
+#include "FilunaPanel.hpp"
 
 #include <wx/event.h>
 #include "slic3r/GUI/Event.hpp"
@@ -1607,9 +1608,14 @@ void MainFrame::init_tabpanel() {
     create_preset_tabs();
 
         //BBS add pages
+    m_filuna_device_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_DEVICE, 22,
+                                                     [](wxWindow* parent) { return new FilunaPanel(parent, "dispositivo.html"); });
+    m_lazy_pages.push_back(m_filuna_device_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_DEVICE, m_filuna_device_page, _L_CONTEXT("Device", "Filuna tab"), "tab_monitor_active");
+
     m_monitor_page = new LazyPage<MonitorPanel>(m_tabpanel, TAB_ID_MONITOR, 20);
     m_lazy_pages.push_back(m_monitor_page);
-    m_tabpanel->AddPage(TAB_ID_MONITOR, m_monitor_page, _L("Device"), "tab_monitor_active");
+    m_tabpanel->AddPage(TAB_ID_MONITOR, m_monitor_page, _L("Printer panel"), "tab_monitor_active");
 
     m_printer_view_page = new LazyPage<PrinterWebView>(m_tabpanel, TAB_ID_MONITOR_WEB, 50, [this](wxWindow* parent) {
         auto* view = new PrinterWebView(parent);
@@ -1639,9 +1645,19 @@ void MainFrame::init_tabpanel() {
 
     // show_device() removes this tab for printers without the Bambu device tab, and the page
     // then never builds its panel.
+    m_filuna_calib_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_CALIB, 32,
+                                                    [](wxWindow* parent) { return new FilunaPanel(parent, "calibracao.html"); });
+    m_lazy_pages.push_back(m_filuna_calib_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_CALIB, m_filuna_calib_page, _L("Calibration"), "tab_calibration_active");
+
     m_calibration_page = new LazyPage<CalibrationPanel>(m_tabpanel, TAB_ID_CALIBRATION, 30);
     m_lazy_pages.push_back(m_calibration_page);
-    m_tabpanel->AddPage(TAB_ID_CALIBRATION, m_calibration_page, _L("Calibration"), "tab_calibration_active");
+    m_tabpanel->AddPage(TAB_ID_CALIBRATION, m_calibration_page, _L("Printer calibration"), "tab_calibration_active");
+
+    m_filuna_space_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_SPACE, 34,
+                                                    [](wxWindow* parent) { return new FilunaPanel(parent, "meu-espaco.html"); });
+    m_lazy_pages.push_back(m_filuna_space_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_SPACE, m_filuna_space_page, _L("My space"), "tab_auxiliary_active");
 
     // Plugin pages are appended after the built-in tabs; their ids are namespaced
     // (plugin.<plugin_key>.<name>) so they can't collide with the built-in TAB_ID_* constants.
@@ -1688,8 +1704,8 @@ void MainFrame::show_device(bool should_use_native) {
                 m_tabpanel->RemovePage(idx);
             }
             m_monitor_page->Show(false);
-            m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_PREVIEW}), TAB_ID_MONITOR, m_monitor_page,
-                                   _L("Device"), "tab_monitor_active");
+            m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_FILUNA_DEVICE, TAB_ID_PREVIEW}), TAB_ID_MONITOR, m_monitor_page,
+                                   _L("Printer panel"), "tab_monitor_active");
         }
 
         if (wxGetApp().is_enable_multi_machine()) {
@@ -1704,8 +1720,8 @@ void MainFrame::show_device(bool should_use_native) {
         }
         if (!m_calibration_page->in_book()) {
             m_calibration_page->Show(false);
-            m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_PROJECT}), TAB_ID_CALIBRATION, m_calibration_page,
-                                   _L("Calibration"), "tab_calibration_active");
+            m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_FILUNA_CALIB, TAB_ID_PROJECT}), TAB_ID_CALIBRATION, m_calibration_page,
+                                   _L("Printer calibration"), "tab_calibration_active");
         }
 
         if (want_web_device_tab) {
@@ -1713,9 +1729,9 @@ void MainFrame::show_device(bool should_use_native) {
                 m_printer_view_page->Show(false);
                 // Immediately right of the native Device tab, not at the end of the tab bar.
                 m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_MONITOR}), TAB_ID_MONITOR_WEB,
-                                       m_printer_view_page, _L("Device (Web)"), "tab_monitor_active");
+                                       m_printer_view_page, _L("Printer panel (Web)"), "tab_monitor_active");
             } else {
-                m_tabpanel->SetPageText(idx, _L("Device (Web)"));
+                m_tabpanel->SetPageText(idx, _L("Printer panel (Web)"));
             }
         }
 
@@ -1743,8 +1759,8 @@ void MainFrame::show_device(bool should_use_native) {
 
         // Insert monitor page
         m_monitor_page->Show(false);
-        m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_PREVIEW}), TAB_ID_MONITOR, m_monitor_page,
-                               _L("Device"), "tab_monitor_active");
+        m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_FILUNA_DEVICE, TAB_ID_PREVIEW}), TAB_ID_MONITOR, m_monitor_page,
+                               _L("Printer panel"), "tab_monitor_active");
 
         if (wxGetApp().is_enable_multi_machine()) {
             // TODO: change the bitmap
@@ -1755,8 +1771,8 @@ void MainFrame::show_device(bool should_use_native) {
         m_calibration_page->Show(false);
         // Last of the built-in tabs, but plugin tabs already sit past it — anchor rather than
         // append, so its position doesn't depend on the relayout() below running afterwards.
-        m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_PROJECT}), TAB_ID_CALIBRATION, m_calibration_page,
-                               _L("Calibration"), "tab_calibration_active");
+        m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_FILUNA_CALIB, TAB_ID_PROJECT}), TAB_ID_CALIBRATION, m_calibration_page,
+                               _L("Printer calibration"), "tab_calibration_active");
 
 #ifdef _MSW_DARK_MODE
         wxGetApp().UpdateDarkUIWin(this);
@@ -1780,8 +1796,8 @@ void MainFrame::show_device(bool should_use_native) {
             m_tabpanel->RemovePage(idx);
         }
         m_printer_view_page->Show(false);
-        m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_PREVIEW}), TAB_ID_MONITOR, m_printer_view_page,
-                               _L("Device"), "tab_monitor_active");
+        m_tabpanel->InsertPage(m_tabpanel->PositionAfter({TAB_ID_FILUNA_DEVICE, TAB_ID_PREVIEW}), TAB_ID_MONITOR, m_printer_view_page,
+                               _L("Printer panel"), "tab_monitor_active");
     }
     fit_tab_labels(); // ORCA on printer change
     m_plugin_pages.relayout(); // re-sync plugin tabs against the native tabs just mutated above
@@ -4940,5 +4956,15 @@ void SettingsDialog::on_dpi_changed(const wxRect& suggested_rect)
 }
 
 
+void MainFrame::select_filuna_tab(const std::string& id)
+{
+    wxString tab = wxString::FromUTF8(id);
+    if (tab == TAB_ID_MONITOR && m_tabpanel->FindPageByName(TAB_ID_MONITOR) == wxNOT_FOUND)
+        tab = TAB_ID_MONITOR_WEB;
+    if (m_tabpanel->FindPageByName(tab) != wxNOT_FOUND)
+        select_tab(tab);
+}
+
 } // GUI
 } // Slic3r
+

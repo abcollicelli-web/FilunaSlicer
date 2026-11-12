@@ -2,7 +2,7 @@
    Carregado depois de home.css; o modo escuro (dark.css, injetado pelo app) continua por cima. */
 :root
 {
-	--main-color         : #D6186F;
+	--main-color         : #C2185B;
 	--focus-bg-item      : #FFE8F2;
 	--focus-bg-box       : #FFF4F9;
 	--bg-color           : #F6F1EA;

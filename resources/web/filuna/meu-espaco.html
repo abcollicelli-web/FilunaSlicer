@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meu espaço</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.dois{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+@media(max-width:1000px){.dois{grid-template-columns:1fr}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:16px 0}
+.kpi{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--side)}.kpi b{display:block;font-size:24px;margin-top:4px}
+.av{padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}.av:last-child{border:none}
+.av .t{font-weight:700}.av .s{color:var(--ink2);font-size:13.5px;margin-top:2px}
+.bob{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:14px}
+.reel{width:44px;height:44px;border-radius:50%;border:9px solid;flex:none;box-shadow:inset 0 0 0 4px #fff}
+.oferta{border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;background:#fff;display:flex;flex-direction:column}
+.oferta img{width:100%;height:140px;object-fit:contain;background:#fff;padding:8px}
+.oferta .i{padding:10px 12px;border-top:1px solid var(--line)}.oferta .t{font-size:13.5px;font-weight:600;max-height:38px;overflow:hidden}
+.oferta .p{font-size:18px;font-weight:800;margin-top:6px}.oferta .k{font-size:12.5px;color:var(--muted)}
+.grupo{margin-bottom:22px}.grupo h3{font-size:16px;margin-bottom:8px}
+.opcao{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
+.opcao .r{font-weight:600}.opcao .a{font-size:12.5px;color:var(--muted);margin-top:2px}
+.opcao input[type=number],.opcao input[type=text],.opcao select{width:170px}
+.marcas{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:360px}
+.marcas label{border:1px solid var(--line);border-radius:9px;padding:5px 10px;font-size:13px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.chat{display:flex;flex-direction:column;gap:10px;max-height:52vh;overflow:auto;padding:4px}
+.msg{padding:12px 14px;border-radius:14px;max-width:85%;white-space:pre-wrap;line-height:1.45}
+.msg.eu{background:var(--rose);align-self:flex-end}.msg.ia{background:var(--side);border:1px solid var(--line)}
+.prov{display:flex;gap:10px;margin:12px 0}
+.prov button{flex:1;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;text-align:left}
+.prov button.on{border-color:var(--magenta-deep);background:var(--rose)}
+.prov b{display:block}.prov span{font-size:12.5px;color:var(--ink2)}
+.proj{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:14px;cursor:pointer}
+.proj:hover{border-color:#d9d2c8}.proj .th{width:56px;height:56px;border-radius:10px;background:linear-gradient(145deg,#F6F2EC,#ECE7E0);flex:none;object-fit:cover}
+table.l{width:100%;border-collapse:collapse}table.l td,table.l th{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13.5px}
+table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+</style>
+</head>
+<body>
+<div class="tela"><div class="app"><div class="corpo">
+	<div class="side">
+		<div class="lbl" style="padding:0 6px 8px">Meu espaço</div>
+		<div id="menu"></div>
+		<div style="margin-top:auto" id="conta"></div>
+	</div>
+	<div class="principal" id="tela"><div class="carregando">Carregando…</div></div>
+</div></div></div>
+<script src="ponte.js"></script>
+<script>
+var E = Filuna.esc;
+var SECOES = [["visao", "Visão geral"], ["estoque", "Estoque"], ["fila", "Fila da Farm"], ["modelos", "Modelos 3D"], ["reparacao", "Reparação"],
+	["ofertas", "Ofertas"], ["ia", "IA Filuna"], ["config", "Configurações"]];
+var st = { secao: "visao", prefs: null, catalogo: [], opcoes: {}, conversa: [] };
+try { var h = (location.hash || "").slice(1); if (h) st.secao = h; } catch (e) {}
+
+function menu() {
+	document.getElementById("menu").innerHTML = SECOES.map(function (s) {
+		return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1]) + "</button>"; }).join("");
+	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; desenhar(); }; });
+	document.getElementById("conta").innerHTML = Filuna.temToken() ? '<div class="card" style="padding:12px"><div class="ajuda">Conectado ao filuna3d.com</div><div id="nomeConta" style="font-weight:700;margin:4px 0 8px"></div><button class="btn peq" id="sair">Sair</button></div>' : "";
+	var s = document.getElementById("sair"); if (s) s.onclick = function () { Filuna.sair().then(desenhar); };
+}
+
+function el() { return document.getElementById("tela"); }
+function titulo(lbl, t, sub) { return '<div class="lbl">' + E(lbl) + '</div><div class="h1" style="margin-top:6px">' + E(t) + "</div>" + (sub ? '<div class="sub">' + E(sub) + "</div>" : ""); }
+function falha(e) { el().insertAdjacentHTML("beforeend", '<div class="erro">' + E(e.erro || e.message) + "</div>"); }
+function precisaConta(texto) {
+	if (Filuna.temToken()) return false;
+	el().innerHTML = '<div id="lg"></div>'; Filuna.telaLogin(el().querySelector("#lg"), desenhar, texto); return true;
+}
+function prefs() {
+	if (st.prefs) return Promise.resolve(st.prefs);
+	return Filuna.api("GET", "/preferencias").then(function (r) { st.prefs = r.valores; st.catalogo = r.catalogo; st.opcoes = r.opcoes; return st.prefs; });
+}
+
+function desenhar() {
+	menu();
+	({ visao: visao, estoque: estoque, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia, config: config }[st.secao] || visao)();
+}
+
+function visao() {
+	if (precisaConta("Seu espaço reúne Farm, estoque, ofertas e IA — os mesmos dados do filuna3d.com.")) return;
+	el().innerHTML = titulo("Meu espaço", "Bem-vindo(a)", "Seu espaço de trabalho, sincronizado com o site.") + '<div id="r" class="carregando">Carregando…</div>';
+	Filuna.api("GET", "/resumo").then(function (r) {
+		var f = r.farm || {}, n = document.getElementById("nomeConta"); if (n) n.textContent = r.conta.nome;
+		var h = '<div class="kpis"><div class="kpi"><span class="ajuda">Plano</span><b style="font-size:18px">' + E(r.conta.plano) + "</b></div>" +
+			'<div class="kpi"><span class="ajuda">Impressoras</span><b>' + (f.impressoras || 0) + "</b></div>" +
+			'<div class="kpi"><span class="ajuda">Imprimindo</span><b>' + (f.imprimindo || 0) + "</b></div>" +
+			'<div class="kpi"><span class="ajuda">Mesas na fila</span><b>' + (f.mesas_na_fila || 0) + "</b></div>" +
+			'<div class="kpi"><span class="ajuda">Peças na fila</span><b>' + (f.pecas_na_fila || 0) + "</b></div></div>" +
+			'<div class="dois"><div class="card"><div class="ch"><span class="lbl">Precisa de você</span></div>' +
+			((r.avisos || []).length ? r.avisos.map(function (a) { return '<div class="av"><span class="dot" style="margin-top:4px;background:' + (a.tipo == "limpar" ? "var(--violeta)" : "var(--orange)") + '"></span><div><div class="t">' + E(a.titulo) + '</div><div class="s">' + E(a.texto) + "</div></div></div>"; }).join("")
+				: '<div class="vazio">Tudo certo por aqui.</div>') + "</div>" +
+			'<div class="card"><div class="ch"><span class="lbl">Projetos recentes</span><a data-s="modelos">Ver todos</a></div><div id="rec" class="grade" style="grid-template-columns:1fr"></div></div></div>';
+		document.getElementById("r").outerHTML = h;
+		el().querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; desenhar(); }; });
+		recentes(document.getElementById("rec"), 4);
+	}, function (e) { if (e.status == 401) Filuna.sair(); document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+
+function recentes(alvo, max) {
+	Filuna.nativo("projetos.recentes").then(function (r) {
+		var l = (r.projetos || []).slice(0, max || 50);
+		alvo.innerHTML = l.length ? l.map(function (p, k) {
+			return '<div class="proj" data-k="' + k + '">' + (p.imagem ? '<img class="th" src="' + E(p.imagem) + '">' : '<div class="th"></div>') +
+				'<div style="min-width:0"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + E(p.nome) + '</div><div class="ajuda">' + E(p.quando || p.caminho) + "</div></div></div>";
+		}).join("") : '<div class="vazio">Nenhum projeto aberto ainda.</div>';
+		alvo.querySelectorAll("[data-k]").forEach(function (b) { b.onclick = function () { Filuna.nativo("projeto.abrir", { caminho: l[+b.dataset.k].caminho }); }; });
+	}, function () { alvo.innerHTML = '<div class="vazio">Abra o Filuna Slicer para ver seus projetos.</div>'; });
+}
+
+function estoque() {
+	if (precisaConta("Entre para ver seu estoque de filamento.")) return;
+	el().innerHTML = titulo("Estoque", "Minhas bobinas", "O mesmo estoque do site. A Farm dá baixa sozinha ao concluir cada impressão.") + '<div id="r" class="carregando">Carregando…</div>';
+	Promise.all([Filuna.api("GET", "/estoque"), prefs()]).then(function (r) {
+		var b = r[0].bobinas || [], lim = r[1]["estoque.limite_baixo_g"], alerta = r[1]["estoque.alerta_baixo"];
+		document.getElementById("r").outerHTML = '<div class="linha" style="margin:14px 0"><button class="btn" id="novo">+ Adicionar bobina no site</button>' +
+			'<span class="ajuda">' + (alerta ? "Alerta quando restar menos de " + lim + " g (mude em Configurações)." : "Alerta de bobina acabando desligado.") + "</span></div>" +
+			(b.length ? '<div class="grade">' + b.map(function (x) {
+				var pct = x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0, baixo = alerta && x.restante_g < lim;
+				return '<div class="bob"><span class="reel" style="border-color:' + E(x.cor) + '"></span><div style="flex:1;min-width:0"><div style="font-weight:700">' + E(x.material + " · " + x.cor_nome) +
+					'</div><div class="ajuda">nº ' + E(x.numero) + (x.marca ? " · " + E(x.marca) : "") + (x.na_impressora ? " · na " + E(x.na_impressora) : "") + "</div>" +
+					'<div class="bar" style="margin:8px 0 4px"><i style="width:' + pct + "%;background:" + (baixo ? "var(--warn)" : "var(--magenta-deep)") + '"></i></div>' +
+					'<div class="ajuda">Restam <b>' + Filuna.gramas(x.restante_g) + "</b>" + (x.na_fila_g ? " · fila usa " + Filuna.gramas(x.na_fila_g) : "") + "</div>" +
+					(x.insuficiente ? '<span class="pill alerta" style="margin-top:6px;display:inline-block">Não basta para a fila</span>' : baixo ? '<span class="pill alerta" style="margin-top:6px;display:inline-block">Acabando</span>' : "") + "</div></div>";
+			}).join("") + "</div>" : '<div class="vazio">Nenhuma bobina cadastrada.</div>');
+		document.getElementById("novo").onclick = function () { Filuna.abrirLink("https://filuna3d.com/farm/estoque"); };
+	}, function (e) { document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+
+function fila() {
+	if (precisaConta("Entre para ver a fila da sua Farm.")) return;
+	el().innerHTML = titulo("Farm", "Fila de impressão", "Mesas organizadas por cor e impressora.") + '<div id="r" class="carregando">Carregando…</div>';
+	Filuna.api("GET", "/fila").then(function (r) {
+		var l = r.trabalhos || r.fila || [];
+		document.getElementById("r").outerHTML = '<div class="linha" style="margin:14px 0"><button class="btn primario" id="novoP">Novo pedido na Farm</button><button class="btn" data-aba="filuna.dispositivo">Ver impressoras</button></div>' +
+			(l.length ? '<div class="card" style="padding:6px 8px"><table class="l"><tr><th>Pedido</th><th>Mesa</th><th>Cor</th><th>Impressora</th><th>Tempo</th><th>Situação</th></tr>' + l.map(function (t) {
+				return "<tr><td><b>" + E(t.descricao || ("Pedido " + (t.pedido || ""))) + "</b><div class='ajuda'>" + E(t.arquivo || "") + "</div></td><td>" + E((t.mesa || t.numero || 1) + "/" + (t.mesas || t.total || 1)) +
+					"</td><td><span class='dot' style='background:" + E(t.cor || t.cor_hex || "#ccc") + "'></span> " + E((t.material || "") + " " + (t.cor_nome || "")) + "</td><td>" + E((t.impressora && t.impressora.nome) || "—") +
+					"</td><td>" + Filuna.tempo(t.tempo_s) + "</td><td>" + E({aguardando:"Na fila",enviado:"Enviado",imprimindo:"Imprimindo"}[t.estado] || t.estado || "") + (t.pode_iniciar ? " · pode começar" : "") + "</td></tr>";
+			}).join("") + "</table></div>" : '<div class="vazio">A fila está vazia.</div>');
+		document.getElementById("novoP").onclick = function () { Filuna.abrirLink("https://filuna3d.com/farm/novo"); };
+		el().querySelectorAll("[data-aba]").forEach(function (b) { b.onclick = function () { Filuna.nativo("aba.abrir", { aba: b.dataset.aba }); }; });
+	}, function (e) { document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+
+function modelos() {
+	el().innerHTML = titulo("Modelos 3D", "Meus projetos", "Os projetos ficam no seu computador; nada sobe para o site.") +
+		'<div class="linha" style="margin:14px 0"><button class="btn primario" id="abrir">Abrir ou importar modelo</button></div><div id="rec" class="grade"></div>';
+	document.getElementById("abrir").onclick = function () { Filuna.nativo("projeto.importar"); };
+	recentes(document.getElementById("rec"));
+}
+
+function reparacao() {
+	el().innerHTML = titulo("Reparação", "Conferir e consertar modelos", "Procura buracos, faces invertidas e partes soltas nos modelos da mesa atual e conserta.") + '<div id="r" class="carregando">Analisando…</div>';
+	Filuna.nativo("modelo.objetos").then(function (r) {
+		var l = r.objetos || [], ruins = l.filter(function (o) { return o.bordas_abertas > 0 || o.reparados > 0; }).length;
+		document.getElementById("r").outerHTML = (l.length ? '<div class="card" style="margin-top:14px;padding:6px 8px"><table class="l"><tr><th>Modelo</th><th>Faces</th><th>Bordas abertas</th><th>Erros já corrigidos</th><th>Situação</th></tr>' +
+			l.map(function (o) { var ok = !o.bordas_abertas; return "<tr><td><b>" + E(o.nome) + "</b></td><td>" + o.faces + "</td><td>" + o.bordas_abertas + "</td><td>" + o.reparados +
+				"</td><td>" + (ok ? '<span class="pill ok">Fechado</span>' : '<span class="pill alerta">Precisa reparar</span>') + "</td></tr>"; }).join("") + "</table></div>" +
+			'<div class="linha" style="margin-top:14px"><button class="btn primario" id="rep"' + (ruins ? "" : " disabled") + ">Reparar " + (ruins ? ruins + " modelo(s)" : "") + '</button><span class="ajuda">Um modelo com bordas abertas pode sair com falhas ou nem fatiar.</span></div>'
+			: '<div class="vazio" style="margin-top:14px">Nenhum modelo na mesa. Importe um modelo na Preparação.</div>');
+		var b = document.getElementById("rep"); if (b) b.onclick = function () { b.disabled = true; Filuna.nativo("modelo.reparar").then(reparacao, function (e) { falha(e); }); };
+	}, falha);
+}
+
+function ofertas() {
+	if (precisaConta("Entre para ver as ofertas escolhidas para você.")) return;
+	el().innerHTML = titulo("Ofertas", "Filamento e peças em oferta", "Reunidas pelo site. Filtros em Configurações › Ofertas.") + '<div id="r" class="carregando">Buscando…</div>';
+	Filuna.api("GET", "/ofertas").then(function (r) {
+		var l = r.ofertas || [];
+		document.getElementById("r").outerHTML = !r.ativas ? '<div class="vazio" style="margin-top:14px">Ofertas desligadas. <a id="lig">Ligar em Configurações</a></div>' :
+			l.length ? '<div class="grade" style="margin-top:14px">' + l.map(function (o, k) {
+				return '<div class="oferta" data-k="' + k + '"><img src="' + E(o.imagem) + '" alt=""><div class="i"><div class="t">' + E(o.titulo) + '</div><div class="p">' + Filuna.reais(o.preco) + "</div>" +
+					'<div class="k">' + E(o.loja) + (o.preco_kg ? " · " + Filuna.reais(o.preco_kg) + "/kg" : "") + "</div></div></div>"; }).join("") + "</div>"
+			: '<div class="vazio" style="margin-top:14px">Nenhuma oferta com esses filtros agora.</div>';
+		el().querySelectorAll("[data-k]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(l[+b.dataset.k].url); }; });
+		var lg = document.getElementById("lig"); if (lg) lg.onclick = function () { st.secao = "config"; desenhar(); };
+	}, function (e) { document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+
+function ia() {
+	if (precisaConta("Entre para usar a IA Filuna.")) return;
+	el().innerHTML = titulo("IA Filuna", "Pergunte sobre a sua impressão", "Ela recebe o que está na Preparação: impressora, filamento e o resultado do fatiamento.") + '<div id="r" class="carregando">Carregando…</div>';
+	Promise.all([Filuna.api("GET", "/ia/estado"), prefs()]).then(function (r) {
+		var e = r[0], prov = st.provedor || e.provedor;
+		document.getElementById("r").outerHTML = '<div class="prov">' +
+			'<button data-p="chatgpt" class="' + (prov == "chatgpt" ? "on" : "") + '"><b>Meu ChatGPT</b><span>' + (e.chatgpt_ligado ? "Ligado (chave …" + E(e.chatgpt_final) + ") · cobrado na sua conta OpenAI" : "Ligue com a sua chave da OpenAI") + "</span></button>" +
+			'<button data-p="claude" class="' + (prov == "claude" ? "on" : "") + '"><b>Claude Filuna</b><span>' + (e.claude_disponivel ? e.creditos_claude + " crédito(s) · 1 por pergunta" : "Indisponível agora") + "</span></button></div>" +
+			(prov == "chatgpt" && !e.chatgpt_ligado ? '<div class="card" style="margin-bottom:14px"><div class="campo"><label>Chave da OpenAI (sk-…)</label><input type="password" id="chave" placeholder="sk-..."></div>' +
+				'<div class="ajuda" style="margin-bottom:10px">Fica guardada criptografada na sua conta. Crie em platform.openai.com › API keys.</div><button class="btn primario" id="ligar">Ligar meu ChatGPT</button> <a id="pegar">Onde pego a chave?</a></div>' : "") +
+			(prov == "claude" && e.claude_disponivel && e.creditos_claude < 1 ? '<div class="erro">Sem créditos do Claude Filuna. <a id="comprar">Adquirir créditos</a></div>' : "") +
+			'<div class="card"><div class="chat" id="chat">' + (st.conversa.length ? st.conversa.map(function (m) { return '<div class="msg ' + m.de + '">' + E(m.t) + "</div>"; }).join("")
+				: '<div class="ajuda">Exemplos: “Por que meu PETG está fazendo fios?” · “Esse tempo de impressão está bom para esta peça?” · “Que suporte uso aqui?”</div>') + "</div>" +
+			'<div class="linha" style="margin-top:12px"><textarea id="perg" rows="2" placeholder="Escreva sua pergunta"></textarea><button class="btn primario" id="env">Perguntar</button></div>' +
+			(e.chatgpt_ligado ? '<div class="ajuda" style="margin-top:8px"><a id="desligar">Desligar meu ChatGPT</a></div>' : "") + "</div>";
+		el().querySelectorAll("[data-p]").forEach(function (b) { b.onclick = function () { st.provedor = b.dataset.p; Filuna.api("POST", "/preferencias", { valores: { "ia.provedor": b.dataset.p } }).then(function (x) { st.prefs = x.valores; ia(); }); }; });
+		var lg = document.getElementById("ligar"); if (lg) lg.onclick = function () { Filuna.api("POST", "/ia/chave", { chave: document.getElementById("chave").value.trim() }).then(ia, falha); };
+		var pg = document.getElementById("pegar"); if (pg) pg.onclick = function () { Filuna.abrirLink("https://platform.openai.com/api-keys"); };
+		var cp = document.getElementById("comprar"); if (cp) cp.onclick = function () { Filuna.abrirLink("https://filuna3d.com/planos"); };
+		var dl = document.getElementById("desligar"); if (dl) dl.onclick = function () { Filuna.api("POST", "/ia/chave", { chave: "" }).then(ia, falha); };
+		document.getElementById("env").onclick = function () {
+			var p = document.getElementById("perg").value.trim(), b = this; if (!p) return;
+			b.disabled = true; st.conversa.push({ de: "eu", t: p }); st.conversa.push({ de: "ia", t: "Pensando…" }); ia_chat();
+			Filuna.nativo("contexto.ia").catch(function () { return {}; }).then(function (c) {
+				return Filuna.api("POST", "/ia", { pergunta: p, contexto: c.texto || "", provedor: prov });
+			}).then(function (r) { st.conversa[st.conversa.length - 1].t = r.resposta; ia(); }, function (x) { st.conversa[st.conversa.length - 1].t = x.erro || x.message; ia(); });
+		};
+	}, function (e) { document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+function ia_chat() { var c = document.getElementById("chat"); if (c) { c.innerHTML = st.conversa.map(function (m) { return '<div class="msg ' + m.de + '">' + E(m.t) + "</div>"; }).join(""); c.scrollTop = 1e6; } }
+
+function config() {
+	if (precisaConta("Entre para personalizar o Filuna. As mesmas configurações valem no site.")) return;
+	el().innerHTML = titulo("Configurações", "Experiência Filuna", "Ative ou desative o que o Filuna faz por você. Vale aqui e no filuna3d.com.") + '<div id="r" class="carregando">Carregando…</div>';
+	st.prefs = null;
+	prefs().then(function (v) {
+		var grupos = {}; st.catalogo.forEach(function (c) { (grupos[c.grupo] = grupos[c.grupo] || []).push(c); });
+		document.getElementById("r").outerHTML = '<div style="margin-top:18px">' + Object.keys(grupos).map(function (g) {
+			return '<div class="grupo card"><h3>' + E(g) + "</h3>" + grupos[g].map(function (c) { return '<div class="opcao"><div><div class="r">' + E(c.rotulo) + '</div><div class="a">' + E(c.ajuda) + "</div></div>" + controle(c, v[c.chave]) + "</div>"; }).join("") + "</div>";
+		}).join("") + '</div><div id="salvo"></div>';
+		el().querySelectorAll("[data-c]").forEach(function (x) { x.onchange = function () { gravar(x); }; });
+	}, function (e) { document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+function controle(c, v) {
+	if (c.tipo == "bool") return '<label class="chave"><input type="checkbox" data-c="' + c.chave + '"' + (v ? " checked" : "") + "><span></span></label>";
+	if (c.tipo == "lista") { var o = st.opcoes[c.chave] || {}; return '<div class="marcas">' + Object.keys(o).map(function (k) {
+		return '<label><input type="checkbox" data-c="' + c.chave + '" data-v="' + E(k) + '"' + ((v || []).indexOf(k) >= 0 ? " checked" : "") + ">" + E(o[k]) + "</label>"; }).join("") + "</div>"; }
+	if (c.tipo.indexOf("escolha:") == 0) return '<select data-c="' + c.chave + '">' + c.tipo.slice(8).split(",").map(function (k) {
+		return '<option value="' + k + '"' + (v == k ? " selected" : "") + ">" + E({ chatgpt: "Meu ChatGPT", claude: "Claude Filuna (créditos)" }[k] || k) + "</option>"; }).join("") + "</select>";
+	if (st.opcoes[c.chave]) { var op = st.opcoes[c.chave]; return '<select data-c="' + c.chave + '">' + Object.keys(op).map(function (k) { return '<option value="' + E(k) + '"' + (v == k ? " selected" : "") + ">" + E(op[k]) + "</option>"; }).join("") + "</select>"; }
+	return '<input type="' + (c.tipo == "texto" ? "text" : "number") + '" step="any" data-c="' + c.chave + '" value="' + E(v == null ? "" : v) + '" placeholder="padrão">';
+}
+function gravar(x) {
+	var k = x.dataset.c, v;
+	if (x.dataset.v !== undefined) v = Array.prototype.map.call(el().querySelectorAll('[data-c="' + k + '"]:checked'), function (i) { return i.dataset.v; });
+	else if (x.type == "checkbox") v = x.checked;
+	else v = x.value === "" ? null : (x.type == "number" ? Number(x.value) : x.value);
+	var d = {}; d[k] = v;
+	Filuna.api("POST", "/preferencias", { valores: d }).then(function (r) {
+		st.prefs = r.valores; Filuna.nativo("preferencias.mudou", { valores: r.valores }).catch(function () {});
+		document.getElementById("salvo").innerHTML = '<div class="okmsg">Salvo. Já vale aqui e no site.</div>';
+	}, function (e) { document.getElementById("salvo").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+
+Filuna.iniciar().then(desenhar);
+Filuna.ouvir("secao", function (d) { if (d.secao) { st.secao = d.secao; desenhar(); } });
+</script>
+</body>
+</html>

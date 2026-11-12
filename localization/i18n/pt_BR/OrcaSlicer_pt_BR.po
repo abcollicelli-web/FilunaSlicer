@@ -6717,7 +6717,7 @@ msgid "Slicing"
 msgstr "Fatiando"
 
 msgid "Slice all"
-msgstr "Fatiar Tudo"
+msgstr "Fatiar tudo"
 
 msgid "Failed"
 msgstr "Falhou"
@@ -7032,7 +7032,7 @@ msgid "Export all sliced file"
 msgstr "Exportar todos os arquivos fatiados"
 
 msgid "Export G-code file"
-msgstr "Exportar arquivo G-code"
+msgstr "Exportar"
 
 msgctxt "Verb"
 msgid "Print"
@@ -7048,7 +7048,7 @@ msgid "Send to Multi-device"
 msgstr "Enviar para multi-dispositivo"
 
 msgid "Slice plate"
-msgstr "Fatiar Placa"
+msgstr "Fatiar mesa"
 
 msgid "Keyboard Shortcuts"
 msgstr "Atalhos de Teclado"
@@ -9177,7 +9177,7 @@ msgid "Purge mode"
 msgstr "Modo de purga"
 
 msgid "Flushing volumes"
-msgstr "Volumes de Purga"
+msgstr "Volumes de purga"
 
 msgid "Add one filament"
 msgstr "Adicionar um filamento"
@@ -36485,3 +36485,19 @@ msgid ""
 msgstr ""
 "Evitar empenamento\n"
 "Você sabia que ao imprimir materiais propensos ao empenamento como ABS, aumentar adequadamente a temperatura da mesa aquecida pode reduzir a probabilidade de empenamento?"
+
+msgctxt "Filuna tab"
+msgid "Device"
+msgstr "Dispositivo"
+
+msgid "Printer panel"
+msgstr "Painel da impressora"
+
+msgid "Printer panel (Web)"
+msgstr "Painel da impressora (web)"
+
+msgid "Printer calibration"
+msgstr "Calibração da impressora"
+
+msgid "My space"
+msgstr "Meu espaço"

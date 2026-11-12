@@ -986,8 +986,8 @@ body.pane-resizing {
 }
 
 .plugin-checkbox-input:checked + .plugin-checkbox-mark {
-  border-color: #D6186F;
-  background: #D6186F;
+  border-color: #C2185B;
+  background: #C2185B;
 }
 
 .plugin-checkbox-input:checked + .plugin-checkbox-mark::after {
@@ -1004,8 +1004,8 @@ body.pane-resizing {
 
 .plugin-checkbox-input:indeterminate + .plugin-checkbox-mark,
 .plugin-checkbox.mixed .plugin-checkbox-mark {
-  border-color: #D6186F;
-  background: #D6186F;
+  border-color: #C2185B;
+  background: #C2185B;
 }
 
 .plugin-checkbox-input:indeterminate + .plugin-checkbox-mark::after,
@@ -1028,7 +1028,7 @@ body.pane-resizing {
 .plugin-checkbox.loading .plugin-checkbox-mark {
   border-radius: 50%;
   border-color: #b7c0ca;
-  border-top-color: #D6186F;
+  border-top-color: #C2185B;
   background: transparent;
   opacity: 1;
   animation: plugin-checkbox-spin 0.8s linear infinite;
@@ -1083,7 +1083,7 @@ body.pane-resizing {
 }
 
 .detail-tab.active {
-  border-bottom-color: #D6186F;
+  border-bottom-color: #C2185B;
   color: var(--text);
 }
 

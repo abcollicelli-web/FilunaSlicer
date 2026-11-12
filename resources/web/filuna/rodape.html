@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+html,body{background:#FCFAF7;overflow:hidden}
+.r{padding:10px 12px;border-top:1px solid var(--line)}
+.venda{background:var(--rose);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.venda .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--magenta-deep);font-weight:700}
+.venda .v{font-size:22px;font-weight:800;color:var(--magenta-deep)}
+.venda .l{font-size:12px;color:var(--ink2);text-align:right}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.nums div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+.nums span{font-size:11px;color:var(--muted);display:block}.nums b{font-size:14px}
+.base{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12.5px;color:var(--ink2)}
+.dica{margin-top:8px;background:var(--cream);border-radius:10px;padding:8px 10px;font-size:12.5px;color:var(--ink2);line-height:1.4}
+.dica b{color:var(--ink)}
+.detalhe{font-size:12px;color:var(--ink2);margin-top:6px;display:none}.detalhe.on{display:block}
+.detalhe div{display:flex;justify-content:space-between;padding:2px 0}
+</style>
+</head>
+<body>
+<div class="r">
+	<div class="venda" id="venda"><div><div class="k">Sugestão de venda</div><div class="v" id="preco">—</div></div><div class="l" id="lucro">Fatie a mesa<br>para calcular</div></div>
+	<div class="detalhe" id="detalhe"></div>
+	<div class="nums"><div><span>Peso</span><b id="peso">—</b></div><div><span>Custo</span><b id="custo">—</b></div><div><span>Tempo</span><b id="tempo">—</b></div></div>
+	<div id="dica"></div>
+	<div class="base"><a id="ia">IA Filuna</a><label class="linha" style="gap:8px">Autoajuda <span class="chave" style="transform:scale(.8)"><input type="checkbox" id="auto" checked><span></span></span></label></div>
+</div>
+<script src="ponte.js"></script>
+<script>
+var ultimo = "", autoajuda = true, prefsLidas = false;
+var DICAS = {
+	vazio: "<b>Comece aqui:</b> arraste um modelo para a mesa ou use Importar. A Sugestão de venda aparece quando você fatiar.",
+	pronto: "<b>Próximo passo:</b> clique em Fatiar mesa. O Filuna calcula peso, tempo e preço com a mesma conta da calculadora do site.",
+	fatiado: "<b>Pronto para enviar.</b> Confira a Visualização camada por camada e use Exportar ou envie para a impressora.",
+	semconta: "<b>Dica:</b> entre na sua conta Filuna para a sugestão de venda usar seus custos (energia, mão de obra, margem)."
+};
+function dica(k) { document.getElementById("dica").innerHTML = autoajuda ? '<div class="dica">' + DICAS[k] + "</div>" : ""; }
+function tempoCurto(s) { s = Math.round(s || 0); var h = Math.floor(s / 3600), m = Math.round(s % 3600 / 60); return h ? h + "h" + (m < 10 ? "0" : "") + m : m + "min"; }
+
+function ler() {
+	if (Filuna.temToken() && !prefsLidas) {
+		prefsLidas = true;
+		Filuna.api("GET", "/preferencias").then(function (r) { autoajuda = r.valores["interface.autoajuda"] !== false; document.getElementById("auto").checked = autoajuda; }).catch(function () {});
+	}
+	Filuna.nativo("fatiamento.resumo").then(function (r) {
+		if (!r.fatiado) {
+			ultimo = ""; ["preco", "peso", "custo", "tempo"].forEach(function (i) { document.getElementById(i).textContent = "—"; });
+			document.getElementById("lucro").innerHTML = "Fatie a mesa<br>para calcular"; document.getElementById("detalhe").innerHTML = "";
+			dica(r.objetos ? "pronto" : "vazio"); return;
+		}
+		document.getElementById("tempo").textContent = tempoCurto(r.tempo_s);
+		var chave = JSON.stringify([r.tempo_s, r.volumes, r.material]);
+		if (chave == ultimo) return;
+		ultimo = chave;
+		dica(Filuna.temToken() ? "fatiado" : "semconta");
+		if (!Filuna.temToken()) { document.getElementById("peso").textContent = Filuna.gramas(r.gramas_estimadas); document.getElementById("lucro").innerHTML = "Entre na conta<br>para o preço"; return; }
+		Filuna.api("POST", "/preco", { material: r.material, placas: [{ tempo_s: r.tempo_s, camadas: r.camadas || 0, volumes: r.volumes }] }).then(function (p) {
+			document.getElementById("preco").textContent = Filuna.reais(p.preco_sugerido);
+			document.getElementById("custo").textContent = Filuna.reais(p.custo_total);
+			var g = p.gramas || {}; document.getElementById("peso").textContent = Filuna.gramas(typeof g == "object" ? (g.total != null ? g.total : Object.values(g).reduce(function (a, b) { return a + (+b || 0); }, 0)) : g);
+			document.getElementById("lucro").innerHTML = "Lucro " + Filuna.reais(p.lucro) + "<br>" + E(r.material);
+			var c = p.custos || {};
+			document.getElementById("detalhe").innerHTML = Object.keys(c).map(function (k) { return "<div><span>" + E(k.replace(/_/g, " ")) + "</span><b>" + Filuna.reais(c[k]) + "</b></div>"; }).join("");
+		}, function (e) { document.getElementById("lucro").textContent = e.erro; if (e.status == 401) Filuna.sair(); });
+	}).catch(function () {});
+}
+var E = Filuna.esc;
+document.getElementById("venda").onclick = function () { document.getElementById("detalhe").classList.toggle("on"); };
+document.getElementById("ia").onclick = function () { Filuna.nativo("aba.abrir", { aba: "filuna.espaco", secao: "ia" }); };
+document.getElementById("auto").onchange = function () {
+	autoajuda = this.checked; ultimo = ""; ler();
+	if (Filuna.temToken()) Filuna.api("POST", "/preferencias", { valores: { "interface.autoajuda": autoajuda } }).catch(function () {});
+};
+Filuna.ouvir("fatiado", function () { ultimo = ""; ler(); });
+Filuna.ouvir("preferencias", function (d) { if (d.valores) { autoajuda = d.valores["interface.autoajuda"] !== false; document.getElementById("auto").checked = autoajuda; ultimo = ""; ler(); } });
+Filuna.iniciar().then(ler);
+setInterval(ler, 3000);
+</script>
+</body>
+</html>

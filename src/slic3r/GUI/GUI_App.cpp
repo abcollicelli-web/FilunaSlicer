@@ -5544,6 +5544,17 @@ std::string GUI_App::handle_web_request(std::string cmd)
         boost::optional<std::string> command = root.get_optional<std::string>("command");
         if (command.has_value()) {
             std::string command_str = command.value();
+            // Filuna: the home page shares the device token with the Filuna pages through app_config.
+            if (command_str == "filuna_token") {
+                app_config->set("filuna_token", root.get<std::string>("token", ""));
+                app_config->save();
+                return "";
+            }
+            if (command_str == "filuna_aba") {
+                const std::string tab = root.get<std::string>("aba", "");
+                CallAfter([this, tab] { if (mainframe) mainframe->select_filuna_tab(tab); });
+                return "";
+            }
             static const std::unordered_set<std::string> stealth_blocked_info_commands = {
                 "get_login_info",
                 "get_orca_login_info",

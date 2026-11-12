@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dispositivo</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.head{display:flex;align-items:flex-start;padding:20px 24px 16px;gap:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.hr{margin-left:auto;display:flex;align-items:center;gap:12px;padding-top:6px;flex-wrap:wrap}
+.hri{display:flex;align-items:center;gap:8px;color:var(--ink2);font-size:14px}
+.lista{width:250px;border-right:1px solid var(--line);background:var(--side);padding:16px 12px;flex:none;overflow:auto}
+.imp{display:flex;gap:10px;align-items:center;padding:10px;border-radius:12px;cursor:pointer;margin-bottom:4px}
+.imp:hover{background:#F4F0EA}.imp.on{background:var(--rose)}
+.imp .n{font-weight:700;font-size:14px}.imp .s{font-size:12px;color:var(--muted)}
+.estado{width:10px;height:10px;border-radius:50%;flex:none;background:#CFC8BE}
+.e-imprimindo{background:var(--magenta-deep)}.e-livre{background:var(--good)}.e-limpar_mesa{background:var(--violeta)}.e-pausada{background:var(--orange)}.e-erro,.e-falhou{background:var(--warn)}
+.body{flex:1;display:flex;gap:24px;padding:22px 24px;min-height:0;flex-wrap:wrap}
+.view{flex:1.5;min-width:340px;min-height:380px;background:var(--scene);border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cena{position:absolute;inset:0;background:radial-gradient(120% 80% at 55% 30%,#39352f,#1b1a19)}
+.cena .gantry{position:absolute;top:70px;left:8%;right:8%;height:24px;background:linear-gradient(#4a453e,#2e2a25);border-radius:4px}
+.cena .rail{position:absolute;top:118px;left:14%;width:72%;height:10px;background:linear-gradient(90deg,#8a847c,#c9c3ba,#8a847c);border-radius:6px}
+.cena .cab{position:absolute;top:92px;left:50%;transform:translateX(-50%);width:66px;height:66px;background:linear-gradient(#534e46,#34302a);border-radius:6px}
+.cena .mesa{position:absolute;bottom:60px;left:50%;transform:translate(-50%,0) perspective(900px) rotateX(60deg) rotateZ(-28deg);width:440px;height:210px;background:linear-gradient(145deg,#2a2824,#201e1b);border-radius:6px}
+.cena .peca{position:absolute;bottom:120px;left:50%;transform:translate(-50%,0);width:140px;border-radius:50%/22%;background:linear-gradient(90deg,#a83557,#d87d98 55%,#a83557);transition:height .5s}
+.vtag{position:absolute;top:16px;left:16px;background:rgba(255,255,255,.1);color:#e2ded8;font-size:13px;padding:8px 14px;border-radius:10px;z-index:2}
+.vbase{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;padding:20px;margin-top:auto;gap:12px;flex-wrap:wrap;background:linear-gradient(transparent,rgba(0,0,0,.45))}
+.vk{color:#cfcac3;font-size:12px;letter-spacing:.12em;text-transform:uppercase}.vv{color:#fff;font-size:21px;font-weight:700;margin-top:6px}
+.vbtn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.18);height:42px;padding:0 16px;border-radius:12px;font-weight:600;font-size:14px}
+.direita{flex:1;min-width:320px;display:flex;flex-direction:column}
+.titulo{font-size:25px;font-weight:800;margin-top:8px}.arq{color:var(--ink2);font-size:14px;margin-top:4px}
+.pctrow{display:flex;align-items:flex-end;gap:36px;margin-top:16px}
+.pct{font-size:50px;font-weight:800;line-height:1}.pct small{font-size:21px;margin-left:4px}
+.eta{font-size:21px;font-weight:700}.eta .s{font-size:13px;color:var(--muted);font-weight:500;margin-top:4px}
+.barrow{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);margin-top:8px}
+.passos{display:flex;justify-content:space-between;margin-top:18px}
+.passo{text-align:center;flex:1;font-size:13px;color:var(--ink2)}.passo .d{width:11px;height:11px;border-radius:50%;background:var(--magenta-deep);margin:0 auto 8px}
+.passo.off .d{background:#D9D4CD}.passo.off{color:var(--muted)}
+.ctl{margin-top:22px;border-top:1px solid var(--line);padding-top:18px}
+.ctl h4{font-size:16px}.ctl p{color:var(--ink2);font-size:13.5px;margin-top:4px}
+.ctl .btns{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}.ctl .btns .btn{flex:1;height:46px}
+.conf{margin-top:12px;padding:12px;border-radius:12px;background:var(--warn-bg);font-size:13.5px}
+.mats{display:flex;align-items:center;gap:32px;padding:14px 24px;border-top:1px solid var(--line);flex-wrap:wrap}
+.mat{display:flex;align-items:center;gap:10px}.mat .n{font-size:14px;font-weight:600}.mat .s{font-size:12.5px;color:var(--muted)}
+.rodape{min-height:50px;border-top:1px solid var(--line);display:flex;align-items:center;padding:0 24px;gap:24px;font-size:14px;color:var(--ink2);flex-wrap:wrap}
+.rodape a{color:var(--ink2);font-weight:500}.rodape .r{margin-left:auto;color:var(--muted)}
+.aviso{margin:14px 24px 0;padding:12px 14px;border-radius:12px;background:#F3EEFF;color:#4b2fb0;display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="tela"><div class="app" id="app"><div class="carregando">Carregando…</div></div></div>
+<script src="ponte.js"></script>
+<script>
+var estado = { imps: [], bobinas: [], sel: null, local: null, confirmar: null };
+var NOMES = { livre: "Livre", imprimindo: "Imprimindo", pausada: "Pausada", limpar_mesa: "Limpar a mesa", erro: "Com erro", offline: "Desconectada", falhou: "Falhou" };
+var TONS = { livre: "ok", imprimindo: "rosa", limpar_mesa: "rosa", pausada: "alerta", erro: "alerta", falhou: "alerta" };
+var E = Filuna.esc;
+
+function carregar() {
+	Filuna.nativo("impressora.atual").then(function (r) { estado.local = r; desenhar(); }).catch(function () {});
+	if (!Filuna.temToken()) { desenhar(); return; }
+	Promise.all([Filuna.api("GET", "/impressoras"), Filuna.api("GET", "/estoque")]).then(function (r) {
+		estado.imps = r[0].impressoras || []; estado.bobinas = r[1].bobinas || [];
+		if (!estado.sel || !estado.imps.some(function (i) { return i.id == estado.sel; })) estado.sel = estado.imps.length ? estado.imps[0].id : null;
+		desenhar();
+	}, function (e) { if (e.status == 401) { Filuna.sair(); } estado.erro = e.erro; desenhar(); });
+}
+
+function desenhar() {
+	var app = document.getElementById("app");
+	var local = estado.local || {};
+	if (!Filuna.temToken()) {
+		app.innerHTML = cabecalho(local.impressora || "Impressora local", "", local.modelo || "", local) +
+			'<div class="body"><div class="direita" style="max-width:520px"><div class="card"><div class="lbl">Farm Filuna</div>' +
+			'<p class="sub">Entre na sua conta para acompanhar todas as suas impressoras, câmera, fila e materiais por aqui — os mesmos dados do site.</p>' +
+			'<div id="login"></div></div></div></div>' + rodape();
+		Filuna.telaLogin(app.querySelector("#login"), carregar, " ");
+		ligarComuns(app); return;
+	}
+	var i = estado.imps.filter(function (x) { return x.id == estado.sel; })[0];
+	var lista = '<div class="lista"><div class="lbl" style="padding:0 6px 8px">Minhas impressoras</div>' +
+		(estado.imps.length ? estado.imps.map(function (x) {
+			return '<div class="imp' + (x.id == estado.sel ? " on" : "") + '" data-imp="' + E(x.id) + '"><span class="estado e-' + E(x.estado) + '"></span><div><div class="n">' + E(x.nome) +
+				'</div><div class="s">' + E(NOMES[x.estado] || x.estado) + (x.na_fila ? " · " + x.na_fila + " na fila" : "") + "</div></div></div>";
+		}).join("") : '<div class="vazio">Nenhuma impressora na Farm ainda.</div>') +
+		'<button class="btn peq" style="margin-top:10px;width:100%" data-aba="monitor">+ Conectar impressora</button></div>';
+	if (!i) {
+		app.innerHTML = cabecalho(local.impressora || "Dispositivo", "", local.modelo || "", local) + '<div class="corpo">' + lista +
+			'<div class="body"><div class="vazio" style="flex:1">Cadastre suas impressoras na Farm (site ou aqui pelo painel da impressora) para acompanhar tudo nesta tela.' +
+			(estado.erro ? '<div class="erro">' + E(estado.erro) + "</div>" : "") + "</div></div></div>" + rodape();
+		ligarComuns(app); return;
+	}
+	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
+	var foto = i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
+	var passos = ["Na fila", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
+	var html = cabecalho(i.nome, i.estado, i.modelo || "", local) +
+		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
+		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
+		'<div class="view">' + foto + '<div class="vtag">' + (i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
+		'<div class="vbase"><div><div class="vk">Vista da impressão</div><div class="vv">' + (t ? "Mesa " + E(t.mesa || 1) + " de " + E(t.mesas || 1) : "Sem impressão agora") + "</div></div>" +
+		'<button class="vbtn" data-aba="monitor">Abrir painel da impressora</button></div></div>' +
+		'<div class="direita"><div class="lbl">Trabalho atual</div>' +
+		(t ? '<div class="titulo">' + E(t.descricao || "Pedido " + (t.pedido || "")) + '</div><div class="arq">' + E(t.arquivo || "") + (t.quantidade ? " · " + t.quantidade + " peça(s)" : "") + "</div>" +
+			'<div class="pctrow"><div class="pct">' + prog + '<small>%</small></div><div class="eta">' + Filuna.tempo(t.resta_s) + '<div class="s">restante</div></div></div>' +
+			'<div class="bar" style="margin-top:14px"><i style="width:' + prog + '%"></i></div>' +
+			'<div class="barrow"><span><span class="dot" style="width:10px;height:10px;background:' + E(t.cor || "#ccc") + '"></span> ' + E((t.material || "") + " " + (t.cor_nome || "")) + "</span><span>" + Filuna.tempo(t.tempo_s) + " total</span></div>"
+			: '<div class="titulo" style="color:var(--muted)">Nada imprimindo</div><div class="arq">' + (i.na_fila ? i.na_fila + " mesa(s) esperando na fila · " + Filuna.tempo(i.carga_s) : "Fila vazia") + "</div>") +
+		'<div class="passos">' + passos.map(function (p, k) { return '<div class="passo' + (k > nivel ? " off" : "") + '"><div class="d"></div>' + p + "</div>"; }).join("") + "</div>" +
+		'<div class="ctl"><h4>Controle</h4><p>O pedido vai pela sua conta até a impressora. Nada é feito sem você confirmar.</p><div class="btns">' +
+		(i.estado == "pausada" ? '<button class="btn" data-cmd="retomar">Retomar</button>' : '<button class="btn" data-cmd="pausar"' + (i.estado != "imprimindo" ? " disabled" : "") + ">Pausar</button>") +
+		'<button class="btn" data-cmd="cancelar"' + (["imprimindo", "pausada"].indexOf(i.estado) < 0 ? " disabled" : "") + ">Cancelar</button></div>" +
+		(estado.confirmar ? '<div class="conf">Confirmar <b>' + E(estado.confirmar) + '</b> em ' + E(i.nome) + '? <button class="btn primario peq" id="sim">Confirmar</button> <button class="btn peq" id="nao">Voltar</button></div>' : "") +
+		(estado.msg ? '<div class="okmsg">' + E(estado.msg) + "</div>" : "") + "</div></div></div>" +
+		'<div class="mats"><div class="lbl">Materiais</div>' + materiais(i) + "</div></div></div>" + rodape();
+	app.innerHTML = html;
+	if (i.camera_em) camera(i.id);
+	app.querySelectorAll("[data-imp]").forEach(function (b) { b.onclick = function () { estado.sel = b.dataset.imp; estado.confirmar = null; estado.msg = ""; desenhar(); }; });
+	app.querySelectorAll("[data-cmd]").forEach(function (b) { b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
+	var sim = app.querySelector("#sim"); if (sim) sim.onclick = function () {
+		var c = estado.confirmar; estado.confirmar = null;
+		Filuna.api("POST", "/impressoras/" + encodeURIComponent(i.id) + "/comando", { comando: c }).then(function () { estado.msg = "Pedido de " + c + " enviado. A impressora recebe em segundos."; desenhar(); },
+			function (e) { estado.msg = e.erro; desenhar(); });
+	};
+	var nao = app.querySelector("#nao"); if (nao) nao.onclick = function () { estado.confirmar = null; desenhar(); };
+	var ml = app.querySelector("#mesaLimpa"); if (ml) ml.onclick = function () {
+		ml.disabled = true; Filuna.api("POST", "/impressoras/" + encodeURIComponent(i.id) + "/mesa-limpa", {}).then(carregar, function (e) { estado.msg = e.erro; desenhar(); });
+	};
+	ligarComuns(app);
+}
+
+function cabecalho(nome, est, modelo, local) {
+	return '<div class="head"><div><div class="lbl">Dispositivo</div><div class="h1">' + E(nome) +
+		(est ? ' <span class="pill ' + (TONS[est] || "") + '">' + E(NOMES[est] || est) + "</span>" : "") + "</div>" +
+		'<div class="sub">' + E(modelo) + (local.bico ? " · bico " + E(String(local.bico).replace(".", ",")) + " mm" : "") + "</div></div>" +
+		'<div class="hr">' + (local.impressora ? '<span class="hri">No Filuna: <b>' + E(local.impressora) + "</b></span>" : "") +
+		'<button class="btn" data-aba="monitor">Painel da impressora</button><button class="btn" data-aba="prepare">Preparar envio</button></div></div>';
+}
+
+function materiais(i) {
+	var b = estado.bobinas.filter(function (x) { return x.na_impressora && x.na_impressora == i.nome; });
+	if (!b.length) return '<span class="ajuda">Nenhuma bobina associada a esta impressora no estoque.</span>';
+	return b.map(function (x) {
+		return '<div class="mat"><span class="dot" style="width:16px;height:16px;background:' + E(x.cor) + '"></span><div><div class="n">' + E(x.material + " · " + x.cor_nome) +
+			'</div><div class="s">Bobina nº ' + E(x.numero) + " · restam " + Filuna.gramas(x.restante_g) + (x.insuficiente ? " · <b style='color:var(--warn)'>não basta para a fila</b>" : "") + "</div></div></div>";
+	}).join("");
+}
+
+function rodape() {
+	return '<div class="rodape"><a data-aba="filuna.espaco">Estoque</a><a data-aba="filuna.espaco">Fila e histórico</a><a data-aba="filuna.calibracao">Calibração</a>' +
+		'<span class="r">Pausar e cancelar sempre pedem confirmação.</span></div>';
+}
+
+function ligarComuns(app) {
+	app.querySelectorAll("[data-aba]").forEach(function (b) { b.onclick = function () { Filuna.nativo("aba.abrir", { aba: b.dataset.aba }); }; });
+}
+
+function camera(iid) {
+	Filuna.nativo("config.ler", { chave: "filuna_token" }).then(function (r) {
+		return fetch("https://filuna3d.com/api/slicer/v1/impressoras/" + encodeURIComponent(iid) + "/camera.jpg?" + Date.now(), { headers: { Authorization: "Bearer " + r.valor } });
+	}).then(function (r) { return r.ok ? r.blob() : null; }).then(function (b) {
+		var img = document.getElementById("cam"); if (b && img) img.src = URL.createObjectURL(b);
+	}).catch(function () {});
+}
+
+Filuna.ouvir("mostrar", carregar);
+Filuna.iniciar().then(carregar);
+setInterval(function () { if (!document.hidden && !estado.confirmar) carregar(); }, 15000);
+</script>
+</body>
+</html>

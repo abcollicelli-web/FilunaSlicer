@@ -52,6 +52,11 @@
 #define TAB_ID_MULTI_DEVICE  "multi_device"
 #define TAB_ID_PROJECT       "project"
 #define TAB_ID_CALIBRATION   "calibration"
+// Filuna pages (resources/web/filuna/). The Orca device and calibration tabs stay as "Printer panel"
+// and "Printer calibration"; these are the Filuna screens shown to the customer.
+#define TAB_ID_FILUNA_DEVICE "filuna.dispositivo"
+#define TAB_ID_FILUNA_CALIB  "filuna.calibracao"
+#define TAB_ID_FILUNA_SPACE  "filuna.espaco"
 
 #define ENABEL_PRINT_ALL 0
 
@@ -91,6 +96,7 @@ class Input_Shaping_Freq_Test_Dlg;
 class Input_Shaping_Damp_Test_Dlg;
 class Cornering_Test_Dlg;
 template <class Panel> class LazyPage;
+class FilunaPanel;
 class Plater;
 #ifdef SLIC3R_CAD
 class DesignPanel;
@@ -441,6 +447,8 @@ public:
     void        select_tab(wxPanel* panel);
     void        select_tab(const wxString& id = wxString());
     void        request_select_tab(const wxString& id);
+    // Opens a tab named by a Filuna page: a TAB_ID_* id, "monitor" (whichever device page this printer has).
+    void        select_filuna_tab(const std::string& id);
     // post_init() needs the plater's canvas on screen to initialize OpenGL; this pass does not
     // build the settings page.
     void        select_prepare_for_gl_init();
@@ -532,6 +540,9 @@ public:
 
     LazyPage<CalibrationPanel>* m_calibration_page{ nullptr };
     LazyPage<WebViewPanel>* m_home_page { nullptr };
+    LazyPage<FilunaPanel>* m_filuna_device_page { nullptr };
+    LazyPage<FilunaPanel>* m_filuna_calib_page { nullptr };
+    LazyPage<FilunaPanel>* m_filuna_space_page { nullptr };
     LazyPage<PrinterWebView>* m_printer_view_page{nullptr};
     PluginPages           m_plugin_pages;
     wxLogWindow*          m_log_window { nullptr };
