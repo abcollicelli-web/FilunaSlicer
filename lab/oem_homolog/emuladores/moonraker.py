@@ -156,7 +156,18 @@ def gcode(e: Estado, script: str):
             continue
         c = p[0].upper()
         args = {x[0].upper(): x[1:] for x in p[1:] if len(x) > 1}
-        if c == "PAUSE" and e.estado == "printing":
+        if c == "SDCARD_PRINT_FILE":
+            import re as _re
+            m = _re.search(r'FILENAME="?([^"]+)"?', linha, _re.I)
+            nome = m.group(1) if m else ""
+            if nome in e.arquivos:
+                e.arquivo, e.estado, e.progresso = nome, "printing", 0.01
+                e.temp[e.extrusoras[0]] = [220.0, 220.0]
+                e.mesa = [60.0, 60.0]
+                log_evento(a, "impressao_iniciada", arquivo=nome, via="SDCARD_PRINT_FILE")
+            else:
+                log_evento(a, "arquivo_inexistente", arquivo=nome)
+        elif c == "PAUSE" and e.estado == "printing":
             e.estado = "paused"
         elif c == "RESUME" and e.estado == "paused":
             e.estado = "printing"
@@ -280,6 +291,11 @@ def fabrica_handler(e: Estado):
                 return self.responder({"result": {"item": {"path": nome, "root": "gcodes"}, "print_started": e.estado == "printing", "action": "create_file"}}, 201)
             if u.path == "/printer/print/start":
                 nome = unquote(q.get("filename", [""])[0])
+                if not nome and corpo:
+                    try:
+                        nome = json.loads(corpo).get("filename", "")
+                    except ValueError:
+                        pass
                 if nome not in e.arquivos:
                     return self.responder({"error": {"code": 400, "message": f"file {nome} not found"}}, 400)
                 self.iniciar(nome)

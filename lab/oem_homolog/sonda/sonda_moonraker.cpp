@@ -86,8 +86,8 @@ int main(int argc, char** argv)
     if (a.count("--chave"))
         p.password = a["--chave"];
     agent.connect_printer(p);
-    etapa("conexao_moonraker", espera(std::chrono::seconds(15), [] { return conexao >= 0; }) && conexao == ConnectStatusOk,
-          "estado " + std::to_string(conexao));
+    const bool conectou = espera(std::chrono::seconds(15), [] { return conexao >= 0; }) && conexao == ConnectStatusOk;
+    etapa("conexao_moonraker", conectou, "estado " + std::to_string(conexao));
     etapa("estado_websocket", espera(std::chrono::seconds(15), [] { return !ultimo.is_null() && ultimo.contains("gcode_state"); }),
           (ultimo.is_object() ? ultimo.value("gcode_state", std::string()) : std::string()));
 
