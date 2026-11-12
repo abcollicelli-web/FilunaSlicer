@@ -27,32 +27,57 @@ from pathlib import Path
 FABRICANTES = ("snapmaker", "bambu", "elegoo", "creality", "flashforge", "qidi", "anycubic", "prusa")
 NOMES = {"snapmaker": "Snapmaker", "bambu": "Bambu Lab", "elegoo": "Elegoo", "creality": "Creality",
          "flashforge": "Flashforge", "qidi": "QIDI", "anycubic": "Anycubic", "prusa": "Prusa"}
-ACEITOS_MOTOR = ("IDENTICO", "IDENTICO_COM_RECUSA_OFICIAL")
+ACEITOS_CASO = ("IDENTICO", "IDENTICO_POR_CAMADA", "MESMA_RECUSA_DO_OFICIAL")
 
 
 def sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
-def estado_motor(prova: Path) -> dict:
+def estado_motor(prova: Path, modelo: str) -> dict:
+    """Paridade do G-code por caso da régua ('cubo' = motor, 'cores' = sistema de cores)."""
     if not prova.is_file():
         return {"estado": "PENDENTE", "motivo": "sem prova de paridade do binário compilado"}
     d = json.loads(prova.read_text(encoding="utf-8"))
     if d.get("oficial") == d.get("compilado"):
-        return {"estado": "PENDENTE", "motivo": "só régua oficial × oficial", "resumo": d.get("resumo")}
-    resumo = d.get("resumo", {})
-    total = sum(resumo.values())
-    bons = sum(v for k, v in resumo.items() if k in ACEITOS_MOTOR)
-    return {"estado": "HOMOLOGADO" if total and bons == total else "REPROVADO", "impressoras": total,
-            "aceitas": bons, "resumo": resumo, "prova_sha256": sha(prova)}
+        return {"estado": "PENDENTE", "motivo": "só régua oficial × oficial"}
+    resumo, n, trocas = {}, 0, 0
+    for r in d.get("resultados", []):
+        casos = r.get("casos")
+        if casos is None:  # régua Prusa: um caso por impressora
+            casos = [{"modelo": "cubo", "veredito": r.get("veredito")}] if modelo == "cubo" else []
+        if r.get("veredito") == "PERFIL_INCOMPLETO" and not r.get("casos"):
+            resumo["PERFIL_INCOMPLETO_DO_FABRICANTE"] = resumo.get("PERFIL_INCOMPLETO_DO_FABRICANTE", 0) + 1
+            continue
+        for c in casos:
+            if c.get("modelo") != modelo:
+                continue
+            n += 1
+            resumo[c["veredito"]] = resumo.get(c["veredito"], 0) + 1
+            if (c.get("trocas_ferramenta") or 0) > 2:
+                trocas += 1
+    if not n:
+        return {"estado": "PENDENTE", "motivo": f"sem caso '{modelo}' na prova"}
+    ok = sum(v for k, v in resumo.items() if k in ACEITOS_CASO)
+    out = {"estado": "HOMOLOGADO" if ok == n else "REPROVADO", "casos": n, "aceitos": ok, "resumo": resumo, "prova_sha256": sha(prova)}
+    if modelo == "cores":
+        out["maquinas_com_troca_de_cor"] = trocas
+    return out
 
 
-def estado_simples(prova: Path, chave_ok: str = "aprovado") -> dict:
-    if not prova.is_file():
-        return {"estado": "PENDENTE", "motivo": "sem prova"}
-    d = json.loads(prova.read_text(encoding="utf-8"))
-    return {"estado": "HOMOLOGADO" if d.get(chave_ok) else "REPROVADO", "resumo": d.get("resumo"),
-            "prova_sha256": sha(prova)}
+def estado_rede(provas: Path, fid: str) -> dict:
+    """Junta as sondas de rede da marca (um protocolo por pasta rede-<id>[-protocolo])."""
+    pastas = sorted(p for p in provas.glob(f"rede-{fid}*") if (p / "prova.json").is_file())
+    if not pastas:
+        return {"estado": "PENDENTE", "motivo": "sem prova de rede"}
+    protocolos, ok = {}, True
+    for p in pastas:
+        d = json.loads((p / "prova.json").read_text(encoding="utf-8"))
+        protocolos[d.get("agente", p.name)] = {"aprovado": bool(d.get("aprovado")), "etapas": len(d.get("etapas", [])),
+                                               "nao_suportado_pelo_protocolo": d.get("nao_suportado_pelo_protocolo", [])}
+        ok &= bool(d.get("aprovado"))
+    return {"estado": "HOMOLOGADO" if ok else "REPROVADO", "protocolos": protocolos,
+            "nota": "ensaio contra emulador do protocolo; impressora real fica para o teste do proprietário"}
 
 
 def main() -> int:
@@ -90,14 +115,15 @@ def main() -> int:
                 "impressoras": [i["maquina"] for i in m.get("impressoras", []) if not i.get("erro")]})
         perfis = next((c for c in componentes if c["tipo"] == "profiles"), None)
         homolog = {
-            "motor": estado_motor(ns.provas / f"paridade-{fid}" / "prova.json"),
+            "motor": estado_motor(ns.provas / f"paridade-{fid}" / "prova.json", "cubo"),
             "perfis": ({"estado": "HOMOLOGADO" if perfis["fonte_igual_oficial"] else "HOMOLOGADO_DO_BINARIO_OFICIAL",
                         "nota": None if perfis["fonte_igual_oficial"] else
                         "perfis publicados na fonte diferem do binário oficial; o pacote leva os do binário oficial"}
                        if perfis else {"estado": "PENDENTE"}),
-            "cores": estado_motor(ns.provas / f"paridade-{fid}" / "prova.json") | {"nota": "caso de 4 cores da régua"},
-            "rede": estado_simples(ns.provas / f"rede-{fid}" / "prova.json"),
-            "preparar_enviar_controlar": estado_simples(ns.provas / f"rede-{fid}" / "prova.json"),
+            "cores": (estado_motor(ns.provas / f"paridade-{fid}" / "prova.json", "cores") if fid != "prusa"
+                      else {"estado": "PENDENTE", "motivo": "régua de 4 cores da Prusa (MMU3/XL) ainda não feita"}),
+            "rede": estado_rede(ns.provas, fid),
+            "preparar_enviar_controlar": estado_rede(ns.provas, fid),
             "impressao_fisica": {"estado": "PENDENTE_TESTE_DO_PROPRIETARIO"},
         }
         internos = [v["estado"] for k, v in homolog.items() if k != "impressao_fisica"]
