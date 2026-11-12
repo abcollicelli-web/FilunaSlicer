@@ -629,3 +629,14 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - **Sempre a versão portátil, nunca o instalador:** o aviso de administrador (UAC) e o SmartScreen só podem ser aprovados na tela do PC. Abrir sempre da mesma pasta faz a aprovação do programa continuar valendo, e a versão instalada em `C:\Program Files\FilunaSlicer` não é alterada.
 - **Antes de o proprietário sair:** suspensão do PC em "Nunca", app Claude aberto, janela do PowerShell com o `remote-control` aberta, celular carregado e com as notificações do app Claude ligadas.
 - **Resultado:** cada validação é registrada nesta seção de etapas (PASS/FAIL por tela, com o SHA). Os prints ficam no PC e não vão para o GitHub.
+
+### V1 — Validação no PC do build `0e92df92` (12/11/2026, noite)
+- **Build:** run `43288337442` — **PASS** (executável portátil e instalador gerados). Prints da sessão Claude Code do PC, no repositório `abcollicelli-web/filuna-qa-prints` (11 arquivos, só 5 imagens diferentes).
+- **Limites da captura:** os nomes dos arquivos estão um passo atrasados em relação à aba aberta (ex.: `dispositivo.png` mostra Projeto), então **não há print** da Preparação nem da Calibração. As imagens têm 1530×810 e cortam a direita da janela, o que sugere uma captura que não leva em conta a escala do Windows. Por isso os botões da janela, Fatiar e a engrenagem não aparecem.
+- **Barra única:** **PASS**. Logo, abas só com texto, aba ativa em pílula rosa, Ajuda e Exportar à direita.
+- **Dispositivo, galeria:** **PASS**. "Lista de unidades", busca, filtros Todas/Disponíveis/Sem conexão, unidade "luca" Pronta, "Abrir unidade". A tela da unidade aberta **não foi capturada**.
+- **Meu espaço:** **PASS de disposição**. Menu com Perfis, Ferramentas Filuna e cartões. Detalhe: o cartão "Perfil de impressão" mostra a inicial da conta, e não o perfil.
+- **Projeto (Meus produtos):** **PASS**.
+- **Início:** **FAIL**. O logo aparecia repetido na coluna da esquerda: uma regra CSS posterior (`display:flex`) desfazia o `display:none` do `#FilunaMarca`. **Corrigido** em `resources/web/homepage/css/filuna.css`, ainda não enviado (vai no próximo pacote). "Plano Equipe" vem do servidor (pendência já registrada). O desenho do Início continua sem aprovação.
+- **Preparação/Visualização (painel nativo):** continua o painel do Orca, com a faixa cinza no topo da coluna. São as pendências já registradas (cartão Perfis, lista de filamentos, modos, barra 3D).
+- **Falta capturar:** Preparação, unidade aberta, Calibração, Preferências › Filuna, rodapé, comportamento sem internet. Recapturar com a janela maximizada e uma captura que leve em conta a escala.

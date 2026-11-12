@@ -41,19 +41,6 @@ body, button, input
 /* O logo fica na barra de navegação do programa; não se repete na tela. */
 #FilunaMarca { display: none; }
 
-#FilunaMarca
-{
-	display: flex;
-	align-items: center;
-	padding: 20px 18px 6px;
-}
-
-#FilunaMarca img
-{
-	height: 34px;
-	width: auto;
-}
-
 #LoginArea
 {
 	margin: 8px 10px 0;
