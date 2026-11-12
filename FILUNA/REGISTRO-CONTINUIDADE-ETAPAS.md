@@ -640,3 +640,22 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - **Início:** **FAIL**. O logo aparecia repetido na coluna da esquerda: uma regra CSS posterior (`display:flex`) desfazia o `display:none` do `#FilunaMarca`. **Corrigido** em `resources/web/homepage/css/filuna.css`, ainda não enviado (vai no próximo pacote). "Plano Equipe" vem do servidor (pendência já registrada). O desenho do Início continua sem aprovação.
 - **Preparação/Visualização (painel nativo):** continua o painel do Orca, com a faixa cinza no topo da coluna. São as pendências já registradas (cartão Perfis, lista de filamentos, modos, barra 3D).
 - **Falta capturar:** Preparação, unidade aberta, Calibração, Preferências › Filuna, rodapé, comportamento sem internet. Recapturar com a janela maximizada e uma captura que leve em conta a escala.
+
+### V1 — Fase 3: banco local e leitor de G-code; correções visuais da validação (12/11/2026, noite)
+- **Ordem do proprietário:** "o visual está quase 100%; leia o projeto, avance nas etapas e já implemente novas etapas; corrija o que faltou". Fases 1 e 2 continuam **sem aceite formal** (o nome do programa ainda é `SLIC3R_APP_NAME=OrcaSlicer` por causa dos CTest; falta a varredura de inglês). A Fase 3 foi feita por ordem expressa do proprietário, sem tocar nas fases anteriores.
+- **Feito (Fase 3, `src/slic3r/Filuna/`):**
+  - `FilunaDb`: banco `filuna.db` com o esquema de 02-DADOS §2. Migrações numeradas (`PRAGMA user_version` = 1), modo WAL, ids UUID v4, exclusão lógica. Toda gravação entra em `sync_fila` com a linha em JSON, sem BLOB. Cobre impressora e manutenção, tipos de filamento, bobinas (lote com códigos B-0001…, bobina já usada por balança ou fração estimada, abrir, local, pesagem, eventos), produto por assinatura (reaproveitar e unir), trabalho a partir do resumo do G-code, confirmar bobina, fim de trabalho em uma transação (eventos, horas da máquina, estado da bobina), desperdício por período e previsão por tipo.
+  - Na bobina, a coluna `estimado` foi acrescentada ao esquema do guia porque §5 manda zerar "o estimado da bobina" na pesagem.
+  - O cadastro grava o evento `entrada` com a capacidade, para que o peso restante seja sempre a soma dos eventos (§5).
+  - `FilunaGcodeResumo`: lê os primeiros e os últimos 64 KB do G-code, só os comentários. Campo ausente fica desconhecido. Tempo `Xd Xh Xm Xs` convertido em segundos.
+  - `FilunaCalculos`: fórmulas de §4, §5, §6, §7, §8, §9 e §10, e a assinatura SHA-256 de §3. `FilunaProduto`: assinatura a partir do `Model` da mesa.
+  - O banco **ainda não está ligado às telas**. Isso é a Fase 4 (estoque) e a Fase 5 (fim de impressão, painel).
+- **Verificação §6.4:** registrada em `FILUNA/guia-v1/VERIFICACOES.md`. Pelo código-fonte, o peso por filamento já inclui a torre, e o Orca não escreve a linha da torre (purga fica desconhecida). Falta conferir fatiando um cubo de 2 cores.
+- **Testes:** `tests/slic3rutils/test_filuna_dados.cpp` (tag `[FilunaDados]`) usa os números exatos do guia: B-0007 com 730,0 g; rateio 4,8/1,2 g; cancelamento na camada 50 de 200 (falha −20,0/−5,0 e 2250 s); manutenção 432 h → próxima, faltam 8 h; 12 centavos/g e desperdício de 12%; PLA branco 4,5 dias e faltam 250 g. Também cobrem: o mesmo modelo 3 vezes vira 1 produto com 3 trabalhos; cancelamento na metade conta como desperdício; reabrir o banco não migra de novo.
+  - Compilado e rodado localmente (Linux, g++ 13, SQLite 3.50.4 do repositório, OpenSSL do sistema): **19 casos, 129 verificações, todos PASS**, em ordem aleatória, sem aviso com `-Wall -Wextra`.
+  - Build Windows e CTest deste pacote: **pendentes** até o CI rodar.
+- **Correções visuais:**
+  - Logo repetido no Início (CSS).
+  - Barra cinza acima de "Impressora" na Preparação: era a barra de título do painel lateral (AUI), que serve para destacar o painel. Continua funcionando; no tema claro passou a ter a cor do painel e bordas na cor de linha Filuna (`AuiMgr::apply_color_mode`). O tema escuro não mudou.
+  - Meu espaço: o cartão do perfil mostrava a inicial da conta. Agora mostra um ícone de perfil e o nome do perfil de processo em uso na Preparação, mesmo quando é do sistema (a ação `perfis.salvos` devolve `em_uso`).
+- **Nada alterado em** `src/libslic3r/**`, perfis, G-code ou motor. Nenhum merge, release, deploy ou impressão.

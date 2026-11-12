@@ -46,10 +46,15 @@ void AuiMgr::apply_color_mode()
 {
     const bool     is_dark    = wxGetApp().dark_mode();
     const wxColour sash_color = is_dark ? wxColour(38, 46, 48) : wxColour(206, 206, 206);
-    GetArtProvider()->SetColour(wxAUI_DOCKART_INACTIVE_CAPTION_COLOUR, sash_color);
-    GetArtProvider()->SetColour(wxAUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR, *wxWHITE);
-    GetArtProvider()->SetColour(wxAUI_DOCKART_SASH_COLOUR, sash_color);
-    GetArtProvider()->SetColour(wxAUI_DOCKART_BORDER_COLOUR, is_dark ? *wxBLACK : wxColour(165, 165, 165));
+    // Filuna (Direção Visual C): in light mode the caption that drags the sidebar out keeps working but
+    // takes the panel colour, so it no longer reads as a grey bar above "Impressora"; edges use the
+    // warm Filuna line colour.
+    const wxColour caption_color = is_dark ? sash_color : wxColour(255, 253, 251);
+    const wxColour line_color    = is_dark ? sash_color : wxColour(231, 227, 221);
+    GetArtProvider()->SetColour(wxAUI_DOCKART_INACTIVE_CAPTION_COLOUR, caption_color);
+    GetArtProvider()->SetColour(wxAUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR, is_dark ? *wxWHITE : wxColour(107, 101, 96));
+    GetArtProvider()->SetColour(wxAUI_DOCKART_SASH_COLOUR, line_color);
+    GetArtProvider()->SetColour(wxAUI_DOCKART_BORDER_COLOUR, is_dark ? *wxBLACK : line_color);
 }
 
 void AuiMgr::track_docked_size(wxWindow* window)

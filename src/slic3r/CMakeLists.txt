@@ -6,6 +6,14 @@ include(PrecompiledHeader)
 set(SLIC3R_GUI_SOURCES
     Filuna/FilunaFoundation.cpp
     Filuna/FilunaFoundation.hpp
+    Filuna/FilunaCalculos.cpp
+    Filuna/FilunaCalculos.hpp
+    Filuna/FilunaDb.cpp
+    Filuna/FilunaDb.hpp
+    Filuna/FilunaGcodeResumo.cpp
+    Filuna/FilunaGcodeResumo.hpp
+    Filuna/FilunaProduto.cpp
+    Filuna/FilunaProduto.hpp
     GUI/Widgets/AnimaController.hpp
     GUI/Widgets/AnimaController.cpp
     Config/Snapshot.cpp

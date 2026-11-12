@@ -13,3 +13,10 @@
 
 - Teste local CMake/C++17 isolado (Linux): `filuna_sqlite3` compilou; `FilunaFoundation` linkou; `ctest` **1/1 PASS**; versão retornada `3050004`.
 - CTest de regressão do Orca e build Windows: **PENDENTES**, sem afirmar aceite da fase.
+
+## Fase 3 — purga da torre no G-code (§6.4 de 02-DADOS), 12/11/2026
+
+- **Verificação pelo código-fonte** (`src/libslic3r/GCode.cpp`, `update_print_stats_and_format_filament_stats`): o peso de cada filamento na linha `; filament used [g]` é calculado sobre `extruder.used_filament() + wipe_tower_data.used_filament[id]`. Portanto o peso **já inclui** a torre de purga, e `; total filament used [g]` (soma desses pesos) também inclui.
+- **Fórmula adotada:** `peça_g = total − purga`. Os eventos de fim de impressão gravam `consumo = −(real − purga)` e `purga = −purga`, então a soma na bobina é o total do G-code, sem contar a torre duas vezes.
+- **A linha `; total filament used for wipe tower [g]` não é escrita por esta versão do Orca:** a constante existe em `Print.cpp`, mas não há chamada que a grave. Sem essa linha, `trabalho.purga_total_g` fica `NULL` (desconhecida), não há rateio e o desperdício de purga não é estimado. O leitor continua aceitando a linha se um módulo de fabricante a escrever.
+- **Ainda não feito:** fatiar de verdade um cubo de 2 cores no executável e conferir os números. Esta verificação foi só de leitura do código.

@@ -486,14 +486,16 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     }
     if (action == "perfis.salvos") {
         // The user's own process presets (the ones made with "Salvar" in Preparação), for Meu espaço.
-        json list = json::array();
+        // "em_uso" is the process preset selected in Preparação, even when it is a system preset.
+        json        list = json::array();
+        std::string current;
         if (PresetBundle* bundle = wxGetApp().preset_bundle) {
-            const std::string current = bundle->prints.get_selected_preset_name();
+            current = bundle->prints.get_selected_preset_name();
             for (const Preset& preset : bundle->prints)
                 if (preset.is_user() && preset.is_visible)
                     list.push_back({{"nome", preset.name}, {"base", preset.inherits()}, {"atual", preset.name == current}});
         }
-        return {{"perfis", list}};
+        return {{"perfis", list}, {"em_uso", current}};
     }
     if (action == "perfil.usar") {
         const std::string name = d.value("nome", std::string());
