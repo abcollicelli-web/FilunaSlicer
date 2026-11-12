@@ -15,6 +15,7 @@
 #include <wx/event.h>
 #include <wx/gdicmn.h>
 #include <wx/panel.h>
+#include <wx/image.h>
 #include "slic3r/GUI/wxExtensions.hpp"
 #include "slic3r/GUI/Widgets/Label.hpp"
 #include "slic3r/GUI/Widgets/Button.hpp"
@@ -95,6 +96,16 @@ wxDEFINE_EVENT(EVT_UPDATE_NOZZLE, wxCommandEvent);
 wxDEFINE_EVENT(EVT_UPDATE_TEXT_MSG, wxCommandEvent);
 wxDEFINE_EVENT(EVT_ERROR_DIALOG_BTN_CLICKED, wxCommandEvent);
 
+// Filuna: the release notes and update dialogs show the Filuna mascot.
+static wxBitmap filuna_mascote_bitmap(int px)
+{
+    wxImage img(from_u8(resources_dir() + "/images/Filuna_mascote.png"), wxBITMAP_TYPE_PNG);
+    if (!img.IsOk())
+        return create_scaled_bitmap("OrcaSlicer", nullptr, 64);
+    img.Rescale(px, px, wxIMAGE_QUALITY_HIGH);
+    return wxBitmap(img);
+}
+
 ReleaseNoteDialog::ReleaseNoteDialog(Plater *plater /*= nullptr*/)
     : DPIDialog(static_cast<wxWindow *>(wxGetApp().mainframe), wxID_ANY, _L("Release Note"), wxDefaultPosition, wxDefaultSize, wxCAPTION | wxCLOSE_BOX)
 {
@@ -109,7 +120,7 @@ ReleaseNoteDialog::ReleaseNoteDialog(Plater *plater /*= nullptr*/)
 
     m_sizer_body->Add(0, 0, 0, wxLEFT, FromDIP(38));
 
-    auto sm = create_scaled_bitmap("OrcaSlicer", nullptr,  70);
+    auto sm = filuna_mascote_bitmap(FromDIP(70));
     auto brand = new wxStaticBitmap(this, wxID_ANY, sm, wxDefaultPosition, wxSize(FromDIP(70), FromDIP(70)));
 
     m_sizer_body->Add(brand, 0, wxALL, 0);
@@ -307,7 +318,7 @@ UpdateVersionDialog::UpdateVersionDialog(wxWindow *parent)
     wxBoxSizer *m_sizer_top  = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *m_sizer_desc = new wxBoxSizer(wxVERTICAL);
 
-    auto sm    = create_scaled_bitmap("OrcaSlicer", nullptr, 64);
+    auto sm    = filuna_mascote_bitmap(FromDIP(64));
     m_brand = new wxStaticBitmap(this, wxID_ANY, sm, wxDefaultPosition, FromDIP(wxSize(64, 64)));
 
     m_text_up_info = new Label(this, Label::Head_14, wxEmptyString, LB_AUTO_WRAP);

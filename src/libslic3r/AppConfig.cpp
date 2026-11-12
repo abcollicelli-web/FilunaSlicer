@@ -732,8 +732,10 @@ void AppConfig::set_defaults()
         set_bool("enable_primitive_size_dialog", true);
     }
 
+    // Filuna: new installs start with the Bambu network plug-in enabled, so Bambu printers get the
+    // native device page (the plug-in itself is downloaded on first start, as Orca does).
     if(get("installed_networking").empty()) {
-        set_bool("installed_networking", false);
+        set_bool("installed_networking", true);
     }
 
 #ifdef __linux__

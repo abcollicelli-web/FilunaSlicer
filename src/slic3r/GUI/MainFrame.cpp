@@ -1639,9 +1639,14 @@ void MainFrame::init_tabpanel() {
         m_tabpanel->AddPage(TAB_ID_MULTI_DEVICE, m_multi_machine_page, _L("Multi-device"), "tab_multi_active");
     }
 
-    m_project_page = new LazyPage<ProjectPanel>(m_tabpanel, TAB_ID_PROJECT, 60);
+    // Filuna: the Project tab is the Filuna project/catalog tool. Orca's 3MF project-info page stays
+    // built on demand only (never in the book), so code that asks for it simply finds it unbuilt.
+    m_project_page = new LazyPage<ProjectPanel>(m_tabpanel, "orca_project", 60);
     m_lazy_pages.push_back(m_project_page);
-    m_tabpanel->AddPage(TAB_ID_PROJECT, m_project_page, _L("Project"), "tab_auxiliary_active");
+    m_filuna_project_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_PROJECT, 61,
+                                                      [](wxWindow* parent) { return new FilunaPanel(parent, "projeto.html"); });
+    m_lazy_pages.push_back(m_filuna_project_page);
+    m_tabpanel->AddPage(TAB_ID_PROJECT, m_filuna_project_page, _L("Project"), "tab_auxiliary_active");
 
     // show_device() removes this tab for printers without the Bambu device tab, and the page
     // then never builds its panel.
@@ -1658,6 +1663,11 @@ void MainFrame::init_tabpanel() {
                                                     [](wxWindow* parent) { return new FilunaPanel(parent, "meu-espaco.html"); });
     m_lazy_pages.push_back(m_filuna_space_page);
     m_tabpanel->AddPage(TAB_ID_FILUNA_SPACE, m_filuna_space_page, _L("My space"), "tab_auxiliary_active");
+
+    m_filuna_store_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_STORE, 36,
+                                                    [](wxWindow* parent) { return new FilunaPanel(parent, "loja.html"); });
+    m_lazy_pages.push_back(m_filuna_store_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_STORE, m_filuna_store_page, _L("My store"), "tab_auxiliary_active");
 
     // Plugin pages are appended after the built-in tabs; their ids are namespaced
     // (plugin.<plugin_key>.<name>) so they can't collide with the built-in TAB_ID_* constants.

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Projeto</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.lista{width:290px;border-right:1px solid var(--line);background:var(--side);display:flex;flex-direction:column;flex:none}
+.lista .topo{padding:18px 16px 10px}
+.lista .itens{flex:1;overflow:auto;padding:0 10px 10px}
+.prod{display:flex;gap:10px;align-items:center;padding:10px;border-radius:12px;cursor:pointer;margin-bottom:4px}
+.prod:hover{background:#F4F0EA}.prod.on{background:var(--rose)}
+.prod .th{width:46px;height:46px;border-radius:10px;object-fit:cover;background:linear-gradient(145deg,#F6F2EC,#ECE7E0);flex:none}
+.prod .n{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.prod .s{font-size:12px;color:var(--muted)}
+.busca{margin:8px 0}
+.editor{flex:1;overflow:auto;padding:22px 26px}
+.cab{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+.nome{font-size:28px;font-weight:800;letter-spacing:-.02em;border:none;padding:4px 0;width:100%;background:transparent}
+.nome:focus{outline:none;border-bottom:2px solid var(--rose)}
+.grade2{display:grid;grid-template-columns:1.25fr 1fr;gap:18px}
+@media(max-width:1100px){.grade2{grid-template-columns:1fr}}
+.sec{margin-bottom:18px}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.foto{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;background:#F6F2EC;border:1px solid var(--line)}
+.foto img{width:100%;height:100%;object-fit:cover}
+.foto button{position:absolute;top:6px;right:6px;border:none;background:rgba(0,0,0,.55);color:#fff;border-radius:8px;width:26px;height:26px}
+.foto.add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink2);font-weight:600;font-size:13px;cursor:pointer;border-style:dashed;text-align:center;padding:8px}
+.foto.add:hover{border-color:var(--magenta-deep);color:var(--magenta-deep)}
+.capa{grid-column:span 2;grid-row:span 2}
+.cores{display:flex;flex-wrap:wrap;gap:8px}
+.cor{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:20px;padding:5px 10px 5px 6px;font-size:13px;font-weight:600}
+.cor .dot{width:20px;height:20px}.cor button{border:none;background:none;color:var(--muted)}
+.bobs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.bobs button{border:1px solid var(--line);border-radius:10px;background:#fff;padding:5px 9px;font-size:12.5px;display:flex;gap:6px;align-items:center}
+.bobs button:hover{border-color:var(--magenta-deep)}
+.valores{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.valores div{background:var(--side);border:1px solid var(--line);border-radius:12px;padding:10px}
+.valores span{font-size:12px;color:var(--muted);display:block}.valores b{font-size:18px}
+.preco{display:flex;align-items:center;gap:12px;margin-top:12px;padding:14px;border-radius:14px;background:var(--rose)}
+.preco input{width:140px;font-size:22px;font-weight:800;color:var(--magenta-deep);border-color:transparent;background:#fff}
+.preco .m{font-size:13px;color:var(--ink2)}
+.loja{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
+.loja:last-child{border:none}.loja .n{font-weight:700}
+.atr{background:var(--side);border-radius:12px;padding:12px;margin-top:10px}
+.salvo{font-size:12.5px;color:var(--muted)}
+.vazio-grande{max-width:560px;margin:80px auto;text-align:center}
+.vazio-grande .h1{justify-content:center}
+/* impressão: ficha do produto / catálogo */
+#ficha{display:none}
+@media print{
+	body{background:#fff}.tela{padding:0}.app{box-shadow:none;border-radius:0}
+	.corpo,.lista,.editor{display:none!important}
+	#ficha{display:block!important;padding:0}
+	.pg{page-break-after:always;padding:28px 34px;font-family:inherit}
+	.pg:last-child{page-break-after:auto}
+}
+.pg h1{font-size:30px;letter-spacing:-.02em;margin:4px 0 6px}.pg .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9A948C;font-weight:700}
+.pg .fotos-f{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin:16px 0}.pg .fotos-f img{width:100%;border-radius:12px;object-fit:cover}
+.pg .fotos-f .mini{display:grid;gap:10px}.pg .fotos-f .mini img{height:120px}
+.pg table{width:100%;border-collapse:collapse;margin-top:12px}.pg td{padding:8px 0;border-bottom:1px solid #ECE8E2;font-size:14px}
+.pg .marca{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#9A948C;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="tela"><div class="app"><div class="corpo" id="corpo"><div class="carregando">Carregando…</div></div></div></div>
+<div id="ficha"></div>
+<script src="ponte.js"></script>
+<script>
+var E = Filuna.esc, SITE = "https://filuna3d.com";
+var st = { produtos: [], vitrine: {}, sel: null, p: null, bobinas: [], lojas: [], busca: "", msg: "", erro: "", atributos: null, sujo: false };
+
+function novo() { return { id: null, nome: "", descricao: "", sku: "", linha: "", material: "PLA", cores: [], preco: 0, custo: 0, peso_g: 0, tempo_s: 0, medidas: "", estoque: 1, video_url: "", tags: "", publico: true, imagens: [], publicacoes: {} }; }
+function img(u) { return u && u.indexOf("http") != 0 && u.indexOf("data:") != 0 ? SITE + u : u; }
+
+function carregar(selecionar) {
+	if (!Filuna.temToken()) {
+		document.getElementById("corpo").innerHTML = '<div class="principal"><div id="lg"></div></div>';
+		Filuna.telaLogin(document.getElementById("lg"), carregar, "Seus projetos viram um catálogo: fotos, cores, preço calculado e publicação nas suas lojas.");
+		return;
+	}
+	Promise.all([Filuna.api("GET", "/catalogo"), Filuna.api("GET", "/estoque").catch(function () { return { bobinas: [] }; }), Filuna.api("GET", "/lojas").catch(function () { return { lojas: [] }; })]).then(function (r) {
+		st.produtos = r[0].produtos; st.vitrine = r[0].vitrine; st.bobinas = r[1].bobinas || []; st.lojas = r[2].lojas || [];
+		var alvo = selecionar || st.sel;
+		var achado = st.produtos.filter(function (p) { return p.id == alvo; })[0];
+		if (achado) { st.sel = achado.id; st.p = JSON.parse(JSON.stringify(achado)); }
+		else if (!st.p && st.produtos.length) { st.sel = st.produtos[0].id; st.p = JSON.parse(JSON.stringify(st.produtos[0])); }
+		desenhar();
+	}, function (e) { if (e.status == 401) Filuna.sair().then(carregar); else { document.getElementById("corpo").innerHTML = '<div class="principal"><div class="erro">' + E(e.erro) + "</div></div>"; } });
+}
+
+function desenhar() {
+	var c = document.getElementById("corpo");
+	var lista = st.produtos.filter(function (p) { var b = st.busca.toLowerCase(); return !b || (p.nome + " " + p.linha + " " + p.sku).toLowerCase().indexOf(b) >= 0; });
+	var h = '<div class="lista"><div class="topo"><div class="lbl">Projetos e catálogo</div><div class="h1" style="font-size:20px;margin:6px 0 10px">Meus produtos</div>' +
+		'<button class="btn primario" id="novo" style="width:100%">+ Novo produto</button>' +
+		'<input class="busca" type="text" id="busca" placeholder="Buscar por nome, linha ou SKU" value="' + E(st.busca) + '"></div><div class="itens">' +
+		(lista.length ? lista.map(function (p) {
+			return '<div class="prod' + (p.id == st.sel ? " on" : "") + '" data-p="' + p.id + '">' + (p.imagens.length ? '<img class="th" src="' + E(img(p.imagens[0].url)) + '">' : '<div class="th"></div>') +
+				'<div style="min-width:0"><div class="n">' + E(p.nome) + '</div><div class="s">' + E(p.linha || "Sem linha") + (p.preco ? " · " + Filuna.reais(p.preco) : "") + (p.publicacoes.mercadolivre ? " · ML" : "") + "</div></div></div>";
+		}).join("") : '<div class="vazio" style="margin-top:10px">' + (st.produtos.length ? "Nada encontrado." : "Nenhum produto ainda.") + "</div>") +
+		'</div><div style="padding:12px 14px;border-top:1px solid var(--line)"><div class="lbl" style="margin-bottom:6px">Catálogo público</div>' +
+		'<div class="linha" style="gap:6px;flex-wrap:wrap"><button class="btn peq" id="verVitrine">Abrir</button><button class="btn peq" id="copiar">Copiar link</button><button class="btn peq" id="pdfTudo">PDF do catálogo</button></div></div></div>';
+	h += '<div class="editor">' + (st.p ? editor() : '<div class="vazio-grande"><div class="h1">Seu primeiro produto</div><p class="sub" style="margin:10px 0 18px">Transforme o que você imprime em um catálogo: fotos da peça, cores, preço calculado pelo fatiamento, ficha em PDF e publicação nas suas lojas com um clique.</p><button class="btn primario" id="novo2">Criar produto a partir da mesa</button></div>') + "</div>";
+	c.innerHTML = h;
+	ligar();
+}
+
+function editor() {
+	var p = st.p, pubML = p.publicacoes.mercadolivre, ml = st.lojas.filter(function (l) { return l.id == "mercadolivre"; })[0] || {};
+	var margem = p.preco > 0 && p.custo > 0 ? Math.round((1 - p.custo / p.preco) * 100) : null;
+	return '<div class="cab"><div style="flex:1;min-width:280px"><div class="lbl">' + (p.id ? "Produto" : "Novo produto") + '</div><input class="nome" id="f_nome" placeholder="Nome do produto" value="' + E(p.nome) + '">' +
+		'<div class="linha" style="margin-top:6px;gap:8px;flex-wrap:wrap"><input type="text" id="f_linha" placeholder="Linha de produtos (ex.: Casa, Geek)" value="' + E(p.linha) + '" style="max-width:260px"><input type="text" id="f_sku" placeholder="SKU" value="' + E(p.sku) + '" style="max-width:150px">' +
+		'<label class="linha" style="gap:8px;font-size:13px;color:var(--ink2)"><span class="chave"><input type="checkbox" id="f_publico"' + (p.publico ? " checked" : "") + '><span></span></span>No catálogo público</label></div></div>' +
+		'<div class="linha" style="gap:8px"><span class="salvo" id="salvo">' + (st.sujo ? "Alterações não salvas" : p.id ? "Salvo" : "") + '</span><button class="btn" id="pdf">Ficha em PDF</button>' +
+		(p.id ? '<button class="btn" id="apagar">Apagar</button>' : "") + '<button class="btn primario" id="salvar">Salvar</button></div></div>' +
+		(st.msg ? '<div class="okmsg">' + E(st.msg) + "</div>" : "") + (st.erro ? '<div class="erro">' + E(st.erro) + "</div>" : "") +
+		'<div class="grade2"><div>' +
+		'<div class="card sec"><div class="ch"><span class="lbl">Fotos e vídeo</span><span class="ajuda">A primeira foto é a capa</span></div><div class="fotos">' +
+		p.imagens.map(function (f, k) { return '<div class="foto' + (k == 0 ? " capa" : "") + '"><img src="' + E(img(f.url)) + '"><button data-del="' + k + '" title="Remover">×</button></div>'; }).join("") +
+		'<div class="foto add" id="capturar">📷<span>Capturar da mesa</span></div><div class="foto add" id="escolher">＋<span>Fotos do computador</span></div></div>' +
+		'<div class="campo" style="margin-top:12px"><label>Vídeo (YouTube, Instagram, TikTok…)</label><input type="text" id="f_video" placeholder="https://" value="' + E(p.video_url) + '"></div></div>' +
+		'<div class="card sec"><div class="lbl" style="margin-bottom:10px">Descrição</div><textarea id="f_descricao" rows="6" placeholder="Conte o que é, para que serve, medidas, acabamento…">' + E(p.descricao) + '</textarea>' +
+		'<div class="linha" style="margin-top:10px;gap:10px"><div class="campo" style="flex:1;margin:0"><label>Medidas (cm)</label><input type="text" id="f_medidas" placeholder="ex.: 12 × 8 × 15 cm" value="' + E(p.medidas) + '"></div>' +
+		'<div class="campo" style="flex:1;margin:0"><label>Palavras-chave</label><input type="text" id="f_tags" placeholder="vaso, decoração, presente" value="' + E(p.tags) + '"></div></div>' +
+		'<div class="linha" style="margin-top:10px"><button class="btn peq" id="iaDesc">✨ Escrever descrição com a IA Filuna</button></div></div></div><div>' +
+		'<div class="card sec"><div class="ch"><span class="lbl">Valores automáticos</span><button class="btn peq" id="puxar">Puxar do fatiamento</button></div>' +
+		'<div class="valores"><div><span>Peso</span><b>' + (p.peso_g ? Filuna.gramas(p.peso_g) : "—") + '</b></div><div><span>Tempo</span><b>' + (p.tempo_s ? Filuna.tempo(p.tempo_s) : "—") + '</b></div>' +
+		'<div><span>Custo</span><b>' + (p.custo ? Filuna.reais(p.custo) : "—") + '</b></div><div><span>Margem</span><b>' + (margem != null ? margem + "%" : "—") + "</b></div></div>" +
+		'<div class="preco"><div><div class="lbl" style="color:var(--magenta-deep)">Preço de venda</div><div class="linha" style="gap:6px;margin-top:4px">R$ <input type="number" step="0.01" id="f_preco" value="' + (p.preco || "") + '"></div></div>' +
+		'<div class="m">Calculado com a mesma conta da calculadora do site e os seus custos (Meu espaço › Configurações). Você pode ajustar.</div></div>' +
+		'<div class="campo" style="margin-top:12px"><label>Estoque pronto (unidades)</label><input type="number" id="f_estoque" value="' + (p.estoque || 0) + '" style="max-width:140px"></div></div>' +
+		'<div class="card sec"><div class="ch"><span class="lbl">Filamento e cores</span><select id="f_material" style="width:auto">' + ["PLA", "PETG", "ABS", "ASA", "TPU", "PLA Silk", "PLA Mármore", "PLA Madeira", "Resina"].map(function (m) { return "<option" + (p.material == m.toUpperCase() || p.material == m ? " selected" : "") + ">" + m + "</option>"; }).join("") + "</select></div>" +
+		'<div class="cores">' + (p.cores.length ? p.cores.map(function (c, k) { return '<span class="cor"><span class="dot" style="background:' + E(c.hex) + '"></span>' + E(c.nome) + (c.material ? ' <span class="ajuda">' + E(c.material) + "</span>" : "") + '<button data-cor="' + k + '">×</button></span>'; }).join("") : '<span class="ajuda">Escolha as cores em que você vende este produto.</span>') + "</div>" +
+		(st.bobinas.length ? '<div class="ajuda" style="margin-top:12px">Do seu estoque:</div><div class="bobs">' + uniq(st.bobinas).map(function (b, k) { return '<button data-bob="' + k + '"><span class="dot" style="width:12px;height:12px;background:' + E(b.cor) + '"></span>' + E(b.material + " " + b.cor_nome) + "</button>"; }).join("") + "</div>" : "") +
+		'<div class="linha" style="margin-top:10px;gap:8px"><input type="color" id="corNova" value="#FF2E8A" style="width:44px;height:36px;padding:2px"><input type="text" id="corNome" placeholder="Nome da cor" style="max-width:180px"><button class="btn peq" id="addCor">Adicionar cor</button></div></div>' +
+		'<div class="card sec"><div class="lbl" style="margin-bottom:6px">Publicar nas suas lojas</div>' +
+		st.lojas.map(function (l) {
+			var pub = p.publicacoes[l.id];
+			var acao = !l.disponivel ? '<span class="pill">Em breve</span>' : pub ? '<a data-link="' + E(pub.link) + '">Ver anúncio</a>' :
+				!l.conectada ? '<button class="btn peq" data-conectar="' + E(l.conectar_url || "") + '">Conectar conta</button>' : '<button class="btn primario peq" data-publicar="' + l.id + '"' + (p.id ? "" : " disabled") + ">Publicar com um clique</button>";
+			return '<div class="loja"><div><div class="n">' + E(l.nome) + '</div><div class="ajuda">' + (pub ? "Publicado · " + E(pub.status) : l.conectada ? "Conta " + E(l.conta) : l.disponivel ? "Não conectada" : "Integração em preparação") + "</div></div>" + acao + "</div>";
+		}).join("") + atributos() + "</div></div></div>";
+}
+
+function uniq(bs) { var v = {}, o = []; bs.forEach(function (b) { var k = b.material + b.cor; if (!v[k]) { v[k] = 1; o.push(b); } }); return o.slice(0, 18); }
+
+function atributos() {
+	if (!st.atributos) return "";
+	return '<div class="atr"><b>O Mercado Livre pede mais alguns dados para esta categoria</b>' + st.atributos.atributos.map(function (a) {
+		return '<div class="campo" style="margin-top:8px"><label>' + E(a.nome) + (a.unidade ? " (" + E(a.unidade) + ")" : "") + "</label>" +
+			(a.valores && a.valores.length ? '<select data-atr="' + a.id + '"><option value="">Escolha…</option>' + a.valores.map(function (v) { return '<option value="' + E(v[0]) + '">' + E(v[1]) + "</option>"; }).join("") + "</select>"
+				: '<input type="text" data-atr="' + a.id + '">') + "</div>";
+	}).join("") + '<button class="btn primario peq" id="publicarAtr">Publicar</button></div>';
+}
+
+function lerCampos() {
+	var p = st.p; if (!p) return;
+	var v = function (id) { var e = document.getElementById(id); return e ? e.value : undefined; };
+	["nome", "linha", "sku", "descricao", "medidas", "tags"].forEach(function (k) { if (v("f_" + k) !== undefined) p[k] = v("f_" + k); });
+	if (v("f_video") !== undefined) p.video_url = v("f_video").trim();
+	if (v("f_preco") !== undefined) p.preco = Number(v("f_preco")) || 0;
+	if (v("f_estoque") !== undefined) p.estoque = parseInt(v("f_estoque")) || 0;
+	if (v("f_material") !== undefined) p.material = v("f_material");
+	var pub = document.getElementById("f_publico"); if (pub) p.publico = pub.checked;
+}
+
+function salvar() {
+	lerCampos(); st.erro = st.msg = "";
+	return Filuna.api("POST", "/catalogo", st.p).then(function (r) {
+		var pend = st.p._pendentes || [];
+		st.p = r.produto; st.sel = r.produto.id; st.sujo = false;
+		return pend.reduce(function (pr, d) { return pr.then(function () { return enviarImagem(d); }); }, Promise.resolve()).then(function () { carregar(st.sel); });
+	}, function (e) { st.erro = e.erro; desenhar(); throw e; });
+}
+
+function enviarImagem(dataUrl) {
+	var tipo = dataUrl.slice(5, dataUrl.indexOf(";")), bin = atob(dataUrl.split(",")[1]), arr = new Uint8Array(bin.length);
+	for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+	return Filuna.nativo("config.ler", { chave: "filuna_token" }).then(function (t) {
+		return fetch("https://filuna3d.com/api/slicer/v1/catalogo/" + st.p.id + "/imagens", { method: "POST", headers: { "Authorization": "Bearer " + t.valor, "Content-Type": tipo }, body: arr });
+	}).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw { erro: d.erro }; st.p.imagens = d.produto.imagens; }); });
+}
+
+function addImagens(lista) {
+	if (!lista.length) return;
+	if (!st.p.id) { st.p._pendentes = (st.p._pendentes || []).concat(lista); lista.forEach(function (d) { st.p.imagens.push({ url: d }); }); st.sujo = true; desenhar(); return; }
+	st.msg = "Enviando foto(s)…"; desenhar();
+	lista.reduce(function (pr, d) { return pr.then(function () { return enviarImagem(d); }); }, Promise.resolve()).then(function () { st.msg = ""; carregar(st.p.id); }, function (e) { st.msg = ""; st.erro = e.erro || "Não consegui enviar a foto."; desenhar(); });
+}
+
+function valoresAutomaticos() {
+	lerCampos(); st.erro = "";
+	Filuna.nativo("fatiamento.resumo").then(function (r) {
+		if (!r.fatiado) throw { erro: "Fatie a mesa na Preparação para puxar peso, tempo e custo." };
+		return Filuna.api("POST", "/preco", { material: r.material, placas: [{ tempo_s: r.tempo_s, camadas: 0, volumes: r.volumes }] }).then(function (p) {
+			st.p.peso_g = (p.gramas && p.gramas.total) || r.gramas_estimadas; st.p.tempo_s = r.tempo_s; st.p.custo = p.custo_total;
+			st.p.preco = p.preco_sugerido; st.p.material = (r.material || st.p.material).toUpperCase(); st.sujo = true;
+			st.msg = "Valores do fatiamento aplicados. Preço sugerido " + Filuna.reais(p.preco_sugerido) + " (lucro " + Filuna.reais(p.lucro) + ")."; desenhar();
+		});
+	}).catch(function (e) { st.erro = e.erro || e.message; desenhar(); });
+}
+
+function publicarComAtributos(loja) {
+	lerCampos();
+	(st.sujo || !st.p.id ? salvar() : Promise.resolve()).then(function () {
+		st.msg = "Publicando…"; st.erro = ""; desenhar();
+		return Filuna.nativo("config.ler", { chave: "filuna_token" }).then(function (t) {
+			var atr = {}; document.querySelectorAll("[data-atr]").forEach(function (x) { if (x.value) atr[x.dataset.atr] = x.value; });
+			return fetch("https://filuna3d.com/api/slicer/v1/catalogo/" + st.p.id + "/publicar", { method: "POST", headers: { "Authorization": "Bearer " + t.valor, "Content-Type": "application/json" },
+				body: JSON.stringify({ loja: loja, preco: st.p.preco, categoria: st.atributos && st.atributos.categoria, atributos: atr }) });
+		}).then(function (r) { return r.json().then(function (d) {
+			st.msg = "";
+			if (r.status == 422) { st.atributos = d; st.erro = d.erro; desenhar(); return; }
+			if (r.status == 409 && d.conectar) { st.erro = d.erro; desenhar(); return; }
+			if (!r.ok) { st.erro = d.erro; desenhar(); return; }
+			st.atributos = null; st.msg = "Publicado no Mercado Livre!"; carregar(st.p.id);
+		}); });
+	}).catch(function (e) { st.msg = ""; st.erro = e.erro || e.message; desenhar(); });
+}
+
+function ficha(lista) {
+	var v = st.vitrine || {};
+	document.getElementById("ficha").innerHTML = lista.map(function (p) {
+		var f = p.imagens.map(function (i) { return img(i.url); });
+		return '<div class="pg"><div class="k">' + E(p.linha || "Catálogo") + (p.sku ? " · SKU " + E(p.sku) : "") + '</div><h1>' + E(p.nome) + "</h1>" +
+			(f.length ? '<div class="fotos-f"><img src="' + E(f[0]) + '" style="height:330px"><div class="mini">' + f.slice(1, 3).map(function (u) { return '<img src="' + E(u) + '">'; }).join("") + "</div></div>" : "") +
+			(p.descricao ? '<p style="font-size:14.5px;line-height:1.55;color:#4a4642;white-space:pre-wrap">' + E(p.descricao) + "</p>" : "") +
+			'<table><tr><td>Material</td><td><b>' + E(p.material) + "</b></td></tr>" +
+			(p.cores.length ? "<tr><td>Cores</td><td>" + p.cores.map(function (c) { return '<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px"><span style="width:12px;height:12px;border-radius:50%;background:' + E(c.hex) + ';display:inline-block;border:1px solid #ddd"></span>' + E(c.nome) + "</span>"; }).join("") + "</td></tr>" : "") +
+			(p.medidas ? "<tr><td>Medidas</td><td>" + E(p.medidas) + "</td></tr>" : "") + (p.peso_g ? "<tr><td>Peso aproximado</td><td>" + Filuna.gramas(p.peso_g) + "</td></tr>" : "") +
+			(p.preco ? '<tr><td>Preço</td><td><b style="font-size:20px;color:#C2185B">' + Filuna.reais(p.preco) + "</b></td></tr>" : "") +
+			(p.publicacoes.mercadolivre ? "<tr><td>Comprar</td><td>" + E(p.publicacoes.mercadolivre.link) + "</td></tr>" : "") + "</table>" +
+			'<div class="marca"><span>' + E(v.titulo || "") + (v.contato ? " · " + E(v.contato) : "") + "</span><span>Catálogo completo: " + E(v.link || "") + "</span></div></div>";
+	}).join("");
+	setTimeout(function () { window.print(); }, 400);
+}
+
+function ligar() {
+	var q = function (id) { return document.getElementById(id); };
+	var on = function (id, f) { var e = q(id); if (e) e.onclick = f; };
+	on("novo", function () { st.p = novo(); st.sel = null; st.msg = st.erro = ""; st.atributos = null; desenhar(); preencherDaMesa(); });
+	on("novo2", function () { st.p = novo(); desenhar(); preencherDaMesa(); });
+	var b = q("busca"); if (b) b.oninput = function () { st.busca = b.value; var pos = b.selectionStart; desenhar(); var nb = q("busca"); nb.focus(); nb.setSelectionRange(pos, pos); };
+	document.querySelectorAll("[data-p]").forEach(function (x) { x.onclick = function () {
+		if (st.sujo && !confirm("Descartar as alterações não salvas?")) return;
+		var p = st.produtos.filter(function (y) { return y.id == x.dataset.p; })[0]; st.sel = p.id; st.p = JSON.parse(JSON.stringify(p)); st.sujo = false; st.msg = st.erro = ""; st.atributos = null; desenhar(); }; });
+	on("verVitrine", function () { Filuna.abrirLink(st.vitrine.link); });
+	on("copiar", function () { try { navigator.clipboard.writeText(st.vitrine.link); } catch (e) {} st.msg = "Link do catálogo copiado: " + st.vitrine.link; desenhar(); });
+	on("pdfTudo", function () { ficha(st.produtos.filter(function (p) { return p.publico; })); });
+	if (!st.p) return;
+	document.querySelectorAll("#corpo input, #corpo textarea, #corpo select").forEach(function (x) { if (x.id && x.id.indexOf("f_") == 0) x.addEventListener("input", function () { st.sujo = true; var s = q("salvo"); if (s) s.textContent = "Alterações não salvas"; }); });
+	on("salvar", function () { salvar().then(function () { st.msg = "Produto salvo."; }).catch(function () {}); });
+	on("apagar", function () { if (!confirm("Apagar este produto do catálogo?")) return; Filuna.api("POST", "/catalogo/" + st.p.id + "/apagar", {}).then(function () { st.p = null; st.sel = null; carregar(); }); });
+	on("pdf", function () { lerCampos(); ficha([st.p]); });
+	on("capturar", function () { Filuna.nativo("mesa.imagem").then(function (r) { addImagens([r.imagem]); }, function (e) { st.erro = e.message; desenhar(); }); });
+	on("escolher", function () { Filuna.nativo("imagens.escolher").then(function (r) { addImagens((r.imagens || []).map(function (i) { return i.imagem; })); }, function (e) { st.erro = e.message; desenhar(); }); });
+	document.querySelectorAll("[data-del]").forEach(function (x) { x.onclick = function () {
+		var f = st.p.imagens[+x.dataset.del];
+		if (!f.id) { st.p.imagens.splice(+x.dataset.del, 1); desenhar(); return; }
+		Filuna.api("POST", "/catalogo/imagens/" + f.id + "/apagar", {}).then(function (r) { st.p.imagens = r.produto.imagens; carregar(st.p.id); }); }; });
+	on("puxar", valoresAutomaticos);
+	on("addCor", function () { lerCampos(); var n = q("corNome").value.trim() || "Cor"; st.p.cores.push({ nome: n, hex: q("corNova").value, material: st.p.material }); st.sujo = true; desenhar(); });
+	document.querySelectorAll("[data-cor]").forEach(function (x) { x.onclick = function () { lerCampos(); st.p.cores.splice(+x.dataset.cor, 1); st.sujo = true; desenhar(); }; });
+	document.querySelectorAll("[data-bob]").forEach(function (x) { x.onclick = function () { lerCampos(); var b = uniq(st.bobinas)[+x.dataset.bob];
+		if (!st.p.cores.some(function (c) { return c.hex == b.cor; })) st.p.cores.push({ nome: b.cor_nome, hex: b.cor, material: b.material }); st.sujo = true; desenhar(); }; });
+	document.querySelectorAll("[data-conectar]").forEach(function (x) { x.onclick = function () { Filuna.abrirLink(x.dataset.conectar); st.msg = "Conecte a conta no navegador e volte aqui — a tela atualiza sozinha."; desenhar(); setTimeout(carregar, 20000); }; });
+	document.querySelectorAll("[data-publicar]").forEach(function (x) { x.onclick = function () { publicarComAtributos(x.dataset.publicar); }; });
+	on("publicarAtr", function () { publicarComAtributos("mercadolivre"); });
+	document.querySelectorAll("[data-link]").forEach(function (x) { x.onclick = function () { Filuna.abrirLink(x.dataset.link); }; });
+	on("iaDesc", function () {
+		lerCampos(); var bt = q("iaDesc"); bt.disabled = true; bt.textContent = "Escrevendo…";
+		Filuna.api("POST", "/ia", { pergunta: "Escreva uma descrição de venda curta e atraente (até 120 palavras, em português do Brasil, sem emojis) para o produto impresso em 3D \"" + st.p.nome + "\"" +
+			(st.p.linha ? " da linha " + st.p.linha : "") + ", material " + st.p.material + (st.p.cores.length ? ", cores " + st.p.cores.map(function (c) { return c.nome; }).join(", ") : "") +
+			(st.p.medidas ? ", medidas " + st.p.medidas : "") + ". Responda só com a descrição.", contexto: "" }).then(function (r) {
+			st.p.descricao = r.resposta.trim(); st.sujo = true; desenhar();
+		}, function (e) { st.erro = e.erro; desenhar(); });
+	});
+}
+
+function preencherDaMesa() {
+	Filuna.nativo("modelo.objetos").then(function (r) {
+		var o = (r.objetos || [])[0]; if (o && !st.p.nome) { st.p.nome = o.nome.replace(/\.(stl|3mf|obj|step|stp)$/i, "").replace(/[_-]+/g, " "); desenhar(); }
+	}).catch(function () {});
+	Filuna.nativo("fatiamento.resumo").then(function (r) { if (r.fatiado) valoresAutomaticos(); }).catch(function () {});
+}
+
+Filuna.iniciar().then(function () { carregar(); });
+Filuna.ouvir("mostrar", function () { if (!st.sujo) carregar(); });
+</script>
+</body>
+</html>

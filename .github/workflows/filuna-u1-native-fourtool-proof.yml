@@ -43,7 +43,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference="Stop"
-          $exe=(Get-ChildItem -Recurse .filuna-exe -Filter orca-slicer.exe | Select-Object -First 1).FullName
+          $exe=(Get-ChildItem -Recurse .filuna-exe -Filter FilunaSlicer.exe | Select-Object -First 1).FullName
           if (-not $exe) { throw "FILUNA_EXE_NOT_FOUND" }
           $a=(Get-ChildItem -Recurse .oem-stress -Filter *.gcode | Where-Object { $_.FullName -match 'stress-00' } | Select-Object -First 1).FullName
           $b=(Get-ChildItem -Recurse .oem-stress -Filter *.gcode | Where-Object { $_.FullName -match 'stress-09' } | Select-Object -First 1).FullName

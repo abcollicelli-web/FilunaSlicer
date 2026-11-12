@@ -181,7 +181,7 @@ private:
     std::array<int, 2> get_active_extruders_for_tick(int tick) const;
 
     // Use those values to disable selection of active extruders
-    bool m_is_dark = false;
+    bool m_is_dark = true;
 
     int  m_min_value;
     int  m_max_value;

@@ -1389,14 +1389,14 @@ set (CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/resources/images\\\\Filuna.ico")
 set (CPACK_NSIS_MUI_ICON "${CPACK_PACKAGE_ICON}")
 set (CPACK_NSIS_MUI_UNIICON "${CPACK_PACKAGE_ICON}")
 # Relative to the install dir: CPack's NSIS template prefixes $INSTDIR itself.
-set (CPACK_NSIS_INSTALLED_ICON_NAME "orca-slicer.exe")
+set (CPACK_NSIS_INSTALLED_ICON_NAME "FilunaSlicer.exe")
 set (CPACK_PACKAGE_CHECKSUM SHA256)
 set (CPACK_PACKAGE_INSTALL_REGISTRY_KEY "FilunaSlicer")
 set (CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
 set (CPACK_NSIS_EXECUTABLES_DIRECTORY ".")
 # set (CPACK_NSIS_MODIFY_PATH "ON")
-set(CPACK_PACKAGE_EXECUTABLES "orca-slicer;Filuna Slicer")
-set(CPACK_CREATE_DESKTOP_LINKS "orca-slicer")
+set(CPACK_PACKAGE_EXECUTABLES "FilunaSlicer;Filuna Slicer")
+set(CPACK_CREATE_DESKTOP_LINKS "FilunaSlicer")
 set (CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE.txt) # must also include in install command
 
 set(CPACK_WIX_UPGRADE_GUID "a64202ae-a0da-422f-a77c-b1d1a7a9c55a")

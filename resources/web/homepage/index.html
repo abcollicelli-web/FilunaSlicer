@@ -248,6 +248,10 @@
 	//HandleStudio(TestData);
     document.onkeydown = function (event) {
 		var e = event || window.event || arguments.callee.caller.arguments[0];
+		// Filuna: campos de texto (login, código de ligação) precisam receber as teclas.
+		var alvo = e.target || e.srcElement;
+		if (alvo && (alvo.tagName == "INPUT" || alvo.tagName == "TEXTAREA" || alvo.isContentEditable) && !e.ctrlKey && !e.metaKey)
+			return true;
 
 		if (e.ctrlKey && e.metaKey)
 			OutputKey(e.keyCode, true, false, true);

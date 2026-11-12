@@ -1,7 +1,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Orca Slicer\n"
+"Project-Id-Version: Filuna Slicer\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-30 11:58-0300\n"
 "PO-Revision-Date: 2026-10-30 19:59-0300\n"
@@ -1056,11 +1056,11 @@ msgid_plural ""
 "Thank you."
 msgstr[0] ""
 "O objeto (%1%) tem conectores duplicados. Alguns conectores podem estar faltando no resultado do fatiamento.\n"
-"Por favor, informe à equipe do OrcaSlicer em qual cenário esse problema ocorreu.\n"
+"Por favor, informe à equipe do Filuna Slicer em qual cenário esse problema ocorreu.\n"
 "Obrigado."
 msgstr[1] ""
 "Os objetos (%1%) têm conectores duplicados. Alguns conectores podem estar faltando no resultado do fatiamento.\n"
-"Por favor, informe à equipe do OrcaSlicer em qual cenário esse problema ocorreu.\n"
+"Por favor, informe à equipe do Filuna Slicer em qual cenário esse problema ocorreu.\n"
 "Obrigado."
 
 msgid "Cut by Plane"
@@ -2092,13 +2092,13 @@ msgid "Draco files"
 msgstr "Arquivos Draco"
 
 msgid "OrcaSlicer will terminate because of running out of memory. It may be a bug. It will be appreciated if you report the issue to our team."
-msgstr "OrcaSlicer será encerrado devido à falta de memória. Pode ser um bug. Agradecemos se você relatar o problema para nossa equipe."
+msgstr "Filuna Slicer será encerrado devido à falta de memória. Pode ser um bug. Agradecemos se você relatar o problema para nossa equipe."
 
 msgid "Fatal error"
 msgstr "Erro fatal"
 
 msgid "OrcaSlicer will terminate because of a localization error. It will be appreciated if you report the specific scenario this issue happened."
-msgstr "OrcaSlicer será encerrado devido a um erro de localização. Agradecemos se você relatar o cenário específico em que esse problema ocorreu."
+msgstr "Filuna Slicer será encerrado devido a um erro de localização. Agradecemos se você relatar o cenário específico em que esse problema ocorreu."
 
 msgid "Critical error"
 msgstr "Erro crítico"
@@ -2161,7 +2161,7 @@ msgid ""
 "Orca Slicer requires the Microsoft WebView2 Runtime to operate certain features.\n"
 "Click Yes to install it now."
 msgstr ""
-"O OrcaSlicer requer o Microsoft WebView2 Runtime para operar determinados recursos.\n"
+"O Filuna Slicer requer o Microsoft WebView2 Runtime para operar determinados recursos.\n"
 "Clique em Sim para instalá-lo agora."
 
 msgid "WebView2 Runtime"
@@ -2197,7 +2197,7 @@ msgid "Click to download new version in default browser: %s"
 msgstr "Clique para baixar a nova versão no navegador padrão: %s"
 
 msgid "OrcaSlicer needs an update"
-msgstr "O OrcaSlicer precisa de uma atualização"
+msgstr "O Filuna Slicer precisa de uma atualização"
 
 msgid "This is the newest version."
 msgstr "Esta é a versão mais recente."
@@ -2233,8 +2233,8 @@ msgid ""
 "OrcaSlicer has attempted to recreate the configuration file.\n"
 "Please note, application settings will be lost, but printer profiles will not be affected."
 msgstr ""
-"O arquivo de configuração do OrcaSlicer pode estar corrompido e não pode ser processado.\n"
-"O OrcaSlicer tentou recriar o arquivo de configuração.\n"
+"O arquivo de configuração do Filuna Slicer pode estar corrompido e não pode ser processado.\n"
+"O Filuna Slicer tentou recriar o arquivo de configuração.\n"
 "Por favor, note que as configurações do aplicativo serão perdidas, mas os perfis de impressora não serão afetados."
 
 msgid "Rebuild"
@@ -2289,7 +2289,7 @@ msgid "Open Project"
 msgstr "Abrir Projeto"
 
 msgid "The version of Orca Slicer is too low and needs to be updated to the latest version before it can be used normally."
-msgstr "Esta versão do OrcaSlicer é muito antiga e precisa ser atualizada para a versão mais recente antes de poder ser usada normalmente."
+msgstr "Esta versão do Filuna Slicer é muito antiga e precisa ser atualizada para a versão mais recente antes de poder ser usada normalmente."
 
 msgid "Cloud sync conflict:"
 msgstr "Conflito de sincronização da nuvem:"
@@ -2360,10 +2360,10 @@ msgid "Retrieving printer information, please try again later."
 msgstr "Obtendo informações da impressora, tente novamente mais tarde."
 
 msgid "Please try updating OrcaSlicer and then try again."
-msgstr "Tente atualizar o OrcaSlicer e então tente novamente."
+msgstr "Tente atualizar o Filuna Slicer e então tente novamente."
 
 msgid "The certificate has expired. Please check the time settings or update OrcaSlicer and try again."
-msgstr "O certificado expirou. Verifique as configurações de horário ou atualize o OrcaSlicer e tente novamente."
+msgstr "O certificado expirou. Verifique as configurações de horário ou atualize o Filuna Slicer e tente novamente."
 
 msgid "The certificate is no longer valid and the printing functions are unavailable."
 msgstr "O certificado não é mais válido e as funções de impressão não estão disponíveis."
@@ -2380,7 +2380,7 @@ msgid ""
 "\n"
 "Developer mode allows the printer to work exclusively through local network access, enabling full functionality with OrcaSlicer."
 msgstr ""
-"Para usar o OrcaSlicer com impressoras Bambu Lab, você precisa ativar o modo LAN e o modo Desenvolvedor na sua impressora.\n"
+"Para usar o Filuna Slicer com impressoras Bambu Lab, você precisa ativar o modo LAN e o modo Desenvolvedor na sua impressora.\n"
 "\n"
 "Acesse as configurações da sua impressora e:\n"
 "1. Ative o modo LAN.\n"
@@ -2405,7 +2405,7 @@ msgid ""
 "\n"
 "Add those printers back to your presets now? Your presets are backed up first. You can also do this later from Help > Migrate Filament Presets."
 msgstr ""
-"O OrcaSlicer 2.5.0 reestruturou muitas predefinições de filamento do sistema para corrigir perfis incorretos e preparar recursos futuros. Como resultado, as predefinições abaixo não aparecem mais em algumas das impressoras para as quais foram criadas. Pedimos desculpas pelo transtorno; esta é uma correção única.\n"
+"O Filuna Slicer 2.5.0 reestruturou muitas predefinições de filamento do sistema para corrigir perfis incorretos e preparar recursos futuros. Como resultado, as predefinições abaixo não aparecem mais em algumas das impressoras para as quais foram criadas. Pedimos desculpas pelo transtorno; esta é uma correção única.\n"
 "\n"
 "Adicionar essas impressoras de volta às suas predefinições agora? Será feito um backup das suas predefinições antes. Você também pode fazer isso mais tarde em Ajuda > Migrar Predefinições de Filamento."
 
@@ -2420,7 +2420,7 @@ msgid "Your presets could not be backed up, so they were not migrated."
 msgstr "Não foi possível fazer backup das suas predefinições, então elas não foram migradas."
 
 msgid "The user presets folder could not be locked, so nothing was migrated. Another OrcaSlicer instance may be saving presets; try again later from Help > Migrate Filament Presets."
-msgstr "Não foi possível travar a pasta de predefinições do usuário, então nada foi migrado. Outra instância do OrcaSlicer pode estar salvando predefinições; tente novamente mais tarde em Ajuda > Migrar Predefinições de Filamento."
+msgstr "Não foi possível travar a pasta de predefinições do usuário, então nada foi migrado. Outra instância do Filuna Slicer pode estar salvando predefinições; tente novamente mais tarde em Ajuda > Migrar Predefinições de Filamento."
 
 #, boost-format
 msgid ""
@@ -2528,7 +2528,7 @@ msgid "Application will close."
 msgstr "O aplicativo será fechado."
 
 msgid "Orca Slicer - Switching language failed"
-msgstr "OrcaSlicer - Falha ao mudar o idioma"
+msgstr "Filuna Slicer - Falha ao mudar o idioma"
 
 msgid "*"
 msgstr "*"
@@ -2603,7 +2603,7 @@ msgid "Rename"
 msgstr "Renomear"
 
 msgid "Orca Slicer GUI initialization failed"
-msgstr "Falha na inicialização da interface do OrcaSlicer"
+msgstr "Falha na inicialização da interface do Filuna Slicer"
 
 #, boost-format
 msgid "Fatal error, exception: %1%"
@@ -4277,13 +4277,13 @@ msgid "License"
 msgstr "Licença"
 
 msgid "Orca Slicer is licensed under "
-msgstr "O OrcaSlicer é licenciado sob "
+msgstr "O Filuna Slicer é licenciado sob "
 
 msgid "GNU Affero General Public License, version 3"
 msgstr "Licença Pública Geral Affero GNU, versão 3"
 
 msgid "Orca Slicer is based on PrusaSlicer and BambuStudio"
-msgstr "O OrcaSlicer é baseado no PrusaSlicer e Bambu Studio"
+msgstr "O Filuna Slicer é baseado no PrusaSlicer e Bambu Studio"
 
 msgid "Libraries"
 msgstr "Bibliotecas"
@@ -4304,13 +4304,13 @@ msgid "Open-source slicing stands on a tradition of collaboration and attributio
 msgstr "O fatiamento de código aberto se baseia em uma tradição de colaboração e atribuição. O Slic3r, criado por Alessandro Ranellucci e a comunidade RepRap, lançou as fundações. O PrusaSlicer, da Prusa Research, se baseou nesse trabalho, o Bambu Studio foi derivado do PrusaSlicer, e o SuperSlicer o estendeu com melhorias impulsionadas pela comunidade. Cada projeto deu continuidade ao trabalho de seus predecessores, dando crédito àqueles que vieram antes."
 
 msgid "OrcaSlicer began in that same spirit, drawing from PrusaSlicer, BambuStudio, SuperSlicer, and CuraSlicer. But it has since grown far beyond its origins — introducing advanced calibration tools, precise wall and seam control and hundreds of other features."
-msgstr "O OrcaSlicer começou com esse mesmo espírito, inspirando-se no PrusaSlicer, Bambu Studio, SuperSlicer e CuraSlicer. Mas desde então, cresceu muito além de suas origens, introduzindo ferramentas avançadas de calibração, controle preciso de paredes e costuras e centenas de outros recursos."
+msgstr "O Filuna Slicer começou com esse mesmo espírito, inspirando-se no PrusaSlicer, Bambu Studio, SuperSlicer e CuraSlicer. Mas desde então, cresceu muito além de suas origens, introduzindo ferramentas avançadas de calibração, controle preciso de paredes e costuras e centenas de outros recursos."
 
 msgid "Today, OrcaSlicer is the most widely used and actively developed open-source slicer in the 3D printing community. Many of its innovations have been adopted by other slicers, making it a driving force for the entire industry."
-msgstr "Atualmente, o OrcaSlicer é o fatiador de código aberto mais utilizado e ativamente desenvolvido na comunidade de impressão 3D. Muitas de suas inovações foram adotadas por outros fatiadores, tornando-o uma força motriz para toda a indústria."
+msgstr "Atualmente, o Filuna Slicer é o fatiador de código aberto mais utilizado e ativamente desenvolvido na comunidade de impressão 3D. Muitas de suas inovações foram adotadas por outros fatiadores, tornando-o uma força motriz para toda a indústria."
 
 msgid "Copyright(C) 2026 OrcaSlicer Pte Ltd All Rights Reserved"
-msgstr "Copyright(C) 2026 OrcaSlicer Pte Ltd Todos os direitos reservados"
+msgstr "Copyright(C) 2026 Filuna Slicer Pte Ltd Todos os direitos reservados"
 
 msgid "Script plugin skipped."
 msgstr "Plugin de script ignorado."
@@ -4698,7 +4698,7 @@ msgid "Failed to download the plug-in. Please check your firewall settings and V
 msgstr "Falha ao baixar o plug-in. Verifique as configurações do seu firewall e software VPN e tente novamente."
 
 msgid "Failed to install the plug-in. The plug-in file may be in use. Please restart OrcaSlicer and try again. Also check whether it is blocked or has been deleted by anti-virus software."
-msgstr "Falha ao instalar o plug-in. O plug-in pode estar em uso. Reinicie o OrcaSlicer e tente novamente. Também verifique se ele está bloqueado ou excluído pelo software antivírus."
+msgstr "Falha ao instalar o plug-in. O plug-in pode estar em uso. Reinicie o Filuna Slicer e tente novamente. Também verifique se ele está bloqueado ou excluído pelo software antivírus."
 
 msgid "Click here to see more info"
 msgstr "Clique aqui para ver mais informações"
@@ -7593,7 +7593,7 @@ msgid ""
 "Do you want to stop this virtual camera?"
 msgstr ""
 "Outra câmera virtual está em execução.\n"
-"O OrcaSlicer suporta apenas uma única câmera virtual.\n"
+"O Filuna Slicer suporta apenas uma única câmera virtual.\n"
 "Deseja parar esta câmera virtual?"
 
 #, c-format, boost-format
@@ -7707,7 +7707,7 @@ msgid "Failed to parse model information."
 msgstr "Falha ao processar a informação do modelo."
 
 msgid "The .gcode.3mf file contains no G-code data. Please slice it with Orca Slicer and export a new .gcode.3mf file."
-msgstr "O arquivo .gcode.3mf não contém dados de G-code. Por favor, fatie com OrcaSlicer e exporte um novo arquivo .gcode.3mf."
+msgstr "O arquivo .gcode.3mf não contém dados de G-code. Por favor, fatie com Filuna Slicer e exporte um novo arquivo .gcode.3mf."
 
 #, c-format, boost-format
 msgid "File '%s' was lost! Please download it again."
@@ -8244,7 +8244,7 @@ msgid "The 3MF file version is in Beta and it is newer than the current OrcaSlic
 msgstr "A versão do arquivo 3MF está em Beta e é mais nova do que a versão atual do OrcaSlicer."
 
 msgid "If you would like to try Orca Slicer Beta, you may click to"
-msgstr "Se você gostaria de testar o OrcaSlicer Beta, clique para"
+msgstr "Se você gostaria de testar o Filuna Slicer Beta, clique para"
 
 msgid "Download Beta Version"
 msgstr "Baixar versão beta"
@@ -8253,7 +8253,7 @@ msgid "The 3MF file version is newer than the current OrcaSlicer version."
 msgstr "A versão do arquivo 3MF é mais recente que a versão atual do OrcaSlicer."
 
 msgid "Updating your OrcaSlicer could enable all functionality in the 3MF file."
-msgstr "Atualizar seu OrcaSlicer poderia habilitar todas as funcionalidades do arquivo 3MF."
+msgstr "Atualizar seu Filuna Slicer poderia habilitar todas as funcionalidades do arquivo 3MF."
 
 msgid "Current Version: "
 msgstr "Versão Atual: "
@@ -8488,7 +8488,7 @@ msgid "Export Toolpaths as OBJ"
 msgstr "Exportar Trilhas de Ferramentas como OBJ"
 
 msgid "About OrcaSlicer"
-msgstr "Sobre o OrcaSlicer"
+msgstr "Sobre o Filuna Slicer"
 
 msgid "Open Wiki"
 msgstr "Abrir Wiki"
@@ -9245,7 +9245,7 @@ msgid ""
 "Please update Orca Slicer or restart Orca Slicer to check if there is an update to system presets."
 msgstr ""
 "Existem alguns filamentos desconhecidos ou incompatíveis mapeados para predefinições genéricas.\n"
-"Atualize ou reinicie o OrcaSlicer para verificar se há alguma atualização para as predefinições do sistema."
+"Atualize ou reinicie o Filuna Slicer para verificar se há alguma atualização para as predefinições do sistema."
 
 msgid "Only filament color information has been synchronized from printer."
 msgstr "Apenas as informações de cor do filamento foram sincronizadas da impressora."
@@ -9300,10 +9300,10 @@ msgid "Load 3MF"
 msgstr "Carregar 3MF"
 
 msgid "The 3MF is not supported by OrcaSlicer, loading geometry data only."
-msgstr "O 3MF não é suportado pelo OrcaSlicer, carregando apenas dados de geometria."
+msgstr "O 3MF não é suportado pelo Filuna Slicer, carregando apenas dados de geometria."
 
 msgid "The 3MF file was generated by an old OrcaSlicer version, loading geometry data only."
-msgstr "O arquivo 3MF foi gerado por uma versão antiga do OrcaSlicer, carregando apenas dados de geometria."
+msgstr "O arquivo 3MF foi gerado por uma versão antiga do Filuna Slicer, carregando apenas dados de geometria."
 
 msgid "The 3MF file was generated by an older version, loading geometry data only."
 msgstr "O arquivo 3MF foi gerado por uma versão antiga, carregando apenas dados de geometria."
@@ -9312,10 +9312,10 @@ msgid "The 3MF file was generated by BambuStudio, loading geometry data only."
 msgstr "O arquivo 3MF foi gerado pelo Bambu Studio, carregando apenas dados de geometria."
 
 msgid "This project was created with an OrcaSlicer 2.3.1-alpha and uses infill rotation template settings that may not work properly with your current infill pattern. This could result in weak support or print quality issues."
-msgstr "Este projeto foi criado com um OrcaSlicer 2.3.1-alpha e usa configurações de gabarito de rotação de preenchimento que podem não funcionar corretamente com o seu padrão de preenchimento atual. Isso pode resultar em suporte fraco ou problemas de qualidade de impressão."
+msgstr "Este projeto foi criado com um Filuna Slicer 2.3.1-alpha e usa configurações de gabarito de rotação de preenchimento que podem não funcionar corretamente com o seu padrão de preenchimento atual. Isso pode resultar em suporte fraco ou problemas de qualidade de impressão."
 
 msgid "Would you like OrcaSlicer to automatically fix this by clearing the rotation template settings?"
-msgstr "Você gostaria que o OrcaSlicer corrigisse isso automaticamente limpando as configurações do gabarito de rotação?"
+msgstr "Você gostaria que o Filuna Slicer corrigisse isso automaticamente limpando as configurações do gabarito de rotação?"
 
 #, c-format, boost-format
 msgid "The 3MF file version %s is newer than %s's version %s, found the following unrecognized keys:"
@@ -9696,7 +9696,7 @@ msgid "Download failed; unknown file format."
 msgstr "Baixar falhou, formato de arquivo desconhecido."
 
 msgid "Importing to Orca Slicer failed. Please download the file and manually import it."
-msgstr "A importação para o OrcaSlicer falhou. Por favor, baixe o arquivo e importe manualmente."
+msgstr "A importação para o Filuna Slicer falhou. Por favor, baixe o arquivo e importe manualmente."
 
 msgid "Downloading project..."
 msgstr "Baixando projeto…"
@@ -10219,13 +10219,13 @@ msgid "Enable dark Mode"
 msgstr "Ativar modo escuro"
 
 msgid "Allow only one OrcaSlicer instance"
-msgstr "Permitir apenas uma instância do OrcaSlicer"
+msgstr "Permitir apenas uma instância do Filuna Slicer"
 
 msgid "On OSX there is always only one instance of app running by default. However it is allowed to run multiple instances of same app from the command line. In such case this settings will allow only one instance."
 msgstr "No OSX, sempre há uma instância do aplicativo sendo executado por padrão. No entanto, é permitido executar várias instâncias do mesmo aplicativo a partir da linha de comando. Neste caso, apenas uma instância será permitida."
 
 msgid "If this is enabled, when starting OrcaSlicer and another instance of the same OrcaSlicer is already running, that instance will be reactivated instead."
-msgstr "Se esta opção estiver habilitada, ao iniciar o OrcaSlicer e outra instância do mesmo OrcaSlicer já estiver em execução, essa instância será reativada em vez disso."
+msgstr "Se esta opção estiver habilitada, ao iniciar o Filuna Slicer e outra instância do mesmo Filuna Slicer já estiver em execução, essa instância será reativada em vez disso."
 
 msgid "Show splash screen"
 msgstr "Mostrar tela de abertura"
@@ -10247,7 +10247,7 @@ msgstr "Renderizar na GPU dedicada"
 # AI Translated
 #. TRN DRI_PRIME is an environment variable name and must stay as it is.
 msgid "On a computer with two GPUs, run OrcaSlicer on the discrete GPU instead of the one that drives the display. Some Wayland systems cannot show frames rendered on the other GPU, or fail to open the window at all. Turn this off if the 3D view stays empty; if OrcaSlicer no longer starts, start it once with DRI_PRIME=0 in the environment to get back here."
-msgstr "Em um computador com duas GPUs, executa o OrcaSlicer na GPU dedicada em vez da que controla a tela. Alguns sistemas Wayland não conseguem exibir quadros renderizados na outra GPU, ou nem conseguem abrir a janela. Desative esta opção se a visualização 3D ficar vazia; se o OrcaSlicer não iniciar mais, inicie-o uma vez com DRI_PRIME=0 no ambiente para voltar aqui."
+msgstr "Em um computador com duas GPUs, executa o Filuna Slicer na GPU dedicada em vez da que controla a tela. Alguns sistemas Wayland não conseguem exibir quadros renderizados na outra GPU, ou nem conseguem abrir a janela. Desative esta opção se a visualização 3D ficar vazia; se o Filuna Slicer não iniciar mais, inicie-o uma vez com DRI_PRIME=0 no ambiente para voltar aqui."
 
 msgid "Downloads folder"
 msgstr "Pasta de itens baixados"
@@ -10464,7 +10464,7 @@ msgid "Auto slice after changes"
 msgstr "Fatiar automaticamente após mudanças"
 
 msgid "If enabled, OrcaSlicer will re-slice automatically whenever slicing-related settings change."
-msgstr "Se ativado, o OrcaSlicer irá refatiar automaticamente sempre que as configurações relacionadas ao fatiamento forem alteradas."
+msgstr "Se ativado, o Filuna Slicer irá refatiar automaticamente sempre que as configurações relacionadas ao fatiamento forem alteradas."
 
 msgid "Delay in seconds before auto slicing starts, allowing multiple edits to be grouped. Use 0 to slice immediately."
 msgstr "Atraso em segundos antes do início do fatiamento automático, permitindo que várias edições sejam agrupadas. Use 0 para fatiar imediatamente."
@@ -10479,7 +10479,7 @@ msgid "Remember last print action"
 msgstr "Lembrar a última ação de impressão"
 
 msgid "If enabled, OrcaSlicer will remember the last selected option in the print button's dropdown (e.g. Print, Export plate sliced file, Export G-code file) and use it as the default on next startup."
-msgstr "Se ativado, o OrcaSlicer lembrará a última opção selecionada no menu suspenso do botão de impressão (ex.: Imprimir, Exportar arquivo de placa fatiada, Exportar arquivo G-code) e a usará como padrão na próxima inicialização."
+msgstr "Se ativado, o Filuna Slicer lembrará a última opção selecionada no menu suspenso do botão de impressão (ex.: Imprimir, Exportar arquivo de placa fatiada, Exportar arquivo G-code) e a usará como padrão na próxima inicialização."
 
 msgid "Camera"
 msgstr "Câmera"
@@ -10914,7 +10914,7 @@ msgid "Associate"
 msgstr "Associar"
 
 msgid "Associate files to OrcaSlicer"
-msgstr "Associar arquivos ao OrcaSlicer"
+msgstr "Associar arquivos ao Filuna Slicer"
 
 msgid "File associations for the Microsoft Store version are managed by Windows Settings."
 msgstr "As associações de arquivos para a versão da Microsoft Store são gerenciadas pelas Configurações do Windows."
@@ -10923,31 +10923,31 @@ msgid "Open Windows Default Apps Settings"
 msgstr "Abrir as Configurações de Aplicativos Padrão do Windows"
 
 msgid "Associate 3MF files to OrcaSlicer"
-msgstr "Associar arquivos 3MF ao OrcaSlicer"
+msgstr "Associar arquivos 3MF ao Filuna Slicer"
 
 msgid "If enabled, this sets OrcaSlicer as the default application to open 3MF files."
-msgstr "Se ativado, isso define o OrcaSlicer como aplicativo padrão para abrir arquivos 3MF."
+msgstr "Se ativado, isso define o Filuna Slicer como aplicativo padrão para abrir arquivos 3MF."
 
 msgid "Associate DRC files to OrcaSlicer"
-msgstr "Associar arquivos DRC ao OrcaSlicer"
+msgstr "Associar arquivos DRC ao Filuna Slicer"
 
 msgid "If enabled, sets OrcaSlicer as default application to open DRC files."
-msgstr "Se ativado, isso define o OrcaSlicer como aplicativo padrão para abrir arquivos DRC."
+msgstr "Se ativado, isso define o Filuna Slicer como aplicativo padrão para abrir arquivos DRC."
 
 msgid "Associate STL files to OrcaSlicer"
-msgstr "Associar arquivos STL ao OrcaSlicer"
+msgstr "Associar arquivos STL ao Filuna Slicer"
 
 msgid "If enabled, this sets OrcaSlicer as the default application to open STL files."
-msgstr "Se ativado, isso define o OrcaSlicer como aplicativo padrão para abrir arquivos STL."
+msgstr "Se ativado, isso define o Filuna Slicer como aplicativo padrão para abrir arquivos STL."
 
 msgid "Associate STEP files to OrcaSlicer"
-msgstr "Associar arquivos STEP ao OrcaSlicer"
+msgstr "Associar arquivos STEP ao Filuna Slicer"
 
 msgid "If enabled, this sets OrcaSlicer as the default application to open STEP files."
-msgstr "Se ativado, isso define o OrcaSlicer como aplicativo padrão para abrir arquivos STEP."
+msgstr "Se ativado, isso define o Filuna Slicer como aplicativo padrão para abrir arquivos STEP."
 
 msgid "Associate web links to OrcaSlicer"
-msgstr "Associar links da web ao OrcaSlicer"
+msgstr "Associar links da web ao Filuna Slicer"
 
 msgid "Developer"
 msgstr "Desenvolvedor"
@@ -10989,7 +10989,7 @@ msgid ""
 "When disabled, OrcaSlicer uses the legacy print-host behavior."
 msgstr ""
 "Encaminha os trabalhos de impressão de impressoras que não são Bambu pelos agentes de plugin de impressora em vez do fluxo clássico de envio ao host de impressão.\n"
-"Quando desativado, o OrcaSlicer usa o comportamento antigo do host de impressão."
+"Quando desativado, o Filuna Slicer usa o comportamento antigo do host de impressão."
 
 msgid "Allow Abnormal Storage"
 msgstr "Permitir Armazenamento Anormal"
@@ -13576,7 +13576,7 @@ msgid "Ramming line"
 msgstr "Linha de moldeamento"
 
 msgid "Orca would re-calculate your flushing volumes everytime the filaments color changed or filaments changed. You could disable the auto-calculate in Orca Slicer > Preferences"
-msgstr "O Orca recalculará seus volumes de purga toda vez que a cor dos filamentos ou os filamentos forem alterados. Você pode desativar o cálculo automático em OrcaSlicer > Preferências"
+msgstr "O Orca recalculará seus volumes de purga toda vez que a cor dos filamentos ou os filamentos forem alterados. Você pode desativar o cálculo automático em Filuna Slicer > Preferências"
 
 msgid "Flushing volume (mm³) for each filament pair."
 msgstr "Volume de purga (mm³) para cada par de filamentos."
@@ -13604,7 +13604,7 @@ msgid "from/to"
 msgstr "de/para"
 
 msgid "Cloud agent is not available. Please restart OrcaSlicer and try again."
-msgstr "O agente da nuvem não está disponível. Reinicie o OrcaSlicer e tente novamente."
+msgstr "O agente da nuvem não está disponível. Reinicie o Filuna Slicer e tente novamente."
 
 msgid "Bambu Network plug-in not detected."
 msgstr "Plug-in de Rede Bambu não detectado."
@@ -13631,10 +13631,10 @@ msgid "Custom"
 msgstr "Personalizado"
 
 msgid "Welcome to Orca Slicer"
-msgstr "Bem-vindo ao OrcaSlicer"
+msgstr "Bem-vindo ao Filuna Slicer"
 
 msgid "Orca Slicer will be set up in several steps. Let's start!"
-msgstr "O OrcaSlicer será configurado em várias etapas. Vamos começar!"
+msgstr "O Filuna Slicer será configurado em poucas etapas. Vamos começar!"
 
 msgid "Get Started"
 msgstr "Vamos Começar"
@@ -13923,7 +13923,7 @@ msgid "Network plug-in update"
 msgstr "Atualização do plug-in de rede"
 
 msgid "Click OK to update the Network plug-in now. If a file is in use, the update will be applied the next time Orca Slicer launches."
-msgstr "Clique em OK para atualizar o plug-in de Rede agora. Se um arquivo estiver em uso, a atualização será aplicada na próxima vez que o OrcaSlicer for iniciado."
+msgstr "Clique em OK para atualizar o plug-in de Rede agora. Se um arquivo estiver em uso, a atualização será aplicada na próxima vez que o Filuna Slicer for iniciado."
 
 msgid "A new Network plug-in is available. Do you want to install it?"
 msgstr "Um novo plug-in de Rede está disponível. Deseja instalá-lo?"
@@ -13933,7 +13933,7 @@ msgid "A new Network plug-in (%s) is available. Do you want to install it?"
 msgstr "Um novo plug-in de rede (%s) está disponível, deseja instalá-lo?"
 
 msgid "New version of Orca Slicer"
-msgstr "Nova versão do OrcaSlicer"
+msgstr "Nova versão do Filuna Slicer"
 
 msgid "Check on Microsoft Store"
 msgstr "Verifique na Microsoft Store"
@@ -13961,7 +13961,7 @@ msgid "Try the following methods to update the connection parameters and reconne
 msgstr "Tente os seguintes métodos para atualizar os parâmetros de conexão e reconectar à impressora."
 
 msgid "1. Please confirm Orca Slicer and your printer are in the same LAN."
-msgstr "1. Confirme se o Orca Slicer e sua impressora estão na mesma rede local."
+msgstr "1. Confirme se o Filuna Slicer e sua impressora estão na mesma rede local."
 
 msgid "2. If the IP and Access Code below are different from the actual values on your printer, please correct them."
 msgstr "2. Se o IP e o Código de Acesso abaixo forem diferentes dos valores reais da sua impressora, corrija-os."
@@ -15012,7 +15012,7 @@ msgid "Use 3MF instead of G-code"
 msgstr "Usar 3MF em vez de G-code"
 
 msgid "Enable this if the printer accepts a 3MF file as the print job. When enabled, Orca Slicer sends the sliced file as a .gcode.3mf, instead of a plain .gcode file."
-msgstr "Ative esta opção se a impressora aceitar um arquivo 3MF como trabalho de impressão. Quando ativada, o OrcaSlicer envia o arquivo fatiado como .gcode.3mf, em vez de um arquivo .gcode comum."
+msgstr "Ative esta opção se a impressora aceitar um arquivo 3MF como trabalho de impressão. Quando ativada, o Filuna Slicer envia o arquivo fatiado como .gcode.3mf, em vez de um arquivo .gcode comum."
 
 msgid "Printer Agent"
 msgstr "Agente de Impressora"
@@ -15036,7 +15036,7 @@ msgid "API Key / Password"
 msgstr "Chave da API / Senha"
 
 msgid "Orca Slicer can upload G-code files to a printer host. This field should contain the API Key or the password required for authentication."
-msgstr "O OrcaSlicer pode enviar arquivos G-code para um host de impressora. Este campo deve conter a Chave da API ou a senha necessária para autenticação."
+msgstr "O Filuna Slicer pode enviar arquivos G-code para um host de impressora. Este campo deve conter a Chave da API ou a senha necessária para autenticação."
 
 msgid "Serial Number"
 msgstr "Número de Série"
@@ -16366,7 +16366,7 @@ msgid ""
 "\n"
 "The default setting is (-99999, -99999), which means there are no limits, thus allowing probing across the entire bed."
 msgstr ""
-"Esta opção define o ponto mínimo para a área permitida da malha da mesa. Devido ao deslocamento XY da sonda, a maioria das impressoras não consegue sondar toda a mesa. Para garantir que o ponto da sonda não saia da área da mesa, os pontos mínimo e máximo da malha da mesa devem ser configurados adequadamente. O OrcaSlicer garante que os valores adaptive_bed_mesh_min/adaptive_bed_mesh_max não excedam esses pontos mínimo/máximo. Essas informações geralmente podem ser obtidas com o fabricante da sua impressora.\n"
+"Esta opção define o ponto mínimo para a área permitida da malha da mesa. Devido ao deslocamento XY da sonda, a maioria das impressoras não consegue sondar toda a mesa. Para garantir que o ponto da sonda não saia da área da mesa, os pontos mínimo e máximo da malha da mesa devem ser configurados adequadamente. O Filuna Slicer garante que os valores adaptive_bed_mesh_min/adaptive_bed_mesh_max não excedam esses pontos mínimo/máximo. Essas informações geralmente podem ser obtidas com o fabricante da sua impressora.\n"
 "\n"
 "A configuração padrão é (-99999, -99999), o que significa que não há limites, permitindo a sondagem em toda a mesa."
 
@@ -16378,7 +16378,7 @@ msgid ""
 "\n"
 "The default setting is (99999, 99999), which means there are no limits, thus allowing probing across the entire bed."
 msgstr ""
-"Esta opção define o ponto máximo para a área permitida da malha da mesa. Devido ao deslocamento XY da sonda, a maioria das impressoras não consegue sondar toda a mesa. Para garantir que o ponto da sonda não saia da área da mesa, os pontos mínimo e máximo da malha da mesa devem ser configurados adequadamente. O OrcaSlicer garante que os valores adaptive_bed_mesh_min/adaptive_bed_mesh_max não excedam esses pontos mínimo/máximo. Essas informações geralmente podem ser obtidas com o fabricante da sua impressora.\n"
+"Esta opção define o ponto máximo para a área permitida da malha da mesa. Devido ao deslocamento XY da sonda, a maioria das impressoras não consegue sondar toda a mesa. Para garantir que o ponto da sonda não saia da área da mesa, os pontos mínimo e máximo da malha da mesa devem ser configurados adequadamente. O Filuna Slicer garante que os valores adaptive_bed_mesh_min/adaptive_bed_mesh_max não excedam esses pontos mínimo/máximo. Essas informações geralmente podem ser obtidas com o fabricante da sua impressora.\n"
 "\n"
 "A configuração padrão é (99999, 99999), o que significa que não há limites, permitindo a sondagem em toda a mesa."
 
@@ -16738,7 +16738,7 @@ msgid "Minimal purge on wipe tower"
 msgstr "Purga mínima na torre de purga"
 
 msgid "After a tool change, the exact position of the newly loaded filament inside the nozzle may not be known, and the filament pressure is likely not yet stable. Before purging the print head into an infill or a sacrificial object, Orca Slicer will always prime this amount of material into the wipe tower to produce successive infill or sacrificial object extrusions reliably."
-msgstr "Após uma troca de ferramenta, a posição exata do filamento recém-carregado dentro do bico pode não ser conhecida, e a pressão do filamento provavelmente ainda não está estável. Antes de purgar a cabeça de impressão em um preenchimento ou em um objeto de sacrifício, o OrcaSlicer sempre preparará essa quantidade de material na torre de purga para produzir extrusões sucessivas de preenchimento ou de objeto de sacrifício de forma confiável."
+msgstr "Após uma troca de ferramenta, a posição exata do filamento recém-carregado dentro do bico pode não ser conhecida, e a pressão do filamento provavelmente ainda não está estável. Antes de purgar a cabeça de impressão em um preenchimento ou em um objeto de sacrifício, o Filuna Slicer sempre preparará essa quantidade de material na torre de purga para produzir extrusões sucessivas de preenchimento ou de objeto de sacrifício de forma confiável."
 
 msgid "Wipe tower cooling"
 msgstr "Resriamento da torre de purga"
@@ -17705,7 +17705,7 @@ msgid ""
 msgstr ""
 "Não grava o CONFIG_BLOCK (os pares chave/valor da configuração do fatiador) no arquivo G-code. Isso pode ajudar com impressoras cujo firmware trava ao interpretar essas linhas de comentário (ex.: Anycubic go-klipper).\n"
 "\n"
-"Nota: o arquivo G-code não conterá mais as configurações do fatiador, então importá-lo de volta no OrcaSlicer não restaurará a configuração."
+"Nota: o arquivo G-code não conterá mais as configurações do fatiador, então importá-lo de volta no Filuna Slicer não restaurará a configuração."
 
 msgid "Pellet Modded Printer"
 msgstr "Impressora Modificada para Pellets"
@@ -18553,7 +18553,7 @@ msgid "Host Type"
 msgstr "Tipo de Host"
 
 msgid "Orca Slicer can upload G-code files to a printer host. This field must contain the kind of the host."
-msgstr "O OrcaSlicer pode carregar arquivos de G-code para um hospedeiro de impressora. Este campo deve conter o tipo de hospedeiro."
+msgstr "O Filuna Slicer pode carregar arquivos de G-code para um hospedeiro de impressora. Este campo deve conter o tipo de hospedeiro."
 
 msgid "Nozzle volume"
 msgstr "Volume do bico"
@@ -18702,7 +18702,7 @@ msgstr ""
 "Não é recomendado usar o preenchimento relâmpago junto com esta opção, pois há preenchimento limitado para ancorar os perímetros extras."
 
 msgid "If you want to process the output G-code through custom scripts, just list their absolute paths here. Separate multiple scripts with a semicolon. Scripts will be passed the absolute path to the G-code file as the first argument, and they can access the Orca Slicer config settings by reading environment variables."
-msgstr "Se você deseja processar o G-code de saída por meio de scripts personalizados, basta listar seus caminhos absolutos aqui. Separe vários scripts com um ponto e vírgula. Os scripts receberão o caminho absoluto para o arquivo G-code como primeiro argumento, e eles podem acessar as configurações do OrcaSlicer lendo variáveis de ambiente."
+msgstr "Se você deseja processar o G-code de saída por meio de scripts personalizados, basta listar seus caminhos absolutos aqui. Separe vários scripts com um ponto e vírgula. Os scripts receberão o caminho absoluto para o arquivo G-code como primeiro argumento, e eles podem acessar as configurações do Filuna Slicer lendo variáveis de ambiente."
 
 msgid "Change extrusion role G-code (process)"
 msgstr "G-code de mudança de tipo de extrusão (processo)"
@@ -21039,10 +21039,10 @@ msgid "Contains Z-hop present at the beginning of the custom G-code block."
 msgstr "Contém o Z-hop presente no início do bloco de G-code personalizado."
 
 msgid "Position of the extruder at the beginning of the custom G-code block. If the custom G-code travels somewhere else, it should write to this variable so OrcaSlicer knows where it travels from when it gets control back."
-msgstr "Posição da extrusora no início do bloco de G-code personalizado. Se o G-code personalizado se deslocar para outro lugar, ele deve escrever nesta variável para que o OrcaSlicer saiba de onde se desloca quando recupera o controle."
+msgstr "Posição da extrusora no início do bloco de G-code personalizado. Se o G-code personalizado se deslocar para outro lugar, ele deve escrever nesta variável para que o Filuna Slicer saiba de onde se desloca quando recupera o controle."
 
 msgid "Retraction state at the beginning of the custom G-code block. If the custom G-code moves the extruder axis, it should write to this variable so OrcaSlicer de-retracts correctly when it gets control back."
-msgstr "Estado de retração no início do bloco de G-code personalizado. Se o G-code personalizado mover o eixo da extrusora, ele deve escrever nesta variável para que o OrcaSlicer desretraia corretamente quando recupera o controle."
+msgstr "Estado de retração no início do bloco de G-code personalizado. Se o G-code personalizado mover o eixo da extrusora, ele deve escrever nesta variável para que o Filuna Slicer desretraia corretamente quando recupera o controle."
 
 msgid "Extra de-retraction"
 msgstr "Desretração extra"
@@ -23402,7 +23402,7 @@ msgid ""
 "OrcaSlicer will convert the values to mm/min when necessary."
 msgstr ""
 "RepRap detectado: Jerk em mm/s.\n"
-"O OrcaSlicer converterá os valores para mm/min quando necessário."
+"O Filuna Slicer converterá os valores para mm/min quando necessário."
 
 #, c-format, boost-format
 msgid ""
@@ -23623,7 +23623,7 @@ msgid "Export Log"
 msgstr "Exportar Registro"
 
 msgid "OrcaSlicer Version:"
-msgstr "Versão do OrcaSlicer:"
+msgstr "Versão do Filuna Slicer:"
 
 msgid "System Version:"
 msgstr "Versão do Sistema:"
@@ -23632,10 +23632,10 @@ msgid "DNS Server:"
 msgstr "Servidor DNS:"
 
 msgid "Test OrcaSlicer (GitHub)"
-msgstr "Testar OrcaSlicer (GitHub)"
+msgstr "Testar Filuna Slicer (GitHub)"
 
 msgid "Test OrcaSlicer (GitHub):"
-msgstr "Testar OrcaSlicer (GitHub):"
+msgstr "Testar Filuna Slicer (GitHub):"
 
 msgid "Test bing.com"
 msgstr "Testar bing.com"
@@ -24339,7 +24339,7 @@ msgid "No project file on current session. Only logs will be included to package
 msgstr "Nenhum arquivo de projeto na sessão atual. Apenas os logs serão incluídos no pacote"
 
 msgid "Please make sure any instances of OrcaSlicer are not running"
-msgstr "Certifique-se de que nenhuma instância do OrcaSlicer esteja em execução"
+msgstr "Certifique-se de que nenhuma instância do Filuna Slicer esteja em execução"
 
 msgid "System folder cannot be deleted because some files are in use by another application. Please close any applications using these files and try again."
 msgstr "A pasta do sistema não pode ser excluída porque alguns arquivos estão sendo usados ​​por outro aplicativo. Feche todos os aplicativos que estejam utilizando esses arquivos e tente novamente."
@@ -25292,7 +25292,7 @@ msgid "Performing desktop integration failed because the application directory w
 msgstr "Falha ao realizar a integração com a área de trabalho porque o diretório do aplicativo não foi encontrado."
 
 msgid "Performing desktop integration failed - could not create Gcodeviewer desktop file. OrcaSlicer desktop file was probably created successfully."
-msgstr "Falha ao realizar a integração com a área de trabalho - não foi possível criar o arquivo desktop do Gcodeviewer. O arquivo desktop do OrcaSlicer provavelmente foi criado com sucesso."
+msgstr "Falha ao realizar a integração com a área de trabalho - não foi possível criar o arquivo desktop do Gcodeviewer. O arquivo desktop do Filuna Slicer provavelmente foi criado com sucesso."
 
 msgid "Performing downloader desktop integration failed - boost::filesystem::canonical did not return appimage path."
 msgstr "Falha ao realizar a integração do downloader com a área de trabalho - boost::filesystem::canonical não retornou o caminho do appimage."
@@ -30728,11 +30728,11 @@ msgstr "Falha ao criar um instantâneo da configuração."
 
 # AI Translated
 msgid "OrcaSlicer has encountered an error while taking a configuration snapshot."
-msgstr "O OrcaSlicer encontrou um erro ao criar um instantâneo da configuração."
+msgstr "O Filuna Slicer encontrou um erro ao criar um instantâneo da configuração."
 
 # AI Translated
 msgid "OrcaSlicer error"
-msgstr "Erro do OrcaSlicer"
+msgstr "Erro do Filuna Slicer"
 
 # AI Translated
 #. TRN Short labels of the external spool of the right and left nozzle
@@ -32732,11 +32732,11 @@ msgid ""
 "\n"
 "If you save anyway, the preset won't keep the plugin references for these settings. On another computer, Orca Slicer won't know which plugins to offer, and the settings may not work there."
 msgstr ""
-"As configurações a seguir fazem referência a plugins que o Orca Slicer não consegue identificar neste computador:\n"
+"As configurações a seguir fazem referência a plugins que o Filuna Slicer não consegue identificar neste computador:\n"
 "\n"
 "%1%\n"
 "\n"
-"Se você salvar mesmo assim, a predefinição não manterá as referências a plugins dessas configurações. Em outro computador, o Orca Slicer não saberá quais plugins oferecer, e as configurações podem não funcionar lá."
+"Se você salvar mesmo assim, a predefinição não manterá as referências a plugins dessas configurações. Em outro computador, o Filuna Slicer não saberá quais plugins oferecer, e as configurações podem não funcionar lá."
 
 # AI Translated
 #, boost-format
@@ -32747,11 +32747,11 @@ msgid ""
 "\n"
 "If you save anyway, the project won't keep the plugin references for these settings. On another computer, Orca Slicer won't know which plugins to offer, and the settings may not work there."
 msgstr ""
-"As configurações a seguir fazem referência a plugins que o Orca Slicer não consegue identificar neste computador:\n"
+"As configurações a seguir fazem referência a plugins que o Filuna Slicer não consegue identificar neste computador:\n"
 "\n"
 "%1%\n"
 "\n"
-"Se você salvar mesmo assim, o projeto não manterá as referências a plugins dessas configurações. Em outro computador, o Orca Slicer não saberá quais plugins oferecer, e as configurações podem não funcionar lá."
+"Se você salvar mesmo assim, o projeto não manterá as referências a plugins dessas configurações. Em outro computador, o Filuna Slicer não saberá quais plugins oferecer, e as configurações podem não funcionar lá."
 
 # AI Translated
 msgid "Plugin Not Identified"
@@ -32770,11 +32770,11 @@ msgid ""
 "\n"
 "If you save anyway, the presets won't keep the plugin references for these settings. On another computer, Orca Slicer won't know which plugins to offer, and the settings may not work there."
 msgstr ""
-"As predefinições que estão sendo salvas fazem referência a plugins que o Orca Slicer não consegue identificar neste computador:\n"
+"As predefinições que estão sendo salvas fazem referência a plugins que o Filuna Slicer não consegue identificar neste computador:\n"
 "\n"
 "%1%\n"
 "\n"
-"Se você salvar mesmo assim, as predefinições não manterão as referências a plugins dessas configurações. Em outro computador, o Orca Slicer não saberá quais plugins oferecer, e as configurações podem não funcionar lá."
+"Se você salvar mesmo assim, as predefinições não manterão as referências a plugins dessas configurações. Em outro computador, o Filuna Slicer não saberá quais plugins oferecer, e as configurações podem não funcionar lá."
 
 msgctxt "Texture Displacement"
 msgid "Bake"
@@ -34480,7 +34480,7 @@ msgstr ""
 "Os seguintes plugins instalados não foram encontrados no disco:\n"
 "%s\n"
 "\n"
-"Removê-los do OrcaSlicer?"
+"Removê-los do Filuna Slicer?"
 
 # AI Translated
 msgid "Missing Plugins"
@@ -36077,7 +36077,7 @@ msgid "You can return to OrcaSlicer. This window will close automatically."
 msgstr "Você pode voltar ao OrcaSlicer. Esta janela será fechada automaticamente."
 
 msgid "Something went wrong. Please return to OrcaSlicer and try again."
-msgstr "Algo deu errado. Volte ao OrcaSlicer e tente novamente."
+msgstr "Algo deu errado. Volte ao Filuna Slicer e tente novamente."
 
 msgid "You can return to OrcaSlicer. If your browser does not redirect automatically, use the button below."
 msgstr "Você pode voltar ao OrcaSlicer. Se o seu navegador não redirecionar automaticamente, use o botão abaixo."
@@ -36210,7 +36210,7 @@ msgid ""
 "Did you know that OrcaSlicer supports chamber temperature?"
 msgstr ""
 "Temperatura da câmara\n"
-"Você sabia que o OrcaSlicer suporta temperatura da câmara?"
+"Você sabia que o Filuna Slicer suporta temperatura da câmara?"
 
 #: resources/data/hints.ini: [hint:Calibration]
 msgid ""
@@ -36226,7 +36226,7 @@ msgid ""
 "Did you know that OrcaSlicer supports Auxiliary part cooling fan?"
 msgstr ""
 "Ventoinha auxiliar\n"
-"Você sabia que o OrcaSlicer suporta ventoinha auxiliar de resfriamento de peças?"
+"Você sabia que o Filuna Slicer suporta ventoinha auxiliar de resfriamento de peças?"
 
 #: resources/data/hints.ini: [hint:Air filtration]
 msgid ""
@@ -36234,7 +36234,7 @@ msgid ""
 "Did you know that OrcaSlicer can support Air filtration/Exhaust Fan?"
 msgstr ""
 "Filtragem de ar/Exaustor\n"
-"Você sabia que o OrcaSlicer pode suportar filtragem de ar/exaustor?"
+"Você sabia que o Filuna Slicer pode suportar filtragem de ar/exaustor?"
 
 #: resources/data/hints.ini: [hint:G-code window]
 msgid ""
@@ -36258,7 +36258,7 @@ msgid ""
 "Did you know that Orca Slicer offers a wide range of keyboard shortcuts and 3D scene operations?"
 msgstr ""
 "Como usar atalhos de teclado\n"
-"Você sabia que o OrcaSlicer oferece uma ampla gama de atalhos de teclado e operações de cena 3D?"
+"Você sabia que o Filuna Slicer oferece uma ampla gama de atalhos de teclado e operações de cena 3D?"
 
 #: resources/data/hints.ini: [hint:Reverse on even]
 msgid ""
@@ -36330,7 +36330,7 @@ msgid ""
 "Did you know that you use the Search tool to quickly find a specific Orca Slicer setting?"
 msgstr ""
 "Funcionalidade de Busca\n"
-"Você sabia que pode usar a ferramenta de busca para encontrar rapidamente uma configuração específica do OrcaSlicer?"
+"Você sabia que pode usar a ferramenta de busca para encontrar rapidamente uma configuração específica do Filuna Slicer?"
 
 #: resources/data/hints.ini: [hint:Simplify Model]
 msgid ""
@@ -36372,7 +36372,7 @@ msgid ""
 msgstr ""
 "STEP\n"
 "Você sabia que pode melhorar a qualidade da impressão fatiando um arquivo STEP ao invés de um STL?\n"
-"O OrcaSlicer é compatível com arquivos STEP, gerando resultados mais suaves do que um STL em baixa resolução. Tente!"
+"O Filuna Slicer é compatível com arquivos STEP, gerando resultados mais suaves do que um STL em baixa resolução. Tente!"
 
 #: resources/data/hints.ini: [hint:Z seam location]
 msgid ""
@@ -36501,3 +36501,9 @@ msgstr "Calibração da impressora"
 
 msgid "My space"
 msgstr "Meu espaço"
+
+msgid "Choose photos"
+msgstr "Escolher fotos"
+
+msgid "My store"
+msgstr "Minha loja"

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minha loja</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin:16px 0}
+.kpi{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--side)}.kpi b{display:block;font-size:26px;margin-top:4px}
+table.l{width:100%;border-collapse:collapse}table.l td,table.l th{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:13.5px;vertical-align:middle}
+table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+table.l img{width:46px;height:46px;border-radius:9px;object-fit:cover;background:#F6F2EC}
+table.l input{width:96px;padding:6px 8px}
+.perg{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.perg .t{font-weight:600}.perg textarea{margin-top:8px}
+.lojaC{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;margin-bottom:10px}
+.lojaC .n{font-weight:700;font-size:16px}
+.slogan{background:linear-gradient(120deg,var(--rose),#FFF0E6);border-radius:16px;padding:16px 18px;margin:16px 0}
+.slogan b{font-size:17px}
+</style>
+</head>
+<body>
+<div class="tela"><div class="app"><div class="corpo">
+	<div class="side">
+		<div class="lbl" style="padding:0 6px 8px">Minha loja</div>
+		<div id="menu"></div>
+		<div style="margin-top:auto" class="ajuda">Tudo das suas lojas aqui: anúncios, vendas, perguntas e etiquetas. Para anunciar, use a aba Projeto.</div>
+	</div>
+	<div class="principal" id="tela"><div class="carregando">Carregando…</div></div>
+</div></div></div>
+<script src="ponte.js"></script>
+<script>
+var E = Filuna.esc;
+var SECOES = [["visao", "Visão geral"], ["anuncios", "Anúncios"], ["vendas", "Vendas"], ["perguntas", "Perguntas"], ["lojas", "Lojas conectadas"]];
+var st = { secao: "visao", ml: null, lojas: [], msg: "", erro: "" };
+
+function menu() {
+	document.getElementById("menu").innerHTML = SECOES.map(function (s) {
+		var n = s[0] == "perguntas" && st.ml && st.ml.perguntas ? " (" + st.ml.perguntas.length + ")" : "";
+		return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1] + n) + "</button>"; }).join("");
+	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; st.msg = st.erro = ""; desenhar(); }; });
+}
+function el() { return document.getElementById("tela"); }
+function cab(l, t, s) { return '<div class="lbl">' + E(l) + '</div><div class="h1" style="margin-top:6px">' + E(t) + "</div>" + (s ? '<div class="sub">' + E(s) + "</div>" : "") +
+	(st.msg ? '<div class="okmsg">' + E(st.msg) + "</div>" : "") + (st.erro ? '<div class="erro">' + E(st.erro) + "</div>" : ""); }
+
+function carregar() {
+	if (!Filuna.temToken()) { menu(); el().innerHTML = '<div id="lg"></div>'; Filuna.telaLogin(el().querySelector("#lg"), carregar, "Entre para ver suas lojas, anúncios e vendas."); return; }
+	el().innerHTML = '<div class="carregando">Buscando suas lojas…</div>';
+	Filuna.api("GET", "/lojas").then(function (r) {
+		st.lojas = r.lojas || [];
+		var ml = st.lojas.filter(function (l) { return l.id == "mercadolivre"; })[0];
+		if (!ml || !ml.conectada) { st.ml = { conectada: false }; desenhar(); return; }
+		return Filuna.api("GET", "/lojas/mercadolivre").then(function (d) { st.ml = d; desenhar(); });
+	}).catch(function (e) { if (e.status == 401) { Filuna.sair().then(carregar); return; } st.erro = e.erro; st.ml = st.ml || { conectada: false }; desenhar(); });
+}
+
+function desenhar() {
+	menu();
+	if (!st.ml) return;
+	if (!st.ml.conectada && st.secao != "lojas") return semLoja();
+	({ visao: visao, anuncios: anuncios, vendas: vendas, perguntas: perguntas, lojas: lojas }[st.secao])();
+}
+
+function semLoja() {
+	el().innerHTML = cab("Minha loja", "Conecte sua loja", "Com a loja conectada, o Filuna mostra seus anúncios, vendas, perguntas e etiquetas — e você publica seus produtos do catálogo com um clique.") +
+		'<div class="slogan"><b>Filuna — tudo para o seu 3D em um só lugar.</b><div class="sub">Fatiar, imprimir, calcular o preço, anunciar e vender, sem trocar de programa.</div></div>' + listaLojas();
+	ligarLojas();
+}
+
+function visao() {
+	var m = st.ml, ativos = m.anuncios.filter(function (a) { return a.status == "active"; }).length;
+	var vendidos = m.anuncios.reduce(function (s, a) { return s + (a.vendidos || 0); }, 0);
+	var pagos = m.pedidos.filter(function (p) { return p.status == "paid"; });
+	el().innerHTML = cab("Mercado Livre · " + (m.conta || ""), "Minha loja", "Atualizado agora, direto da sua conta.") +
+		'<div class="kpis"><div class="kpi"><span class="ajuda">Anúncios ativos</span><b>' + ativos + '</b></div><div class="kpi"><span class="ajuda">Pausados</span><b>' + (m.anuncios.length - ativos) + "</b></div>" +
+		'<div class="kpi"><span class="ajuda">Vendidos (total)</span><b>' + vendidos + '</b></div><div class="kpi"><span class="ajuda">Vendas recentes</span><b>' + pagos.length + "</b></div>" +
+		'<div class="kpi"><span class="ajuda">Perguntas sem resposta</span><b style="color:' + (m.perguntas.length ? "var(--warn)" : "inherit") + '">' + m.perguntas.length + "</b></div></div>" +
+		'<div class="card"><div class="ch"><span class="lbl">Últimas vendas</span><a data-s="vendas">Ver todas</a></div>' + tabelaVendas(m.pedidos.slice(0, 5)) + "</div>" +
+		(m.perguntas.length ? '<div class="card" style="margin-top:14px"><div class="ch"><span class="lbl">Perguntas esperando você</span><a data-s="perguntas">Responder</a></div>' +
+			m.perguntas.slice(0, 3).map(function (q) { return '<div class="perg"><div class="t">' + E(q.texto) + '</div><div class="ajuda">' + E(titulo(q.item)) + "</div></div>"; }).join("") + "</div>" : "");
+	el().querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; desenhar(); }; });
+	ligarEtiquetas();
+}
+
+function titulo(item) { var a = st.ml.anuncios.filter(function (x) { return x.id == item; })[0]; return a ? a.titulo : item; }
+
+function anuncios() {
+	var l = st.ml.anuncios;
+	el().innerHTML = cab("Mercado Livre", "Anúncios", "Mude preço e estoque, pause ou reative. Vale na hora no Mercado Livre.") +
+		(l.length ? '<div class="card" style="padding:6px 8px;margin-top:14px"><table class="l"><tr><th></th><th>Anúncio</th><th>Preço (R$)</th><th>Estoque</th><th>Vendidos</th><th>Situação</th><th></th></tr>' +
+			l.map(function (a, k) {
+				return "<tr><td><img src='" + E(a.foto) + "'></td><td><b>" + E(a.titulo) + "</b><div class='ajuda'>" + E(a.id) + "</div></td>" +
+					"<td><input type='number' step='0.01' data-preco='" + k + "' value='" + E(a.preco) + "'></td><td><input type='number' data-est='" + k + "' value='" + E(a.estoque) + "' style='width:70px'></td>" +
+					"<td>" + E(a.vendidos || 0) + "</td><td>" + (a.status == "active" ? "<span class='pill ok'>Ativo</span>" : a.status == "paused" ? "<span class='pill alerta'>Pausado</span>" : "<span class='pill'>" + E(a.status) + "</span>") + "</td>" +
+					"<td style='white-space:nowrap'><button class='btn peq' data-salvar='" + k + "'>Salvar</button> " +
+					(a.status == "active" ? "<button class='btn peq' data-status='" + k + "' data-v='paused'>Pausar</button>" : a.status == "paused" ? "<button class='btn peq' data-status='" + k + "' data-v='active'>Reativar</button>" : "") +
+					" <button class='btn peq' data-ver='" + k + "'>Ver</button></td></tr>";
+			}).join("") + "</table></div>" : '<div class="vazio" style="margin-top:14px">Nenhum anúncio. Publique produtos pela aba Projeto.</div>');
+	var mudar = function (k, corpo) {
+		var a = l[k];
+		Filuna.api("POST", "/lojas/mercadolivre/anuncios/" + encodeURIComponent(a.id), corpo).then(function (r) {
+			a.status = r.status || a.status; if (r.preco != null) a.preco = r.preco; if (r.estoque != null) a.estoque = r.estoque;
+			st.msg = "Anúncio atualizado."; st.erro = ""; anuncios();
+		}, function (e) { st.erro = e.erro; st.msg = ""; anuncios(); });
+	};
+	el().querySelectorAll("[data-salvar]").forEach(function (b) { b.onclick = function () { var k = +b.dataset.salvar;
+		mudar(k, { preco: el().querySelector("[data-preco='" + k + "']").value, estoque: el().querySelector("[data-est='" + k + "']").value }); }; });
+	el().querySelectorAll("[data-status]").forEach(function (b) { b.onclick = function () { mudar(+b.dataset.status, { status: b.dataset.v }); }; });
+	el().querySelectorAll("[data-ver]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(l[+b.dataset.ver].link); }; });
+}
+
+var STATUS = { paid: "Pago", confirmed: "Confirmado", cancelled: "Cancelado", payment_required: "Aguardando pagamento", payment_in_process: "Pagamento em análise" };
+function tabelaVendas(l) {
+	if (!l.length) return '<div class="vazio">Nenhuma venda recente.</div>';
+	return '<table class="l"><tr><th>Data</th><th>Comprador</th><th>Itens</th><th>Total</th><th>Situação</th><th></th></tr>' + l.map(function (p) {
+		return "<tr><td>" + E((p.data || "").slice(0, 10).split("-").reverse().join("/")) + "</td><td>" + E(p.comprador || "") + "</td><td>" + p.itens.map(E).join("<br>") +
+			"</td><td><b>" + Filuna.reais(p.total) + "</b></td><td>" + E(STATUS[p.status] || p.status) + "</td><td>" + (p.envio && p.status == "paid" ? "<button class='btn peq' data-etq='" + E(p.envio) + "'>Etiqueta</button>" : "") + "</td></tr>";
+	}).join("") + "</table>";
+}
+function vendas() {
+	el().innerHTML = cab("Mercado Livre", "Vendas", "Os pedidos mais recentes. A etiqueta de envio baixa em PDF.") + '<div class="card" style="padding:6px 8px;margin-top:14px">' + tabelaVendas(st.ml.pedidos) + "</div>";
+	ligarEtiquetas();
+}
+function ligarEtiquetas() {
+	el().querySelectorAll("[data-etq]").forEach(function (b) { b.onclick = function () {
+		b.disabled = true;
+		Filuna.nativo("config.ler", { chave: "filuna_token" }).then(function (t) {
+			return fetch("https://filuna3d.com/api/slicer/v1/lojas/mercadolivre/etiquetas/" + encodeURIComponent(b.dataset.etq), { headers: { Authorization: "Bearer " + t.valor } });
+		}).then(function (r) {
+			if (!r.ok) return r.json().then(function (d) { throw { erro: d.erro }; });
+			return r.blob().then(function (bl) { var a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = "etiqueta-" + b.dataset.etq + ".pdf"; document.body.appendChild(a); a.click(); a.remove(); b.disabled = false; });
+		}).catch(function (e) { b.disabled = false; st.erro = e.erro || "Não consegui baixar a etiqueta."; desenhar(); });
+	}; });
+}
+
+function perguntas() {
+	var l = st.ml.perguntas;
+	el().innerHTML = cab("Mercado Livre", "Perguntas", "Responder rápido aumenta as vendas.") + '<div style="margin-top:14px">' +
+		(l.length ? l.map(function (q, k) {
+			return '<div class="perg"><div class="ajuda">' + E(titulo(q.item)) + " · " + E((q.data || "").slice(0, 10).split("-").reverse().join("/")) + '</div><div class="t">' + E(q.texto) + "</div>" +
+				'<textarea rows="2" data-r="' + k + '" placeholder="Sua resposta"></textarea><div class="linha" style="margin-top:8px"><button class="btn primario peq" data-resp="' + k + '">Responder</button>' +
+				'<button class="btn peq" data-ia="' + k + '">✨ Sugerir resposta</button></div></div>'; }).join("") : '<div class="vazio">Nenhuma pergunta esperando resposta.</div>') + "</div>";
+	el().querySelectorAll("[data-resp]").forEach(function (b) { b.onclick = function () { var k = +b.dataset.resp, q = l[k];
+		Filuna.api("POST", "/lojas/mercadolivre/perguntas/" + q.id, { texto: el().querySelector("[data-r='" + k + "']").value }).then(function () { l.splice(k, 1); st.msg = "Resposta enviada."; st.erro = ""; perguntas(); },
+			function (e) { st.erro = e.erro; perguntas(); }); }; });
+	el().querySelectorAll("[data-ia]").forEach(function (b) { b.onclick = function () { var k = +b.dataset.ia, q = l[k]; b.disabled = true;
+		Filuna.api("POST", "/ia", { pergunta: "Um cliente perguntou no Mercado Livre sobre o anúncio \"" + titulo(q.item) + "\": \"" + q.texto + "\". Escreva uma resposta curta, educada e vendedora, em português do Brasil, sem inventar informação que você não tem. Responda só com o texto.", contexto: "" })
+			.then(function (r) { el().querySelector("[data-r='" + k + "']").value = r.resposta.trim(); b.disabled = false; }, function (e) { st.erro = e.erro; perguntas(); }); }; });
+}
+
+function listaLojas() {
+	return '<div style="margin-top:14px">' + st.lojas.map(function (l) {
+		return '<div class="lojaC"><div><div class="n">' + E(l.nome) + '</div><div class="ajuda">' + (l.conectada ? "Conectada · " + E(l.conta) : l.disponivel ? "Não conectada" : "Integração em preparação") + "</div></div>" +
+			(!l.disponivel ? '<span class="pill">Em breve</span>' : l.conectada ? '<span class="pill ok">Conectada</span>' : '<button class="btn primario" data-con="' + E(l.conectar_url) + '">Conectar</button>') + "</div>";
+	}).join("") + "</div>";
+}
+function lojas() { el().innerHTML = cab("Integrações", "Lojas conectadas", "A conexão é feita no navegador, direto com a loja; o Filuna nunca vê sua senha.") + listaLojas(); ligarLojas(); }
+function ligarLojas() { el().querySelectorAll("[data-con]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(b.dataset.con); st.msg = "Conclua a conexão no navegador. Esta tela atualiza em seguida."; desenhar(); setTimeout(carregar, 20000); }; }); }
+
+Filuna.iniciar().then(carregar);
+Filuna.ouvir("mostrar", function () { if (st.ml) carregar(); });
+</script>
+</body>
+</html>

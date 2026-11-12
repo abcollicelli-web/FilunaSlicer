@@ -1787,6 +1787,9 @@ bool GLCanvas3D::init()
 }
 
 void GLCanvas3D::on_change_color_mode(bool is_dark, bool reinit) {
+    // Filuna (Direção Visual C): a área 3D é sempre escura — cena, barra de ferramentas, gizmos, réguas
+    // e janelas dentro dela — como na referência aprovada. Os painéis fora dela seguem o tema do programa.
+    is_dark = true;
     m_is_dark = is_dark;
     // Filuna (Direção Visual C): a cena 3D é sempre escura, com mesa e linhas na versão escura;
     // painéis, menus e avisos continuam seguindo o tema claro ou escuro do programa.

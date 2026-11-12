@@ -163,7 +163,7 @@ private:
     // key MENU_ICON_NAME, value = ImtextureID
     static std::map<int, void*> icon_list;
 
-    bool m_is_dark = false;
+    bool m_is_dark = true;
     bool m_restore_realistic_view_after_paint = false;
 
     /// <summary>

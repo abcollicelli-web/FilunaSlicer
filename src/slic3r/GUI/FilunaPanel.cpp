@@ -15,6 +15,12 @@
 
 #include <wx/sizer.h>
 #include <wx/utils.h>
+#include <wx/base64.h>
+#include <wx/filedlg.h>
+#include <wx/filename.h>
+#include <wx/file.h>
+
+#include <miniz.h>
 
 #include "libslic3r/AppConfig.hpp"
 #include "libslic3r/calib.hpp"
@@ -24,9 +30,11 @@
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
 
 #include "GUI.hpp"
 #include "GUI_App.hpp"
+#include "I18N.hpp"
 #include "GUI_ObjectList.hpp"
 #include "MainFrame.hpp"
 #include "PartPlate.hpp"
@@ -264,6 +272,54 @@ std::string ai_context()
     return out.str();
 }
 
+// The current plate rendered as a PNG data URL, for product photos in the catalog.
+json plate_image()
+{
+    Plater* plater = wxGetApp().plater();
+    if (plater == nullptr || plater->model().objects.empty())
+        throw std::runtime_error("Coloque um modelo na mesa primeiro.");
+    PartPlateList& plates = plater->get_partplate_list();
+    plater->update_plate_thumbnails(plates.get_curr_plate_index(), true);
+    PartPlate* plate = plates.get_curr_plate();
+    const ThumbnailData& data = plate->thumbnail_data;
+    if (!data.is_valid())
+        throw std::runtime_error("Não consegui gerar a imagem da mesa.");
+    size_t size = 0;
+    void* png = tdefl_write_image_to_png_file_in_memory_ex(data.pixels.data(), data.width, data.height, 4, &size, MZ_DEFAULT_LEVEL, 1);
+    if (png == nullptr)
+        throw std::runtime_error("Não consegui gerar a imagem da mesa.");
+    const wxString b64 = wxBase64Encode(png, size);
+    mz_free(png);
+    return {{"imagem", "data:image/png;base64," + std::string(b64.ToUTF8())}};
+}
+
+// Photos picked on the computer, returned as data URLs (the page uploads them to the catalog).
+json pick_images(wxWindow* parent)
+{
+    wxFileDialog dlg(parent, _L("Choose photos"), wxEmptyString, wxEmptyString, "JPG, PNG, WEBP (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp",
+                     wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE);
+    json list = json::array();
+    if (dlg.ShowModal() != wxID_OK)
+        return {{"imagens", list}};
+    wxArrayString paths;
+    dlg.GetPaths(paths);
+    for (const wxString& path : paths) {
+        wxFile file(path);
+        if (!file.IsOpened() || file.Length() <= 0 || file.Length() > 8 * 1024 * 1024)
+            continue;
+        std::vector<char> buf(size_t(file.Length()));
+        if (static_cast<size_t>(file.Read(buf.data(), buf.size())) != buf.size())
+            continue;
+        const wxString ext = wxFileName(path).GetExt().Lower();
+        const std::string mime = ext == "png" ? "image/png" : ext == "webp" ? "image/webp" : "image/jpeg";
+        list.push_back({{"nome", std::string(wxFileName(path).GetFullName().ToUTF8())},
+                        {"imagem", "data:" + mime + ";base64," + std::string(wxBase64Encode(buf.data(), buf.size()).ToUTF8())}});
+        if (list.size() >= 12)
+            break;
+    }
+    return {{"imagens", list}};
+}
+
 } // namespace
 
 FilunaPanel::FilunaPanel(wxWindow* parent, const std::string& page) : wxPanel(parent, wxID_ANY)
@@ -432,6 +488,10 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         });
         return json::object();
     }
+    if (action == "mesa.imagem")
+        return plate_image();
+    if (action == "imagens.escolher")
+        return pick_images(this);
     if (action == "modelo.objetos")
         return model_objects();
     if (action == "modelo.reparar") {
