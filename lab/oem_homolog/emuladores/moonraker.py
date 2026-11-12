@@ -228,7 +228,16 @@ def fabrica_handler(e: Estado):
                 return self.responder({"result": {"dirs": [], "files": [{"filename": k, "size": v, "modified": time.time()} for k, v in e.arquivos.items()],
                                                   "disk_usage": {"total": 8 << 30, "used": 1 << 30, "free": 7 << 30}, "root_info": {"name": "gcodes", "permissions": "rw"}}})
             if u.path == "/server/database/item":
-                return self.responder({"result": {"namespace": q.get("namespace", [""])[0], "key": q.get("key", [""])[0], "value": {}}})
+                ns = q.get("namespace", [""])[0]
+                if ns == "lane_data" and a.perfil == "anycubic-ace":
+                    # driver comunitário ACEPRO: grava o inventário do ACE em lane_data para o OrcaSlicer
+                    val = {f"lane{i + 1}": {"lane": str(i), "color": CORES[i], "material": "PLA", "name": "ACE slot", "vendor": "Anycubic",
+                                            "nozzle_temp": 210, "bed_temp": 60} for i in range(4)}
+                    log_evento(a, "lane_data")
+                    return self.responder({"result": {"namespace": ns, "key": None, "value": val}})
+                if ns == "lane_data":
+                    return self.responder({"error": {"code": 404, "message": "Namespace 'lane_data' not found"}}, 404)
+                return self.responder({"result": {"namespace": ns, "key": q.get("key", [""])[0], "value": {}}})
             if u.path.startswith("/server/files/config/"):
                 nome = u.path.rsplit("/", 1)[-1]
                 if a.perfil == "qidi-box" and nome == "officiall_filas_list.cfg":
