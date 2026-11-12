@@ -23,6 +23,7 @@
 #include "slic3r/Utils/FilunaElegooCC2Agent.hpp"
 #include "slic3r/Utils/FilunaFlashforgeAgent.hpp"
 #include "slic3r/Utils/FilunaPrusaLinkAgent.hpp"
+#include "slic3r/Utils/FilunaElegooSDCPAgent.hpp"
 #include <memory>
 
 using namespace Slic3r;
@@ -58,6 +59,10 @@ int main(int argc, char** argv)
         auto b = std::make_unique<FilunaBambuLanAgent>("");
         b->set_ports({porta("--porta-a", 8883), porta("--porta-b", 990), porta("--porta-c", 2021), true});
         agente = std::move(b);
+    } else if (a["--agente"] == "elegoo-sdcp") {
+        auto e = std::make_unique<FilunaElegooSDCPAgent>("");
+        e->set_ports({porta("--porta-a", 3030), porta("--porta-a", 3030), porta("--porta-c", 3000)});
+        agente = std::move(e);
     } else if (a["--agente"] == "prusa") {
         auto pl = std::make_unique<FilunaPrusaLinkAgent>("");
         pl->set_poll_ms(500);
@@ -72,7 +77,7 @@ int main(int argc, char** argv)
         agente = std::move(e);
     }
     IPrinterAgent& agent = *agente;
-    json prova = {{"fabricante", bambu ? "bambu" : (a["--agente"] == "flashforge" ? "flashforge" : (a["--agente"] == "prusa" ? "prusa" : "elegoo"))}, {"agente", agent.get_agent_info().id}, {"ip", a["--ip"]}, {"etapas", json::array()}};
+    json prova = {{"fabricante", bambu ? "bambu" : (a["--agente"] == "flashforge" ? "flashforge" : (a["--agente"] == "prusa" ? "prusa" : "elegoo"))}, {"protocolo", a["--agente"]}, {"agente", agent.get_agent_info().id}, {"ip", a["--ip"]}, {"etapas", json::array()}};
     bool tudo_ok = true;
     auto etapa = [&](const std::string& nome, bool ok, const std::string& det = {}) {
         prova["etapas"].push_back({{"etapa", nome}, {"ok", ok}, {"detalhe", det}});
@@ -119,22 +124,27 @@ int main(int argc, char** argv)
     } else
         etapa(bambu ? "descoberta_ssdp" : "descoberta_udp", false, "nenhum anúncio em 10 s");
 
+    const bool sdcp = a["--agente"] == "elegoo-sdcp";
     PrinterConnectionParams p;
     p.dev_id = serial;
     p.host   = a["--ip"];
     const bool ff = a["--agente"] == "flashforge";
-    p.port   = std::to_string(porta("--porta-a", bambu ? 8883 : (ff ? 8898 : (prusa ? 80 : 1883))));
+    p.port   = std::to_string(porta("--porta-a", bambu ? 8883 : (ff ? 8898 : (prusa ? 80 : (sdcp ? 3030 : 1883)))));
     if (prusa)
         p.username = "maker";
 
     // 2. código errado é recusado
-    p.password = "00000000";
-    etapa("recusa_codigo_errado", agent.connect_printer(p) != BAMBU_NETWORK_SUCCESS && estado_conexao == ConnectStatusFailed);
+    if (sdcp)
+        prova["nao_suportado_pelo_protocolo"].push_back("autenticacao (o SDCP v3 não tem senha na rede local)");
+    else {
+        p.password = "00000000";
+        etapa("recusa_codigo_errado", agent.connect_printer(p) != BAMBU_NETWORK_SUCCESS && estado_conexao == ConnectStatusFailed);
+    }
 
     // 3. conexão
     p.password = a["--codigo"];
     const int rc = agent.connect_printer(p);
-    etapa(bambu ? "conexao_mqtt_tls" : (ff || prusa ? "conexao_http" : "conexao_mqtt"), rc == BAMBU_NETWORK_SUCCESS && estado_conexao == ConnectStatusOk);
+    etapa(bambu ? "conexao_mqtt_tls" : (ff || prusa ? "conexao_http" : (sdcp ? "conexao_websocket" : "conexao_mqtt")), rc == BAMBU_NETWORK_SUCCESS && estado_conexao == ConnectStatusOk);
     if (rc != BAMBU_NETWORK_SUCCESS) {
         std::ofstream(a["--prova"]) << prova.dump(1);
         return 1;
@@ -154,6 +164,8 @@ int main(int argc, char** argv)
     }
     if (prusa)
         prova["nao_suportado_pelo_protocolo"].push_back("sistema_cores (a PrusaLink não expõe o MMU)");
+    else if (sdcp)
+        prova["nao_suportado_pelo_protocolo"].push_back("sistema_cores (Centauri Carbon sem CANVAS; a CC2 usa o agente CC2)");
     else
         etapa(bambu ? "sistema_cores_ams" : (ff ? "sistema_cores_ifs" : "sistema_cores_canvas"), bandejas > 0, std::to_string(bandejas) + " bandejas");
 
@@ -190,7 +202,7 @@ int main(int argc, char** argv)
         else
             etapa("controle_temperatura", espera(std::chrono::seconds(10), [&] { return ultimo.value("nozzle_target_temper", 0.0) == 200.0; }));
         agent.send_message_to_printer(serial, base + "stop\"}}", 0, 0);
-        etapa("parar", estado_vira(bambu || ff || prusa ? "FAILED" : "IDLE"));
+        etapa("parar", estado_vira(bambu || ff || prusa || sdcp ? "FAILED" : "IDLE"));
     }
     agent.disconnect_printer();
     prova["aprovado"] = tudo_ok;
