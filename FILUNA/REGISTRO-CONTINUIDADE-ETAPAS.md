@@ -628,7 +628,7 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - O chat que acompanha o build escreve a mensagem pronta para a sessão do Claude Code, com o número do run, o SHA e o nome do artefato.
 - **Sempre a versão portátil, nunca o instalador:** o aviso de administrador (UAC) e o SmartScreen só podem ser aprovados na tela do PC. Abrir sempre da mesma pasta faz a aprovação do programa continuar valendo, e a versão instalada em `C:\Program Files\FilunaSlicer` não é alterada.
 - **Antes de o proprietário sair:** suspensão do PC em "Nunca", app Claude aberto, janela do PowerShell com o `remote-control` aberta, celular carregado e com as notificações do app Claude ligadas.
-- **Resultado:** cada validação é registrada nesta seção de etapas (PASS/FAIL por tela, com o SHA). Os prints ficam no PC e não vão para o GitHub.
+- **Resultado:** a sessão do PC segue o roteiro que o chat do projeto manda (script `filuna-qa.ps1`: baixar, abrir, prints com escala real, clique por coordenada da imagem, log) e envia prints, `relatorio.md` e log para `github.com/abcollicelli-web/filuna-qa-prints`, pasta `builds/<SHA8>`. Ela só relata o que viu. Quem avalia é o chat do projeto, que registra aqui PASS/FAIL por tela com o SHA.
 
 ### V1 — Validação no PC do build `0e92df92` (12/11/2026, noite)
 - **Build:** run `43288337442` — **PASS** (executável portátil e instalador gerados). Prints da sessão Claude Code do PC, no repositório `abcollicelli-web/filuna-qa-prints` (11 arquivos, só 5 imagens diferentes).
