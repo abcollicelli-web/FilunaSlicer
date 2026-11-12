@@ -107,13 +107,34 @@ def de_semente(semente: Path, destino: Path) -> dict:
             raise AssertionError("SEMENTE_SEM_METADADO_EXTRUDER")
         novo = novo.replace(m.group(0), f'<object id="{m.group(1)}">{corpo}</object>')
     dados[chave] = novo.encode("utf-8")
+    # Alguns CLIs (Bambu 02.09) exportam vetores por filamento com 1 só item apesar de
+    # 4 filamentos carregados; fatiar esse 3MF com extrusoras 2..4 aborta (double free).
+    # Completa só vetores 'filament_*' de tamanho 1 replicando o valor e dá 4 cores.
+    import json as _json
+    proj = next((i for i in dados if i.filename == "Metadata/project_settings.config"), None)
+    estendidos = []
+    if proj is not None:
+        try:
+            cfg = _json.loads(dados[proj])
+        except ValueError:
+            cfg = None
+        if isinstance(cfg, dict):
+            n = len(cfg.get("filament_settings_id") or []) or 4
+            for k, v in cfg.items():
+                if k.startswith("filament_") and isinstance(v, list) and len(v) == 1 and n > 1:
+                    cfg[k] = v * n
+                    estendidos.append(k)
+            if "filament_colour" in cfg:
+                cfg["filament_colour"] = ["#E60012", "#1565C0", "#FFD600", "#15B857"][:n]
+            dados[proj] = (_json.dumps(cfg, indent=4, ensure_ascii=False) + "\n").encode("utf-8")
     destino.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(destino, "w") as z:
         for info, d in dados.items():
             z.writestr(info, d)
     return {"sha256": hashlib.sha256(destino.read_bytes()).hexdigest(),
             "semente_sha256": hashlib.sha256(semente.read_bytes()).hexdigest(),
-            "objetos": [int(m.group(1)) for m in ordem], "extrusoras": [1, 2, 3, 4]}
+            "objetos": [int(m.group(1)) for m in ordem], "extrusoras": [1, 2, 3, 4],
+            "vetores_estendidos": len(estendidos)}
 
 
 def main() -> int:
