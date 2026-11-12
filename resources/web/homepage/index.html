@@ -7,6 +7,7 @@
 <title>homepage</title>
 <link rel="stylesheet" type="text/css" href="../include/global.css" />	<!-- ORCA One for all-->
 <link rel="stylesheet" type="text/css" href="./css/home.css" />
+<link rel="stylesheet" type="text/css" href="./css/filuna.css" />	<!-- Filuna: Direção Visual C -->
 <!-- <link rel="stylesheet" type="text/css" href="./css/dark.css" />	 -->
 
 <script type="text/javascript" src="../include/jquery-3.6.0.min.js"></script>
@@ -18,9 +19,42 @@
 <script type="text/javascript" src="../include/i18n.js"></script>		
 	
 <script type="text/javascript" src="js/home.js"></script>
+<script type="text/javascript" src="js/filuna-home.js"></script>
 </head>
 <body class="thin-scroll" onLoad="OnInit()">
 <div id="LeftBoard">
+	<div id="FilunaMarca"><img src="../../images/Filuna_horizontal_light.png" alt="Filuna 3D"></div>
+	<!-- Filuna: conta ligada ao site. Os dados são os mesmos do site, sincronizados; as telas são do Filuna. -->
+	<div id="FilunaConta" class="FlCard">
+		<div id="FlDesligado">
+			<div class="FlTitulo">Conta Filuna</div>
+			<div class="FlTexto">Entre para usar a Farm, o estoque e o seu plano.</div>
+			<form id="FlFormEntrar" autocomplete="on">
+				<label class="FlCampo"><span>E-mail</span><input id="FlEmail" type="email" autocomplete="username" required></label>
+				<label class="FlCampo"><span>Senha</span><input id="FlSenha" type="password" autocomplete="current-password" required></label>
+				<button type="submit" class="FlBotao" id="FlBtnEntrar">Entrar</button>
+			</form>
+			<details class="FlCodigo">
+				<summary>Entra pelo Google? Use um código</summary>
+				<form id="FlFormCodigo">
+					<label class="FlCampo"><span>Código de ligação</span><input id="FlCodigo" maxlength="9" placeholder="ABCD-1234" required></label>
+					<button type="submit" class="FlBotao FlBotaoLinha">Ligar com o código</button>
+				</form>
+			</details>
+			<div id="FlErro" class="FlErro" role="alert"></div>
+		</div>
+		<div id="FlLigado" hidden>
+			<div class="FlLinhaConta">
+				<span class="FlAvatar" id="FlInicial">F</span>
+				<span class="FlConta"><b id="FlNome"></b><small id="FlEmailLigado"></small></span>
+			</div>
+			<div class="FlLinhaConta">
+				<span class="FlPlano" id="FlPlano"></span>
+				<span class="FlStatus"><i id="FlPonto"></i><span id="FlSync">Sincronizado</span></span>
+			</div>
+			<button type="button" class="FlLink" id="FlBtnSair">Sair desta conta</button>
+		</div>
+	</div>
 	<div id="LoginArea">
 
 		<!-- Orca Cloud account -->
@@ -90,6 +124,14 @@
 			<div data-i18n="recent">Recent</div>
 			<div class="NavArrow icon16"></div>
 		</div>
+		<div menu="filuna_farm" class="BtnItem FlSoLigado" onClick="GotoMenu('filuna_farm'); FlAtualizar();" hidden>
+			<div>Farm</div>
+			<div class="FlContador" id="FlMenuAvisos" hidden></div>
+		</div>
+		<div menu="filuna_estoque" class="BtnItem FlSoLigado" onClick="GotoMenu('filuna_estoque'); FlAtualizar();" hidden>
+			<div>Estoque</div>
+			<div class="NavArrow icon16"></div>
+		</div>
 		<div menu="orca_cloud" class="BtnItem" onClick="GotoCloud()">
 			<div>OrcaCloud</div>
 			<div class="NavArrow icon16"></div>
@@ -102,6 +144,23 @@
 </div>
 
 <div id="RightBoard">
+<div class="FlBoard thin-scroll" board="filuna_farm" style="display:none">
+	<div class="FlCabecalho"><h1>Farm</h1><span id="FlFarmSub"></span></div>
+	<div class="FlKpis">
+		<div class="FlKpi"><span>Imprimindo agora</span><b id="FlKpiImprimindo">—</b></div>
+		<div class="FlKpi"><span>Mesas na fila</span><b id="FlKpiMesas">—</b></div>
+		<div class="FlKpi"><span>Peças na fila</span><b id="FlKpiPecas">—</b></div>
+		<div class="FlKpi"><span>Mesas para limpar</span><b id="FlKpiLimpar">—</b></div>
+	</div>
+	<h2 class="FlH2">Avisos</h2>
+	<div id="FlAvisos"></div>
+	<h2 class="FlH2">Impressoras</h2>
+	<div id="FlImpressoras" class="FlGrade"></div>
+</div>
+<div class="FlBoard thin-scroll" board="filuna_estoque" style="display:none">
+	<div class="FlCabecalho"><h1>Estoque de filamento</h1><span>A baixa é automática ao fim de cada impressão.</span></div>
+	<div id="FlBobinas" class="FlTabela"></div>
+</div>
 <div id="ContentBoard" class="thin-scroll" board="recent">
     <div style="height: 14px;"></div>	
 	<div id="MenuArea">

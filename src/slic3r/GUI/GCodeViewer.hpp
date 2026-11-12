@@ -339,7 +339,7 @@ private:
 
     bool m_contained_in_bed{ true };
 mutable bool m_no_render_path { false };
-    bool m_is_dark = false;
+    bool m_is_dark = true; // Filuna: cena 3D escura desde a abertura (Direção Visual C)
 
     bool  m_belt_view_enabled = false;
     bool  m_belt_show_designed = true;   // Designed (upright, back-transformed) view by default; off shows

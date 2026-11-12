@@ -125,7 +125,7 @@ private:
     std::vector<Vec2d>  m_bed_shape;
     std::vector<std::vector<Vec2d>> m_extruder_shapes;
     std::vector<double> m_extruder_heights;
-    bool m_is_dark = false;
+    bool m_is_dark = true; // Filuna: cena 3D escura desde a abertura (Direção Visual C)
 
 public:
     Bed3D() = default;

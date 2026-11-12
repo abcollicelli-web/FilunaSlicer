@@ -26,8 +26,8 @@
 	--fg-color-text			: #262E30;
 	--fg-color-label		: #363636;
 	--fg-color-disabled		: #ACACAC;
-	--focus-bg-item			: #BFE1DE; /*ORCA color with %10 opacity. Used for focused item background like combobox, text input*/
-	--focus-bg-box			: #E5F0EE; /*ORCA color with %25 opacity. Used for checked / active item background*/
+	--focus-bg-item			: #F9D9E6; /*ORCA color with %10 opacity. Used for focused item background like combobox, text input*/
+	--focus-bg-box			: #FCEFF5; /*ORCA color with %25 opacity. Used for checked / active item background*/
 	--border-color			: #DBDBDB;
 	--icon-color			: #7C8282;
 	--button-fg-light		: #FEFEFE;

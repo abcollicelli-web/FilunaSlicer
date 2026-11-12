@@ -844,7 +844,7 @@ class PartPlateList : public ObjectBase
     // Tooltip of the plate icon the last scene pass drew hovered; the canvas overlay shows it.
     std::string m_hover_tooltip;
 
-    bool m_is_dark = false;
+    bool m_is_dark = true; // Filuna: cena 3D escura desde a abertura (Direção Visual C)
     bool m_icon_textures_dark = false;
 
     int m_filament_count = 1;

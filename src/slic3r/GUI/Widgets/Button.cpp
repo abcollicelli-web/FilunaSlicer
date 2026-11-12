@@ -314,18 +314,18 @@ void Button::SetStyle(const ButtonStyle style, const ButtonType type)
     } else if (type == ButtonType::Choice) {
         this->SetMinSize(FromDIP(wxSize(100, 32)));
         this->SetPaddingSize(FromDIP(wxSize(12, 8)));
-        this->SetCornerRadius(this->FromDIP(4));
+        this->SetCornerRadius(this->FromDIP(8)); // Filuna
         this->SetFont(Label::Body_14);
     } else if (type == ButtonType::Parameter) {
         this->SetMinSize(FromDIP(wxSize(120, 26)));
         this->SetSize(FromDIP(wxSize(120, 26)));
-        this->SetCornerRadius(this->FromDIP(4));
+        this->SetCornerRadius(this->FromDIP(8)); // Filuna
         this->SetFont(Label::Body_14);
     } else if (type == ButtonType::Icon) {
         this->SetPaddingSize(FromDIP(wxSize(5, 5)));
         this->SetMinSize(FromDIP(wxSize(26, 26)));
         this->SetSize(FromDIP(wxSize(26, 26)));
-        this->SetCornerRadius(this->FromDIP(4));
+        this->SetCornerRadius(this->FromDIP(8)); // Filuna
     } else if (type == ButtonType::Circle) {
         this->SetPaddingSize(FromDIP(wxSize(6, 6)));
         this->SetMinSize(FromDIP(wxSize(25, 25)));
@@ -335,7 +335,7 @@ void Button::SetStyle(const ButtonStyle style, const ButtonType type)
     } else if (type == ButtonType::Expanded) {
         this->SetMinSize(FromDIP(wxSize(-1, 32)));
         this->SetPaddingSize(FromDIP(wxSize(12, 8)));
-        this->SetCornerRadius(this->FromDIP(4));
+        this->SetCornerRadius(this->FromDIP(8)); // Filuna
         this->SetFont(Label::Body_14);
     }
 

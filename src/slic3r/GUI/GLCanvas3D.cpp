@@ -192,7 +192,7 @@ using namespace std::string_view_literals;
 
 static constexpr const float TRACKBALLSIZE = 0.8f;
 
-static Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR      = { 0.906f, 0.906f, 0.906f, 1.0f };
+static Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR      = { 0.118f, 0.125f, 0.141f, 1.0f }; // Filuna: área 3D escura (Direção Visual C)
 static Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR_DARK = { 0.329f, 0.329f, 0.353f, 1.0f };
 static Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR        = { 0.753f, 0.192f, 0.039f, 1.0f };
 static Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR_DARK   = { 0.753f, 0.192f, 0.039f, 1.0f };
@@ -1788,10 +1788,13 @@ bool GLCanvas3D::init()
 
 void GLCanvas3D::on_change_color_mode(bool is_dark, bool reinit) {
     m_is_dark = is_dark;
+    // Filuna (Direção Visual C): a cena 3D é sempre escura, com mesa e linhas na versão escura;
+    // painéis, menus e avisos continuam seguindo o tema claro ou escuro do programa.
+    const bool cena_escura = true;
     // Bed color
-    m_bed.on_change_color_mode(is_dark);
+    m_bed.on_change_color_mode(cena_escura);
     // GcodeViewer color
-    m_gcode_viewer.on_change_color_mode(is_dark);
+    m_gcode_viewer.on_change_color_mode(cena_escura);
     // ImGui Style
     wxGetApp().imgui()->on_change_color_mode(is_dark);
     // Notification
@@ -1804,7 +1807,7 @@ void GLCanvas3D::on_change_color_mode(bool is_dark, bool reinit) {
     m_layers_slider->on_change_color_mode(is_dark);
     m_moves_slider->on_change_color_mode(is_dark);
     // Partplate
-    wxGetApp().plater()->get_partplate_list().on_change_color_mode(is_dark);
+    wxGetApp().plater()->get_partplate_list().on_change_color_mode(cena_escura);
     // Plates toolbar - Reload All Stats button images
     _init_select_plate_toolbar();
 
