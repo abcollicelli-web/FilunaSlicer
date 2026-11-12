@@ -88,21 +88,25 @@ def primeira_diferenca(a: bytes, b: bytes):
     return None
 
 
-_ACEITA_DATADIR: dict[str, bool] = {}
+_AJUDA: dict[str, bytes] = {}
+
+
+def ajuda(exe: Path) -> bytes:
+    k = str(exe)
+    if k not in _AJUDA:
+        try:
+            r = subprocess.run([k, "--help"], capture_output=True, timeout=120, check=False,
+                               env=dict(os.environ, HOME="/tmp/filuna-help-home"))
+            _AJUDA[k] = r.stdout + r.stderr
+        except (OSError, subprocess.TimeoutExpired):
+            _AJUDA[k] = b"--datadir"
+    return _AJUDA[k]
 
 
 def aceita_datadir(exe: Path) -> bool:
     """Nem todo CLI de fabricante tem --datadir (QIDI Studio 2.07 não tem); sem ele a pasta de
     dados nova vem do HOME novo de cada execução."""
-    k = str(exe)
-    if k not in _ACEITA_DATADIR:
-        try:
-            r = subprocess.run([k, "--help"], capture_output=True, timeout=120, check=False,
-                               env=dict(os.environ, HOME="/tmp/filuna-help-home"))
-            _ACEITA_DATADIR[k] = b"--datadir" in (r.stdout + r.stderr)
-        except (OSError, subprocess.TimeoutExpired):
-            _ACEITA_DATADIR[k] = True
-    return _ACEITA_DATADIR[k]
+    return b"--datadir" in ajuda(exe)
 
 
 def fatiar(exe: Path, trio: dict, modelo: Path, pasta: Path, extra: list[str], timeout: int) -> dict:
@@ -112,7 +116,10 @@ def fatiar(exe: Path, trio: dict, modelo: Path, pasta: Path, extra: list[str], t
     dados = pasta / "datadir"
     dados.mkdir()
     n = int(trio.get("n_filamentos") or 1)
-    cmd = [str(exe), *extra, *(["--datadir", str(dados)] if aceita_datadir(exe) else []), "--slice", "0",
+    # o 3MF de cores é exportado pelo próprio oficial e grava a versão do app (ex.: Snapmaker 2.4.0.1),
+    # que o CLI compara com a versão do motor (01.10.01.50) e recusa como "mais novo"
+    novo = ["--allow-newer-file", "1"] if str(modelo).endswith(".3mf") and b"--allow-newer-file" in ajuda(exe) else []
+    cmd = [str(exe), *extra, *novo, *(["--datadir", str(dados)] if aceita_datadir(exe) else []), "--slice", "0",
            "--load-settings", f"{trio['machine']};{trio['process']}",
            "--load-filaments", ";".join([str(trio["filament"])] * n),
            "--outputdir", str(pasta), str(modelo)]
