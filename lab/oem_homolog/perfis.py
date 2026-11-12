@@ -16,8 +16,15 @@ from pathlib import Path
 
 
 class Catalogo:
+    # Bibliotecas comuns de que os presets de qualquer marca podem herdar (fatiadores base Orca).
+    COMUNS = ("OrcaFilamentLibrary",)
+
     def __init__(self, profiles_dir: Path):
         self.raiz = profiles_dir
+        # (vendor, tipo, nome) -> (arquivo, dados): o fatiador resolve 'inherits' DENTRO do pacote
+        # do próprio fabricante (depois nas bibliotecas comuns); nomes iguais em outras marcas
+        # (ex.: fdm_machine_common) não se misturam.
+        self.por_vendor: dict[tuple[str, str, str], tuple[Path, dict]] = {}
         self.indice: dict[tuple[str, str], tuple[Path, dict]] = {}
         self.vendor_de: dict[tuple[str, str], str] = {}
         for vendor_json in sorted(profiles_dir.glob("*.json")):
@@ -25,7 +32,7 @@ class Catalogo:
             pasta = profiles_dir / vendor
             if not pasta.is_dir():
                 continue
-            for arq in pasta.rglob("*.json"):
+            for arq in sorted(pasta.rglob("*.json")):
                 try:
                     dados = json.loads(arq.read_text(encoding="utf-8-sig"))
                 except (ValueError, UnicodeDecodeError):
@@ -35,21 +42,32 @@ class Catalogo:
                 tipo, nome = dados.get("type"), dados.get("name")
                 if tipo not in ("machine", "process", "filament", "machine_model") or not nome:
                     continue
-                chave = (tipo, nome)
-                # o primeiro vendor que define o nome vence, como o fatiador (OrcaFilamentLibrary/comuns por último)
-                if chave not in self.indice or vendor not in ("OrcaFilamentLibrary",):
-                    self.indice.setdefault(chave, (arq, dados))
-                    self.vendor_de.setdefault(chave, vendor)
+                self.por_vendor.setdefault((vendor, tipo, nome), (arq, dados))
+                self.indice.setdefault((tipo, nome), (arq, dados))
+                self.vendor_de.setdefault((tipo, nome), vendor)
 
-    def efetivo(self, tipo: str, nome: str) -> tuple[dict, list[str]]:
-        """Fusão da herança. Devolve (config efetiva, cadeia de nomes da folha até a raiz)."""
+    def _busca(self, vendor: str | None, tipo: str, nome: str):
+        if vendor:
+            for v in (vendor, *self.COMUNS):
+                item = self.por_vendor.get((v, tipo, nome))
+                if item:
+                    return v, item
+            return None, None
+        item = self.indice.get((tipo, nome))
+        return (self.vendor_de.get((tipo, nome)), item) if item else (None, None)
+
+    def efetivo(self, tipo: str, nome: str, vendor: str | None = None) -> tuple[dict, list[str]]:
+        """Fusão da herança. Devolve (config efetiva, cadeia de nomes da folha até a raiz).
+        Com 'vendor', a cadeia é resolvida no pacote dessa marca (+ bibliotecas comuns)."""
+        if vendor is None:
+            vendor = self.vendor_de.get((tipo, nome))
         cadeia, visto = [], set()
         atual = nome
         while atual:
             if atual in visto:
                 raise ValueError(f"HERANCA_CICLICA {tipo} {atual}")
             visto.add(atual)
-            item = self.indice.get((tipo, atual))
+            _, item = self._busca(vendor, tipo, atual)
             if not item:
                 raise ValueError(f"PAI_AUSENTE {tipo} {atual} (de {nome})")
             cadeia.append((atual, item[1]))
@@ -66,13 +84,13 @@ class Catalogo:
     def impressoras(self, vendor: str | None = None) -> list[dict]:
         """Impressoras selecionáveis + processo e filamento padrão de cada uma."""
         saida = []
-        for (tipo, nome), (arq, dados) in sorted(self.indice.items()):
+        for (vend, tipo, nome), (arq, dados) in sorted(self.por_vendor.items()):
             if tipo != "machine" or str(dados.get("instantiation", "true")).lower() != "true":
                 continue
-            if vendor and self.vendor_de.get((tipo, nome)) not in vendor.split(","):
+            if vendor and vend not in vendor.split(","):
                 continue
             try:
-                maq, _ = self.efetivo("machine", nome)
+                maq, _ = self.efetivo("machine", nome, vend)
             except ValueError as e:
                 saida.append({"maquina": nome, "erro": str(e)})
                 continue
@@ -85,47 +103,49 @@ class Catalogo:
             # O padrão citado pela máquina às vezes não existe no catálogo do próprio fabricante
             # (ex.: Snapmaker U1 "0.20 Standard" × arquivo "0.20mm Standard"). O fatiador então
             # seleciona outro preset compatível; repetimos isso de forma explícita e registrada.
-            if not self._resolve("process", proc):
-                alt = self._compativel("process", nome, proc)
+            if not self._resolve("process", proc, vend):
+                alt = self._compativel("process", nome, proc, vend)
                 notas.append(f"PADRAO_OEM_AUSENTE process '{proc}' -> '{alt}'")
                 proc = alt or ""
-            if not self._resolve("filament", fil0):
-                alt = self._compativel("filament", nome, fil0)
+            if not self._resolve("filament", fil0, vend):
+                alt = self._compativel("filament", nome, fil0, vend)
                 notas.append(f"PADRAO_OEM_AUSENTE filament '{fil0}' -> '{alt}'")
                 fil0 = alt or ""
-            saida.append({"maquina": nome, "processo": proc, "filamento": fil0, "notas": notas,
+            saida.append({"maquina": nome, "vendor": vend, "processo": proc, "filamento": fil0, "notas": notas,
                           "modelo": maq.get("printer_model", ""), "bico": maq.get("nozzle_diameter", [""]),
                           "extrusoras": len(maq.get("nozzle_diameter") or [1]) if isinstance(maq.get("nozzle_diameter"), list) else 1,
                           "arquivo": str(arq.relative_to(self.raiz))})
         return saida
 
-    def _resolve(self, tipo: str, nome: str) -> bool:
+    def _resolve(self, tipo: str, nome: str, vendor: str | None = None) -> bool:
         if not nome:
             return False
         try:
-            self.efetivo(tipo, nome)
+            self.efetivo(tipo, nome, vendor)
             return True
         except ValueError:
             return False
 
-    def _compativeis(self, tipo: str) -> dict[str, list[str]]:
+    def _compativeis(self, tipo: str, vendor: str | None) -> dict[str, list[str]]:
         cache = self.__dict__.setdefault("_cache_compat", {})
-        if tipo not in cache:
+        if (tipo, vendor) not in cache:
             m = {}
-            for (t, n), (_, d) in self.indice.items():
-                if t != tipo or str(d.get("instantiation", "true")).lower() != "true":
+            for (v, t, n), (_, d) in self.por_vendor.items():
+                if t != tipo or (vendor and v not in (vendor, *self.COMUNS)):
+                    continue
+                if str(d.get("instantiation", "true")).lower() != "true":
                     continue
                 try:
-                    ef, _ = self.efetivo(t, n)
+                    ef, _ = self.efetivo(t, n, v)
                 except ValueError:
                     continue
                 cp = ef.get("compatible_printers") or []
                 m[n] = cp if isinstance(cp, list) else [cp]
-            cache[tipo] = m
-        return cache[tipo]
+            cache[(tipo, vendor)] = m
+        return cache[(tipo, vendor)]
 
-    def _compativel(self, tipo: str, maquina: str, pedido: str) -> str | None:
-        cands = sorted(n for n, cp in self._compativeis(tipo).items() if maquina in cp)
+    def _compativel(self, tipo: str, maquina: str, pedido: str, vendor: str | None = None) -> str | None:
+        cands = sorted(n for n, cp in self._compativeis(tipo, vendor).items() if maquina in cp)
         if not cands:
             return None
 
@@ -140,7 +160,7 @@ class Catalogo:
         destino.mkdir(parents=True, exist_ok=True)
         caminhos = {}
         for tipo, nome in (("machine", item["maquina"]), ("process", item["processo"]), ("filament", item["filamento"])):
-            efetivo, cadeia = self.efetivo(tipo, nome)
+            efetivo, cadeia = self.efetivo(tipo, nome, item.get("vendor"))
             p = destino / f"{tipo}.json"
             p.write_text(json.dumps(efetivo, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             caminhos[tipo] = p
@@ -150,14 +170,14 @@ class Catalogo:
     def auditoria(self) -> dict:
         """Integridade do catálogo: pais ausentes e ciclos, por tipo."""
         erros, contagem = [], {}
-        for (tipo, nome) in self.indice:
+        for (vend, tipo, nome) in self.por_vendor:
             contagem[tipo] = contagem.get(tipo, 0) + 1
             if tipo == "machine_model":
                 continue
             try:
-                self.efetivo(tipo, nome)
+                self.efetivo(tipo, nome, vend)
             except ValueError as e:
-                erros.append(str(e))
+                erros.append(f"[{vend}] {e}")
         return {"contagem": contagem, "erros": sorted(set(erros))}
 
 

@@ -45,24 +45,20 @@ def arquivos_vendor(raiz: Path, vendor: str) -> dict[str, str]:
 
 
 def fechamento(cat: Catalogo, vendors: list[str]) -> set[str]:
-    """Pastas de fabricante alcançadas pela herança dos presets das marcas pedidas."""
+    """Pastas necessárias: as marcas pedidas + bibliotecas comuns de que algum preset delas herda
+    (a herança é resolvida dentro da marca primeiro, como o fatiador)."""
     pastas = set(vendors)
-    pendentes = [(t, n) for (t, n), v in cat.vendor_de.items() if v in vendors]
-    vistos = set()
-    while pendentes:
-        chave = pendentes.pop()
-        if chave in vistos:
+    for (v, t, n), (_, d) in cat.por_vendor.items():
+        if v not in vendors:
             continue
-        vistos.add(chave)
-        item = cat.indice.get(chave)
-        if not item:
-            continue
-        pai = item[1].get("inherits")
-        if pai:
-            k = (chave[0], pai)
-            if k in cat.vendor_de:
-                pastas.add(cat.vendor_de[k])
-                pendentes.append(k)
+        atual, visto = d.get("inherits"), set()
+        while atual and atual not in visto:
+            visto.add(atual)
+            onde, item = cat._busca(v, t, atual)
+            if not item:
+                break
+            pastas.add(onde)
+            atual = item[1].get("inherits")
     return pastas
 
 
@@ -93,8 +89,7 @@ def main() -> int:
     aud = cat.auditoria()
     imps = cat.impressoras(",".join(vendors))
     # erros de auditoria só das pastas do pacote
-    nomes_pacote = {n for (t, n), v in cat.vendor_de.items() if v in pastas}
-    erros = [e for e in aud["erros"] if e.split(" (de ")[-1].rstrip(")") in nomes_pacote]
+    erros = [e for e in aud["erros"] if any(e.startswith(f"[{v}]") for v in vendors)]
 
     ns.saida.mkdir(parents=True, exist_ok=True)
     nome = f"perfis-{ns.id}-{ns.versao}.tar.gz"
