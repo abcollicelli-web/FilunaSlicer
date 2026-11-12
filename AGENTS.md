@@ -5,6 +5,7 @@ Este repositório é o **FilunaSlicer** (fork AGPL do OrcaSlicer). Antes de qual
 1. Leia `FILUNA/REGISTRO-CONTINUIDADE-ETAPAS.md` (estado: **G0 PASS DOCUMENTAL**; próximo = **Onda 01 Fundação** / `FILUNA/FUND-SPEC-ONDA01-2026-11-05.md` — **não** Identity/Home/tokens)
 2. Leia `FILUNA/REGRA-MESTRE-QUALIDADE.md` e `FILUNA/PLANO-MESTRE-ENGENHARIA-E-CRONOGRAMA.md`
 3. Respeite `upstream-mirror` intacto e a pasta `FILUNA/`; não alterar `src/libslic3r/**` na fundação sem ADR
+4. Para testar um build no PC do proprietário, siga a regra "Validação de builds no PC do proprietário" do registro: o Claude Code em `claude remote-control` baixa o executável portátil (nunca o instalador) para `C:\Users\abcol\Downloads\FilunaSlicer-teste`, e o chat ligado ao PC abre e testa a interface
 
 As seções abaixo são as regras de engenharia herdadas do OrcaSlicer (também em `CLAUDE.md` → este arquivo). Elas continuam válidas para o core C++/wxWidgets.
 
