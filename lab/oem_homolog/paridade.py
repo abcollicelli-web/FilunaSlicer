@@ -209,7 +209,9 @@ def main() -> int:
             if ok(cc) and variantes:
                 nc = normalizado(Path(cc["gcodes"][0]))
                 # variante do compilado ainda não vista: dá mais chances ao oficial antes de reprovar
-                while sha(nc) not in variantes and len(variantes) > 1 and k < ns.max_oficial_busca:
+                # (o oficial pode repetir A=B e variar só depois: o Bambu faz isso; por isso procura
+                # mesmo com uma variante, até max_oficial, e até max_oficial_busca se já variou)
+                while sha(nc) not in variantes and k < (ns.max_oficial_busca if len(variantes) > 1 else ns.max_oficial):
                     x = fatiar(ns.oficial, t, modelo, caso / f"{nome_m}-oficial-{k + 1}", ex, ns.timeout)
                     oficiais.append(x); registra(x); k += 1
             c["execucoes_oficiais"] = len(oficiais)
