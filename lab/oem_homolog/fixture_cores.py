@@ -172,6 +172,7 @@ def de_semente_prusa(semente: Path, destino: Path, centro: tuple[float, float] =
     for i in range(4):
         b = bloco.replace('<object id="1"', f'<object id="{i + 1}"', 1)
         b = b.replace('<metadata type="object" key="name"', f'<metadata type="object" key="extruder" value="{i + 1}"/>\n  <metadata type="object" key="name"', 1)
+        b = b.replace('<metadata type="volume" key="name"', f'<metadata type="volume" key="extruder" value="{i + 1}"/>\n   <metadata type="volume" key="name"', 1)
         novos.append(b)
     dados["Metadata/Slic3r_PE_model.config"] = cfg.replace(bloco, "".join(novos)).encode()
     destino.parent.mkdir(parents=True, exist_ok=True)
