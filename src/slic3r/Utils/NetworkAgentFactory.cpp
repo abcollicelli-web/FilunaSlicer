@@ -10,6 +10,7 @@
 #include "slic3r/plugin/PluginManager.hpp"
 #include "slic3r/plugin/pluginTypes/printerAgent/PrinterAgentPluginCapability.hpp"
 #include "CrealityPrintAgent.hpp"
+#include "FilunaBambuLanAgent.hpp"
 #include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <chrono>
@@ -189,6 +190,8 @@ void NetworkAgentFactory::register_all_agents()
                                             // CrealityPrintAgent extends Moonraker behaviour
                                             // for K-series boards with CFS support.
     register_agent<MoonrakerPrinterAgent>();
+    // Filuna: Bambu Lab pelo modo LAN aberto, sem o plug-in fechado (REGRA-CANONICA-CONECTIVIDADE-OPEN)
+    register_agent<FilunaBambuLanAgent>();
 
     // Keep BBL as a built-in option. Python printer-agent plugins with the
     // same AgentInfo ID are listed separately under the plugin registry key.

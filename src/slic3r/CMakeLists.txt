@@ -786,7 +786,11 @@ set(SLIC3R_GUI_SOURCES
     Utils/FontConfigHelp.hpp
     Utils/HexFile.cpp
     Utils/HexFile.hpp
+    Utils/FilunaBambuLanAgent.cpp
+    Utils/FilunaBambuLanAgent.hpp
     Utils/FilunaModuleStore.cpp
+    Utils/FilunaMqttClient.cpp
+    Utils/FilunaMqttClient.hpp
     Utils/FilunaModuleStore.hpp
     Utils/Http.cpp
     Utils/Http.hpp
