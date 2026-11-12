@@ -6,7 +6,7 @@
 2. Resolve o fechamento da herança: outras pastas de fabricante de que os presets da marca
    herdam (ex.: OrcaFilamentLibrary) entram no pacote; nada é editado.
 3. Audita o catálogo (pais ausentes, ciclos) e lista as impressoras selecionáveis.
-4. Grava um .tar.gz determinístico + manifest.json com o SHA-256 de cada arquivo.
+4. Grava um .zip determinístico + manifest.json com o SHA-256 de cada arquivo.
 
 Uso:
   pacote_perfis.py --id qidi --vendor "Q Series,X 3 Series" --fonte SRC/resources/profiles \
@@ -15,12 +15,11 @@ Uso:
 from __future__ import annotations
 
 import argparse
-import gzip
 import hashlib
 import io
 import json
 import sys
-import tarfile
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -97,26 +96,24 @@ def main() -> int:
     erros = [e for e in aud["erros"] if any(e.startswith(f"[{v}]") for v in vendors)]
 
     ns.saida.mkdir(parents=True, exist_ok=True)
-    nome = f"perfis-{ns.id}-{ns.versao}.tar.gz"
+    nome = f"perfis-{ns.id}-{ns.versao}.zip"
     manifesto_arquivos = {}
     buf = io.BytesIO()
-    with tarfile.open(fileobj=buf, mode="w", format=tarfile.PAX_FORMAT) as tar:
+    # zip determinístico (data fixa, ordem fixa): o Slicer extrai com o miniz que já tem
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as z:
         for v in pastas:
             for rel, h in sorted(arquivos_vendor(ns.oficial, v).items()):
-                p = ns.oficial / rel
-                ti = tarfile.TarInfo("profiles/" + rel)
-                dados = p.read_bytes()
-                ti.size, ti.mtime, ti.mode, ti.uid, ti.gid, ti.uname, ti.gname = len(dados), 0, 0o644, 0, 0, "", ""
-                tar.addfile(ti, io.BytesIO(dados))
+                info = zipfile.ZipInfo("profiles/" + rel, date_time=(2026, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.external_attr = 0o644 << 16
+                z.writestr(info, (ns.oficial / rel).read_bytes())
                 manifesto_arquivos["profiles/" + rel] = h
-    gz = io.BytesIO()
-    with gzip.GzipFile(fileobj=gz, mode="wb", mtime=0, filename="") as g:
-        g.write(buf.getvalue())
-    (ns.saida / nome).write_bytes(gz.getvalue())
+    pacote = buf.getvalue()
+    (ns.saida / nome).write_bytes(pacote)
     manifesto = {
         "schema": 1, "id": ns.id, "componente": "profiles", "versao": ns.versao,
         "marcas": vendors, "pastas": pastas, "pacote": nome,
-        "pacote_sha256": hashlib.sha256(gz.getvalue()).hexdigest(), "pacote_bytes": len(gz.getvalue()),
+        "pacote_sha256": hashlib.sha256(pacote).hexdigest(), "pacote_bytes": len(pacote),
         "fonte_igual_oficial": ok, "comparacao": comparacao,
         "auditoria": {"contagem": aud["contagem"], "erros_no_pacote": erros},
         "impressoras": [{"maquina": i["maquina"], "processo": i.get("processo"), "filamento": i.get("filamento"),
