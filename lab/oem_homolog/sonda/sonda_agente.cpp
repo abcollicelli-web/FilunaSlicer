@@ -97,11 +97,11 @@ int main(int argc, char** argv)
     prova["nao_suportado_pelo_protocolo"] = json::array();
     if (achou) {
         json d = json::parse(descoberto);
-        etapa("descoberta_ssdp", d.value("dev_id", "") == serial || serial.empty(), d.dump());
+        etapa(bambu ? "descoberta_ssdp" : "descoberta_udp", d.value("dev_id", "") == serial || serial.empty(), d.dump());
         if (serial.empty())
             serial = d.value("dev_id", "");
     } else
-        etapa("descoberta_ssdp", false, "nenhum anúncio em 10 s");
+        etapa(bambu ? "descoberta_ssdp" : "descoberta_udp", false, "nenhum anúncio em 10 s");
 
     PrinterConnectionParams p;
     p.dev_id = serial;
@@ -115,7 +115,7 @@ int main(int argc, char** argv)
     // 3. conexão
     p.password = a["--codigo"];
     const int rc = agent.connect_printer(p);
-    etapa("conexao_mqtt_tls", rc == BAMBU_NETWORK_SUCCESS && estado_conexao == ConnectStatusOk);
+    etapa(bambu ? "conexao_mqtt_tls" : "conexao_mqtt", rc == BAMBU_NETWORK_SUCCESS && estado_conexao == ConnectStatusOk);
     if (rc != BAMBU_NETWORK_SUCCESS) {
         std::ofstream(a["--prova"]) << prova.dump(1);
         return 1;
@@ -124,11 +124,16 @@ int main(int argc, char** argv)
     // 4. estado + sistema de cores
     const bool tem = espera(std::chrono::seconds(10), [&] { return !ultimo.is_null(); });
     etapa("estado_inicial", tem, tem ? ultimo.value("gcode_state", "") : "");
+    // o sistema de cores pode chegar num relatório seguinte ao primeiro estado (CC2: canvas 2005)
+    espera(std::chrono::seconds(5), [&] { return ultimo.contains("ams"); });
     int bandejas = 0;
-    if (tem && ultimo.contains("ams") && ultimo["ams"].contains("ams"))
-        for (const auto& u : ultimo["ams"]["ams"])
-            bandejas += int(u.value("tray", json::array()).size());
-    etapa("sistema_cores_ams", bandejas > 0, std::to_string(bandejas) + " bandejas");
+    {
+        std::lock_guard<std::mutex> l(mx);
+        if (ultimo.contains("ams") && ultimo["ams"].contains("ams"))
+            for (const auto& u : ultimo["ams"]["ams"])
+                bandejas += int(u.value("tray", json::array()).size());
+    }
+    etapa(bambu ? "sistema_cores_ams" : "sistema_cores_canvas", bandejas > 0, std::to_string(bandejas) + " bandejas");
 
     if (!so_ler) {
         // 5. envio + início com mapeamento do AMS
