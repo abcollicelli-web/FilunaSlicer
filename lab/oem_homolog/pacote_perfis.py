@@ -80,9 +80,14 @@ def main() -> int:
         a, b = arquivos_vendor(ns.fonte, v), arquivos_vendor(ns.oficial, v)
         so_f = sorted(set(a) - set(b))
         so_o = sorted(set(b) - set(a))
-        dif = sorted(k for k in set(a) & set(b) if a[k] != b[k])
+        dif_bytes = sorted(k for k in set(a) & set(b) if a[k] != b[k])
+        # checkout do git pode trocar CRLF/LF; separa isso de conteúdo diferente
+        def sem_eol(raiz, k):
+            return (raiz / k).read_bytes().replace(b"\r\n", b"\n")
+        dif = [k for k in dif_bytes if sem_eol(ns.fonte, k) != sem_eol(ns.oficial, k)]
         comparacao[v] = {"arquivos_fonte": len(a), "arquivos_oficial": len(b),
                          "so_na_fonte": so_f[:50], "so_no_oficial": so_o[:50], "diferentes": dif[:50],
+                         "n_diferentes": len(dif), "so_fim_de_linha": len(dif_bytes) - len(dif),
                          "identico": not (so_f or so_o or dif)}
         ok &= comparacao[v]["identico"]
 
