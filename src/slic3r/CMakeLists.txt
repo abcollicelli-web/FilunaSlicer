@@ -788,6 +788,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/HexFile.hpp
     Utils/FilunaBambuLanAgent.cpp
     Utils/FilunaBambuLanAgent.hpp
+    Utils/FilunaElegooCC2Agent.cpp
+    Utils/FilunaElegooCC2Agent.hpp
     Utils/FilunaModuleStore.cpp
     Utils/FilunaMqttClient.cpp
     Utils/FilunaMqttClient.hpp

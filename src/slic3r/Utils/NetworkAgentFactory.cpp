@@ -11,6 +11,7 @@
 #include "slic3r/plugin/pluginTypes/printerAgent/PrinterAgentPluginCapability.hpp"
 #include "CrealityPrintAgent.hpp"
 #include "FilunaBambuLanAgent.hpp"
+#include "FilunaElegooCC2Agent.hpp"
 #include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <chrono>
@@ -192,6 +193,8 @@ void NetworkAgentFactory::register_all_agents()
     register_agent<MoonrakerPrinterAgent>();
     // Filuna: Bambu Lab pelo modo LAN aberto, sem o plug-in fechado (REGRA-CANONICA-CONECTIVIDADE-OPEN)
     register_agent<FilunaBambuLanAgent>();
+    // Filuna: Elegoo Centauri Carbon 2 pelo protocolo LAN do SDK aberto Elegoo-Link
+    register_agent<FilunaElegooCC2Agent>();
 
     // Keep BBL as a built-in option. Python printer-agent plugins with the
     // same AgentInfo ID are listed separately under the plugin registry key.

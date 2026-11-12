@@ -1,10 +1,12 @@
-// Filuna — sonda de rede da Bambu Lab pelo agente nativo FilunaBambuLanAgent (sem plug-in fechado).
+// Filuna — sonda de rede dos agentes LAN nativos do Filuna (sem plug-in fechado):
+//   --agente bambu       FilunaBambuLanAgent  (SSDP 2021, MQTT/TLS 8883, FTPS 990)
+//   --agente elegoo-cc2  FilunaElegooCC2Agent (UDP 52700, MQTT 1883, HTTP PUT /upload)
 // Roda o fluxo inteiro contra uma impressora (emulada ou real): descobrir, recusar código errado,
-// conectar, ler estado e AMS, enviar o 3MF por FTPS, iniciar com o mapeamento do AMS, pausar,
-// retomar e parar. Escreve uma prova JSON com o resultado de cada etapa.
+// conectar, ler estado e sistema de cores, enviar o arquivo, iniciar com o mapeamento de cores,
+// pausar, retomar, mudar temperatura (quando o protocolo tem) e parar. Grava uma prova JSON.
 //
-// sonda_bambu --ip IP --serial SERIAL --codigo CODIGO --arquivo cubo.gcode.3mf --prova prova.json
-//             [--mqtt 8883 --ftps 990 --ssdp 2021] [--sem-parar]   (--sem-parar: impressora real, só lê)
+// sonda_agente --agente bambu --ip IP --serial SERIAL --codigo CODIGO --arquivo arquivo --prova prova.json
+//              [--porta-a N --porta-b N --porta-c N] [--sem-parar]   (--sem-parar: impressora real, só lê)
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
@@ -18,6 +20,8 @@
 #include <nlohmann/json.hpp>
 
 #include "slic3r/Utils/FilunaBambuLanAgent.hpp"
+#include "slic3r/Utils/FilunaElegooCC2Agent.hpp"
+#include <memory>
 
 using namespace Slic3r;
 using json = nlohmann::json;
@@ -38,14 +42,27 @@ bool espera(std::chrono::seconds t, const std::function<bool()>& f)
 
 int main(int argc, char** argv)
 {
-    std::map<std::string, std::string> a{{"--ip", "127.0.0.1"}, {"--mqtt", "8883"}, {"--ftps", "990"}, {"--ssdp", "2021"}};
+    std::map<std::string, std::string> a{{"--ip", "127.0.0.1"}, {"--agente", "bambu"}};
     bool so_ler = false;
     for (int i = 1; i < argc; ++i) {
         std::string k = argv[i];
         if (k == "--sem-parar") { so_ler = true; continue; }
         if (i + 1 < argc) a[k] = argv[++i];
     }
-    json prova = {{"fabricante", "bambu"}, {"agente", FILUNA_BAMBU_LAN_AGENT_ID}, {"ip", a["--ip"]}, {"etapas", json::array()}};
+    const bool bambu = a["--agente"] == "bambu";
+    auto porta = [&](const char* k, int padrao) { return (unsigned short) (a.count(k) ? std::stoi(a[k]) : padrao); };
+    std::unique_ptr<IPrinterAgent> agente;
+    if (bambu) {
+        auto b = std::make_unique<FilunaBambuLanAgent>("");
+        b->set_ports({porta("--porta-a", 8883), porta("--porta-b", 990), porta("--porta-c", 2021), true});
+        agente = std::move(b);
+    } else {
+        auto e = std::make_unique<FilunaElegooCC2Agent>("");
+        e->set_ports({porta("--porta-a", 1883), porta("--porta-b", 80), porta("--porta-c", 52700)});
+        agente = std::move(e);
+    }
+    IPrinterAgent& agent = *agente;
+    json prova = {{"fabricante", bambu ? "bambu" : "elegoo"}, {"agente", agent.get_agent_info().id}, {"ip", a["--ip"]}, {"etapas", json::array()}};
     bool tudo_ok = true;
     auto etapa = [&](const std::string& nome, bool ok, const std::string& det = {}) {
         prova["etapas"].push_back({{"etapa", nome}, {"ok", ok}, {"detalhe", det}});
@@ -53,8 +70,6 @@ int main(int argc, char** argv)
         tudo_ok &= ok;
     };
 
-    FilunaBambuLanAgent agent("");
-    agent.set_ports({(unsigned short) std::stoi(a["--mqtt"]), (unsigned short) std::stoi(a["--ftps"]), (unsigned short) std::stoi(a["--ssdp"]), true});
     agent.set_on_ssdp_msg_fn([](std::string js) {
         std::lock_guard<std::mutex> l(mx);
         descoberto = js;
@@ -79,6 +94,7 @@ int main(int argc, char** argv)
     const bool achou = espera(std::chrono::seconds(10), [&] { return !descoberto.empty(); });
     agent.start_discovery(false, false);
     std::string serial = a["--serial"];
+    prova["nao_suportado_pelo_protocolo"] = json::array();
     if (achou) {
         json d = json::parse(descoberto);
         etapa("descoberta_ssdp", d.value("dev_id", "") == serial || serial.empty(), d.dump());
@@ -90,7 +106,7 @@ int main(int argc, char** argv)
     PrinterConnectionParams p;
     p.dev_id = serial;
     p.host   = a["--ip"];
-    p.port   = a["--mqtt"];
+    p.port   = std::to_string(porta("--porta-a", bambu ? 8883 : 1883));
 
     // 2. código errado é recusado
     p.password = "00000000";
@@ -131,7 +147,7 @@ int main(int argc, char** argv)
             if (st == PrintingStageUpload) ultimo_pct = code;
             if (st == PrintingStageERROR) erro = msg;
         }, [] { return false; });
-        etapa("envio_ftps", prc == BAMBU_NETWORK_SUCCESS && ultimo_pct == 100, erro.empty() ? "100%" : erro);
+        etapa(bambu ? "envio_ftps" : "envio_http", prc == BAMBU_NETWORK_SUCCESS && ultimo_pct == 100, erro.empty() ? "100%" : erro);
         auto estado_vira = [&](const char* s) {
             return espera(std::chrono::seconds(10), [&] { return ultimo.value("gcode_state", "") == s; });
         };
@@ -141,10 +157,13 @@ int main(int argc, char** argv)
         etapa("pausar", estado_vira("PAUSE"));
         agent.send_message_to_printer(serial, base + "resume\"}}", 0, 0);
         etapa("retomar", estado_vira("RUNNING"));
-        agent.send_message_to_printer(serial, R"({"print":{"sequence_id":"2","command":"gcode_line","param":"M104 S200\n"}})", 0, 0);
-        etapa("controle_temperatura", espera(std::chrono::seconds(10), [&] { return ultimo.value("nozzle_target_temper", 0.0) == 200.0; }));
+        const int trc = agent.send_message_to_printer(serial, R"({"print":{"sequence_id":"2","command":"gcode_line","param":"M104 S200\n"}})", 0, 0);
+        if (trc == ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED)
+            prova["nao_suportado_pelo_protocolo"].push_back("controle_temperatura");
+        else
+            etapa("controle_temperatura", espera(std::chrono::seconds(10), [&] { return ultimo.value("nozzle_target_temper", 0.0) == 200.0; }));
         agent.send_message_to_printer(serial, base + "stop\"}}", 0, 0);
-        etapa("parar", estado_vira("FAILED"));
+        etapa("parar", estado_vira(bambu ? "FAILED" : "IDLE"));
     }
     agent.disconnect_printer();
     prova["aprovado"] = tudo_ok;
