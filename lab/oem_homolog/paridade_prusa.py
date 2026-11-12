@@ -29,7 +29,7 @@ from paridade import normalizado, primeira_diferenca, sha  # noqa: E402
 
 
 def ler_ini(p: Path) -> dict[str, dict[str, str]]:
-    cp = configparser.RawConfigParser(strict=False, interpolation=None, delimiters=("=",), comment_prefixes=("#",))
+    cp = configparser.RawConfigParser(strict=False, interpolation=None, delimiters=("=",), comment_prefixes=("#", ";"))
     cp.optionxform = str
     cp.read(p, encoding="utf-8")
     return {s: dict(cp[s]) for s in cp.sections()}
