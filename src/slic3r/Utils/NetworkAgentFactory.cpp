@@ -12,6 +12,7 @@
 #include "CrealityPrintAgent.hpp"
 #include "FilunaBambuLanAgent.hpp"
 #include "FilunaElegooCC2Agent.hpp"
+#include "FilunaFlashforgeAgent.hpp"
 #include <algorithm>
 #include <boost/log/trivial.hpp>
 #include <chrono>
@@ -195,6 +196,8 @@ void NetworkAgentFactory::register_all_agents()
     register_agent<FilunaBambuLanAgent>();
     // Filuna: Elegoo Centauri Carbon 2 pelo protocolo LAN do SDK aberto Elegoo-Link
     register_agent<FilunaElegooCC2Agent>();
+    // Filuna: Flashforge pela API HTTP local, sem a biblioteca fechada FlashNetwork
+    register_agent<FilunaFlashforgeAgent>();
 
     // Keep BBL as a built-in option. Python printer-agent plugins with the
     // same AgentInfo ID are listed separately under the plugin registry key.

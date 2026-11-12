@@ -790,6 +790,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/FilunaBambuLanAgent.hpp
     Utils/FilunaElegooCC2Agent.cpp
     Utils/FilunaElegooCC2Agent.hpp
+    Utils/FilunaFlashforgeAgent.cpp
+    Utils/FilunaFlashforgeAgent.hpp
     Utils/FilunaModuleStore.cpp
     Utils/FilunaMqttClient.cpp
     Utils/FilunaMqttClient.hpp
