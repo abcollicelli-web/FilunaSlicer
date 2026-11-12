@@ -276,5 +276,11 @@
     "status": "CANDIDATO_LOCALIZAR_E_VERIFICAR",
     "policy": "FILUNA/REGRA-CANONICA-CONECTIVIDADE-OPEN-20261110.md",
     "rules": "fonte aberta/SDK aberto; sem componente fechado; sem desvio de autenticacao; homologar por modelo"
+  },
+  "homologation_block": {
+    "estado": "BLOQUEADO_PELO_FABRICANTE",
+    "motivo": "A fonte publicada (ANYCUBIC-3D/AnycubicSlicerNext, main 6103ed8, 02/02/2026, motor 2.3.1) não é a do binário oficial 2.0.0.6 (30/10/2026), e não há outra tag ou ramo. Compilada pela receita do próprio fabricante, ela recusa os perfis do binário oficial (retraction_distances_when_cut fora da faixa) em 35 de 39 máquinas e diverge nas outras 4 (Kobra 3 Max V2). Sem a fonte do binário não existe prova de identidade possível.",
+    "prova": "res/paridade-anycubic/prova.json (régua de 12/11/2026)",
+    "desbloqueio": "Anycubic publicar a fonte do 2.0.0.6, ou decisão do proprietário sobre outro critério para o motor desta marca."
   }
 }

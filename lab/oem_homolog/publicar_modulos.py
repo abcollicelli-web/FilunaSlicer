@@ -130,8 +130,15 @@ def main() -> int:
             "preparar_enviar_controlar": estado_rede(ns.provas, fid),
             "impressao_fisica": {"estado": "PENDENTE_TESTE_DO_PROPRIETARIO"},
         }
+        bloqueio = mod.get("homologation_block")
+        if bloqueio:
+            # motor/cores não têm como provar identidade: a fonte publicada não é a do binário oficial.
+            # O resultado medido fica junto, para ninguém confundir bloqueio com falta de teste.
+            for k in ("motor", "cores"):
+                homolog[k] = {"estado": bloqueio["estado"], "motivo": bloqueio["motivo"], "medido": homolog[k]}
         internos = [v["estado"] for k, v in homolog.items() if k != "impressao_fisica"]
-        estado = "HOMOLOGADO_INTERNO" if all(e.startswith("HOMOLOGADO") for e in internos) else "EM_TESTE"
+        estado = ("HOMOLOGADO_INTERNO" if all(e.startswith("HOMOLOGADO") for e in internos)
+                  else bloqueio["estado"] if bloqueio else "EM_TESTE")
         modulos.append({
             "id": fid, "nome": NOMES[fid], "versao": versao, "estado": estado,
             "fonte": {"repositorio": src.get("repository"), "ref": src.get("tag") or src.get("branch"),
