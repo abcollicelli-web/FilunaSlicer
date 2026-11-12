@@ -126,10 +126,15 @@ function FlImpressoras() {
 					(s.bobina_restante_g != null ? FlGramas(s.bobina_restante_g) : "") + "</em></div>";
 			});
 			if (i.estado === "limpar_mesa")
-				h += '<button type="button" class="FlBotao" onclick="FlMesaLimpa(\'' + FlEsc(i.id) + '\', this)">Mesa limpa</button>';
+				h += '<button type="button" class="FlBotao" onclick="event.stopPropagation(); FlMesaLimpa(\'' + FlEsc(i.id) + '\', this)">Mesa limpa</button>';
 			h += "</div>";
 		});
 		$("#FlImpressoras").html(h || '<p class="FlVazio">Nenhuma impressora na Farm ainda.</p>');
+		// Clicar na impressora abre a unidade na tela Dispositivo.
+		$("#FlImpressoras .FlImp").each(function (k) {
+			var nome = (r.impressoras || [])[k] ? r.impressoras[k].nome : "";
+			$(this).off("click").on("click", function () { FlAbrirAba("filuna.dispositivo", "unidade:" + nome); });
+		});
 	}).catch(function () { });
 }
 

@@ -5,6 +5,7 @@
 #include "GUI_App.hpp"
 #include "wxExtensions.hpp"
 #include "Widgets/Button.hpp"
+#include "Widgets/Label.hpp"
 
 //BBS set font size
 
@@ -25,7 +26,7 @@
 wxDEFINE_EVENT(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, wxCommandEvent);
 
 ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
-    wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
+    wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL), m_owner(parent)
 {
 #ifdef __WINDOWS__
     SetDoubleBuffered(true);
@@ -110,8 +111,13 @@ void ButtonsListCtrl::Rescale()
     //m_mode_sizer->msw_rescale();
     int em = em_unit(this);
     for (Button* btn : m_pageButtons) {
-        //BBS
-        btn->SetMinSize({(btn->GetLabel().empty() ? 40 : 132) * em / 10, 36 * em / 10});
+        if (m_filuna_navbar) {
+            btn->SetPaddingSize(FromDIP(wxSize(16, 8)));
+            btn->SetMinSize({-1, FromDIP(38)});
+        } else {
+            //BBS
+            btn->SetMinSize({(btn->GetLabel().empty() ? 40 : 132) * em / 10, 36 * em / 10});
+        }
         btn->Rescale();
     }
 
@@ -162,10 +168,10 @@ void ButtonsListCtrl::SetSelection(int sel)
 
 bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /* = false*/, const std::string &bmp_name /* = ""*/, const wxBitmap &bmp /* = wxNullBitmap */)
 {
-    Button * btn = new Button(this, text, bmp_name, wxNO_BORDER);
+    Button * btn = new Button(this, text, m_filuna_navbar ? wxString() : wxString(bmp_name), wxNO_BORDER);
     btn->SetCornerRadius(10); // Filuna: abas em pílula
 
-    if (bmp_name.empty() && bmp.IsOk())
+    if (!m_filuna_navbar && bmp_name.empty() && bmp.IsOk())
         btn->SetIcon(bmp);
 
     // The label no longer carries a leading space, so widen the icon<->text gap to keep the
@@ -179,8 +185,15 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
     }
 
     int em = em_unit(this);
-    //BBS set size for button
-    btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 36 * em / 10});
+    if (m_filuna_navbar) {
+        // Text-only tab sized to its label, like the approved screens.
+        btn->SetFont(Label::Body_15);
+        btn->SetPaddingSize(FromDIP(wxSize(16, 8)));
+        btn->SetMinSize({-1, FromDIP(38)});
+    } else {
+        //BBS set size for button
+        btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 36 * em / 10});
+    }
 
     StateColor bg_color = StateColor(
         std::pair{wxColour(246, 239, 231), (int) StateColor::Hovered},
@@ -198,7 +211,7 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
             
             wxCommandEvent evt = wxCommandEvent(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED);
             evt.SetId(sel);
-            wxPostEvent(this->GetParent(), evt);
+            wxPostEvent(m_owner, evt);
         }
     });
     Slic3r::GUI::wxGetApp().UpdateDarkUI(btn);
@@ -267,6 +280,8 @@ void ButtonsListCtrl::ShowPageButton(size_t n, bool show)
 // ORCA
 void ButtonsListCtrl::SetCompact(size_t n, bool compact)
 {
+    if (m_filuna_navbar) // Filuna: text-only tabs have no icon to fall back to
+        return;
     int em = em_unit(this);
     Button* btn = m_pageButtons[n];
     btn->SetMinSize({(compact ? 40 : 136) * em / 10, 36 * em / 10});

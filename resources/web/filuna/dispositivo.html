@@ -6,7 +6,7 @@
 <title>Dispositivo</title>
 <link rel="stylesheet" href="base.css">
 <style>
-.head{display:flex;align-items:flex-start;padding:20px 24px 16px;gap:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.head{display:flex;align-items:flex-start;padding:8px 32px 18px;gap:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .hr{margin-left:auto;display:flex;align-items:center;gap:12px;padding-top:6px;flex-wrap:wrap}
 .hri{display:flex;align-items:center;gap:8px;color:var(--ink2);font-size:14px}
 .lista{width:250px;border-right:1px solid var(--line);background:var(--side);padding:16px 12px;flex:none;overflow:auto}
@@ -15,7 +15,7 @@
 .imp .n{font-weight:700;font-size:14px}.imp .s{font-size:12px;color:var(--muted)}
 .estado{width:10px;height:10px;border-radius:50%;flex:none;background:#CFC8BE}
 .e-imprimindo{background:var(--magenta-deep)}.e-livre{background:var(--good)}.e-limpar_mesa{background:var(--violeta)}.e-pausada{background:var(--orange)}.e-erro,.e-falhou{background:var(--warn)}
-.body{flex:1;display:flex;gap:24px;padding:22px 24px;min-height:0;flex-wrap:wrap}
+.body{flex:1;display:flex;gap:28px;padding:24px 32px;min-height:0;flex-wrap:wrap}
 .view{flex:1.5;min-width:340px;min-height:380px;background:var(--scene);border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column}
 .view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cena{position:absolute;inset:0;background:radial-gradient(120% 80% at 55% 30%,#39352f,#1b1a19)}
@@ -52,55 +52,140 @@
 .trava{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--ink2)}
 .diag{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-weight:600;cursor:pointer}
 .perfil-aviso{margin-top:6px;font-size:13px;color:var(--warn)}.perfil-aviso a{margin-left:6px}
+/* Configuração (sem impressora) e galeria de unidades — pranchas DEV-01 e DEV-02 da Direção Visual C */
+.pg{padding:28px 32px}.pg .topo{padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.cfg{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:36px}
+@media(max-width:1000px){.cfg{grid-template-columns:1fr}}
+.cfg .cena2{background:#1C2024;border-radius:18px;min-height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;color:#EDEAE6;font-size:21px}
+.passos2 .p{padding:22px 0;border-bottom:1px solid var(--line)}.passos2 .p b{font-size:18px;display:block}.passos2 .p span{color:var(--ink2);font-size:14px;margin-top:6px;display:block}
+.passos2 .btn{width:100%;height:46px;margin-top:28px}
+.filtros{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+.filtros .campo{margin:0;width:min(520px,100%)}
+.chip{border:none;border-radius:20px;padding:8px 26px;background:#ECE9E4;color:var(--ink2);font-weight:700;font-size:13px}.chip.on{background:var(--rose);color:var(--magenta-deep)}
+.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
+.un{background:#F1EEEA;border-radius:18px;padding:22px 22px 24px;display:flex;flex-direction:column}
+.un .ilu{display:flex;justify-content:center;margin-bottom:18px}
+.un .n{font-size:24px;font-weight:800}.un .st{margin:12px 0 24px;font-size:14.5px;color:var(--ink2)}.un .st.ok{color:var(--good)}
+.un .btn{margin-top:auto;justify-content:flex-start;height:46px;padding:0 18px}
+.nota{margin-top:26px;color:var(--ink2);font-size:14px}
+.voltar{display:inline-flex;align-items:center;gap:6px;color:var(--ink2);font-weight:600;font-size:13.5px;margin-bottom:8px;cursor:pointer}
 </style>
 </head>
 <body>
 <div class="tela"><div class="app" id="app"><div class="carregando">Carregando…</div></div></div>
 <script src="ponte.js"></script>
 <script>
-var estado = { imps: [], bobinas: [], sel: null, local: null, confirmar: null };
+// Fluxo do Dispositivo: sem impressora → configuração (DEV-01); com impressoras → galeria de unidades (DEV-02);
+// ao abrir uma unidade → a tela aprovada (02-dispositivo). As impressoras cadastradas neste computador aparecem
+// mesmo sem internet; a leitura da Farm (estado, trabalho, slots) entra quando a conta está conectada.
+var estado = { vista: "lista", filtro: "todas", busca: "", unidades: [], imps: [], bobinas: [], locais: [], sel: null, local: null, confirmar: null };
 var NOMES = { livre: "Livre", imprimindo: "Imprimindo", pausada: "Pausada", limpar_mesa: "Limpar a mesa", erro: "Com erro", offline: "Desconectada", falhou: "Falhou" };
 var TONS = { livre: "ok", imprimindo: "rosa", limpar_mesa: "rosa", pausada: "alerta", erro: "alerta", falhou: "alerta" };
 var E = Filuna.esc;
 
 function carregar() {
-	Filuna.nativo("impressora.atual").then(function (r) { estado.local = r; desenhar(); }).catch(function () {});
-	if (!Filuna.temToken()) { desenhar(); return; }
-	Promise.all([Filuna.api("GET", "/impressoras"), Filuna.api("GET", "/estoque")]).then(function (r) {
-		estado.imps = r[0].impressoras || []; estado.bobinas = r[1].bobinas || [];
-		if (!estado.sel || !estado.imps.some(function (i) { return i.id == estado.sel; })) estado.sel = estado.imps.length ? estado.imps[0].id : null;
-		desenhar();
-	}, function (e) { if (e.status == 401) { Filuna.sair(); } estado.erro = e.erro; desenhar(); });
+	var pedidos = [
+		Filuna.nativo("impressora.atual").then(function (r) { estado.local = r; }).catch(function () {}),
+		Filuna.nativo("impressoras.registradas").then(function (r) { estado.locais = r.impressoras || []; }).catch(function () { estado.locais = []; })
+	];
+	if (Filuna.temToken()) pedidos.push(Promise.all([Filuna.api("GET", "/impressoras"), Filuna.api("GET", "/estoque").catch(function () { return { bobinas: [] }; })]).then(function (r) {
+		estado.imps = r[0].impressoras || []; estado.bobinas = r[1].bobinas || []; estado.semLeitura = !!r[0]._offline; estado.erro = "";
+	}, function (e) { if (e.status == 401) Filuna.sair(); estado.erro = e.erro; }));
+	Promise.all(pedidos).then(function () { juntar(); aplicarPedido(); desenhar(); });
+}
+
+// Uma unidade por nome: cadastro deste computador e/ou impressora da Farm.
+// Pedido de outra tela (Início › Farm › cartão da impressora): "unidade:<nome>" abre essa unidade.
+function abrirPedido(secao) {
+	if (!secao || secao.indexOf("unidade:") != 0) return;
+	estado.pedido = secao.slice(8).trim().toLowerCase();
+}
+function aplicarPedido() {
+	if (estado.pedido == null) return;
+	var u = estado.unidades.filter(function (x) { return x.nome.trim().toLowerCase() == estado.pedido; })[0];
+	estado.pedido = null;
+	if (u) { estado.sel = u.id; estado.vista = "unidade"; }
+}
+
+function juntar() {
+	var por = {}, lista = [];
+	function chave(n) { return String(n || "").trim().toLowerCase(); }
+	estado.imps.forEach(function (i) { var u = { id: "f:" + i.id, nome: i.nome, modelo: i.modelo || "", farm: i }; por[chave(i.nome)] = u; lista.push(u); });
+	estado.locais.forEach(function (l) {
+		var u = por[chave(l.nome)];
+		if (u) { u.local = l; return; }
+		lista.push({ id: "l:" + l.nome, nome: l.nome, modelo: (l.perfis && l.perfis[0]) || "", local: l });
+	});
+	estado.unidades = lista;
+}
+
+function leitura(u) {
+	var i = u.farm;
+	if (!i || estado.semLeitura || i.estado == "offline") return { txt: i && i.estado == "offline" ? "Offline · última leitura expirada" : "Sem leitura · cadastrada neste computador", ok: false, livre: false };
+	if (i.estado == "imprimindo" && i.trabalho) return { txt: "Imprimindo · " + Math.round((i.trabalho.progresso || 0) * (i.trabalho.progresso <= 1 ? 100 : 1)) + " %", ok: true, livre: false };
+	if (i.estado == "livre") return { txt: "Pronta · leitura atual", ok: true, livre: true };
+	return { txt: (NOMES[i.estado] || i.estado) + " · leitura atual", ok: true, livre: false };
+}
+
+function ilustracao(w) {
+	return '<svg viewBox="0 0 260 216" width="' + w + '" style="stroke:none"><rect x="8" y="8" width="244" height="180" rx="20" fill="#353B43"/><rect x="26" y="22" width="208" height="134" rx="12" fill="#11161B"/>' +
+		'<rect x="45" y="36" width="170" height="3" fill="#7E8791"/><rect x="128" y="38" width="3" height="30" fill="#7E8791"/><rect x="111" y="66" width="37" height="28" rx="5" fill="#A3ABB4"/>' +
+		'<path d="M55 130 L185 118 L215 145 L80 158 Z" fill="#4A535C"/><path d="M118 108 l15-9 15 9v18l-15 9-15-9z M118 108l15 9 15-9 M133 117v18" fill="none" stroke="#E4769C" stroke-width="3" stroke-linejoin="round"/>' +
+		'<rect x="40" y="160" width="180" height="7" rx="3" fill="#7E8791"/><circle cx="226" cy="170" r="3.5" fill="#1F8F5F"/><rect x="22" y="188" width="216" height="22" rx="10" fill="#1C2024"/></svg>';
+}
+
+function configurar(app) {
+	app.innerHTML = '<div class="pg"><div class="topo"><div class="h1">Sua primeira impressora</div><div class="sub">Cadastre a impressora uma vez; ela fica salva neste computador e funciona sem internet.</div></div>' +
+		'<div class="cfg"><div class="cena2">' + ilustracao(300) + '<div>Seu espaço de impressão começa aqui</div></div><div class="passos2">' +
+		'<div class="p"><b>Identificar</b><span>Descobrir a impressora na rede local ou informar o endereço autorizado.</span></div>' +
+		'<div class="p"><b>Cadastrar</b><span>Associar a unidade, o modelo e o perfil, sem confundir cadastro com conexão.</span></div>' +
+		'<div class="p"><b>Parear</b><span>Acesso local do titular; a autorização de comandos é separada.</span></div>' +
+		'<div class="p"><b>Verificar</b><span>As capacidades são observadas antes de liberar comandos.</span></div>' +
+		'<button class="btn primario" id="adicionar">+ Adicionar impressora</button></div></div></div>';
+	app.querySelector("#adicionar").onclick = function () { Filuna.nativo("impressora.adicionar"); };
+}
+
+function galeria(app) {
+	var f = estado.filtro, q = estado.busca.toLowerCase();
+	var vis = estado.unidades.filter(function (u) {
+		var l = leitura(u);
+		if (f == "disp" && !l.livre) return false;
+		if (f == "sem" && l.ok) return false;
+		return !q || (u.nome + " " + u.modelo).toLowerCase().indexOf(q) >= 0;
+	});
+	app.innerHTML = '<div class="pg"><div class="topo entre"><div><div class="h1">Lista de unidades</div><div class="sub">' + estado.unidades.length +
+		(estado.unidades.length == 1 ? " impressora cadastrada" : " impressoras cadastradas") + (estado.semLeitura ? " · sem conexão, mostrando o último estado guardado" : "") + '</div></div>' +
+		'<button class="btn" id="adicionar">+ Adicionar impressora</button></div>' +
+		'<div class="filtros"><div class="campo"><label>Buscar unidade</label><input type="text" id="busca" placeholder="Nome, modelo ou identificador" value="' + E(estado.busca) + '"></div>' +
+		[["todas", "Todas"], ["disp", "Disponíveis"], ["sem", "Sem conexão"]].map(function (c) { return '<button class="chip' + (c[0] == f ? " on" : "") + '" data-f="' + c[0] + '">' + c[1] + "</button>"; }).join("") + "</div>" +
+		(vis.length ? '<div class="galeria">' + vis.map(function (u, k) {
+			var l = leitura(u);
+			return '<div class="un"><div class="ilu">' + ilustracao(240) + '</div><div class="n">' + E(u.nome) + '</div><div class="st' + (l.ok ? " ok" : "") + '">' + E(l.txt) + "</div>" +
+				'<button class="btn' + (k == 0 ? " primario" : "") + '" data-u="' + E(u.id) + '">› &nbsp;Abrir unidade</button></div>';
+		}).join("") + "</div>" : '<div class="vazio">Nenhuma unidade neste filtro.</div>') +
+		'<div class="nota">Cadastro não é presença. Estado desconhecido não é apresentado como online.</div>' + (estado.erro ? '<div class="erro">' + E(estado.erro) + "</div>" : "") + "</div>";
+	app.querySelector("#adicionar").onclick = function () { Filuna.nativo("impressora.adicionar"); };
+	var b = app.querySelector("#busca"); b.oninput = function () { estado.busca = b.value; var pos = b.selectionStart; galeria(app); var nb = app.querySelector("#busca"); nb.focus(); nb.setSelectionRange(pos, pos); };
+	app.querySelectorAll("[data-f]").forEach(function (x) { x.onclick = function () { estado.filtro = x.dataset.f; galeria(app); }; });
+	app.querySelectorAll("[data-u]").forEach(function (x) { x.onclick = function () { estado.sel = x.dataset.u; estado.vista = "unidade"; estado.confirmar = null; estado.msg = ""; desenhar(); }; });
 }
 
 function desenhar() {
 	var app = document.getElementById("app");
-	var local = estado.local || {};
-	if (!Filuna.temToken()) {
-		app.innerHTML = cabecalho(local.impressora || "Impressora local", "", local.modelo || "", local) +
-			'<div class="body"><div class="direita" style="max-width:520px"><div class="card"><div class="lbl">Farm Filuna</div>' +
-			'<p class="sub">Entre na sua conta para acompanhar todas as suas impressoras, câmera, fila e materiais por aqui — os mesmos dados do site.</p>' +
-			'<div id="login"></div></div></div></div>' + rodape();
-		Filuna.telaLogin(app.querySelector("#login"), carregar, " ");
-		ligarComuns(app); return;
-	}
-	var i = estado.imps.filter(function (x) { return x.id == estado.sel; })[0];
-	var lista = estado.imps.length < 2 ? "" : '<div class="lista"><div class="lbl" style="padding:0 6px 8px">Minhas impressoras</div>' +
-		(estado.imps.length ? estado.imps.map(function (x) {
-			return '<div class="imp' + (x.id == estado.sel ? " on" : "") + '" data-imp="' + E(x.id) + '"><span class="estado e-' + E(x.estado) + '"></span><div><div class="n">' + E(x.nome) +
-				'</div><div class="s">' + E(NOMES[x.estado] || x.estado) + (x.na_fila ? " · " + x.na_fila + " na fila" : "") + "</div></div></div>";
-		}).join("") : '<div class="vazio">Nenhuma impressora na Farm ainda.</div>') +
-		'<button class="btn peq" style="margin-top:10px;width:100%" data-aba="monitor">+ Conectar impressora</button></div>';
-	if (!i) {
-		app.innerHTML = cabecalho(local.impressora || "Dispositivo", "", local.modelo || "", local) + '<div class="corpo">' + lista +
-			'<div class="body"><div class="vazio" style="flex:1">Cadastre suas impressoras na Farm (site ou aqui pelo painel da impressora) para acompanhar tudo nesta tela.' +
-			(estado.erro ? '<div class="erro">' + E(estado.erro) + "</div>" : "") + "</div></div></div>" + rodape();
-		ligarComuns(app); return;
-	}
+	if (!estado.unidades.length) { estado.vista = "lista"; configurar(app); return; }
+	var u = estado.unidades.filter(function (x) { return x.id == estado.sel; })[0];
+	if (estado.vista != "unidade" || !u) { estado.vista = "lista"; galeria(app); return; }
+	unidade(app, u);
+}
+
+function unidade(app, u) {
+	var local = estado.local || {}, lista = "";
+	// Unidade só cadastrada neste computador (ou sem conexão): mesma tela, sem leitura da Farm.
+	var i = u.farm || { id: "", nome: u.nome, modelo: u.modelo, estado: "offline", slots: [], na_fila: 0 };
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
 	var foto = i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
-	var html = cabecalho(i.nome, i.estado, i.modelo || "", local) +
+	var html = '<div style="padding:16px 32px 0"><a class="voltar" id="voltar">‹ Unidades</a></div>' + cabecalho(i.nome, i.estado, i.modelo || "", local) +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
 		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
 		'<div class="view">' + foto + '<div class="vtag">' + (i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
@@ -126,8 +211,8 @@ function desenhar() {
 		'<div class="mats"><div class="lbl">Materiais</div>' + materiais(i) + "</div></div></div>" + rodape();
 	app.innerHTML = html;
 	if (i.camera_em) camera(i.id);
-	app.querySelectorAll("[data-imp]").forEach(function (b) { b.onclick = function () { estado.sel = b.dataset.imp; estado.confirmar = null; estado.msg = ""; desenhar(); }; });
-	app.querySelectorAll("[data-cmd]").forEach(function (b) { b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
+	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
+	app.querySelectorAll("[data-cmd]").forEach(function (b) { if (!u.farm) b.disabled = true; b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
 	var sim = app.querySelector("#sim"); if (sim) sim.onclick = function () {
 		var c = estado.confirmar; estado.confirmar = null;
 		Filuna.api("POST", "/impressoras/" + encodeURIComponent(i.id) + "/comando", { comando: c }).then(function () { estado.msg = "Pedido de " + c + " enviado. A impressora recebe em segundos."; desenhar(); },
@@ -175,11 +260,12 @@ function materiais(i) {
 }
 
 function rodape() {
-	return '<div class="rodape"><a style="color:var(--magenta-deep);font-weight:700">Impressoras</a><a data-aba="filuna.espaco" data-secao="estoque">Filamentos</a><a data-aba="filuna.espaco" data-secao="fila">Fila e histórico</a>' +
+	return '<div class="rodape"><a style="color:var(--magenta-deep);font-weight:700" id="unidades">Impressoras</a><a data-aba="filuna.espaco" data-secao="estoque">Filamentos</a><a data-aba="filuna.espaco" data-secao="fila">Fila e histórico</a>' +
 		'<span class="r">Envio, fila e agenda não iniciam impressão.</span></div>';
 }
 
 function ligarComuns(app) {
+	var un = app.querySelector("#unidades"); if (un) un.onclick = function () { estado.vista = "lista"; desenhar(); };
 	app.querySelectorAll("[data-aba]").forEach(function (b) { b.onclick = function () { Filuna.nativo("aba.abrir", { aba: b.dataset.aba, secao: b.dataset.secao || "" }); }; });
 }
 
@@ -192,8 +278,10 @@ function camera(iid) {
 }
 
 Filuna.ouvir("mostrar", carregar);
-Filuna.iniciar().then(carregar);
-setInterval(function () { if (!document.hidden && !estado.confirmar) carregar(); }, 15000);
+Filuna.ouvir("impressoras", carregar);   // cadastrada agora em "Adicionar impressora"
+Filuna.ouvir("secao", function (d) { Filuna.nativo("secao.pendente").catch(function () {}); abrirPedido(d.secao); carregar(); });
+Filuna.iniciar().then(function () { return Filuna.nativo("secao.pendente").then(function (r) { abrirPedido(r.secao); }).catch(function () {}); }).then(carregar);
+setInterval(function () { if (!document.hidden && !estado.confirmar && document.activeElement.id != "busca") carregar(); }, 15000);
 </script>
 </body>
 </html>

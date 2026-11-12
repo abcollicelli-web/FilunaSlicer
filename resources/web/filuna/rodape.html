@@ -44,9 +44,9 @@ function dica(k) {
 function tempoCurto(s) { s = Math.round(s || 0); var h = Math.floor(s / 3600), m = Math.round(s % 3600 / 60); return h ? h + "h" + (m < 10 ? "0" : "") + m : m + "min"; }
 
 function ler() {
-	if (Filuna.temToken() && !prefsLidas) {
+	if (!prefsLidas) {
 		prefsLidas = true;
-		Filuna.api("GET", "/preferencias").then(function (r) { autoajuda = r.valores["interface.autoajuda"] !== false; document.getElementById("auto").checked = autoajuda; }).catch(function () {});
+		Filuna.prefs().then(function (v) { autoajuda = v["interface.autoajuda"] !== false; document.getElementById("auto").checked = autoajuda; ultimo = ""; ler(); }).catch(function () {});
 	}
 	Filuna.nativo("fatiamento.resumo").then(function (r) {
 		if (!r.fatiado) {
@@ -76,12 +76,14 @@ document.getElementById("venda").onclick = function () { Filuna.nativo("aba.abri
 document.getElementById("ia").onclick = function () { Filuna.nativo("aba.abrir", { aba: "filuna.espaco", secao: "ia" }); };
 document.getElementById("auto").onchange = function () {
 	autoajuda = this.checked; ultimo = ""; ler();
-	if (Filuna.temToken()) Filuna.api("POST", "/preferencias", { valores: { "interface.autoajuda": autoajuda } }).catch(function () {});
+	// Mesma chave das Configurações (engrenagem › Filuna › Autoajuda); a conta recebe uma cópia.
+	Filuna.nativo("config.gravar", { chave: "filuna_pref_interface_autoajuda", valor: autoajuda ? "true" : "false" }).then(Filuna.enviarPrefs).catch(function () {});
 };
 Filuna.ouvir("fatiado", function () { ultimo = ""; ler(); });
 Filuna.ouvir("preferencias", function (d) { if (d.valores) { autoajuda = d.valores["interface.autoajuda"] !== false; document.getElementById("auto").checked = autoajuda; ultimo = ""; ler(); } });
 Filuna.iniciar().then(ler);
 setInterval(ler, 3000);
+Filuna.ouvir("preferencias", function () { prefsLidas = false; ler(); });
 </script>
 </body>
 </html>

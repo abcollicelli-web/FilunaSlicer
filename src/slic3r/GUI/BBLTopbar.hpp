@@ -18,6 +18,9 @@ class wxMouseCaptureLostEvent;
 class wxMouseEvent;
 class wxWindow;
 
+// Filuna: height of the single navigation bar (logo, tabs, Exportar / Fatiar mesa, window buttons), in DIP.
+constexpr int FILUNA_NAVBAR_HEIGHT = 56;
+
 class CenteredTitle : public wxControl
 {
 public:
@@ -81,6 +84,9 @@ public:
 
     void ShowCalibrationButton(bool show = true);
 
+    // Filuna: the main tabs are moved into this panel, so the whole window has one navigation bar.
+    wxWindow* GetTabsHost() const { return m_tabs_host; }
+
 protected:
 #ifdef __WXMSW__
     WXLRESULT MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam) override;
@@ -101,10 +107,11 @@ private:
     wxString          m_titleText;
 
     
-    wxAuiToolBarItem* m_undo_item;
-    wxAuiToolBarItem* m_redo_item;
-    wxAuiToolBarItem* m_calib_item;
-    wxAuiToolBarItem* maximize_btn;
+    wxAuiToolBarItem* m_undo_item { nullptr };
+    wxAuiToolBarItem* m_redo_item { nullptr };
+    wxAuiToolBarItem* m_calib_item { nullptr };
+    wxAuiToolBarItem* maximize_btn { nullptr };
+    wxWindow*         m_tabs_host { nullptr };
 
 
     wxBitmap maximize_bitmap;

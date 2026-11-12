@@ -1,6 +1,7 @@
 #include "FilunaPanel.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <ctime>
 #include <stdexcept>
@@ -12,6 +13,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/nowide/fstream.hpp>
 
 #include <wx/sizer.h>
 #include <wx/utils.h>
@@ -38,6 +40,7 @@
 #include "GUI_ObjectList.hpp"
 #include "MainFrame.hpp"
 #include "PartPlate.hpp"
+#include "PhysicalPrinterDialog.hpp"
 #include "Plater.hpp"
 #include "Tab.hpp"
 #include "WebViewDialog.hpp"
@@ -61,6 +64,20 @@ std::string& pending_section()
 {
     static std::string section;
     return section;
+}
+
+// Filuna works without internet: the pages keep their last data and the changes not sent yet in small JSON files
+// under <data_dir>/filuna/local/, one per key (letters, digits, '.', '-' and '_' only).
+boost::filesystem::path local_store_path(const std::string& key)
+{
+    if (key.empty() || key.size() > 120)
+        throw std::runtime_error("Chave local inválida.");
+    for (char c : key)
+        if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '.' || c == '-' || c == '_'))
+            throw std::runtime_error("Chave local inválida.");
+    const boost::filesystem::path dir = boost::filesystem::path(data_dir()) / "filuna" / "local";
+    boost::filesystem::create_directories(dir);
+    return dir / (key + ".json");
 }
 
 // Only these app_config keys are reachable from the pages.
@@ -397,6 +414,12 @@ void FilunaPanel::open_tab(const std::string& tab, const std::string& section)
             p->send_event("secao", {{"secao", section}});
 }
 
+void FilunaPanel::broadcast(const std::string& name, const json& data)
+{
+    for (FilunaPanel* p : panels())
+        p->send_event(name, data);
+}
+
 void FilunaPanel::account_changed(const std::string& token, const FilunaPanel* source)
 {
     for (FilunaPanel* p : panels())
@@ -481,6 +504,72 @@ json FilunaPanel::handle(const std::string& action, const json& d)
                 tab->select_preset(name);
         });
         return json::object();
+    }
+    if (action == "armazem.ler") {
+        const boost::filesystem::path file = local_store_path(d.value("chave", std::string()));
+        if (!boost::filesystem::exists(file))
+            return {{"valor", nullptr}};
+        boost::nowide::ifstream in(file.string());
+        json value = json::parse(in, nullptr, false);
+        return {{"valor", value.is_discarded() ? json() : value}};
+    }
+    if (action == "armazem.gravar") {
+        const boost::filesystem::path file = local_store_path(d.value("chave", std::string()));
+        const std::string text = d.contains("valor") ? d["valor"].dump() : std::string("null");
+        if (text.size() > 8u * 1024u * 1024u)
+            throw std::runtime_error("Dados grandes demais para guardar no computador.");
+        const boost::filesystem::path tmp = file.string() + ".tmp";
+        {
+            boost::nowide::ofstream out(tmp.string(), std::ios::binary | std::ios::trunc);
+            out << text;
+            if (!out)
+                throw std::runtime_error("Não foi possível gravar no computador.");
+        }
+        boost::filesystem::rename(tmp, file); // atomic replace: a crash never leaves half a file
+        return json::object();
+    }
+    if (action == "impressoras.registradas") {
+        // Printers registered in this Filuna Slicer (Preparação › Impressora › conexão); available without internet.
+        json list = json::array();
+        if (PresetBundle* bundle = wxGetApp().preset_bundle)
+            for (const PhysicalPrinter& printer : bundle->physical_printers) {
+                json presets = json::array();
+                for (const std::string& name : printer.preset_names)
+                    presets.push_back(name);
+                const std::string host = printer.config.has("print_host") ? printer.config.opt_string("print_host") : std::string();
+                list.push_back({{"nome", printer.name}, {"perfis", presets}, {"endereco", host}});
+            }
+        return {{"impressoras", list}};
+    }
+    if (action == "impressora.adicionar") {
+        CallAfter([] {
+            MainFrame* frame = wxGetApp().mainframe;
+            if (frame == nullptr)
+                return;
+            PresetBundle* bundle = wxGetApp().preset_bundle;
+            if (bundle != nullptr && bundle->is_bbl_vendor()) {
+                // Bambu printers are found and bound in Orca's own device page.
+                frame->select_filuna_tab(TAB_ID_MONITOR);
+                return;
+            }
+            PhysicalPrinterDialog dlg(wxGetApp().plater()); // same parent as the Preparação connection button
+            dlg.ShowModal();
+            for (FilunaPanel* p : panels())
+                p->send_event("impressoras");
+        });
+        return json::object();
+    }
+    if (action == "preferencias.abrir") {
+        // Filuna options are part of the program settings (gear of the navigation bar).
+        CallAfter([] { wxGetApp().open_preferences(); });
+        return json::object();
+    }
+    if (action == "app.metricas") {
+        // The Filuna pages use the width of the Preparação side panel, so every screen has the same left column.
+        int side = 0;
+        if (wxGetApp().plater() != nullptr)
+            side = wxGetApp().sidebar().ToDIP(wxGetApp().sidebar().GetSize()).GetWidth();
+        return {{"lateral", side >= 280 && side <= 560 ? side : 390}};
     }
     if (action == "impressora.atual")
         return printer_info();

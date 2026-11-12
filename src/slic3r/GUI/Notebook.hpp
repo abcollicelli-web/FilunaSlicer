@@ -46,6 +46,9 @@ public:
     void SetCompact(size_t n, bool compact); // ORCA
     // Filuna: keeps the page in the book but takes its button off the tab bar.
     void ShowPageButton(size_t n, bool show);
+    // Filuna: main navigation bar of the approved Direção Visual C — text-only tabs, rose pill on the selected one,
+    // no compact (icon-only) mode. Call before the pages are added.
+    void SetFilunaNavbar(bool on) { m_filuna_navbar = on; }
     wxString GetPageText(size_t n) const;
     // ORCA: the full page label, unaffected by SetCompact() blanking the button text.
     wxString GetPageLabel(size_t n) const;
@@ -72,6 +75,8 @@ private:
     std::vector<wxString>           m_pageLabels; // ORCA
     std::vector<std::string>        m_pageIcons;  // ORCA: resource icon name per page, plugin pages empty
     wxWindow*                       m_overflow_button{nullptr}; // ORCA
+    wxWindow*                       m_owner{nullptr};  // Filuna: the Notebook, also after the bar moves into the title bar
+    bool                            m_filuna_navbar{false};
 };
 
 class Notebook : public wxBookCtrlBase
@@ -311,6 +316,22 @@ public:
     }
 
     ButtonsListCtrl* GetBtnsListCtrl() const { return static_cast<ButtonsListCtrl*>(m_bookctrl); }
+
+    // Filuna: puts the tab bar inside another window (the window title bar), so the tabs, the logo and the window
+    // buttons share one row. The pages then take the whole notebook area.
+    void MoveTabsInto(wxWindow* host)
+    {
+        if (host == nullptr || m_bookctrl == nullptr || m_bookctrl->GetParent() == host)
+            return;
+        m_controlSizer->Detach(m_bookctrl);
+        m_bookctrl->Reparent(host);
+        if (wxSizer* sizer = host->GetSizer())
+            sizer->Add(m_bookctrl, 1, wxEXPAND);
+        host->Layout();
+        Layout();
+        DoSize();
+    }
+
     void SetOverflowButton(wxWindow* button) { GetBtnsListCtrl()->SetOverflowButton(button); }
 
     // Insertion index just past the first of `ids` that is present, or the end of the bar
@@ -483,6 +504,13 @@ protected:
         }
 
         return win;
+    }
+
+    wxRect GetPageRect() const override
+    {
+        if (m_bookctrl != nullptr && m_bookctrl->GetParent() != this)
+            return wxRect(wxPoint(0, 0), GetClientSize());
+        return wxBookCtrlBase::GetPageRect();
     }
 
     virtual void DoSize() override

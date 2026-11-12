@@ -1,8 +1,10 @@
 /* Ponte das telas Filuna.
  * - Filuna.nativo(acao, dados): pede algo ao Filuna Slicer (C++). Mensagem {"filuna":1,"id","acao","dados"};
  *   o C++ responde chamando Filuna._resposta(id, ok, dados).
- * - Filuna.api(metodo, rota, corpo): dados da conta no site (os mesmos do filuna3d.com), com o token do dispositivo.
- * As telas são nativas do Filuna; do site vêm só os dados. */
+ * - Filuna.api(metodo, rota, corpo): dados da conta, com o token do dispositivo. O Filuna trabalha sem internet:
+ *   cada leitura fica guardada no computador e é usada quando não há conexão; cadastros e ajustes ficam numa fila e
+ *   são enviados quando a conexão volta. A conta vale 3 dias sem comprovar conexão (Filuna.plano()).
+ * As telas são do Filuna Slicer; o site só sincroniza os dados. */
 var Filuna = (function () {
 	var API = "https://filuna3d.com/api/slicer/v1";
 	var pendentes = {}, seq = 0, token = "", ouvintes = {};
@@ -41,6 +43,11 @@ var Filuna = (function () {
 	}
 
 	function iniciar() {
+		// Mesma coluna da esquerda da Preparação em todas as telas.
+		nativo("app.metricas").then(function (m) {
+			if (m.lateral) document.documentElement.style.setProperty("--lateral", m.lateral + "px");
+		}).catch(function () {});
+		pendentesLocais().then(function (f) { conexao.pendentes = f.length; if (f.length) enviarFila(); });
 		// O Filuna Slicer guarda a conta; o armazenamento da página só vale fora do programa.
 		return nativo("config.ler", { chave: "filuna_token" }).then(function (r) {
 			token = r.valor || "";
@@ -51,8 +58,24 @@ var Filuna = (function () {
 		});
 	}
 
-	function api(metodo, rota, corpo) {
-		if (!token) return Promise.reject({ status: 401, erro: "Entre na sua conta Filuna para ver seus dados." });
+	// ---- Dados no computador (funciona sem internet) ----
+	var TOLERANCIA_MS = 3 * 24 * 3600 * 1000;           // a conta vale 3 dias sem comprovar conexão
+	var NA_FILA = ["/app/estoque/nova", "/app/estoque/ajustar", "/preferencias"]; // só o que é seguro mandar depois
+	var conexao = { online: true, pendentes: 0 };
+
+	function lerLocal(chave) {
+		return nativo("armazem.ler", { chave: chave }).then(function (r) { return r.valor; }, function () {
+			try { return JSON.parse(localStorage.getItem("fl." + chave)); } catch (e) { return null; }
+		});
+	}
+	function guardarLocal(chave, valor) {
+		return nativo("armazem.gravar", { chave: chave, valor: valor }).catch(function () {
+			try { localStorage.setItem("fl." + chave, JSON.stringify(valor)); } catch (e) {}
+		});
+	}
+	function chaveCache(rota) { return "api." + rota.replace(/[^A-Za-z0-9]/g, "_").slice(0, 100); }
+
+	function rede(metodo, rota, corpo) {
 		return fetch(API + rota, {
 			method: metodo,
 			headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
@@ -62,7 +85,132 @@ var Filuna = (function () {
 				if (!r.ok) throw { status: r.status, erro: d.erro || ("Erro " + r.status) };
 				return d;
 			});
-		}, function () { throw { status: 0, erro: "Sem conexão com o filuna3d.com." }; });
+		}, function () { throw { status: 0, erro: "Sem conexão." }; });
+	}
+
+	function marcarConexao(online) {
+		if (conexao.online === online) return;
+		conexao.online = online;
+		mostrarConexao();
+		_evento("conexao", { online: online });
+		if (online) enviarFila();
+	}
+
+	function api(metodo, rota, corpo) {
+		if (!token) return Promise.reject({ status: 401, erro: "Entre na sua conta Filuna para ver seus dados." });
+		if (metodo == "GET") {
+			return rede(metodo, rota).then(function (d) {
+				marcarConexao(true);
+				guardarLocal(chaveCache(rota), d);
+				if (rota == "/resumo" || rota == "/conta") guardarLocal("conta.verificada", Date.now());
+				return d;
+			}, function (e) {
+				if (e.status !== 0) throw e;
+				marcarConexao(false);
+				return lerLocal(chaveCache(rota)).then(function (d) {
+					if (d == null) throw { status: 0, erro: "Sem conexão. Estes dados aparecem depois da primeira conexão do Filuna." };
+					d._offline = true;
+					return d;
+				});
+			});
+		}
+		return rede(metodo, rota, corpo).then(function (d) { marcarConexao(true); return d; }, function (e) {
+			if (e.status !== 0) throw e;
+			marcarConexao(false);
+			if (NA_FILA.indexOf(rota) < 0) throw { status: 0, erro: "Sem conexão. Esta ação precisa da impressora ou da conta conectadas." };
+			return enfileirar(metodo, rota, corpo).then(function () { return { _pendente: true }; });
+		});
+	}
+
+	// Fila do que foi feito sem internet; enviada na ordem quando a conexão volta.
+	function enfileirar(metodo, rota, corpo) {
+		return lerLocal("fila").then(function (f) {
+			f = Array.isArray(f) ? f : [];
+			f.push({ metodo: metodo, rota: rota, corpo: corpo || {}, em: new Date().toISOString() });
+			conexao.pendentes = f.length; mostrarConexao();
+			return guardarLocal("fila", f);
+		});
+	}
+	var enviando = false;
+	function enviarFila() {
+		if (enviando || !token) return Promise.resolve();
+		enviando = true;
+		return lerLocal("fila").then(function (f) {
+			f = Array.isArray(f) ? f : [];
+			var i = 0;
+			function proximo() {
+				if (i >= f.length) return null;
+				var it = f[i];
+				return rede(it.metodo, it.rota, it.corpo).then(function () { i++; return proximo(); }, function (e) {
+					if (e.status === 0) { marcarConexao(false); return null; }   // ainda sem conexão: tenta depois
+					i++; return proximo();                                         // recusado pelo servidor: não repete
+				});
+			}
+			return Promise.resolve(proximo()).then(function () {
+				var resto = f.slice(i);
+				conexao.pendentes = resto.length; mostrarConexao(true);
+				if (i > 0) _evento("sincronizado", {});
+				return guardarLocal("fila", resto);
+			});
+		}).then(function () { enviando = false; }, function () { enviando = false; });
+	}
+	function pendentesLocais() { return lerLocal("fila").then(function (f) { return Array.isArray(f) ? f : []; }); }
+
+	// A conta (plano) vale 3 dias sem comprovar conexão; o motor Orca funciona sempre, com ou sem conta.
+	function plano() {
+		return lerLocal("conta.verificada").then(function (t) {
+			var desde = t ? Date.now() - Number(t) : Infinity;
+			return { online: conexao.online, valido: conexao.online || desde < TOLERANCIA_MS,
+				horasRestantes: conexao.online ? 72 : Math.max(0, Math.round((TOLERANCIA_MS - desde) / 3600000)) };
+		});
+	}
+
+	var avisoTimer = null;
+	function mostrarConexao(acabouDeEnviar) {
+		var el = document.getElementById("flConexao");
+		if (!el) { el = document.createElement("div"); el.id = "flConexao"; document.body.appendChild(el); }
+		clearTimeout(avisoTimer);
+		if (!conexao.online) {
+			el.className = ""; el.style.display = "flex";
+			el.textContent = conexao.pendentes ? "Sem conexão — " + conexao.pendentes + (conexao.pendentes == 1 ? " alteração será enviada depois" : " alterações serão enviadas depois") : "Sem conexão — trabalhando no computador";
+		} else if (acabouDeEnviar && !conexao.pendentes) {
+			el.className = "ok"; el.style.display = "flex"; el.textContent = "Salvo no servidor";
+			avisoTimer = setTimeout(function () { el.style.display = "none"; }, 3000);
+		} else el.style.display = "none";
+	}
+
+	// Preferências Filuna: ficam nas Configurações do programa (engrenagem), no computador; a conta recebe uma cópia.
+	var PREFS = { "interface.autoajuda": "bool", "estoque.alerta_baixo": "bool", "estoque.limite_baixo_g": "num",
+		"farm.avisar_limpar_mesa": "bool", "farm.avisar_filamento": "bool", "inicio.tendencias": "bool", "ofertas.ativas": "bool",
+		"ofertas.material": "texto", "ofertas.preco_max_kg": "num", "calculo.margem": "num", "calculo.mao_obra_hora": "num",
+		"calculo.energia_kwh": "num", "calculo.potencia_w": "num", "calculo.preco_kg": "num" };
+	function prefs() {
+		var chaves = Object.keys(PREFS), valores = {};
+		return Promise.all(chaves.map(function (k) {
+			return nativo("config.ler", { chave: "filuna_pref_" + k.replace(/\./g, "_") }).then(function (r) {
+				var v = r.valor;
+				if (v === undefined || v === null || v === "") return;
+				valores[k] = PREFS[k] == "bool" ? (v == "true" || v == "1") : PREFS[k] == "num" ? Number(String(v).replace(",", ".")) : v;
+			}).catch(function () {});
+		})).then(function () {
+			if (!token) return valores;
+			// O que não foi ajustado neste computador vem da conta (última cópia guardada, se estiver sem internet).
+			return api("GET", "/preferencias").then(function (r) {
+				var s = r.valores || {};
+				Object.keys(s).forEach(function (k) { if (!(k in valores)) valores[k] = s[k]; });
+				return valores;
+			}, function () { return valores; });
+		});
+	}
+	function enviarPrefs() {
+		if (!token) return Promise.resolve();
+		var locais = {};
+		return Promise.all(Object.keys(PREFS).map(function (k) {
+			return nativo("config.ler", { chave: "filuna_pref_" + k.replace(/\./g, "_") }).then(function (r) {
+				if (r.valor === undefined || r.valor === null) return;
+				locais[k] = PREFS[k] == "bool" ? (r.valor == "true" || r.valor == "1") : PREFS[k] == "num" ? (r.valor === "" ? null : Number(String(r.valor).replace(",", "."))) : r.valor;
+			}).catch(function () {});
+		})).then(function () { return Object.keys(locais).length ? api("POST", "/preferencias", { valores: locais }).catch(function () {}) : null; });
 	}
 
 	function entrar(email, senha) {
@@ -115,6 +263,14 @@ var Filuna = (function () {
 		}).catch(function () {});
 	});
 
-	return { nativo: nativo, api: api, iniciar: iniciar, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
+	// Telas de programa: sem menu de navegador nem arrastar imagens/textos.
+	document.addEventListener("contextmenu", function (e) { if (!/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) e.preventDefault(); });
+	document.addEventListener("dragstart", function (e) { if (e.target.tagName == "IMG" || e.target.tagName == "A") e.preventDefault(); });
+	window.addEventListener("online", function () { enviarFila(); });
+	setInterval(function () { if (conexao.pendentes) enviarFila(); }, 60000);
+	ouvir("preferencias.locais", function () { enviarPrefs().then(function () { _evento("preferencias", {}); }); });
+
+	return { nativo: nativo, api: api, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
+		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
 		temToken: function () { return !!token; }, esc: esc, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, telaLogin: telaLogin };
 })();

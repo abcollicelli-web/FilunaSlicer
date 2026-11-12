@@ -48,3 +48,25 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--rose);border-col
 .entre{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .login{max-width:380px;margin:60px auto}
 .carregando{color:var(--muted);padding:20px}
+
+/* ---- Moldura única do Filuna Slicer (vale para todas as telas Filuna) ----
+   As telas são parte do programa, não páginas: ocupam a área toda (sem cartão flutuante), a coluna da esquerda tem a
+   largura da coluna da Preparação (--lateral, enviada pelo programa) e título, margens e grade são os mesmos em todas,
+   para a troca de aba não parecer outro programa. */
+:root{--lateral:390px;--fundo:#F8F6F3}
+html,body{background:var(--fundo);user-select:none;-webkit-user-select:none;cursor:default}
+input,textarea,select,[contenteditable]{user-select:text;-webkit-user-select:text}
+a:hover{text-decoration:none}
+.tela{padding:0;min-height:100vh}
+.app{border-radius:0;box-shadow:none;min-height:100vh;background:var(--fundo)}
+.side{width:var(--lateral);padding:20px 18px;background:var(--side);border-right:1px solid var(--line)}
+.principal{padding:28px 32px}
+.h1{font-size:30px;font-weight:800}
+.sub{font-size:14.5px}
+.card,.bloco{border-radius:16px}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#DCD5CC;border-radius:10px;border:2px solid var(--fundo)}::-webkit-scrollbar-thumb:hover{background:#C9C1B6}
+/* Indicador de conexão no canto (cronograma: "Salvo no servidor" / "Sem conexão — será enviado depois"). */
+#flConexao{position:fixed;right:16px;bottom:12px;font-size:12.5px;color:var(--ink2);background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 12px;display:none;align-items:center;gap:8px;z-index:50}
+#flConexao:before{content:"";width:8px;height:8px;border-radius:50%;background:#D9480F}
+#flConexao.ok:before{background:var(--good)}

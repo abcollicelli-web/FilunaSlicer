@@ -36507,3 +36507,99 @@ msgstr "Escolher fotos"
 
 msgid "My store"
 msgstr "Minha loja"
+
+# AI Translated
+msgid "Self-help"
+msgstr "Autoajuda"
+
+# AI Translated
+msgid "Show what each setting and tool does, with an example image, when the mouse is over it."
+msgstr "Mostra o que cada ajuste e ferramenta faz, com uma imagem de exemplo, ao passar o mouse."
+
+# AI Translated
+msgid "Warn when a spool is running out"
+msgstr "Avisar quando a bobina estiver acabando"
+
+# AI Translated
+msgid "Shows a warning on Home, in the Farm and on the stock screen when the remaining filament goes below the limit."
+msgstr "Mostra um aviso no Início, na Farm e no Estoque quando o filamento restante fica abaixo do limite."
+
+# AI Translated
+msgid "Running-out limit"
+msgstr "Limite de bobina acabando"
+
+# AI Translated
+msgid "Remaining weight below which a spool counts as running out."
+msgstr "Peso restante abaixo do qual a bobina conta como acabando."
+
+# AI Translated
+msgid "Warn when a print finishes"
+msgstr "Avisar quando a impressão terminar"
+
+# AI Translated
+msgid "Asks to clear the bed before the next Farm job is sent."
+msgstr "Pede para limpar a mesa antes de enviar o próximo trabalho da Farm."
+
+# AI Translated
+msgid "Warn about insufficient filament"
+msgstr "Avisar filamento insuficiente"
+
+# AI Translated
+msgid "Warns before a job when the spool in the printer does not have enough filament."
+msgstr "Avisa antes do trabalho quando a bobina da impressora não tem filamento suficiente."
+
+# AI Translated
+msgid "Show sales trends on Home"
+msgstr "Mostrar tendências de venda no Início"
+
+# AI Translated
+msgid "Costs for the sale suggestion"
+msgstr "Custos da sugestão de venda"
+
+# AI Translated
+msgid "Profit margin"
+msgstr "Margem de lucro"
+
+# AI Translated
+msgid "From 0 to 0.95. Empty uses the calculator default."
+msgstr "De 0 a 0,95. Vazio usa o padrão da calculadora."
+
+# AI Translated
+msgid "Labor per hour"
+msgstr "Mão de obra por hora"
+
+# AI Translated
+msgid "Energy per kWh"
+msgstr "Energia por kWh"
+
+# AI Translated
+msgid "Average printer power"
+msgstr "Potência média da impressora"
+
+# AI Translated
+msgid "Filament price per kg"
+msgstr "Preço do filamento por kg"
+
+# AI Translated
+msgid "Offers"
+msgstr "Ofertas"
+
+# AI Translated
+msgid "Show filament and parts offers"
+msgstr "Mostrar ofertas de filamento e peças"
+
+# AI Translated
+msgid "Only this material"
+msgstr "Só deste material"
+
+# AI Translated
+msgid "For example PLA. Empty shows every material."
+msgstr "Por exemplo PLA. Vazio mostra todos os materiais."
+
+# AI Translated
+msgid "Maximum price per kg"
+msgstr "Preço máximo por kg"
+
+# AI Translated
+msgid "0 shows every price."
+msgstr "0 mostra todos os preços."

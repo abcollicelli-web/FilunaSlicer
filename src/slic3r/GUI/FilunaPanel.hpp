@@ -34,6 +34,9 @@ public:
     // the page asks for it ("secao.pendente"), so it works when the page is built only now.
     static void open_tab(const std::string& tab, const std::string& section = std::string());
 
+    // Sends an event to every Filuna page (e.g. "preferencias" after the Preferences dialog closes).
+    static void broadcast(const std::string& name, const nlohmann::json& data = nlohmann::json::object());
+
 private:
     void create_browser();
     void on_script_message(wxWebViewEvent& evt);

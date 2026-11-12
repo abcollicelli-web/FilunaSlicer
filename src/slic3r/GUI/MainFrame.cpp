@@ -48,9 +48,6 @@
 #include <wx/base64.h>
 #include <ctime>
 #include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-#include <wx/image.h>
-#include <wx/statbmp.h>
 #include "slic3r/GUI/calib_dlg.hpp"
 #include "slic3r/GUI/ParamsPanel.hpp"
 #include "slic3r/GUI/UnsavedChangesDialog.hpp"
@@ -1503,20 +1500,20 @@ void MainFrame::init_tabpanel() {
                               wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
     m_tabpanel->SetBackgroundColour(*wxWHITE);
 
-    // Filuna: the "Filuna 3D" logo opens the tab bar, as in the approved Direção Visual C screens.
-    {
-        wxImage logo;
-        const wxString logo_path = wxString::FromUTF8((boost::filesystem::path(resources_dir()) / "images" / "Filuna_horizontal_light.png").string());
-        if (logo.LoadFile(logo_path, wxBITMAP_TYPE_PNG) && logo.GetHeight() > 0) {
-            const int h = FromDIP(30);
-            logo.Rescale(std::max(1, logo.GetWidth() * h / logo.GetHeight()), h, wxIMAGE_QUALITY_HIGH);
-            ButtonsListCtrl* tabs = m_tabpanel->GetBtnsListCtrl();
-            auto* mark = new wxStaticBitmap(tabs, wxID_ANY, wxBitmap(logo));
-            mark->SetToolTip(_L("Home"));
-            mark->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent&) { select_tab(TAB_ID_HOME); });
-            tabs->GetSizer()->Insert(0, mark, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, FromDIP(14));
-        }
-    }
+    // Filuna: one navigation bar, as in the approved Direção Visual C screens. The tabs are text-only pills and go up
+    // into the window title bar, between the "Filuna 3D" logo (which opens the menus) and the window buttons.
+    m_tabpanel->GetBtnsListCtrl()->SetFilunaNavbar(true);
+#ifndef __APPLE__
+    m_tabpanel->MoveTabsInto(m_topbar->GetTabsHost());
+#ifdef __WXMSW__
+    // The free space of the bar still moves and maximizes the window, like any title bar.
+    m_tabpanel->GetBtnsListCtrl()->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent&) {
+        ::ReleaseCapture();
+        ::PostMessage((HWND) GetHWND(), WM_NCLBUTTONDOWN, HTCAPTION, 0);
+    });
+    m_tabpanel->GetBtnsListCtrl()->Bind(wxEVT_LEFT_DCLICK, [this](wxMouseEvent&) { Maximize(!IsMaximized()); });
+#endif
+#endif
 
 #ifndef __WXOSX__ // Don't call SetFont under OSX to avoid name cutting in ObjectList
     m_tabpanel->SetFont(Slic3r::GUI::wxGetApp().normal_font());
@@ -2379,7 +2376,7 @@ wxBoxSizer* MainFrame::create_side_tools()
     m_slice_btn = new SideButton(slice_panel, _L("Slice plate"), "");
     m_slice_option_btn = new SideButton(slice_panel, "", "sidebutton_dropdown", 0, 14);
     m_print_btn = new SideButton(print_panel, _L("Print plate"), "");
-    m_print_option_btn = new SideButton(print_panel, "", "sidebutton_dropdown", 0, 14);
+    m_print_option_btn = new SideButton(print_panel, "", "filuna_dropdown_dark", 0, 14); // Filuna: dark arrow on the outlined Exportar
 
     // Orca: restore the last used print/export action if the user opted to remember it
     PrintSelectType remembered_print_select;
@@ -2389,24 +2386,51 @@ wxBoxSizer* MainFrame::create_side_tools()
         fit_tab_labels(); // ORCA on label change
     }
 
+    // Filuna (Direção Visual C): ajuda · | · Exportar · Fatiar mesa ˅ · engrenagem — the option arrow sits after its button.
     auto slice_sizer = new wxBoxSizer(wxHORIZONTAL);
-    slice_sizer->Add(m_slice_option_btn, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
-    slice_sizer->Add(m_slice_btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
+    slice_sizer->Add(m_slice_btn, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
+    slice_sizer->Add(m_slice_option_btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
     slice_panel->SetSizer(slice_sizer);
 
     auto print_sizer = new wxBoxSizer(wxHORIZONTAL);
-    print_sizer->Add(m_print_option_btn, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
-    print_sizer->Add(m_print_btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
+    print_sizer->Add(m_print_btn, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
+    print_sizer->Add(m_print_option_btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
     print_panel->SetSizer(print_sizer);
 
     update_side_button_style();
     m_slice_option_btn->Enable();
     m_print_option_btn->Enable();
-    //sizer->Add(FromDIP(15), 0, 0, 0, 0);
-    sizer->Add(slice_panel);
-    sizer->Add(FromDIP(15), 0, 0, 0, 0);
-    sizer->Add(print_panel);
-    sizer->Add(FromDIP(19), 0, 0, 0, 0);
+
+    const StateColor nav_icon_bg(std::pair{wxColour(246, 239, 231), (int) StateColor::Hovered},
+                                 std::pair{wxColour(255, 253, 251), (int) StateColor::Normal});
+    auto* help_btn = new Button(this, "", "filuna_nav_help", wxNO_BORDER, 20);
+    help_btn->SetToolTip(_L("Keyboard Shortcuts"));
+    help_btn->SetBackgroundColor(nav_icon_bg);
+    help_btn->SetCornerRadius(FromDIP(18));
+    help_btn->SetMinSize(FromDIP(wxSize(36, 36)));
+    help_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxGetApp().keyboard_shortcuts(ShortcutContext::Global); });
+
+    auto* gear_btn = new Button(this, "", "filuna_nav_gear", wxNO_BORDER, 20);
+    gear_btn->SetToolTip(_L("Preferences"));
+    gear_btn->SetBackgroundColor(StateColor(std::pair{wxColour(236, 232, 226), (int) StateColor::Hovered},
+                                            std::pair{wxColour(242, 239, 234), (int) StateColor::Normal}));
+    gear_btn->SetCornerRadius(FromDIP(18));
+    gear_btn->SetMinSize(FromDIP(wxSize(36, 36)));
+    gear_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxGetApp().open_preferences(); });
+
+    auto* divider = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(1, 28)));
+    divider->SetBackgroundColour(wxColour(236, 232, 226));
+
+    sizer->Add(help_btn, 0, wxALIGN_CENTER_VERTICAL);
+    sizer->Add(FromDIP(14), 0, 0, 0, 0);
+    sizer->Add(divider, 0, wxALIGN_CENTER_VERTICAL);
+    sizer->Add(FromDIP(14), 0, 0, 0, 0);
+    sizer->Add(print_panel, 0, wxALIGN_CENTER_VERTICAL);
+    sizer->Add(FromDIP(12), 0, 0, 0, 0);
+    sizer->Add(slice_panel, 0, wxALIGN_CENTER_VERTICAL);
+    sizer->Add(FromDIP(18), 0, 0, 0, 0);
+    sizer->Add(gear_btn, 0, wxALIGN_CENTER_VERTICAL);
+    sizer->Add(FromDIP(8), 0, 0, 0, 0);
 
     sizer->Layout();
 
@@ -2764,10 +2788,40 @@ void MainFrame::update_side_button_style()
     m_print_option_btn->SetIconOffset(FromDIP(2));
     m_print_option_btn->SetMinSize(wxSize(FromDIP(24), FromDIP(24)));
 
-    // Keep panel backgrounds in sync with SideButton's darkModeColorFor(#3B4446) bottom strip
-    auto bg = StateColor::darkModeColorFor(wxColour("#3B4446"));
-    m_slice_btn->GetParent()->SetBackgroundColour(bg);
-    m_print_btn->GetParent()->SetBackgroundColour(bg);
+    // Filuna (Direção Visual C): Exportar is an outlined button, Fatiar mesa the filled magenta one; both sit on the
+    // light navigation bar, so the corners and the panels use the bar colour.
+    const wxColour bar_bg(255, 253, 251);
+    for (SideButton* b : {m_slice_btn, m_slice_option_btn, m_print_btn, m_print_option_btn}) {
+        b->SetBottomColour(bar_bg);
+        b->SetCornerRadius(FromDIP(10));
+    }
+    const StateColor fill(std::pair{wxColour(206, 202, 196), (int) StateColor::Disabled},
+                          std::pair{wxColour(142, 18, 67), (int) StateColor::Pressed},
+                          std::pair{wxColour(142, 18, 67), (int) StateColor::Hovered},
+                          std::pair{wxColour(194, 24, 91), (int) StateColor::Normal});
+    const StateColor white_text(std::pair{wxColour(255, 255, 255), (int) StateColor::Disabled},
+                                std::pair{wxColour(255, 255, 255), (int) StateColor::Normal});
+    for (SideButton* b : {m_slice_btn, m_slice_option_btn}) {
+        b->SetBackgroundColor(fill);
+        b->SetBorderColor(fill);
+        b->SetForegroundColor(white_text);
+    }
+    const StateColor outline_bg(std::pair{wxColour(246, 243, 239), (int) StateColor::Disabled},
+                                std::pair{wxColour(246, 239, 231), (int) StateColor::Pressed},
+                                std::pair{wxColour(246, 239, 231), (int) StateColor::Hovered},
+                                std::pair{wxColour(255, 255, 255), (int) StateColor::Normal});
+    const StateColor outline_border(std::pair{wxColour(231, 227, 221), (int) StateColor::Disabled},
+                                    std::pair{wxColour(194, 24, 91), (int) StateColor::Hovered},
+                                    std::pair{wxColour(231, 227, 221), (int) StateColor::Normal});
+    const StateColor dark_text(std::pair{wxColour(154, 148, 140), (int) StateColor::Disabled},
+                               std::pair{wxColour(44, 42, 40), (int) StateColor::Normal});
+    for (SideButton* b : {m_print_btn, m_print_option_btn}) {
+        b->SetBackgroundColor(outline_bg);
+        b->SetBorderColor(outline_border);
+        b->SetForegroundColor(dark_text);
+    }
+    m_slice_btn->GetParent()->SetBackgroundColour(bar_bg);
+    m_print_btn->GetParent()->SetBackgroundColour(bar_bg);
 }
 
 void MainFrame::update_slice_print_status(SlicePrintEventType event, bool can_slice, bool can_print)

@@ -9209,6 +9209,8 @@ void GUI_App::open_preferences(PreferencesTab tab, const std::string& highlight_
         PreferencesDialog dlg(mainframe);
         dlg.select_tab(tab, highlight_option);
         dlg.ShowModal();
+        // Filuna: the Filuna options are edited here; the Filuna pages re-read them and send them to the account.
+        FilunaPanel::broadcast("preferencias.locais");
         need_recreate_gui = dlg.recreate_GUI();
         pending_language = dlg.pending_language();
         if (!need_recreate_gui) {

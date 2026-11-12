@@ -1,4 +1,9 @@
 #include "BBLTopbar.hpp"
+#include <algorithm>
+#include <wx/sizer.h>
+#include <wx/control.h>
+#include "libslic3r/Utils.hpp"
+#include <boost/filesystem/path.hpp>
 #include "wx/artprov.h"
 #include "wx/aui/framemanager.h"
 #include "wx/display.h"
@@ -235,6 +240,19 @@ BBLTopbar::BBLTopbar(wxWindow* pwin, wxFrame* parent)
     Init(parent);
 }
 
+// Filuna: the "Filuna 3D" logo of the navigation bar, at the height of the approved screens.
+static wxBitmap filuna_logo_bitmap(wxWindow* win)
+{
+    wxImage logo;
+    const wxString path = wxString::FromUTF8(
+        (boost::filesystem::path(Slic3r::resources_dir()) / "images" / "Filuna_horizontal_light.png").string());
+    if (!logo.LoadFile(path, wxBITMAP_TYPE_PNG) || logo.GetHeight() <= 0)
+        return create_scaled_bitmap("topbar_dropdown", win, TOPBAR_ICON_SIZE);
+    const int h = win->FromDIP(30);
+    logo.Rescale(std::max(1, logo.GetWidth() * h / logo.GetHeight()), h, wxIMAGE_QUALITY_HIGH);
+    return wxBitmap(logo);
+}
+
 void BBLTopbar::Init(wxFrame* parent) 
 {
     auto* art = new BBLTopbarArt();
@@ -279,76 +297,27 @@ void BBLTopbar::Init(wxFrame* parent)
     if(!window_btns_on_left)
         this->AddSpacer(5);
 
-    /*wxBitmap logo_bitmap = create_scaled_bitmap("topbar_logo", nullptr, TOPBAR_ICON_SIZE);
-    wxAuiToolBarItem* logo_item = this->AddTool(ID_LOGO, "", logo_bitmap);
-    logo_item->SetHoverBitmap(logo_bitmap);
-    logo_item->SetActive(false);*/
-
-    wxBitmap file_bitmap = create_scaled_bitmap("topbar_file", nullptr, TOPBAR_ICON_SIZE);
-    m_file_menu_item = this->AddTool(ID_TOP_FILE_MENU, _L("File"), file_bitmap, wxEmptyString, wxITEM_NORMAL);
-
+    // Filuna (Direção Visual C): one bar for the whole window. The "Filuna 3D" logo opens the menus (Arquivo, Editar,
+    // Ver, Preferências, Ajuda); the main tabs with Exportar and Fatiar mesa sit in m_tabs_host (MainFrame moves them
+    // in); the window buttons close the row. Save and undo/redo stay in the menus and shortcuts, calibration in its tab,
+    // and the window title is not drawn (it is still the frame title for the taskbar).
     this->SetForegroundColour(wxColour(58, 58, 58));
-
-    this->AddSpacer(FromDIP(5));
-
-    wxBitmap dropdown_bitmap = create_scaled_bitmap("topbar_dropdown", nullptr, TOPBAR_ICON_SIZE);
-    m_dropdown_menu_item = this->AddTool(ID_TOP_DROPDOWN_MENU, "",
-        dropdown_bitmap, wxEmptyString);
-
-    this->AddSpacer(FromDIP(5));
+    m_file_menu_item = nullptr;
+    this->AddSpacer(FromDIP(14));
+    m_dropdown_menu_item = this->AddTool(ID_TOP_DROPDOWN_MENU, "", filuna_logo_bitmap(this), _L("Menu"));
+    this->AddSpacer(FromDIP(14));
     this->AddSeparator();
-    this->AddSpacer(FromDIP(5));
-
-    //wxBitmap open_bitmap = create_scaled_bitmap("topbar_open", nullptr, TOPBAR_ICON_SIZE);
-    //wxAuiToolBarItem* tool_item = this->AddTool(wxID_OPEN, "", open_bitmap);
-
     this->AddSpacer(FromDIP(10));
 
-    wxBitmap save_bitmap = create_scaled_bitmap("topbar_save", nullptr, TOPBAR_ICON_SIZE);
-    wxAuiToolBarItem* save_btn = this->AddTool(wxID_SAVE, "", save_bitmap);
+    // wxAuiToolBar only hosts wxControl items; a borderless control holding a sizer works as the panel.
+    m_tabs_host = new wxControl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
+    m_tabs_host->SetBackgroundColour(wxColour(255, 253, 251));
+    m_tabs_host->SetSizer(new wxBoxSizer(wxHORIZONTAL));
+    m_tabs_host->SetMinSize(wxSize(FromDIP(320), FromDIP(FILUNA_NAVBAR_HEIGHT - 4)));
+    wxAuiToolBarItem* tabs_item = this->AddControl(static_cast<wxControl*>(m_tabs_host), "");
+    tabs_item->SetProportion(1);
 
-    this->AddSpacer(FromDIP(10));
-
-    wxBitmap undo_bitmap = create_scaled_bitmap("topbar_undo", nullptr, TOPBAR_ICON_SIZE);
-    m_undo_item = this->AddTool(wxID_UNDO, "", undo_bitmap);
-    wxBitmap undo_inactive_bitmap = create_scaled_bitmap("topbar_undo_inactive", nullptr, TOPBAR_ICON_SIZE);
-    m_undo_item->SetDisabledBitmap(undo_inactive_bitmap);
-
-    this->AddSpacer(FromDIP(10));
-
-    wxBitmap redo_bitmap = create_scaled_bitmap("topbar_redo", nullptr, TOPBAR_ICON_SIZE);
-    m_redo_item = this->AddTool(wxID_REDO, "", redo_bitmap);
-    wxBitmap redo_inactive_bitmap = create_scaled_bitmap("topbar_redo_inactive", nullptr, TOPBAR_ICON_SIZE);
-    m_redo_item->SetDisabledBitmap(redo_inactive_bitmap);
-
-    this->AddSpacer(FromDIP(10));
-
-    wxBitmap calib_bitmap          = create_scaled_bitmap("calib_sf", nullptr, TOPBAR_ICON_SIZE);
-    wxBitmap calib_bitmap_inactive = create_scaled_bitmap("calib_sf_inactive", nullptr, TOPBAR_ICON_SIZE);
-    m_calib_item                   = this->AddTool(ID_CALIB, _L("Calibration"), calib_bitmap);
-    m_calib_item->SetDisabledBitmap(calib_bitmap_inactive);
-
-    this->AddSpacer(FromDIP(25));
-    //this->AddStretchSpacer(1);
-
-    m_title_ctrl = new CenteredTitle(this);
-    m_title_ctrl->SetFont(Label::Body_12);
-    wxAuiToolBarItem* title_item = this->AddControl(m_title_ctrl, "");
-    title_item->SetProportion(1); 
-
-    this->AddSpacer(FromDIP(25));
-    //this->AddStretchSpacer(1);
-
-    //this->EnableTool(m_publish_item->GetId(), false);
-    //this->AddSpacer(FromDIP(4));
-
-    /*wxBitmap model_store_bitmap = create_scaled_bitmap("topbar_store", nullptr, TOPBAR_ICON_SIZE);
-    m_model_store_item = this->AddTool(ID_MODEL_STORE, "", model_store_bitmap);
-    this->AddSpacer(12);
-    */
-
-    //this->AddSeparator();
-    //this->AddSpacer(FromDIP(4));
+    this->AddSpacer(FromDIP(12));
 
     if(!window_btns_on_left){
     wxBitmap iconize_bitmap = create_scaled_bitmap("topbar_min", nullptr, TOPBAR_ICON_SIZE);
@@ -373,7 +342,7 @@ void BBLTopbar::Init(wxFrame* parent)
 
     Realize();
     // m_toolbar_h = this->GetSize().GetHeight();
-    m_toolbar_h = FromDIP(30);
+    m_toolbar_h = FromDIP(FILUNA_NAVBAR_HEIGHT);
 
     int client_w = parent->GetClientSize().GetWidth();
     this->SetSize(client_w, m_toolbar_h);
@@ -442,26 +411,27 @@ void BBLTopbar::OnRedo(wxAuiToolBarEvent& event)
     plater->redo();
 }
 
+// Filuna: the bar has no save/undo/redo/calibration buttons any more (see Init); these stay as no-ops for the callers.
 void BBLTopbar::EnableUndoRedoItems()
 {
-    this->EnableTool(m_undo_item->GetId(), true);
-    this->EnableTool(m_redo_item->GetId(), true);
-    this->EnableTool(m_calib_item->GetId(), true);
+    if (m_undo_item) this->EnableTool(m_undo_item->GetId(), true);
+    if (m_redo_item) this->EnableTool(m_redo_item->GetId(), true);
+    if (m_calib_item) this->EnableTool(m_calib_item->GetId(), true);
     Refresh();
 }
 
 void BBLTopbar::EnableUndoRedo(bool undo, bool redo)
 {
-    this->EnableTool(m_undo_item->GetId(), undo);
-    this->EnableTool(m_redo_item->GetId(), redo);
+    if (m_undo_item) this->EnableTool(m_undo_item->GetId(), undo);
+    if (m_redo_item) this->EnableTool(m_redo_item->GetId(), redo);
     Refresh();
 }
 
 void BBLTopbar::DisableUndoRedoItems()
 {
-    this->EnableTool(m_undo_item->GetId(), false);
-    this->EnableTool(m_redo_item->GetId(), false);
-    this->EnableTool(m_calib_item->GetId(), false);
+    if (m_undo_item) this->EnableTool(m_undo_item->GetId(), false);
+    if (m_redo_item) this->EnableTool(m_redo_item->GetId(), false);
+    if (m_calib_item) this->EnableTool(m_calib_item->GetId(), false);
     Refresh();
 }
 
@@ -472,6 +442,8 @@ void BBLTopbar::SaveNormalRect()
 
 void BBLTopbar::ShowCalibrationButton(bool show)
 {
+    if (m_calib_item == nullptr || m_calib_item->GetSizerItem() == nullptr)
+        return;
     m_calib_item->GetSizerItem()->Show(show);
     m_sizer->Layout();
     if (!show)
@@ -487,6 +459,9 @@ void BBLTopbar::OnModelStoreClicked(wxAuiToolBarEvent& event)
 void BBLTopbar::SetFileMenu(wxMenu* file_menu)
 {
     m_file_menu = file_menu;
+    // Filuna: no separate Arquivo button; the logo menu starts with it.
+    if (file_menu != nullptr)
+        m_top_menu.Insert(0, wxID_ANY, _L("File"), file_menu);
 }
 
 void BBLTopbar::AddDropDownSubMenu(wxMenu* sub_menu, const wxString& title)
@@ -535,39 +510,15 @@ void BBLTopbar::Rescale() {
     int em = em_unit(this);
     wxAuiToolBarItem* item;
 
-    /*item = this->FindTool(ID_LOGO);
-    item->SetBitmap(create_scaled_bitmap("topbar_logo", nullptr, TOPBAR_ICON_SIZE));*/
-
-    item = this->FindTool(ID_TOP_FILE_MENU);
-    item->SetBitmap(create_scaled_bitmap("topbar_file", this, TOPBAR_ICON_SIZE));
-
-    item = this->FindTool(ID_TOP_DROPDOWN_MENU);
-    item->SetBitmap(create_scaled_bitmap("topbar_dropdown", this, TOPBAR_ICON_SIZE));
-
-    //item = this->FindTool(wxID_OPEN);
-    //item->SetBitmap(create_scaled_bitmap("topbar_open", nullptr, TOPBAR_ICON_SIZE));
-
-    item = this->FindTool(wxID_SAVE);
-    item->SetBitmap(create_scaled_bitmap("topbar_save", this, TOPBAR_ICON_SIZE));
-
-    item = this->FindTool(wxID_UNDO);
-    item->SetBitmap(create_scaled_bitmap("topbar_undo", this, TOPBAR_ICON_SIZE));
-    item->SetDisabledBitmap(create_scaled_bitmap("topbar_undo_inactive", this, TOPBAR_ICON_SIZE));
-
-    item = this->FindTool(wxID_REDO);
-    item->SetBitmap(create_scaled_bitmap("topbar_redo", this, TOPBAR_ICON_SIZE));
-    item->SetDisabledBitmap(create_scaled_bitmap("topbar_redo_inactive", this, TOPBAR_ICON_SIZE));
-
-    item = this->FindTool(ID_CALIB);
-    item->SetBitmap(create_scaled_bitmap("calib_sf", this, TOPBAR_ICON_SIZE));
-    item->SetDisabledBitmap(create_scaled_bitmap("calib_sf_inactive", this, TOPBAR_ICON_SIZE));
+    // Filuna: the logo is the only tool before the tabs (see Init).
+    if ((item = this->FindTool(ID_TOP_DROPDOWN_MENU)) != nullptr)
+        item->SetBitmap(filuna_logo_bitmap(this));
+    if (m_tabs_host)
+        m_tabs_host->SetMinSize(wxSize(FromDIP(320), FromDIP(FILUNA_NAVBAR_HEIGHT - 4)));
+    m_toolbar_h = FromDIP(FILUNA_NAVBAR_HEIGHT);
 
     if (m_title_ctrl)
         m_title_ctrl->SetTitle(m_titleText);
-
-    /*item = this->FindTool(ID_MODEL_STORE);
-    item->SetBitmap(create_scaled_bitmap("topbar_store", this, TOPBAR_ICON_SIZE));
-    */
 
     item = this->FindTool(wxID_ICONIZE_FRAME);
     item->SetBitmap(create_scaled_bitmap("topbar_min", this, TOPBAR_ICON_SIZE));

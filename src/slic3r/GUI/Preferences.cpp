@@ -1,4 +1,7 @@
 #include "Preferences.hpp"
+
+#include <initializer_list>
+#include <utility>
 #include "CloudProvider.hpp"
 #include "OptionsGroup.hpp"
 #include "GUI_App.hpp"
@@ -1741,6 +1744,42 @@ void PreferencesDialog::create_items()
 
     //auto item_hints            = create_item_checkbox(_L("Show \"Daily Tips\" after start"), page, _L("If enabled, useful hints are displayed at startup."), "show_daily_tips");
     //g_sizer->Add(item_hints);
+
+    //// GENERAL > Filuna
+    // The Filuna options live here, in the program's own settings (the gear of the navigation bar). They are saved on
+    // this computer first, so they work without internet, and the Filuna pages send them to the account when online.
+    for (const auto& [key, value] : std::initializer_list<std::pair<const char*, const char*>>{
+             {"filuna_pref_interface_autoajuda", "true"}, {"filuna_pref_estoque_alerta_baixo", "true"},
+             {"filuna_pref_estoque_limite_baixo_g", "150"}, {"filuna_pref_farm_avisar_limpar_mesa", "true"},
+             {"filuna_pref_farm_avisar_filamento", "true"}, {"filuna_pref_ofertas_ativas", "true"},
+             {"filuna_pref_inicio_tendencias", "true"}})
+        if (app_config->get(key).empty())
+            app_config->set(key, value);
+
+    g_sizer->Add(create_item_title(_L("Filuna")), 1, wxEXPAND);
+    g_sizer->Add(create_item_checkbox(_L("Self-help"), _L("Show what each setting and tool does, with an example image, when the mouse is over it."),
+                                      "filuna_pref_interface_autoajuda"));
+    g_sizer->Add(create_item_checkbox(_L("Warn when a spool is running out"), _L("Shows a warning on Home, in the Farm and on the stock screen when the remaining filament goes below the limit."),
+                                      "filuna_pref_estoque_alerta_baixo"));
+    g_sizer->Add(create_item_spinctrl(_L("Running-out limit"), "", "g", _L("Remaining weight below which a spool counts as running out."),
+                                      "filuna_pref_estoque_limite_baixo_g", 0, 5000));
+    g_sizer->Add(create_item_checkbox(_L("Warn when a print finishes"), _L("Asks to clear the bed before the next Farm job is sent."),
+                                      "filuna_pref_farm_avisar_limpar_mesa"));
+    g_sizer->Add(create_item_checkbox(_L("Warn about insufficient filament"), _L("Warns before a job when the spool in the printer does not have enough filament."),
+                                      "filuna_pref_farm_avisar_filamento"));
+    g_sizer->Add(create_item_checkbox(_L("Show sales trends on Home"), "", "filuna_pref_inicio_tendencias"));
+
+    g_sizer->Add(create_item_title(_L("Costs for the sale suggestion")), 1, wxEXPAND);
+    g_sizer->Add(create_item_decimal_input(_L("Profit margin"), "", _L("From 0 to 0.95. Empty uses the calculator default."), "filuna_pref_calculo_margem", 0., 0.95, 2));
+    g_sizer->Add(create_item_decimal_input(_L("Labor per hour"), "R$", "", "filuna_pref_calculo_mao_obra_hora", 0., 10000., 2));
+    g_sizer->Add(create_item_decimal_input(_L("Energy per kWh"), "R$", "", "filuna_pref_calculo_energia_kwh", 0., 100., 2));
+    g_sizer->Add(create_item_decimal_input(_L("Average printer power"), "W", "", "filuna_pref_calculo_potencia_w", 0., 10000., 0));
+    g_sizer->Add(create_item_decimal_input(_L("Filament price per kg"), "R$", "", "filuna_pref_calculo_preco_kg", 0., 10000., 2));
+
+    g_sizer->Add(create_item_title(_L("Offers")), 1, wxEXPAND);
+    g_sizer->Add(create_item_checkbox(_L("Show filament and parts offers"), "", "filuna_pref_ofertas_ativas"));
+    g_sizer->Add(create_item_input(_L("Only this material"), "", _L("For example PLA. Empty shows every material."), "filuna_pref_ofertas_material"));
+    g_sizer->Add(create_item_decimal_input(_L("Maximum price per kg"), "R$", _L("0 shows every price."), "filuna_pref_ofertas_preco_max_kg", 0., 10000., 2));
 
     //// GENERAL > Features
     g_sizer->Add(create_item_title(_L("Features")), 1, wxEXPAND);
