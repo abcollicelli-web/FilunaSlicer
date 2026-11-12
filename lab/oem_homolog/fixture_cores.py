@@ -86,12 +86,43 @@ def gerar(destino: Path, lado: float = 15.0, centro: tuple[float, float] = (110.
     return {"sha256": hashlib.sha256(destino.read_bytes()).hexdigest(), "extrusoras": ext, "lado_mm": lado}
 
 
+def de_semente(semente: Path, destino: Path) -> dict:
+    """Recebe um 3MF exportado pelo PRÓPRIO binário oficial com 4 objetos
+    (``--export-3mf`` de 4 cópias do cubo) e só troca a extrusora de cada
+    objeto para 1..4 em Metadata/model_settings.config. Malha, projeto e todo
+    o resto do arquivo do fabricante ficam como ele gravou."""
+    import re
+    with zipfile.ZipFile(semente) as z:
+        dados = {i: z.read(i.filename) for i in z.infolist()}
+    chave = next(i for i in dados if i.filename == "Metadata/model_settings.config")
+    texto = dados[chave].decode("utf-8")
+    blocos = list(re.finditer(r'<object id="(\d+)">(.*?)</object>', texto, re.S))
+    if len(blocos) != 4:
+        raise AssertionError(f"SEMENTE_SEM_4_OBJETOS ({len(blocos)})")
+    ordem = sorted(blocos, key=lambda m: int(m.group(1)))
+    novo = texto
+    for n, m in enumerate(ordem, 1):
+        corpo = re.sub(r'(<metadata key="extruder" value=")\d+(")', rf"\g<1>{n}\2", m.group(2), count=1)
+        if corpo == m.group(2) and f'value="{n}"' not in corpo:
+            raise AssertionError("SEMENTE_SEM_METADADO_EXTRUDER")
+        novo = novo.replace(m.group(0), f'<object id="{m.group(1)}">{corpo}</object>')
+    dados[chave] = novo.encode("utf-8")
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(destino, "w") as z:
+        for info, d in dados.items():
+            z.writestr(info, d)
+    return {"sha256": hashlib.sha256(destino.read_bytes()).hexdigest(),
+            "semente_sha256": hashlib.sha256(semente.read_bytes()).hexdigest(),
+            "objetos": [int(m.group(1)) for m in ordem], "extrusoras": [1, 2, 3, 4]}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("destino", type=Path)
     ap.add_argument("--lado", type=float, default=15.0)
+    ap.add_argument("--semente", type=Path, help="3MF de 4 objetos exportado pelo binário oficial")
     ns = ap.parse_args()
-    print(gerar(ns.destino, ns.lado))
+    print(de_semente(ns.semente, ns.destino) if ns.semente else gerar(ns.destino, ns.lado))
     return 0
 
 
