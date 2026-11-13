@@ -28,6 +28,10 @@ jobs:
           persist-credentials: false
           lfs: false
       - uses: lukka/get-cmake@latest
+        with:
+          # CMake 4.x recusa o source_group do Boost.Locale 1.84 ("is not a prefix of file") ao reconstruir as
+          # dependências (branch nova não herda o cache da v1-base-unificada); mesma faixa que compilou a base.
+          cmakeVersion: "~3.31.0"
       - uses: microsoft/setup-msbuild@v2
       - name: Install pinned uv for offline-safe CMake configuration
         uses: astral-sh/setup-uv@v6

@@ -10,12 +10,11 @@
 
 #include <nlohmann/json.hpp>
 #include <wx/panel.h>
+#include <wx/timer.h>
 #include <wx/string.h>
 #include <wx/webview.h>
 
 namespace Slic3r { namespace GUI {
-
-class wxTimer;
 
 class FilunaPanel : public wxPanel
 {
