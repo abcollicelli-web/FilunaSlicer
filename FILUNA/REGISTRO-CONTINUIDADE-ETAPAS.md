@@ -727,3 +727,11 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - o **app** é o controle remoto: câmera, pausar, enviar impressão, avisos e scanner.
   - Entram: estoque único (as bobinas do Slicer usam `farm_bobinas`/`farm_movimentos`, que o app já usa); impressões, produtos e manutenção pela sincronização do guia 03 §4; etiqueta `FLN-<id>` para o scanner do app; avisos no celular; restauração num PC novo; configuração dos paramétricos prevista no backup (o que sobe é a configuração, nunca o arquivo gerado).
   - O site só é publicado com ordem do proprietário.
+
+### V1 — Desenho da bobina aprovado (13/11/2026, 04:15)
+- **Pedido do proprietário:** imagem de bobina com a cor do filamento, no estilo da foto enviada (aba perfurada azul-escura, filamento em destaque), com a cor ajustada automaticamente a partir do hex ou do RGB.
+- **Feito:** `Filuna.bobinaSVG(cor, px)` em `resources/web/filuna/ponte.js`. É um SVG em vista 3/4: borda da aba de trás, filamento cilíndrico com brilho e voltas, aba da frente com espessura e perfuração regular, três janelas mostrando o filamento e miolo com anéis. Luz e sombra são calculadas da cor; branco, preto e prata têm contraste próprio.
+  - Usado na tabela do Estoque (64 px), na Biblioteca de filamentos do Meu espaço, na etiqueta (120 px) e no cadastro, com prévia ao vivo pelo seletor de cor ou pelo hex.
+  - A barra de peso das cores muito claras usa `#9A948C`.
+- **Aprovado pelo proprietário:** "Agora está perfeita" (2ª versão; a 1ª foi recusada).
+- Vai no próximo pacote. O mesmo desenho deve ser usado no app Android, para a bobina ficar igual nos dois.
