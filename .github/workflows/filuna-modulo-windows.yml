@@ -50,6 +50,8 @@ jobs:
           ref: ${{ matrix.commit }}
           path: oem
           submodules: recursive
+          fetch-depth: 0        # a versão dos forks vem do "git describe" (tags): sem elas o libslic3r_version.h sai inválido
+          fetch-tags: true
       - name: Ferramentas (Strawberry Perl p/ OpenSSL, NASM, Ninja)
         if: steps.sel.outputs.go == '1'
         shell: pwsh
