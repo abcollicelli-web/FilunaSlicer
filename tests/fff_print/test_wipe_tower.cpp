@@ -229,6 +229,7 @@ TEST_CASE("Tower consumption is classified separately for each printer kind", "[
         REQUIRE(statistics.model_volumes_per_extruder.count(filament_id) == 1);
         CHECK(statistics.model_volumes_per_extruder.at(filament_id) > 0.);
     }
+}
 
 // change_filament_gcode for the Klipper sections: a marker comment, so no slicer output changes.
 static const char *const toolchange_mark = "; TOOLCHANGE_MARK\n";
