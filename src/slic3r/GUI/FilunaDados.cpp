@@ -5,6 +5,7 @@
 #include "GUI.hpp"
 #include "GUI_App.hpp"
 #include "I18N.hpp"
+#include "MainFrame.hpp"
 #include "PartPlate.hpp"
 #include "Plater.hpp"
 #include "format.hpp"
