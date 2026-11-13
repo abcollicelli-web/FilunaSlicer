@@ -704,3 +704,26 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - Vínculo de arquivos e "Localizar arquivo".
   - Sincronização com o servidor (Fase 6).
   - Causa do "Fatiar mesa" desabilitado na validação de `c9f52c4a`, que entra no próximo roteiro de QA.
+
+### V1 — Validação no PC do build `67e51c47` (13/11/2026, 03:51–04:00)
+- **Build:** run `43337170025` — **PASS**. CTest 3026/3026, incluindo os 23 testes `[FilunaDados]`. Resultado em `filuna-qa-prints/builds/67e51c47`: 33 arquivos, com o `filuna.db` da cópia isolada.
+- **PASS:**
+  - telas Início, Preparação, Visualização, Dispositivo (galeria e unidade), Projeto, Calibração, Meu espaço, Filamentos, Histórico, Painel e Preferências;
+  - abas das Preferências em pt-BR ("Arquivos", "Comportamento");
+  - cópia isolada (`--datadir`) funcionou sem tocar nos dados reais.
+- **Fase 4, conferida no banco:**
+  - cadastro em lote: 10 bobinas B-0001 a B-0010, com tipo eSun PLA Branco reaproveitado, 1000 g, tara 200 g e R$ 120,00 por bobina;
+  - pesagem da B-0001 com 930 g na balança gerou o evento `pesagem −270` e restante **730 g** (02-DADOS §5);
+  - 23 itens em `sync_fila`; a fila ainda não sobe, porque o envio é do próximo pacote;
+  - etiqueta abre.
+- **"Fatiar mesa não concluiu": não é defeito.** O log mostra `update_print_volume_state … got 0 printable istances` e `render_thumbnail … volumes size 0`: **a mesa estava vazia**. O desenho colorido no centro da mesa é a marca da placa, não um objeto. A Confirmação de bobinas (B06) e o fim no Histórico (B08) ficam para o próximo roteiro, que vai **importar um cubo de teste** antes de fatiar.
+- **Em aberto:**
+  - o menu do logo e a setinha do Exportar não abriram no clique automático; repetir com modelo fatiado;
+  - na unidade "luca" aparece o aviso "perfil da Preparação não é o desta impressora" (Generic Marlin × Elegoo CC2). É esperado: o aviso existe para isso;
+  - o erro `calc_exclude_triangles` e o `[Orca Updater] status=400` estão no log; o updater do Orca ainda consulta o servidor da Bambu, e isso será trocado na Fase 7 (atualização pelo servidor Filuna).
+- **Próximo pacote, por decisão do proprietário de 13/11:**
+  - o **servidor é a ponte de dados** entre o Slicer, o site e o app Android;
+  - o **Slicer é autônomo** e faz o trabalho pesado no PC;
+  - o **app** é o controle remoto: câmera, pausar, enviar impressão, avisos e scanner.
+  - Entram: estoque único (as bobinas do Slicer usam `farm_bobinas`/`farm_movimentos`, que o app já usa); impressões, produtos e manutenção pela sincronização do guia 03 §4; etiqueta `FLN-<id>` para o scanner do app; avisos no celular; restauração num PC novo; configuração dos paramétricos prevista no backup (o que sobe é a configuração, nunca o arquivo gerado).
+  - O site só é publicado com ordem do proprietário.
