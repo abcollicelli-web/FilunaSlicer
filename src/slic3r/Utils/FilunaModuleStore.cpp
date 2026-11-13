@@ -68,19 +68,7 @@ bool verify_ed25519(const std::string& text, const std::string& signature_b64, c
                             reinterpret_cast<const unsigned char*>(text.data()), text.size()) == 1;
 }
 
-std::string sha256_hex(const std::string& data)
-{
-    unsigned char md[EVP_MAX_MD_SIZE];
-    unsigned int  len = 0;
-    EVP_Digest(data.data(), data.size(), md, &len, EVP_sha256(), nullptr);
-    static const char* hex = "0123456789abcdef";
-    std::string        out;
-    for (unsigned int i = 0; i < len; ++i) {
-        out.push_back(hex[md[i] >> 4]);
-        out.push_back(hex[md[i] & 15]);
-    }
-    return out;
-}
+// sha256_hex: definição única em FilunaCalculos.cpp (mesma assinatura em Slic3r::Filuna; a duplicata quebrava o link dos testes)
 
 std::optional<ModuleCatalog> parse_catalog_response(const std::string& body, std::string& error, const std::string& public_key_b64)
 {
