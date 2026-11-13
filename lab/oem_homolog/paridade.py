@@ -44,18 +44,40 @@ UUID_LIVRE = re.compile(rb"^;\s*\w*uuid\s*[:=]\s*[0-9a-f-]{32,36}\s*$", re.I)
 ID_OBJETO = re.compile(rb"(id[:_])(\d{9,})")
 
 
-# Rótulos de "cancelar objeto" do PrusaSlicer (M486 S<n>, lista objects_info): a numeração sai de um
-# std::map indexado pelo ENDEREÇO de memória de cada ModelObject (LabelObjects::init), então muda entre
-# compilações do mesmo código. Mesmo tratamento do id: o número vira a ordem da primeira aparição, e a
-# lista objects_info é comparada em ordem canônica. A geometria de cada objeto continua conferida.
+# Rótulos de objeto do PrusaSlicer ("cancelar objeto"): M486 S<n> no G-code binário e
+# "; printing object <nome> id:<n> copy <c>" no ASCII. A numeração sai de um std::map indexado pelo
+# ENDEREÇO de memória de cada ModelObject (LabelObjects::init) e muda entre compilações do mesmo código.
+# O próprio arquivo diz, na lista objects_info, qual polígono cada rótulo é: o número vira esse polígono
+# (o lugar do objeto na mesa), e a lista é comparada em ordem canônica. Quem foi impresso onde, e com
+# qual rótulo, continua conferido.
 M486 = re.compile(rb"^M486 S(\d+)")
-# mesma origem nos comentários do G-code ASCII: "; printing object <nome> id:<n> copy <c>" (n pequeno)
 ROTULO_ASCII = re.compile(rb"^(; (?:stop )?printing object .* id:)(\d{1,8})( copy \d+)")
-OBJ_INFO = re.compile(rb"^(; \[printer_metadata\] objects_info=)(.*)$")
+OBJ_INFO = re.compile(rb"^(; (?:\[printer_metadata\] objects_info=|objects_info = ))(.*)$")
+NOME_ID = re.compile(r" id:(\d+) copy \d+$")
+
+
+def _poligonos(todas: list[bytes]) -> tuple[dict[bytes, bytes], dict[bytes, bytes]]:
+    """(rótulo M486 -> polígono, id do comentário ASCII -> polígono) lidos do objects_info."""
+    m486, ascii_ = {}, {}
+    for ln in todas:
+        m = OBJ_INFO.match(ln)
+        if not m:
+            continue
+        try:
+            objs = json.loads(m.group(2)).get("objects", [])
+        except ValueError:
+            continue
+        for n, o in enumerate(objs):
+            chave = json.dumps(o.get("polygon"), separators=(",", ":")).encode()
+            m486[str(n).encode()] = chave
+            a = NOME_ID.search(o.get("name", ""))
+            if a:
+                ascii_[a.group(1).encode()] = chave
+    return m486, ascii_
 
 
 def normalizado(p: Path) -> bytes:
-    linhas, ordem, rotulos = [], {}, {}
+    linhas, ordem = [], {}
 
     def troca(m):
         n = ordem.setdefault(m.group(2), len(ordem) + 1)
@@ -63,25 +85,23 @@ def normalizado(p: Path) -> bytes:
 
     # G-code binário (Prusa, binary_gcode=1) é aberto para texto antes de normalizar
     todas = bgcode.texto(p.read_bytes()).splitlines()
-    for k, ln in enumerate(todas):
+    poli_m486, poli_ascii = _poligonos(todas)
+    for ln in todas:
         if CABECALHO.match(ln) or DATA_LIVRE.match(ln) or UUID_LIVRE.match(ln):
             linhas.append(b"; <cabecalho-normalizado>")
         else:
             m = M486.match(ln)
-            # a declaração "M486 S<n>" + "M486 A<nome>" do início fica como está (sempre 0..n-1);
-            # só os usos no corpo são renumerados pela ordem em que o objeto é impresso
-            declaracao = k + 1 < len(todas) and todas[k + 1].startswith(b"M486 A")
-            if m and m.group(1) != b"-1" and not declaracao:
-                n = rotulos.setdefault(m.group(1), len(rotulos))
-                ln = b"M486 S" + str(n).encode() + ln[m.end():]
+            if m and m.group(1) in poli_m486:
+                ln = b"M486 S@" + poli_m486[m.group(1)] + ln[m.end():]
             m = ROTULO_ASCII.match(ln)
-            if m:
-                n = rotulos.setdefault(b"a" + m.group(2), len(rotulos))
-                ln = m.group(1) + b"rot" + str(n).encode() + m.group(3) + ln[m.end():]
+            if m and m.group(2) in poli_ascii:
+                ln = m.group(1) + b"@" + poli_ascii[m.group(2)] + m.group(3) + ln[m.end():]
             m = OBJ_INFO.match(ln)
             if m:
                 try:
                     j = json.loads(m.group(2))
+                    for o in j.get("objects", []):
+                        o["name"] = NOME_ID.sub(" id:@ copy", o.get("name", ""))
                     j["objects"] = sorted(j.get("objects", []), key=lambda o: json.dumps(o, sort_keys=True))
                     ln = m.group(1) + json.dumps(j, sort_keys=True, separators=(",", ":")).encode()
                 except ValueError:
