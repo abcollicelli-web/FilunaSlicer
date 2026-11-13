@@ -4,6 +4,8 @@
 **Alcance:** todos os fabricantes e modelos do Filuna Slicer.
 **Precedência:** onde esta regra conflitar com documentos anteriores, esta regra prevalece (ver §7).
 
+> **13/11/2026:** §2 item 1 (motor clonado para dentro do Filuna) e §8 foram substituídos por `REGRA-CANONICA-ARQUITETURA-V2-MOTORES-HEADLESS-DISPOSITIVOS-20261113.md` (motor = fatiador oficial headless em processo separado; Anycubic = Orca nativo). O restante desta regra continua válido.
+
 ## 1. Princípio
 
 O Filuna Slicer é um fork AGPL do OrcaSlicer. Cada fatiador oficial de fabricante é também um fork aberto da mesma linhagem (Slic3r → PrusaSlicer → Bambu Studio → OrcaSlicer), porém **cada um parou em uma versão diferente e alterou o próprio motor**. Por isso o G-code oficial só é reproduzido com o motor do próprio fabricante.
