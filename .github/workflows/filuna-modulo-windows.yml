@@ -79,7 +79,12 @@ jobs:
         run: |
           $inst = Get-ChildItem -Path oem/build -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'resources') } | Select-Object -First 1
           if (-not $inst) { throw "pasta de instalação não encontrada em oem/build" }
-          $exe = Get-ChildItem -Path $inst.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'validator|console' } | Select-Object -First 1
+          # Nada proprietário no pacote (REGRA-CANONICA-CONECTIVIDADE-OPEN): o script da Snapmaker baixa o binário fechado
+          # snapmaker_control_*.exe (connect bundle) para resources/ — removido; qualquer outro .exe/.dll fechado conhecido idem.
+          Get-ChildItem -Path $inst.FullName -Recurse -File | Where-Object { $_.Name -match 'snapmaker_control|FlashNetwork|pgLibConnect|bambu_networking' } | ForEach-Object { Write-Host "removido (fechado): $($_.FullName)"; Remove-Item -Force $_.FullName }
+          $exe = Get-ChildItem -Path $inst.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'validator|console|crashpad|handler|control|updater|uninstall' } | Sort-Object Length -Descending | Select-Object -First 1
+          if (-not $exe) { throw "executável do fatiador não encontrado" }
+          Write-Host "executavel: $($exe.Name)"
           $zip = "${{ matrix.id }}-${{ matrix.versao }}-windows.zip"
           Compress-Archive -Path (Join-Path $inst.FullName '*') -DestinationPath $zip -CompressionLevel Optimal
           $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
@@ -104,6 +109,7 @@ jobs:
           New-Item -ItemType Directory -Force prova | Out-Null
           $p = Start-Process -FilePath $exe -ArgumentList @('--slice','0','--export-gcode','--outputdir','prova','filuna/fixtures/cube20.stl') -PassThru -Wait -NoNewWindow
           "rc=$($p.ExitCode)"; Get-ChildItem prova
+          if (-not (Get-ChildItem prova -Filter *.gcode)) { throw "a prova --slice não gerou G-code (rc=$($p.ExitCode))" }
       - name: Publicar artefatos
         if: steps.sel.outputs.go == '1'
         uses: actions/upload-artifact@v4
