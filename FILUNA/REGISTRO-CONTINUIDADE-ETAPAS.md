@@ -774,3 +774,34 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - **Falta:**
   - aprovação do proprietário para publicar o site, compilar e liberar o APK beta e enviar o próximo build do Slicer;
   - teste real de gravação numa NTAG213 com a Centauri Carbon 2 do proprietário.
+
+### V1 — Publicações de 13/11 e Fases 6 e 5.4 (13/11/2026, manhã)
+- **Publicado com ordem do proprietário ("Pode"):**
+  - **Site:** release `20261113T045348Z-6681eae` (branch local `site-v2/etiquetas-nfc`), migração 17 aplicada (`app_tags_bobina`).
+    - O servidor **não tem credencial do GitHub**: `git push` e `git fetch` falham. Por isso a publicação foi feita a partir da branch local, com uma cópia do `publicar.sh` que busca no próprio repositório em vez do GitHub.
+    - **O GitHub (`abcollicelli-web/Filuna`) continua sem as rotas do app e sem as etiquetas.** Rodar o `publicar.sh` original com uma branch do GitHub apagaria tudo isso do site.
+  - **App:** APK `0.2.0-beta` (código 3), mesma assinatura das versões anteriores, liberado só para admin pela atualização automática.
+  - **Slicer:** commits até `323fe3af` enviados para `filuna/v1-base-unificada`. Build Windows QA em andamento: run `43368343094`.
+- **Fase 6 — sincronização** (servidor no commit `6a2c59c`, branch local, **ainda não publicado**; Slicer no commit `5e62749e`, ainda não enviado):
+  - **Servidor (`app/slicer_sync.py`):**
+    - `POST /sync/enviar`, que aceita gzip e até 200 itens; tabela e campos são conferidos contra o esquema local.
+    - `GET /sync/receber?desde=&pc_id=`, que pagina e não devolve ao computador o que ele mesmo mandou.
+    - `GET /sync/estado`.
+    - Os registros ficam em `slc_registros`, com o contador `slc_rev`.
+    - **Ponte com o estoque do site e do app:** a bobina do Slicer vira `farm_bobinas` com o mesmo id; consumo e purga viram movimentos `impressao`, e pesagem, ajuste e descarte viram `ajuste_slicer`. Bobina nova, ajuste ou "acabou" feitos no site ou no app voltam ao Slicer como eventos.
+    - 27 testes do site passam.
+  - **Slicer:**
+    - `FilunaSync` roda numa thread própria: sobe a fila 5 s depois de cada gravação e a cada 5 minutos, recebe ao abrir o programa e faz um último envio ao fechar (no máximo 3 s).
+    - `FilunaDb::aplicar_remotos`: eventos só são inseridos; nas outras tabelas vence o `atualizado_em` mais novo; o restante é a soma dos eventos. Código de bobina repetido ganha sufixo.
+    - Estado discreto no rodapé ("Salvo no servidor" / "Sem conexão — será enviado depois") e no Estoque, com o botão "Sincronizar agora".
+  - O login continua pelo código de pareamento (já existente). O `FilunaCloudServiceAgent` do guia não foi feito, porque o login atual já entrega o token.
+- **Fase 5.4 — vínculo de arquivos** (commit `054e302b`, ainda não enviado):
+  - Ao registrar o envio, o produto fica ligado ao arquivo do projeto: caminho, nome, tamanho e SHA-256. O arquivo em si nunca sobe.
+  - No Histórico, o produto mostra uma de três opções: Abrir; "Arquivo não encontrado neste computador"; ou "Arquivo em outro computador", com o botão Localizar arquivo. O Localizar arquivo confere o SHA-256 e pergunta antes de usar um arquivo diferente.
+- **Testes locais `[FilunaDados]`:** 27 casos e 180 verificações, todos PASS.
+- **Falta:**
+  - publicar o servidor da Fase 6 **antes** do próximo build do Slicer chegar ao PC;
+  - aceite real da Fase 6 com dois computadores (pelo app, como segundo dispositivo);
+  - Fase 7 (atualização automática pelo servidor Filuna);
+  - Fase 8 (telas de Modelos e Paramétricos; o backup da configuração dos paramétricos entra junto com elas);
+  - decisão sobre a Creality CFS.
