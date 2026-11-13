@@ -418,10 +418,12 @@
   "homologation_exceptions": {
     "criterio": "comandos iguais (decisão do proprietário, 13/11/2026): o binário oficial 7.3.1.6378 tem o recurso 'time flush', ausente de todas as refs publicadas; vale o caso em que a impressora executa os mesmos comandos do oficial (ou varia só como o próprio oficial varia entre execuções). Ver lab/oem_homolog/criterio_comandos.py e res/paridade-creality/prova.json.",
     "maquinas_fora": [
-      "SPARKX i8 0.4 nozzle"
+      "SPARKX i8 0.4 nozzle",
+      "Creality K3"
     ],
     "motivo_fora": {
-      "SPARKX i8 0.4 nozzle": "torre de limpeza 0,021 mm mais para dentro no compilado (G1 Y292.949 x Y292.970); diferença real de motor"
+      "SPARKX i8 0.4 nozzle": "torre de limpeza 0,021 mm mais para dentro no compilado (G1 Y292.949 x Y292.970); diferença real de motor",
+      "Creality K3": "4 cores: mesma diferença real da SPARKX — torre de limpeza (G1  Y252.470 E0.1889 no oficial x E0.1881) e trajetos de deslocamento; com 40 execuções extras do oficial e 15 do compilado nenhuma camada a partir da 2ª coincide (res/paridade-creality/casos/082/cores-mais-variantes-comandos.json). Cubo: comandos iguais."
     }
   }
 }
