@@ -179,7 +179,7 @@ json cores_de(MachineObject* o)
 
 json card(MachineObject* o)
 {
-    json c = {{"dev_id", o->dev_id}, {"nome", o->dev_name}, {"ip", o->dev_ip}, {"modelo", o->printer_type},
+    json c = {{"dev_id", o->get_dev_id()}, {"nome", o->get_dev_name()}, {"ip", o->get_dev_ip()}, {"modelo", o->printer_type},
               {"modelo_nome", std::string(o->get_printer_type_display_str().ToUTF8().data())},
               {"ligada", o->is_online()},      {"estado", estado_legivel(o)},
               {"conexao", o->dev_connection_type}, {"agente", o->printer_agent_id},
@@ -338,7 +338,7 @@ json descobertas()
         return {{"impressoras", lista}};
     for (auto& [id, o] : dev->get_local_machinelist())
         if (o != nullptr)
-            lista.push_back({{"dev_id", o->dev_id}, {"nome", o->dev_name}, {"ip", o->dev_ip}, {"modelo", o->printer_type},
+            lista.push_back({{"dev_id", o->get_dev_id()}, {"nome", o->get_dev_name()}, {"ip", o->get_dev_ip()}, {"modelo", o->printer_type},
                              {"modelo_nome", std::string(o->get_printer_type_display_str().ToUTF8().data())},
                              {"livre", o->bind_state != "occupied"}, {"ligada", o->is_online()},
                              {"precisa_codigo", o->get_access_code().empty() && !o->has_access_right()}});
@@ -385,7 +385,7 @@ json conectar_ip(const std::string& modulo_id, const std::string& modelo, const 
     MachineObject* o = dev->insert_local_device(m, "lan", "free", "", codigo);
     if (o == nullptr)
         return {{"erro", "Não foi possível registrar o endereço."}};
-    return conectar(o->dev_id, codigo);
+    return conectar(o->get_dev_id(), codigo);
 }
 
 json ponte_instrucoes(const std::string& modulo_id)
@@ -432,8 +432,8 @@ json estado()
         if (o == nullptr)
             continue;
         json c = card(o);
-        c["selecionada"] = (sel != nullptr && sel->dev_id == o->dev_id);
-        c["cadastro_id"] = cfg != nullptr ? cfg->get(chave_vinculo(o->dev_id)) : std::string();
+        c["selecionada"] = (sel != nullptr && sel->get_dev_id() == o->get_dev_id());
+        c["cadastro_id"] = cfg != nullptr ? cfg->get(chave_vinculo(o->get_dev_id())) : std::string();
         lista.push_back(c);
     }
     // cadastradas no banco local que não estão na rede agora: aparecem desligadas
