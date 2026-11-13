@@ -810,3 +810,18 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - **Feito com ordem do proprietário:** entrada só por chave, bloqueio automático de quem erra a senha, firewall, backup diário com teste de restauração, prioridade de CPU para o site e atualização do sistema.
 - **Detalhes operacionais** (chaves, arquivos e procedimento de emergência): só no servidor e no repositório privado do site. Este repositório é público e não guarda detalhes de segurança.
 - **Ainda abertos:** cópia do backup fora do servidor, reinício do servidor para a atualização da libc, e o código do site no repositório privado `filuna-site`.
+### ADR-2026-11-13 — Correções do OrcaSlicer 2.5.0 final por cherry-pick (toca `src/libslic3r`)
+- **Contexto:** o pin `a620d804` é o `main` do Orca de 05/11, que **já contém** plugins Python, a aba Design (CAD paramétrico), a textura em relevo (`TextureDisplacement`) e a mistura de filamentos. A tag `v2.5.0`, de 07/11 (lançada em 10/11), saiu de um ramo de release separado. **Por isso não se troca o pin pela tag:** o `main` do pin tem funções que a tag não tem, e a troca removeria código. Comparando os patches, só 29 commits da tag não estão no pin.
+- **Decisão:** aplicar por `cherry-pick -x` (cada commit leva a referência ao original) só as correções e os perfis. Ficam de fora:
+  - trocas de versão (`Bump version`);
+  - assinatura de CI do Orca (o Filuna tem a própria);
+  - atualização geral dos catálogos de tradução: conflita com o pt-BR do Filuna, e as strings da aba Design já estão traduzidas no pt-BR;
+  - a tradução própria da aba Permissões dos plugins.
+- **Aplicados** (branch local `filuna/v1-orca-250-final`):
+  - **motor (`libslic3r`):** `803dddb0f` (caminhos de preenchimento adaptativo e TPMS), `34c8e78e3` (M400 da torre de limpeza no Klipper), `1f32f5a99` (vagas de filamento), `a2acec57c` (agrupamento em dois bicos);
+  - **interface:** `e7e731429` (câmera personalizada no Dispositivo), `8a1395259` (Speed Dial), `84a2400a9` e `62e60b289` (auditoria e permissões dos plugins);
+  - **perfis:** Flashforge, Sovol, Prusa XL, PrintaLot, Recycling Fabrik, EverLoop e a Orca Filament Library. Os 152 JSON foram conferidos e todos são válidos.
+  - `2dc6f7b18` ficou vazio: a correção já estava no pin.
+  - Nos testes, os conflitos foram só casos novos dos dois lados no mesmo lugar; ficaram os dois.
+- **Aba Design ligada por padrão no Filuna:** feito no `GUI_App.cpp`, uma única vez (chave `filuna_design_padrao`). Quem desligar nas Preferências continua desligado. O padrão do Orca em `AppConfig.cpp` não foi mexido.
+- **Risco e verificação:** as mudanças no motor são correções do próprio Orca, já lançadas na 2.5.0. O CTest completo do próximo build e o cubo de referência validam.

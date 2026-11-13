@@ -3770,6 +3770,11 @@ bool GUI_App::on_init_inner()
         scrn->SetText(scrn_txt, 70);
         wxYield();
     }
+    // Filuna: a aba Design (CAD paramétrico) vem ligada. Só uma vez: quem desligar nas Preferências continua desligado.
+    if (app_config->get("filuna_design_padrao").empty()) {
+        app_config->set_bool("enable_cad_feature", true);
+        app_config->set("filuna_design_padrao", "1");
+    }
     BOOST_LOG_TRIVIAL(info) << "create the main window";
     mainframe = new MainFrame();
     // The first render can happen as soon as the frame is shown, before the queued
