@@ -18,8 +18,11 @@ import argparse
 import base64
 import hashlib
 import json
+import re
 import shutil
 import subprocess
+import tempfile
+import zipfile
 import sys
 import time
 from pathlib import Path
@@ -85,6 +88,61 @@ def estado_rede(provas: Path, fid: str) -> dict:
             "nota": "ensaio contra emulador do protocolo; impressora real fica para o teste do proprietário"}
 
 
+
+# Recursos do próprio Slicer servidos pelo mesmo catálogo (Fase 7): id -> (nome, pasta no fork).
+# O id é o mesmo do motor em FilunaVersoes.hpp; a versão vem de lá, no mesmo ref.
+RECURSOS_SLICER = {"telas": ("Filuna Telas", "resources/web/filuna")}
+
+
+def versao_motor(repo: Path, ref: str, motor: str) -> str | None:
+    try:
+        txt = subprocess.run(["git", "-C", str(repo), "show", f"{ref}:src/slic3r/Filuna/FilunaVersoes.hpp"],
+                             capture_output=True, check=True, text=True).stdout
+    except subprocess.CalledProcessError:
+        return None
+    m = re.search(r'\{"%s",\s*"[^"]*",\s*"([^"]+)"\}' % re.escape(motor), txt)
+    return m.group(1) if m else None
+
+
+def recursos_slicer(repo: Path, ref: str, destino: Path) -> list[dict]:
+    """Empacota os recursos do Slicer (ex.: telas) a partir do git do fork. O zip leva os
+    arquivos na raiz, como o FilunaRecursos espera em <dados>/filuna/recursos/<id>/<versao>/.
+    Datas fixas no zip: o pacote só muda quando o conteúdo muda."""
+    mods = []
+    commit = subprocess.run(["git", "-C", str(repo), "rev-parse", ref],
+                            capture_output=True, check=True, text=True).stdout.strip()
+    for rid, (nome, subdir) in RECURSOS_SLICER.items():
+        versao = versao_motor(repo, ref, rid)
+        if not versao:
+            print(f"AVISO {rid}: versao nao encontrada em FilunaVersoes.hpp ({ref})", file=sys.stderr)
+            continue
+        with tempfile.TemporaryDirectory() as td:
+            tar = subprocess.run(["git", "-C", str(repo), "archive", ref, subdir],
+                                 capture_output=True, check=True).stdout
+            subprocess.run(["tar", "-x", "-C", td], input=tar, check=True)
+            raiz = Path(td) / subdir
+            arquivos = sorted(q for q in raiz.rglob("*") if q.is_file())
+            if not arquivos:
+                print(f"AVISO {rid}: {subdir} vazio em {ref}", file=sys.stderr)
+                continue
+            alvo = destino / rid / versao
+            alvo.mkdir(parents=True, exist_ok=True)
+            pacote = alvo / f"{rid}-{versao}.zip"
+            with zipfile.ZipFile(pacote, "w") as z:
+                for q in arquivos:
+                    z.writestr(zipfile.ZipInfo(str(q.relative_to(raiz))), q.read_bytes(),
+                               zipfile.ZIP_DEFLATED)
+        mods.append({"id": rid, "nome": nome, "versao": versao, "estado": "HOMOLOGADO_INTERNO",
+                     "fonte": {"repositorio": "https://github.com/abcollicelli-web/FilunaSlicer",
+                               "ref": ref, "commit": commit, "licenca": "AGPL-3.0"},
+                     "componentes": [{"tipo": "recurso", "arquivo": pacote.name, "sha256": sha(pacote),
+                                      "bytes": pacote.stat().st_size,
+                                      "url": f"/api/slicer/v1/modulos/{rid}/{versao}/{pacote.name}"}],
+                     "homologacao": {"recurso": {"estado": "HOMOLOGADO",
+                                                 "nota": "arquivos do proprio fork, os mesmos do instalador"}}})
+    return mods
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", type=Path, required=True)
@@ -92,6 +150,8 @@ def main() -> int:
     ap.add_argument("--provas", type=Path, required=True)
     ap.add_argument("--destino", type=Path, required=True)
     ap.add_argument("--chave", type=Path, required=True)
+    ap.add_argument("--slicer-repo", type=Path, help="git do fork FilunaSlicer para empacotar recursos (telas)")
+    ap.add_argument("--slicer-ref", default="FETCH_HEAD")
     ns = ap.parse_args()
 
     ns.destino.mkdir(parents=True, exist_ok=True)
@@ -145,6 +205,9 @@ def main() -> int:
                       "commit": src.get("commit"), "licenca": src.get("license")},
             "conectividade": mod.get("connectivity", {}).get("path"),
             "componentes": componentes, "homologacao": homolog})
+
+    if ns.slicer_repo:
+        modulos += recursos_slicer(ns.slicer_repo, ns.slicer_ref, ns.destino)
 
     catalogo = {"schema": 1, "gerado_em": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "chave": "filuna-modulos-ed25519-1", "modulos": modulos}
