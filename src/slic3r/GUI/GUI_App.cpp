@@ -16,6 +16,7 @@
 #include "WebUserLoginDialog.hpp"
 #include "WebViewDialog.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaAtualizacao.hpp"
 #include "FilunaSync.hpp"
 #include "slic3r/Utils/BBLCloudServiceAgent.hpp"
 #include "slic3r/Utils/CloudDeleteQueue.hpp"
@@ -1134,15 +1135,12 @@ void GUI_App::post_init()
         CallAfter([this] {
             bool cw_showed = this->config_wizard_startup();
 
-            if (!app_config->get_stealth_mode()) {
-                std::string http_url = get_http_url(app_config->get_country_code());
-                std::string language = GUI::into_u8(current_language_code());
-                std::string network_ver = Slic3r::NetworkAgent::get_version();
-                bool        sys_preset  = app_config->get("sync_system_preset") == "true";
-                this->preset_updater->sync(http_url, language, network_ver, sys_preset ? preset_bundle : nullptr);
-            }
+            // Filuna (Fase 7): perfis, plugins e recursos vêm do servidor Filuna (FilunaAtualizacao);
+            // a consulta do PresetUpdater ao servidor da Bambu ficava em erro 400 no log e foi desligada.
 
             this->check_new_version_sf();
+            FilunaAtualizacao::instancia().iniciar((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(),
+                                                   app_config->get("filuna_token"));
             if (!cw_showed)
                 this->check_legacy_user_filament_presets(false);
             const auto cloud_provider = get_printer_cloud_provider();
@@ -2933,6 +2931,7 @@ int GUI_App::OnExit()
 {
     // Filuna: última subida da fila de sincronização (no máximo 3 s).
     FilunaSync::instancia().parar();
+    FilunaAtualizacao::instancia().parar();
     stop_http_server();
     stop_sync_user_preset();
     if (m_startup_cloud_plugin_fetch_thread.joinable())

@@ -15,6 +15,8 @@ set(SLIC3R_GUI_SOURCES
     Filuna/FilunaProduto.cpp
     Filuna/FilunaProduto.hpp
     Filuna/FilunaVersoes.hpp
+    Filuna/FilunaRecursos.cpp
+    Filuna/FilunaRecursos.hpp
     GUI/Widgets/AnimaController.hpp
     GUI/Widgets/AnimaController.cpp
     Config/Snapshot.cpp
@@ -505,6 +507,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/FilunaDados.hpp
     GUI/FilunaSync.cpp
     GUI/FilunaSync.hpp
+    GUI/FilunaAtualizacao.cpp
+    GUI/FilunaAtualizacao.hpp
     GUI/FilunaPanel.cpp
     GUI/FilunaPanel.hpp
     GUI/ProjectDirtyStateManager.cpp

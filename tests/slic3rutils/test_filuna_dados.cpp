@@ -6,6 +6,7 @@
 #include "slic3r/Filuna/FilunaCalculos.hpp"
 #include "slic3r/Filuna/FilunaDb.hpp"
 #include "slic3r/Filuna/FilunaGcodeResumo.hpp"
+#include "slic3r/Filuna/FilunaRecursos.hpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -531,4 +532,53 @@ TEST_CASE("Vínculo de arquivo do produto e Localizar arquivo", "[FilunaDados]")
     CHECK(db->arquivo(arq)->encontrado);
     CHECK(db->arquivo(arq)->caminho == caminho + ".novo");
     boost::filesystem::remove(caminho);
+}
+
+// --- Recursos atualizáveis (03-SERVIDOR §5 / Fase 7) -----------------------------------------
+
+TEST_CASE("Recursos: ponteiro atômico, poda e validação de nomes", "[FilunaDados]")
+{
+    namespace R = Slic3r::Filuna::Recursos;
+    const auto raiz = (boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("filuna-rec-%%%%%%")).string();
+    CHECK(R::versao_atual(raiz, "telas").empty());
+    CHECK(R::dir_atual(raiz, "telas").empty());
+    for (const char* v : {"1.0.0", "1.1.0", "1.2.0"}) {
+        boost::filesystem::create_directories(R::dir_versao(raiz, "telas", v));
+        R::ativar(raiz, "telas", v);
+    }
+    CHECK(R::versao_atual(raiz, "telas") == "1.2.0");
+    CHECK(R::dir_atual(raiz, "telas") == R::dir_versao(raiz, "telas", "1.2.0"));
+    // poda: fica a ativa e a anterior; a 1.0.0 saiu
+    CHECK(boost::filesystem::exists(R::dir_versao(raiz, "telas", "1.1.0")));
+    CHECK_FALSE(boost::filesystem::exists(R::dir_versao(raiz, "telas", "1.0.0")));
+    const auto lista = R::instalados(raiz);
+    REQUIRE(lista.size() == 1);
+    CHECK(lista[0] == std::make_pair(std::string("telas"), std::string("1.2.0")));
+    // ponteiro para pasta que sumiu: versao_atual responde, dir_atual não
+    boost::filesystem::remove_all(R::dir_versao(raiz, "telas", "1.2.0"));
+    CHECK(R::versao_atual(raiz, "telas") == "1.2.0");
+    CHECK(R::dir_atual(raiz, "telas").empty());
+    // nomes que viram pasta e URL são validados
+    CHECK(R::id_valido("cad"));
+    CHECK_FALSE(R::id_valido("Telas"));
+    CHECK_FALSE(R::id_valido("a/b"));
+    CHECK(R::versao_valida("2026.11.10"));
+    CHECK_FALSE(R::versao_valida("../x"));
+    CHECK_THROWS(R::ativar(raiz, "telas", "../fuga"));
+    boost::filesystem::remove_all(raiz);
+}
+
+TEST_CASE("Recursos: base64 e assinatura Ed25519 do catálogo", "[FilunaDados]")
+{
+    namespace R = Slic3r::Filuna::Recursos;
+    const auto b = R::base64_decodificar("RmlsdW5h");
+    CHECK(std::string(b.begin(), b.end()) == "Filuna");
+    CHECK(R::base64_decodificar("not!base64").empty());
+    // Par gerado só para o teste (openssl genpkey ed25519); a mensagem é o texto exato.
+    const std::string pub = "3e8794ecff6050e1ae23a472c1b7359f51ffcffa4aa7089ce8ce0ac2692e72fb";
+    const std::string sig = "oRHtr9GP4YjcfRtbLYP6lqhlE0nQTxtqyNz6m6yOlYgnXWROWsYvzPTPvGHkbYKw8aixI0RoeA9H7bj0GkNRCg==";
+    CHECK(R::verificar_ed25519("catalogo de teste do filuna", sig, pub));
+    CHECK_FALSE(R::verificar_ed25519("catalogo de teste do filunA", sig, pub));          // mensagem mudou
+    CHECK_FALSE(R::verificar_ed25519("catalogo de teste do filuna", sig, std::string(64, 'a'))); // outra chave
+    CHECK_FALSE(R::verificar_ed25519("catalogo de teste do filuna", "QUJD", pub));       // assinatura curta
 }

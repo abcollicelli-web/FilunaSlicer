@@ -835,3 +835,17 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - Meu espaço: o rodapé da barra lateral mostra "Filuna Slicer 1.2.0-beta · Filuna CAD 1.1.0 · …" (conferido no harness com captura).
   - `FILUNA/DOCUMENTO-DE-CRIACAO-FILUNA-SLICER.md`: documento de criação consolidado e fechado — o que o produto é, arquitetura construída, as 8 telas aprovadas do Filuna CAD com ordem de implementação (1–3 e 5 → 8 → 6 → 4 → 7), as 10 decisões de criação e a lista do que falta com critério de "fechado". Esse documento só muda com decisão nova; o dia a dia continua aqui.
 - **Upgrade da maquete do CAD aprovado em conversa:** telas 5–8 (recorte por extrudar negativo, texto/SVG na face, roscas com folga calibrada para impressão 3D + encaixes prontos, esboço por plano e eixo com revolução).
+
+### V1 — Fase 7 (parte do Slicer): atualização pelo servidor Filuna (13/11/2026)
+- **O que o servidor já tinha** (nada mudou nele): o aviso de versão nova em `/api/slicer/v1/versao` (formato GitHub, chave `slicer_versoes` da config), que o `check_new_version_sf` já lê; e o catálogo de módulos **assinado com Ed25519** em `/api/slicer/v1/modulos`, com download por componente e SHA-256 (`app/modulos.py`, pacotes em `/var/lib/filuna-v2/modulos`).
+- **Feito no Slicer:**
+  - `Filuna/FilunaRecursos`: camada pura dos recursos atualizáveis — `<data_dir>/filuna/recursos/<id>/<versão>/` com ponteiro `atual` trocado de forma atômica, poda guardando a versão anterior, validação de ids e versões (viram pasta e URL), base64 e verificação Ed25519 (OpenSSL).
+  - `GUI/FilunaAtualizacao`: thread própria que, 20 s depois de abrir e a cada 6 h (guia-v1/03 §5), baixa o catálogo, **confere a assinatura com a chave pública fixa no binário** (`filuna-modulos-ed25519-1`, raw `54e050b4…43b1` — pública, pode ficar no repositório), baixa cada componente dos módulos visíveis com versão diferente da instalada, confere o SHA-256, extrai os .zip com `extract_archive_confined` (sem escapar da pasta) e só então ativa. Qualquer falha descarta a pasta e mantém o que está. Precisa de conta (a rota exige token); entrar ou sair da conta dispara a verificação.
+  - **Telas atualizáveis:** `FilunaPanel` passa a carregar as páginas do recurso `telas` (quando instalado) no lugar das embutidas; recurso ainda sem pacote no servidor (abaixo).
+  - **Updater da Bambu desligado:** a chamada `preset_updater->sync(...)` (que gerava `[Orca Updater] status=400` no log) saiu; perfis e recursos passam a vir do canal Filuna. O `check_new_version_sf` continua (já aponta para o filuna3d.com).
+  - `versoes.listar` agora devolve também os recursos instalados (id → versão); motor novo `atualizacao` (Filuna Atualização 1.0.0) em `FilunaVersoes`.
+  - Testes: +2 casos `[FilunaDados]` (29 casos, 202 verificações, todos PASS): ponteiro/poda/validação e base64/Ed25519 com par gerado para o teste.
+- **Falta para fechar a Fase 7:**
+  - empacotar `telas`, `autoajuda` e `perfis` no catálogo (hoje só há módulos de fabricante): estender `lab/oem_homolog/publicar_modulos.py` para incluir recursos de uma pasta extra, com os mesmos sha256/assinatura;
+  - preencher `slicer_versoes` na config quando houver release (aviso de binário novo);
+  - aceite do guia: publicar um pacote `telas` de teste → o programa aplica sem reinstalar; corromper de propósito → recusa e mantém a versão.

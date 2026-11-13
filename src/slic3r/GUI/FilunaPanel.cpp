@@ -1,4 +1,6 @@
 #include "FilunaPanel.hpp"
+#include "FilunaAtualizacao.hpp"
+#include "slic3r/Filuna/FilunaRecursos.hpp"
 #include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
 
@@ -352,7 +354,13 @@ json pick_images(wxWindow* parent)
 FilunaPanel::FilunaPanel(wxWindow* parent, const std::string& page) : wxPanel(parent, wxID_ANY)
 {
     SetBackgroundColour(wxColour(0xED, 0xEB, 0xE7));
-    m_url = file_url_from_path(boost::filesystem::path(resources_dir()) / "web" / "filuna" / page);
+    // Fase 7: páginas atualizadas pelo servidor (recurso "telas") valem sobre as embutidas no instalador.
+    boost::filesystem::path base = boost::filesystem::path(resources_dir()) / "web" / "filuna";
+    const std::string atualizadas =
+        Filuna::Recursos::dir_atual((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(), "telas");
+    if (!atualizadas.empty() && boost::filesystem::exists(boost::filesystem::path(atualizadas) / page))
+        base = atualizadas;
+    m_url = file_url_from_path(base / page);
     auto* sizer = new wxBoxSizer(wxVERTICAL);
     SetSizer(sizer);
     create_browser();
@@ -425,6 +433,7 @@ void FilunaPanel::broadcast(const std::string& name, const json& data)
 void FilunaPanel::account_changed(const std::string& token, const FilunaPanel* source)
 {
     FilunaSync::instancia().avisar(token); // entrou ou saiu da conta: sincroniza (ou para) com a conta nova
+    FilunaAtualizacao::instancia().avisar(token); // e confere se há recursos ou módulos novos
     for (FilunaPanel* p : panels())
         if (p != source)
             p->send_event("conta", {{"token", token}});

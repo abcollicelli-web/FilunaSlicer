@@ -18,6 +18,7 @@
 #include "slic3r/Filuna/FilunaDb.hpp"
 #include "slic3r/Filuna/FilunaGcodeResumo.hpp"
 #include "slic3r/Filuna/FilunaProduto.hpp"
+#include "slic3r/Filuna/FilunaRecursos.hpp"
 #include "slic3r/Filuna/FilunaVersoes.hpp"
 #include "libslic3r_version.h"
 
@@ -378,11 +379,15 @@ std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
         json motores = json::array();
         for (const auto& m : F::motores_filuna())
             motores.push_back({{"id", m.id}, {"nome", m.nome}, {"versao", m.versao}});
+        json recursos = json::object();
+        for (const auto& [rid, rver] : F::Recursos::instalados((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string()))
+            recursos[rid] = rver;
         return json{{"produto", "Filuna Slicer"},
                     {"versao", F::VERSAO_FILUNA_SLICER},
                     {"base_orca", SoftFever_VERSION},
                     {"esquema_banco", db.versao_esquema()},
-                    {"motores", motores}};
+                    {"motores", motores},
+                    {"recursos", recursos}};
     }
     if (acao == "sync.estado") {
         const FilunaSync::Estado e = FilunaSync::instancia().estado();
