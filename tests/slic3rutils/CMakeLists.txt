@@ -37,6 +37,8 @@ add_executable(${_TEST_NAME}_tests
     test_plugin_status.cpp
     test_printer_agent.cpp
     test_qidi_printer_agent.cpp
+    test_filuna_module_store.cpp
+    test_filuna_bambu_lan.cpp
     test_plugin_install.cpp
     test_plugin_lifecycle.cpp
     test_plugin_resource_texture.cpp
@@ -142,3 +144,8 @@ if (ORCA_BUNDLED_UV_EXECUTABLE)
 endif()
 
 orcaslicer_discover_tests(${_TEST_NAME}_tests)
+
+# Filuna: sonda de rede dos agentes Moonraker contra o emulador do laboratório de homologação
+# (lab/oem_homolog); não é teste do CTest, roda pelo script do laboratório.
+add_executable(filuna_sonda_moonraker ${CMAKE_SOURCE_DIR}/lab/oem_homolog/sonda/sonda_moonraker.cpp)
+target_link_libraries(filuna_sonda_moonraker libslic3r_gui libslic3r)

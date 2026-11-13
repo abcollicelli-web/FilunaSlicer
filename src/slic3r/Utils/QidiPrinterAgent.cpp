@@ -259,7 +259,7 @@ bool QidiPrinterAgent::fetch_slot_info(const std::string&        base_url,
 
             // Try Qidi-specific setting ID first; fall back to visible preset by type
             std::string setting_id = build_setting_id(filament_type, vendor_type, tray.tray_type);
-            auto* bundle = GUI::wxGetApp().preset_bundle;
+            auto* bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
             if (!bundle) {
                 tray.tray_info_idx = setting_id;
             } else if (!setting_id.empty() && has_visible_base_preset(bundle->filaments, setting_id)) {

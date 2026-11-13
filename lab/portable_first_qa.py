@@ -79,6 +79,7 @@ def record(rows,brand,version,stage,status,detail,evidence=""):
 
 def obtain(cfg:dict,cache:Path)->tuple[Path,str]:
  url="https://github.com/"+cfg["repo"]+"/releases/download/"+cfg["tag"]+"/"+cfg["asset"]
+ cache.mkdir(parents=True,exist_ok=True)
  archive=cache/cfg["asset"]
  expected=cfg["sha256"]
  if not archive.is_file() or digest(archive)!=expected:

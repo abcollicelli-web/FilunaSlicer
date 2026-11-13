@@ -195,7 +195,7 @@ bool SnapmakerPrinterAgent::fetch_filament_info(std::string dev_id, FilamentSync
                                                        safe_at(filament_sub_type, i, empty_str));
             tray.tray_color    = safe_at(filament_color, i, default_color);
 
-            auto* bundle = GUI::wxGetApp().preset_bundle;
+            auto* bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
             // Try to find a matching preset for this filament based on vendor, type and color.
             // If not found, default to traditional search by type only or generic type mapping.
             if (bundle) {

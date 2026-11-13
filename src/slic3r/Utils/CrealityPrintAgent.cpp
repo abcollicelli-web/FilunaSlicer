@@ -361,7 +361,7 @@ bool CrealityPrintAgent::fetch_filament_info(std::string dev_id, FilamentSyncMod
     for (const auto& s : slots)
         by_position[{s.box_id, s.slot_id}] = &s;
 
-    auto* bundle = GUI::wxGetApp().preset_bundle;
+    auto* bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
 
     const int max_slots = box_count * 4;
     std::vector<AmsTrayData> trays;

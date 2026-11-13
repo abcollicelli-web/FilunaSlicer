@@ -534,7 +534,7 @@ bool MoonrakerPrinterAgent::print_uploaded_file(const PrintParams& /*params*/, c
 
 bool MoonrakerPrinterAgent::accepts_3mf() const
 {
-    const PresetBundle*     bundle  = GUI::wxGetApp().preset_bundle;
+    const PresetBundle*     bundle  = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
     const ConfigOptionBool* use_3mf = bundle ? bundle->printers.get_edited_preset().config.option<ConfigOptionBool>("use_3mf") : nullptr;
     return use_3mf != nullptr && use_3mf->value;
 }
@@ -607,16 +607,6 @@ int MoonrakerPrinterAgent::set_queue_on_main_fn(QueueOnMainFn fn)
 
 void MoonrakerPrinterAgent::build_ams_payload(int ams_count, int max_lane_index, const std::vector<AmsTrayData>& trays)
 {
-
-    // Look up MachineObject via DeviceManager
-    auto* dev_manager = GUI::wxGetApp().getDeviceManager();
-    if (!dev_manager) {
-        return;
-    }
-    MachineObject* obj = dev_manager->get_my_machine(device_info.dev_id);
-    if (!obj) {
-        return;
-    }
 
     // Build BBL-format JSON for DevFilaSystemParser::ParseV1_0
     nlohmann::json ams_json = nlohmann::json::object();
@@ -712,6 +702,21 @@ void MoonrakerPrinterAgent::build_ams_payload(int ams_count, int max_lane_index,
     // Wrap in the expected structure for ParseV1_0
     nlohmann::json print_json = nlohmann::json::object();
     print_json["ams"] = ams_json;
+
+    // Look up MachineObject via DeviceManager
+    auto* dev_manager = (wxTheApp ? GUI::wxGetApp().getDeviceManager() : nullptr);
+    if (!dev_manager) {
+        // Filuna: without the GUI (network probe, headless tests) there is no DeviceManager; hand the same
+        // filament-system payload to the message callback so the colour system can still be observed.
+        nlohmann::json report;
+        report["print"] = {{"command", "push_status"}, {"ams", ams_json}};
+        dispatch_message(device_info.dev_id, report.dump());
+        return;
+    }
+    MachineObject* obj = dev_manager->get_my_machine(device_info.dev_id);
+    if (!obj) {
+        return;
+    }
 
     // Call the parser to populate DevFilaSystem
     DevFilaSystemParser::ParseV1_0(print_json, obj, obj->GetFilaSystem().get(), false);
@@ -851,7 +856,7 @@ std::string MoonrakerPrinterAgent::map_filament_type_to_generic_id(const std::st
     if (it == type_to_ofl_family.end())
         return UNKNOWN_FILAMENT_ID;
 
-    if (auto* bundle = GUI::wxGetApp().preset_bundle) {
+    if (auto* bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr)) {
         const Preset* preset = bundle->filaments.find_preset("Generic " + it->second + " @System");
         if (preset != nullptr && preset->is_system && !preset->filament_id.empty())
             return preset->filament_id;
@@ -881,7 +886,7 @@ bool MoonrakerPrinterAgent::fetch_creality_cfs_data(std::vector<AmsTrayData>& tr
 
     trays.clear();
     max_lane_index = 0;
-    auto* bundle = GUI::wxGetApp().preset_bundle;
+    auto* bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
     for (const auto& slot : slots) {
         AmsTrayData data;
         data.slot_index = slot.slot_index;
@@ -1048,7 +1053,7 @@ bool MoonrakerPrinterAgent::fetch_moonraker_filament_data(std::vector<AmsTrayDat
         // and falls back to the material type when no compatible preset carries it. Only a string
         // counts: Happy Hare writes Spoolman's numeric filament record id under the same key.
         tray.tray_info_idx = safe_json_string(lane_obj, "filament_id");
-        auto* bundle = GUI::wxGetApp().preset_bundle;
+        auto* bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
         if (tray.tray_info_idx.empty())
             tray.tray_info_idx = bundle
                 ? bundle->filaments.filament_id_by_type(tray.tray_type)
@@ -1177,7 +1182,7 @@ bool MoonrakerPrinterAgent::fetch_hh_filament_info(std::vector<AmsTrayData>& tra
         tray.bed_temp = 0;  // HH doesn't provide bed temp in gate arrays
         tray.has_filament = true;
 
-        auto* bundle = GUI::wxGetApp().preset_bundle;
+        auto* bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
         tray.tray_info_idx = bundle
             ? bundle->filaments.filament_id_by_type(tray.tray_type)
             : map_filament_type_to_generic_id(tray.tray_type);
@@ -1304,19 +1309,19 @@ int MoonrakerPrinterAgent::handle_request(const std::string& dev_id, const std::
 bool MoonrakerPrinterAgent::init_device_info(const std::string& dev_id, const std::string& dev_ip, const std::string& username, const std::string& password, bool use_ssl, const std::string& port)
 {
     device_info         = MoonrakerDeviceInfo{};
-    auto* preset_bundle = GUI::wxGetApp().preset_bundle;
-    if (!preset_bundle) {
-        return false;
-    }
-
-    auto&       preset      = preset_bundle->printers.get_edited_preset();
-    const auto& printer_cfg = preset.config;
+    auto* preset_bundle = (wxTheApp ? GUI::wxGetApp().preset_bundle : nullptr);
 
     device_info.dev_ip     = dev_ip;
     device_info.api_key    = password;
-    device_info.model_name = printer_cfg.opt_string("printer_model");
-    device_info.model_id   = preset.get_printer_type(preset_bundle);
     device_info.base_url   = normalize_base_url(use_ssl, dev_ip, port);
+    // Filuna: without the GUI (network probe, headless tests) there is no preset to read the model from;
+    // the connection itself does not need it
+    if (preset_bundle) {
+        auto&       preset      = preset_bundle->printers.get_edited_preset();
+        const auto& printer_cfg = preset.config;
+        device_info.model_name  = printer_cfg.opt_string("printer_model");
+        device_info.model_id    = preset.get_printer_type(preset_bundle);
+    }
     device_info.dev_id     = dev_id;
     device_info.version    = "";
     device_info.dev_name   = device_info.dev_id;
