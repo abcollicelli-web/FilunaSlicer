@@ -357,3 +357,75 @@ TEST_CASE("Reopening the database keeps the data and does not migrate twice", "[
     for (const char* sufixo : {"", "-wal", "-shm"})
         boost::filesystem::remove(caminho.string() + sufixo, ec);
 }
+
+TEST_CASE("Registering the same brand, material and colour twice reuses the filament type", "[FilunaDados]")
+{
+    auto db = banco_em_memoria();
+    FilunaDb::FilamentoTipo t;
+    t.marca    = "eSun";
+    t.material = "PLA";
+    t.cor_nome = "Branco";
+    t.cor_hex  = "#FFFFFF";
+    const std::string a = db->tipo_igual_ou_novo(t);
+    t.marca = "ESUN";
+    CHECK(db->tipo_igual_ou_novo(t) == a);
+    t.cor_nome = "Preto";
+    CHECK(db->tipo_igual_ou_novo(t) != a);
+    CHECK(db->tipos().size() == 2);
+}
+
+TEST_CASE("Archiving a spool books what was left as discarded and hides it from the active list", "[FilunaDados]")
+{
+    auto db = banco_em_memoria();
+    const auto ids = db->cadastrar_bobinas(tipo_pla_branco(*db), 2, 1000.);
+    db->registrar_evento(ids[0], "consumo", -400.);
+    db->descartar_bobina(ids[0]);
+    const auto b = db->bobina(ids[0]);
+    REQUIRE(b.has_value());
+    CHECK(b->estado == "descartada");
+    CHECK_THAT(b->restante_g, WithinAbs(0., 1e-9));
+    CHECK(db->eventos_da_bobina(ids[0]).front().tipo == "descarte");
+    CHECK(db->bobinas().size() == 1);
+    CHECK(db->bobinas(true).size() == 2);
+}
+
+TEST_CASE("Purge known per filament is booked as exact, not estimated", "[FilunaDados]")
+{
+    auto db = banco_em_memoria();
+    const auto  ids = db->cadastrar_bobinas(tipo_pla_branco(*db), 2, 1000.);
+    GcodeResumo resumo;
+    resumo.filamento_g = {80., 20.};
+    resumo.purga_g     = {5., 1.};
+    const std::string trabalho = db->criar_trabalho({}, {}, resumo);
+    db->confirmar_bobina(trabalho, 0, ids[0]);
+    db->confirmar_bobina(trabalho, 1, ids[1]);
+    const auto r = db->finalizar_trabalho(trabalho, FimTrabalho::Concluido, FracaoImpressa{});
+    REQUIRE(r.eventos.size() == 4);
+    CHECK_FALSE(r.eventos[1].estimado);
+    CHECK_THAT(r.eventos[0].delta_g, WithinAbs(-75., 1e-9));
+    CHECK_THAT(db->bobina(ids[1])->restante_g, WithinAbs(980., 1e-9));
+    const auto lista = db->trabalhos();
+    REQUIRE(lista.size() == 1);
+    CHECK(lista[0].estado == "concluido");
+    CHECK_THAT(lista[0].real_g, WithinAbs(100., 1e-9));
+    REQUIRE(lista[0].bobinas.size() == 2);
+    CHECK(lista[0].bobinas[1] == ids[1]);
+}
+
+TEST_CASE("The product ranking puts the most printed product first", "[FilunaDados]")
+{
+    auto db = banco_em_memoria();
+    GcodeResumo resumo;
+    resumo.filamento_g = {10.};
+    const std::string pouco = db->produto_por_assinatura("a", "Pouco");
+    const std::string muito = db->produto_por_assinatura("b", "Muito");
+    db->finalizar_trabalho(db->criar_trabalho(pouco, {}, resumo), FimTrabalho::Concluido, FracaoImpressa{});
+    for (int i = 0; i < 2; ++i)
+        db->finalizar_trabalho(db->criar_trabalho(muito, {}, resumo), FimTrabalho::Concluido, FracaoImpressa{});
+    const auto r = db->produtos();
+    REQUIRE(r.size() == 2);
+    CHECK(r[0].nome == "Muito");
+    CHECK(r[0].concluidos == 2);
+    CHECK_THAT(r[0].gramas, WithinAbs(20., 1e-9));
+    CHECK(db->impressora_por_nome("luca") == db->impressora_por_nome("luca"));
+}

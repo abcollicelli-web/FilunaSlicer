@@ -498,6 +498,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/ProgressStatusBar.cpp
     GUI/ProgressStatusBar.hpp
     GUI/Project.cpp
+    GUI/FilunaDados.cpp
+    GUI/FilunaDados.hpp
     GUI/FilunaPanel.cpp
     GUI/FilunaPanel.hpp
     GUI/ProjectDirtyStateManager.cpp

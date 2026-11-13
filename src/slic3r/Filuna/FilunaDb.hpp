@@ -58,6 +58,14 @@ public:
         double      densidade_g_cm3 = 0.;
     };
     std::string criar_filamento_tipo(const FilamentoTipo& t);
+    // Reaproveita o tipo com a mesma marca, material, cor e diâmetro (sem diferenciar maiúsculas) ou cria um.
+    std::string tipo_igual_ou_novo(const FilamentoTipo& t);
+    struct TipoCadastrado : FilamentoTipo
+    {
+        std::string id;
+    };
+    std::vector<TipoCadastrado>   tipos() const;
+    std::optional<TipoCadastrado> tipo(const std::string& id) const;
 
     // Cadastro em lote: N bobinas 'lacrada', cada uma com código B-0001… e evento 'entrada'.
     std::vector<std::string> cadastrar_bobinas(const std::string& filamento_tipo_id, int quantidade, double capacidade_g,
@@ -80,6 +88,17 @@ public:
         bool         estimado       = false;
     };
     std::optional<Bobina> bobina(const std::string& bobina_id) const;
+    // Todas as bobinas não excluídas; com incluir_inativas=false ficam só 'lacrada' e 'em_uso'.
+    std::vector<Bobina>   bobinas(bool incluir_inativas = false) const;
+    // Arquivar: estado 'descartada' e evento 'descarte' com o que restava.
+    void                  descartar_bobina(const std::string& bobina_id, const std::string& obs = {});
+    struct Evento
+    {
+        std::string id, tipo, criado_em, trabalho_id, obs;
+        double      delta_g  = 0.;
+        bool        estimado = false;
+    };
+    std::vector<Evento> eventos_da_bobina(const std::string& bobina_id) const;
     std::vector<Bobina>   bobinas_do_tipo(const std::string& filamento_tipo_id) const;
     // Sugestão do diálogo "Confirmar bobinas".
     std::optional<std::string> sugerir_bobina(const std::string& filamento_tipo_id, const std::string& local_do_slot) const;
@@ -90,6 +109,31 @@ public:
     // Une o produto 'de' ao 'para': trabalhos passam a apontar para 'para' e 'de' fica excluído.
     void unir_produtos(const std::string& de, const std::string& para);
     int  trabalhos_concluidos_do_produto(const std::string& produto_id) const;
+    struct ProdutoRanking
+    {
+        std::string id, nome;
+        int         concluidos = 0;
+        double      gramas     = 0.;
+    };
+    std::vector<ProdutoRanking> produtos() const; // mais impressos primeiro
+    struct TrabalhoLista
+    {
+        std::string                 id, produto_id, produto_nome, impressora_id, impressora_nome, estado, criado_em, terminado_em;
+        std::optional<std::int64_t> tempo_previsto_s, tempo_real_s;
+        std::optional<int>          camadas_total;
+        double                      previsto_g = 0., real_g = 0.;
+        bool                        estimado   = false;
+        std::vector<std::string>    bobinas; // id por índice de filamento ('' = sem bobina)
+    };
+    std::vector<TrabalhoLista> trabalhos(int limite = 100) const;
+    struct ImpressoraCadastrada
+    {
+        std::string id, nome, fabricante, modelo;
+        double      horas = 0.;
+    };
+    std::vector<ImpressoraCadastrada> impressoras() const;
+    // Reaproveita a impressora com o mesmo nome ou cria uma.
+    std::string impressora_por_nome(const std::string& nome, const std::string& fabricante = {}, const std::string& modelo = {});
 
     // Cria o trabalho 'fatiado' com uma linha por filamento a partir do resumo do G-code.
     // A purga rateada só é gravada quando o G-code informou o total (senão fica desconhecida).

@@ -1,5 +1,6 @@
 #include "Plater.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaDados.hpp"
 #include "DeviceCore/FilunaOEMOverlay.hpp"
 #include "../../../FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp"
 #include "DeviceCore/FilunaVendorRegistry.hpp"
@@ -13583,6 +13584,8 @@ void Plater::priv::on_export_began(wxCommandEvent& evt)
 
 void Plater::priv::on_export_finished(wxCommandEvent& evt)
 {
+    // Filuna: G-code exported — ask which spools it will use (only when the Filuna stock has spools).
+    filuna_registrar_envio(q);
 #if 0
     //BBS: also export 3mf to the same directory for debugging
     std::string gcode_path_str(evt.GetString().ToUTF8().data());
@@ -21708,6 +21711,8 @@ void Plater::send_gcode_legacy(int plate_idx, Export3mfProgressFn proFn)
         upload_job.upload_data.source_path = p->m_print_job_data._3mf_path;
     }
 
+    // Filuna: sending to the printer — ask which spools it will use (only when the Filuna stock has spools).
+    filuna_registrar_envio(this);
     p->export_gcode(fs::path(), false, std::move(upload_job));
 }
 int Plater::send_gcode(int plate_idx, Export3mfProgressFn proFn)

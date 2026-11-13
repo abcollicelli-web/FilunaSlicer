@@ -680,3 +680,27 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - O menu do logo não abriu no clique e não foi validado.
   - A unidade aberta do Dispositivo não foi capturada.
   - Início continua com textos do Orca ("Aberto Recentemente", "Criar Novo Projeto", "3mf") e o desenho dele ainda não foi aprovado.
+
+### V1 — Fases 4 e 5 (estoque, confirmar bobinas, histórico, painel, manutenção), 13/11/2026 madrugada
+- **Ordem do proprietário:** "continue o projeto até estar 100% aplicado todo o roteiro; ponha no próximo script o que deseja que ele faça e corrija as falhas desse".
+- **Fase 4, estoque de bobinas:**
+  - **Meu espaço › Filamentos** lê e grava o banco local pela ponte. Funciona sem conta e sem internet. O estoque da conta no servidor passa a ser sincronização (Fase 6), não a fonte.
+  - Cadastro individual e em lote (quantidade). Para bobina já usada, informa o peso da balança ou uma fração (¾, ½ ou ¼, marcada como estimada).
+  - Ações por bobina: Pesar, Etiqueta (código grande, cor e botão imprimir) e Arquivar (vira descartada; o que restava conta como descarte). Opção para mostrar as vazias e arquivadas.
+  - O mesmo material, marca e cor reaproveita o tipo de filamento (`tipo_igual_ou_novo`).
+- **Diálogo "Confirmar bobinas"** (wx nativo, `FilunaDados.cpp`): aparece ao terminar **Exportar G-code** (`on_export_finished`) e ao **enviar para a impressora** pelo envio padrão (`send_gcode_legacy`), **só quando há bobinas cadastradas**.
+  - Mostra uma linha por filamento usado, com o peso. A bobina sugerida (02-DADOS §4) já vem escolhida; existe a opção "Não descontar de nenhuma bobina".
+  - Ao confirmar, registra o produto (pela assinatura da mesa), a impressora (pelo nome da impressora física ou do perfil) e o trabalho `enviado`, com as bobinas.
+  - Peso e purga por filamento vêm das estatísticas do fatiamento (volume × densidade do perfil). A purga da torre por filamento é **exata**, não rateada.
+- **Fase 5, histórico, painel e manutenção:**
+  - **Meu espaço › Histórico:** lista os trabalhos. Nos que estão abertos há os botões Terminou, Cancelada e Falhou; para cancelada ou falhou, pergunta a % impressa (02-DADOS §7).
+  - **Meu espaço › Painel:** desperdício em 30 dias, produtos mais impressos, "vai faltar filamento?" (com "dados insuficientes") e manutenção por impressora (Feita e "Adicionar limpeza do bico a cada 100 h").
+  - **Ponte:** `estoque.listar|criar|pesar|arquivar|abrir|local`, `bobina.eventos|etiqueta`, `historico.listar`, `trabalho.finalizar`, `produto.listar|unir`, `painel.resumo`, `previsao.filamentos`, `manutencao.listar|adicionar|registrar` e `sync.estado`, todas sobre o banco local (01-TELAS §5).
+- **Testes:** `[FilunaDados]` passa a ter 23 casos (152 verificações), todos PASS localmente. Os 4 novos cobrem o reaproveitamento do tipo, o arquivamento, a purga exata e o ranking de produtos.
+- **Também neste pacote:** fundo dos botões redondos da barra; abas Arquivos e Comportamento das Preferências; strings novas do diálogo traduzidas (`# AI Translated`).
+- **Pendente:**
+  - QR na etiqueta (hoje mostra o código).
+  - Fim automático pelos módulos de impressora: Bambu e o envio de rede da Bambu não passam pelo diálogo; o fim é marcado no Histórico.
+  - Vínculo de arquivos e "Localizar arquivo".
+  - Sincronização com o servidor (Fase 6).
+  - Causa do "Fatiar mesa" desabilitado na validação de `c9f52c4a`, que entra no próximo roteiro de QA.

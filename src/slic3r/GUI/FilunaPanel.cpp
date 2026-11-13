@@ -1,4 +1,5 @@
 #include "FilunaPanel.hpp"
+#include "FilunaDados.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -455,6 +456,9 @@ void FilunaPanel::on_script_message(wxWebViewEvent& evt)
 
 json FilunaPanel::handle(const std::string& action, const json& d)
 {
+    // Banco local (estoque, histórico, painel, manutenção): FilunaDados.cpp.
+    if (auto dados = filuna_dados_acao(action, d))
+        return *dados;
     AppConfig* cfg = wxGetApp().app_config;
     if (action == "config.ler") {
         const std::string key = d.value("chave", std::string());

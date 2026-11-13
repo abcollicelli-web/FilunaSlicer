@@ -16,6 +16,7 @@ struct GcodeResumo
     std::vector<double>          filamento_mm;      // "; filament used [mm] = a, b" (conferência)
     std::optional<double>        total_g;           // "; total filament used [g] = x"
     std::optional<double>        purga_total_g;     // "; total filament used for wipe tower [g] = x"
+    std::vector<double>          purga_g;           // purga por filamento, quando a fonte informa (estatística do fatiamento)
     std::optional<int>           trocas_filamento;  // "; total filament change = n"
     std::optional<std::int64_t>  tempo_previsto_s;  // "; estimated printing time (normal mode) = 1h 45m 3s"
     std::optional<int>           camadas_total;     // "; total layers count = n"

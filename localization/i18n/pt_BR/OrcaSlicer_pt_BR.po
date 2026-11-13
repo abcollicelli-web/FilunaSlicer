@@ -36611,3 +36611,27 @@ msgstr "Arquivos"
 # AI Translated
 msgid "Behaviour"
 msgstr "Comportamento"
+
+# AI Translated
+msgid "Confirm spools"
+msgstr "Confirmar bobinas"
+
+# AI Translated
+msgid "Which spool will each filament come from? The stock is updated when the print ends."
+msgstr "De qual bobina sai cada filamento? O estoque é atualizado quando a impressão termina."
+
+# AI Translated
+msgid "Do not take from any spool"
+msgstr "Não descontar de nenhuma bobina"
+
+# AI Translated
+msgid "%1% · %2% · %3% g left"
+msgstr "%1% · %2% · restam %3% g"
+
+# AI Translated
+msgid "Filament %1% (%2%) — %3% g"
+msgstr "Filamento %1% (%2%) — %3% g"
+
+# AI Translated
+msgid "Do not record this print"
+msgstr "Não registrar esta impressão"

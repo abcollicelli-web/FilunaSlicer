@@ -107,7 +107,7 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 var E = Filuna.esc;
 // Menu da referência (Meu espaço, Projetos, Perfis de impressão, Filamentos, Configurações) e, abaixo, as ferramentas Filuna.
 // Configurações não ficam aqui: estão na engrenagem da barra (Configurações do programa › Filuna).
-var SECOES = [["visao", "Meu espaço"], ["modelos", "Projetos"], ["perfis", "Perfis de impressão"], ["estoque", "Filamentos"]];
+var SECOES = [["visao", "Meu espaço"], ["modelos", "Projetos"], ["perfis", "Perfis de impressão"], ["estoque", "Filamentos"], ["historico", "Histórico"], ["painel", "Painel"]];
 var FERRAMENTAS = [["fila", "Fila da Farm"], ["reparacao", "Reparação"], ["ofertas", "Ofertas"], ["ia", "IA Filuna"], ["loja", "Minha loja"]];
 var st = { secao: "visao", prefs: null, catalogo: [], opcoes: {}, conversa: [] };
 try { var h = (location.hash || "").slice(1); if (h) st.secao = h; } catch (e) {}
@@ -158,7 +158,7 @@ function prefs() {
 function desenhar() {
 	if (st.secao == "loja") { location.href = "loja.html"; return; }
 	menu();
-	({ visao: visao, estoque: estoque, perfis: perfis, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia }[st.secao] || visao)();
+	({ visao: visao, estoque: estoque, historico: historico, painel: painel, perfis: perfis, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia }[st.secao] || visao)();
 }
 
 var ICONE = {
@@ -218,10 +218,16 @@ function visao() {
 		: '<div class="vazio" style="margin:14px 18px 0">Nenhum perfil salvo. Ajuste a impressão na Preparação e clique em salvar.</div>';
 
 	var cx = document.getElementById("contaBox"), fs = document.getElementById("fils");
+	Filuna.nativo("estoque.listar").then(function (r) {
+		var b = (r.bobinas || []).map(bobinaParaLinha);
+		fs.innerHTML = b.length ? b.slice(0, 4).map(function (x) {
+			return '<div class="fil"><span class="reel" style="border-color:' + E(x.cor) + '"></span><div style="min-width:0"><div class="n">' + E((x.marca ? x.marca + " " : "") + x.material) +
+				'</div><div class="s">' + E(x.cor_nome) + "</div></div></div>"; }).join("")
+			: '<div class="vazio" style="grid-column:1/-1">Nenhuma bobina cadastrada.</div>';
+	}, function (e) { fs.innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
 	if (!Filuna.temToken()) {
 		cx.innerHTML = '<div class="ajuda" style="margin-bottom:10px">Entre na sua conta Filuna para ver plano, estoque e Farm.</div><button class="btn primario peq" id="entrarAqui">Entrar</button>';
 		document.getElementById("entrarAqui").onclick = function () { el().innerHTML = '<div id="lg"></div>'; Filuna.telaLogin(el().querySelector("#lg"), function () { location.reload(); }); };
-		fs.innerHTML = '<div class="vazio" style="grid-column:1/-1">Entre na conta para ver suas bobinas.</div>';
 		return;
 	}
 	Filuna.api("GET", "/resumo").then(function (r) {
@@ -232,13 +238,6 @@ function visao() {
 			'<div class="kv"><span>Mesas na fila</span><b>' + (f.mesas_na_fila || 0) + "</b></div>";
 		document.getElementById("gerPlano").onclick = function () { Filuna.abrirLink("https://filuna3d.com/planos"); };
 	}, function (e) { if (e.status == 401) Filuna.sair(); cx.innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
-	Filuna.api("GET", "/estoque").then(function (r) {
-		var b = r.bobinas || [];
-		fs.innerHTML = b.length ? b.slice(0, 4).map(function (x) {
-			return '<div class="fil"><span class="reel" style="border-color:' + E(x.cor) + '"></span><div style="min-width:0"><div class="n">' + E((x.marca ? x.marca + " " : "") + x.material) +
-				'</div><div class="s">' + E(x.cor_nome) + "</div></div></div>"; }).join("")
-			: '<div class="vazio" style="grid-column:1/-1">Nenhuma bobina cadastrada.</div>';
-	}, function (e) { fs.innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
 }
 
 function perfis() {
@@ -264,76 +263,193 @@ function recentes(alvo, max) {
 	}, function () { alvo.innerHTML = '<div class="vazio">Abra o Filuna Slicer para ver seus projetos.</div>'; });
 }
 
+// Estoque local (banco do Filuna, 02-DADOS §4–§5): funciona sem conta e sem internet; a conta sincroniza depois.
+function bobinaParaLinha(x) {
+	var t = x.tipo || {};
+	var imp = /^impressora:/.test(x.local || "") ? x.local.split(":").slice(1, 2).join("") : "";
+	return { id: x.id, numero: x.codigo, material: t.material || "", cor: t.cor_hex || "#C2185B", cor_nome: t.cor_nome || "", marca: t.marca || "",
+		restante_g: x.restante_g, peso_inicial_g: x.capacidade_g, preco_kg: x.preco_centavos && x.capacidade_g ? x.preco_centavos / 100 / x.capacidade_g * 1000 : null,
+		na_impressora: imp, prateleira: /^prateleira:/.test(x.local || "") ? x.local.slice(11) : "", estado: x.estado, estimado: x.estimado, nova: x.estado == "lacrada" };
+}
 function estoque() {
-	if (precisaConta("Entre para ver seu estoque de filamento.")) return;
 	el().innerHTML = '<div class="etop"><div><div class="h1">Estoque de filamentos</div><div class="sub">Gerencie seus filamentos, quantidades e custos. A baixa é automática ao fim de cada impressão.</div></div>' +
 		'<button class="btn primario" id="novo" style="height:46px;padding:0 20px">+ Adicionar filamento</button></div><div id="r" class="carregando">Carregando…</div>';
 	document.getElementById("novo").onclick = function () { novaBobina(); };
-	Promise.all([Filuna.api("GET", "/estoque"), prefs(), Filuna.pendentesLocais()]).then(function (r) {
-		// Bobinas cadastradas sem internet aparecem já, marcadas "a enviar", até a conta confirmar.
-		var fila = r[2].filter(function (f) { return f.rota == "/app/estoque/nova"; }).map(function (f, k) {
-			var c = f.corpo; return { numero: "—", material: c.material, cor: c.cor_hex, cor_nome: c.cor_nome, marca: c.marca, restante_g: c.restante_g, peso_inicial_g: c.peso_g, preco_kg: c.preco_kg, na_impressora: "", pendente: true };
-		});
-		st.bobinas = (r[0].bobinas || []).concat(fila); st.lim = r[1]["estoque.limite_baixo_g"] == null ? 150 : r[1]["estoque.limite_baixo_g"]; st.alerta = r[1]["estoque.alerta_baixo"] !== false;
+	Promise.all([Filuna.nativo("estoque.listar", { incluir_arquivadas: !!st.verArquivadas }), prefs().catch(function () { return {}; })]).then(function (r) {
+		st.bobinas = (r[0].bobinas || []).map(bobinaParaLinha);
+		st.lim = r[1]["estoque.limite_baixo_g"] == null ? 150 : r[1]["estoque.limite_baixo_g"]; st.alerta = r[1]["estoque.alerta_baixo"] !== false;
 		tabelaEstoque();
-	}, function (e) { document.getElementById("r").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+	}, function (e) { document.getElementById("r").outerHTML = '<div id="r" class="erro">' + E(e.erro || e.message) + "</div>"; });
 }
-// Cadastro de bobina no próprio Filuna: grava na conta e, sem internet, fica na fila e aparece já no estoque.
-var MATERIAIS = ["PLA", "PETG", "ABS", "TPU", "ASA"];
+var MATERIAIS = ["PLA", "PETG", "ABS", "TPU", "ASA", "PA", "PC"];
 function novaBobina() {
-	if (precisaConta("Entre na conta uma vez para guardar o estoque. Depois funciona também sem internet.")) return;
 	el().innerHTML = '<div class="etop"><div><a class="voltar" id="voltar" style="color:var(--ink2);font-weight:600;font-size:13.5px">‹ Filamentos</a><div class="h1">Adicionar filamento</div>' +
-		'<div class="sub">Uma linha por bobina física. Sem internet, ela fica guardada e é enviada depois.</div></div></div>' +
-		'<div class="bloco" style="margin-top:20px;max-width:720px"><div class="bb" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 18px">' +
+		'<div class="sub">Cadastre uma ou várias bobinas iguais de uma vez. Fica guardado neste computador e funciona sem internet.</div></div></div>' +
+		'<div class="bloco" style="margin-top:20px;max-width:760px"><div class="bb" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 18px">' +
 		'<div class="campo"><label>Material</label><select id="fMat">' + MATERIAIS.map(function (m) { return "<option>" + m + "</option>"; }).join("") + "</select></div>" +
 		'<div class="campo"><label>Marca</label><input type="text" id="fMarca" placeholder="Ex.: eSun"></div>' +
-		'<div class="campo"><label>Cor</label><div class="linha"><input type="color" id="fCor" value="#C2185B" style="width:54px;height:40px;padding:3px"><input type="text" id="fNomeCor" placeholder="Nome da cor (ex.: Rosa mineral)"></div></div>' +
+		'<div class="campo"><label>Cor</label><div class="linha"><input type="color" id="fCor" value="#FFFFFF" style="width:54px;height:40px;padding:3px"><input type="text" id="fNomeCor" placeholder="Nome da cor (ex.: Branco)"></div></div>' +
 		'<div class="campo"><label>Preço por kg (R$)</label><input type="number" id="fPreco" min="0" step="0.01" placeholder="Opcional"></div>' +
-		'<div class="campo"><label>Peso da bobina (g)</label><input type="number" id="fPeso" min="1" step="1" value="1000"></div>' +
-		'<div class="campo"><label>Restante (g)</label><input type="number" id="fResta" min="0" step="1" placeholder="Igual ao peso se for nova"></div>' +
-		'</div><div class="bb" style="border-top:1px solid var(--line);display:flex;gap:12px;align-items:center"><button class="btn primario" id="fSalvar">Salvar bobina</button><button class="btn" id="fCancelar">Cancelar</button><span id="fMsg"></span></div></div>';
+		'<div class="campo"><label>Peso de filamento da bobina (g)</label><input type="number" id="fPeso" min="1" step="1" value="1000"></div>' +
+		'<div class="campo"><label>Peso da bobina vazia — tara (g)</label><input type="number" id="fTara" min="0" step="1" placeholder="Opcional, para pesar depois"></div>' +
+		'<div class="campo"><label>Situação</label><select id="fSit"><option value="nova">Nova, lacrada</option><option value="balanca">Já usada — pesei na balança</option><option value="fracao">Já usada — não tenho balança</option></select></div>' +
+		'<div class="campo" id="cQtd"><label>Quantidade de bobinas iguais</label><input type="number" id="fQtd" min="1" max="200" step="1" value="1"></div>' +
+		'<div class="campo" id="cBal" style="display:none"><label>Peso na balança, com a bobina (g)</label><input type="number" id="fBal" min="0" step="1"></div>' +
+		'<div class="campo" id="cFra" style="display:none"><label>Quanto ainda tem</label><select id="fFra"><option value="0.75">Uns ¾</option><option value="0.5">Metade</option><option value="0.25">Uns ¼</option></select></div>' +
+		'</div><div class="bb" style="border-top:1px solid var(--line);display:flex;gap:12px;align-items:center"><button class="btn primario" id="fSalvar">Salvar</button><button class="btn" id="fCancelar">Cancelar</button><span id="fMsg"></span></div></div>';
 	var volta = function () { st.secao = "estoque"; desenhar(); };
 	document.getElementById("voltar").onclick = volta; document.getElementById("fCancelar").onclick = volta;
+	var sit = document.getElementById("fSit");
+	sit.onchange = function () {
+		document.getElementById("cQtd").style.display = sit.value == "nova" ? "" : "none";
+		document.getElementById("cBal").style.display = sit.value == "balanca" ? "" : "none";
+		document.getElementById("cFra").style.display = sit.value == "fracao" ? "" : "none";
+	};
 	document.getElementById("fSalvar").onclick = function () {
-		var b = this, peso = Number(document.getElementById("fPeso").value || 1000), resta = document.getElementById("fResta").value;
-		var dados = { material: document.getElementById("fMat").value, cor_hex: document.getElementById("fCor").value.toUpperCase(),
-			cor_nome: document.getElementById("fNomeCor").value.trim(), marca: document.getElementById("fMarca").value.trim(),
-			peso_g: peso, restante_g: resta === "" ? peso : Number(resta), preco_kg: Number(document.getElementById("fPreco").value || 0) || null };
+		var b = this, v = function (id) { return document.getElementById(id).value; };
+		var peso = Number(v("fPeso") || 1000), tara = Number(v("fTara") || 0);
+		var dados = { material: v("fMat"), marca: v("fMarca").trim(), cor_hex: v("fCor").toUpperCase(), cor_nome: v("fNomeCor").trim(),
+			capacidade_g: peso, tara_g: tara, preco_kg: Number(v("fPreco") || 0) };
+		if (sit.value == "nova") dados.quantidade = Math.max(1, Math.round(Number(v("fQtd") || 1)));
+		else if (sit.value == "balanca") {
+			if (v("fBal") === "") { document.getElementById("fMsg").innerHTML = '<span class="erro" style="display:inline-block;margin:0">Informe o peso da balança.</span>'; return; }
+			dados.usada = true; dados.restante_g = Math.max(0, Number(v("fBal")) - tara); dados.estimado = false;
+		} else { dados.usada = true; dados.restante_g = peso * Number(v("fFra")); dados.estimado = true; }
 		b.disabled = true;
-		Filuna.api("POST", "/app/estoque/nova", dados).then(function () { volta(); }, function (e) {
-			b.disabled = false; document.getElementById("fMsg").innerHTML = '<span class="erro" style="display:inline-block;margin:0">' + E(e.erro) + "</span>";
+		Filuna.nativo("estoque.criar", dados).then(function () { volta(); }, function (e) {
+			b.disabled = false; document.getElementById("fMsg").innerHTML = '<span class="erro" style="display:inline-block;margin:0">' + E(e.erro || e.message) + "</span>";
 		});
 	};
+}
+function pesarBobina(x) {
+	var p = window.prompt("Peso na balança de " + x.numero + ", com a bobina, em gramas:");
+	if (p === null || p === "" || isNaN(Number(p.replace(",", ".")))) return;
+	Filuna.nativo("estoque.pesar", { id: x.id, peso_g: Number(p.replace(",", ".")) }).then(estoque, function (e) { falha(e); });
+}
+function arquivarBobina(x) {
+	if (!window.confirm("Arquivar " + x.numero + "? O que restava conta como descartado.")) return;
+	Filuna.nativo("estoque.arquivar", { id: x.id }).then(estoque, function (e) { falha(e); });
+}
+function etiquetaBobina(x) {
+	Filuna.nativo("bobina.etiqueta", { id: x.id }).then(function (t) {
+		el().innerHTML = '<a class="voltar" id="voltar" style="color:var(--ink2);font-weight:600;font-size:13.5px">‹ Filamentos</a>' +
+			'<div class="h1" style="margin-top:6px">Etiqueta da bobina</div><div class="sub">Imprima e cole na bobina. O código identifica esta bobina na confirmação de cada impressão.</div>' +
+			'<div class="bloco" style="margin-top:20px;max-width:420px"><div class="bb" style="text-align:center">' +
+			'<div style="font-size:44px;font-weight:800;letter-spacing:1px">' + E(t.codigo) + '</div>' +
+			'<div style="margin-top:6px;font-weight:700">' + E(t.titulo) + "</div><div class='s' style='color:var(--muted)'>" + E(t.marca) + " · " + Filuna.gramas(t.capacidade_g) + "</div>" +
+			'<div style="height:14px;border-radius:7px;margin:14px 0 0;background:' + E(t.cor_hex || "#ccc") + ';border:1px solid var(--line)"></div></div>' +
+			'<div class="bb" style="border-top:1px solid var(--line)"><button class="btn primario" id="imp">Imprimir etiqueta</button></div></div>';
+		document.getElementById("voltar").onclick = function () { estoque(); };
+		document.getElementById("imp").onclick = function () { window.print(); };
+	}, function (e) { falha(e); });
 }
 
 function tabelaEstoque() {
 	var b = (st.bobinas || []).slice(), ord = st.ordem || "nome", lim = st.lim, alerta = st.alerta;
 	var nome = function (x) { return (x.material + " " + x.cor_nome).toLowerCase(); };
-	b.sort(function (a, c) { return ord == "peso" ? a.restante_g - c.restante_g : ord == "numero" ? a.numero - c.numero : nome(a) < nome(c) ? -1 : nome(a) > nome(c) ? 1 : 0; });
+	b.sort(function (a, c) { return ord == "peso" ? a.restante_g - c.restante_g : ord == "numero" ? (a.numero < c.numero ? -1 : 1) : nome(a) < nome(c) ? -1 : nome(a) > nome(c) ? 1 : 0; });
+	var ativas = b.filter(function (x) { return x.estado == "lacrada" || x.estado == "em_uso"; });
 	var custo = function (x) { return x.preco_kg ? x.restante_g / 1000 * x.preco_kg : null; };
-	var baixo = function (x) { return alerta && x.restante_g < lim; };
-	var naImp = b.filter(function (x) { return x.na_impressora; }).length, total = 0, inicial = 0, valor = 0, temValor = false, nBaixo = 0;
-	b.forEach(function (x) { total += x.restante_g; inicial += x.peso_inicial_g || 0; var c = custo(x); if (c != null) { valor += c; temValor = true; } if (baixo(x)) nBaixo++; });
-	var linhas = b.map(function (x) {
+	var baixo = function (x) { return alerta && (x.estado == "lacrada" || x.estado == "em_uso") && x.restante_g < lim; };
+	var naImp = ativas.filter(function (x) { return x.na_impressora; }).length, total = 0, inicial = 0, valor = 0, temValor = false, nBaixo = 0;
+	ativas.forEach(function (x) { total += x.restante_g; inicial += x.peso_inicial_g || 0; var c = custo(x); if (c != null) { valor += c; temValor = true; } if (baixo(x)) nBaixo++; });
+	var ESTADO = { lacrada: "lacrada", em_uso: "em uso", vazia: "vazia", descartada: "arquivada" };
+	var linhas = b.map(function (x, k) {
 		var pct = x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0, c = custo(x);
 		return "<tr><td><div class='fn'><span class='dot' style='background:" + E(x.cor) + "'></span><div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" +
-			E((x.marca ? x.marca + " · " : "") + (x.pendente ? "a enviar quando houver conexão" : "Bobina nº " + x.numero + (x.nova ? " · nova" : ""))) + "</div><span class='mat'>" + E(x.material) + "</span></div></div></td>" +
-			"<td class='loc'>" + (x.na_impressora ? "<b>Na impressora</b><span>" + E(x.na_impressora) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>") + "</td>" +
+			E((x.marca ? x.marca + " · " : "") + "Bobina " + String(x.numero).replace("-", "\u2011") + " · " + (ESTADO[x.estado] || x.estado)) + "</div><span class='mat'>" + E(x.material) + "</span></div></div></td>" +
+			"<td class='loc'>" + (x.na_impressora ? "<b>Na impressora</b><span>" + E(x.na_impressora) + "</span>" : x.prateleira ? "<b>Guardada</b><span>" + E(x.prateleira) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>") + "</td>" +
 			"<td class='peso'><div class='bar'><i style='width:" + pct + "%;background:" + E(x.cor || "#C2185B") + "'></i></div>" + Filuna.gramas(x.restante_g) + " / " + Filuna.gramas(x.peso_inicial_g) +
-			"<span>" + Math.round(pct) + "% restante" + (x.na_fila_g ? " · a fila usa " + Filuna.gramas(x.na_fila_g) : "") + "</span></td>" +
+			"<span>" + Math.round(pct) + "% restante" + (x.estimado ? " · estimado, pese para confirmar" : "") + "</span></td>" +
 			"<td class='custo'>" + (c != null ? "<b>" + Filuna.reais(c) + "</b><span>" + Filuna.reais(x.preco_kg / 1000) + " /g</span>" : "<b>—</b><span>sem preço cadastrado</span>") + "</td>" +
-			"<td>" + (x.insuficiente ? "<span class='baixo'>Não basta para a fila</span>" : baixo(x) ? "<span class='baixo'>Estoque baixo<br>&lt; " + E(lim) + " g</span>" : "") + "</td></tr>";
+			"<td>" + (baixo(x) ? "<span class='baixo'>Estoque baixo<br>&lt; " + E(lim) + " g</span>" : "") + "</td>" +
+			"<td style='white-space:nowrap'>" + (x.estado == "descartada" ? "" : "<button class='btn peq' data-pesar='" + k + "'>Pesar</button> <button class='btn peq' data-etq='" + k + "'>Etiqueta</button> <button class='btn peq' data-arq='" + k + "'>Arquivar</button>") + "</td></tr>";
 	}).join("");
 	document.getElementById("r").outerHTML = '<div id="r">' + (b.length ?
-		'<div class="etab"><table><tr><th>Filamento</th><th>Localização</th><th>Peso restante</th><th>Custo</th><th></th></tr>' + linhas + "</table>" +
-		'<div class="pe"><span>' + b.length + (b.length == 1 ? " filamento encontrado" : " filamentos encontrados") + '</span><label class="linha" style="gap:8px">Ordenar por: <select id="ordem" style="width:auto">' +
-		[["nome", "Nome"], ["peso", "Peso restante"], ["numero", "Número da bobina"]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] == ord ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></label></div></div>" +
-		'<div class="ekpis"><div><span>Total de filamentos</span><b>' + b.length + "</b><small>" + naImp + " na impressora · " + (b.length - naImp) + " guardada(s)</small></div>" +
+		'<div class="etab"><table><tr><th>Filamento</th><th>Localização</th><th>Peso restante</th><th>Custo</th><th></th><th></th></tr>' + linhas + "</table>" +
+		'<div class="pe"><span>' + ativas.length + (ativas.length == 1 ? " bobina ativa" : " bobinas ativas") + '</span><label class="linha" style="gap:8px"><input type="checkbox" id="arq"' + (st.verArquivadas ? " checked" : "") + '> Mostrar vazias e arquivadas</label>' +
+		'<label class="linha" style="gap:8px">Ordenar por: <select id="ordem" style="width:auto">' +
+		[["nome", "Nome"], ["peso", "Peso restante"], ["numero", "Código da bobina"]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] == ord ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></label></div></div>" +
+		'<div class="ekpis"><div><span>Bobinas ativas</span><b>' + ativas.length + "</b><small>" + naImp + " na impressora · " + (ativas.length - naImp) + " guardada(s)</small></div>" +
 		"<div><span>Peso total restante</span><b>" + Filuna.gramas(total) + "</b><small>de " + Filuna.gramas(inicial) + "</small></div>" +
-		"<div><span>Valor total estimado</span><b>" + (temValor ? Filuna.reais(valor) : "—") + "</b><small>" + (temValor ? "pelo preço por kg das bobinas" : "cadastre o preço por kg no site") + "</small></div>" +
-		"<div><span>Alerta de estoque baixo</span><b" + (nBaixo ? " style='color:var(--warn)'" : "") + ">" + (alerta ? nBaixo : "—") + "</b><small>" + (alerta ? "abaixo de " + E(lim) + " g" : "alerta desligado em Configurações") + "</small></div></div>"
+		"<div><span>Valor total estimado</span><b>" + (temValor ? Filuna.reais(valor) : "—") + "</b><small>" + (temValor ? "pelo preço por kg das bobinas" : "cadastre o preço por kg") + "</small></div>" +
+		"<div><span>Alerta de estoque baixo</span><b" + (nBaixo ? " style='color:var(--warn)'" : "") + ">" + (alerta ? nBaixo : "—") + "</b><small>" + (alerta ? "abaixo de " + E(lim) + " g" : "alerta desligado nas Configurações") + "</small></div></div>"
 		: '<div class="vazio" style="margin-top:20px">Nenhuma bobina cadastrada. Use “Adicionar filamento”.</div>') + "</div>";
 	var o = document.getElementById("ordem"); if (o) o.onchange = function () { st.ordem = o.value; tabelaEstoque(); };
+	var a = document.getElementById("arq"); if (a) a.onchange = function () { st.verArquivadas = a.checked; estoque(); };
+	el().querySelectorAll("[data-pesar]").forEach(function (x) { x.onclick = function () { pesarBobina(b[+x.dataset.pesar]); }; });
+	el().querySelectorAll("[data-etq]").forEach(function (x) { x.onclick = function () { etiquetaBobina(b[+x.dataset.etq]); }; });
+	el().querySelectorAll("[data-arq]").forEach(function (x) { x.onclick = function () { arquivarBobina(b[+x.dataset.arq]); }; });
+}
+
+// Histórico de impressões (02-DADOS §7): onde a impressora não avisa o fim, o fim é marcado aqui.
+var ESTADO_TRAB = { fatiado: "Fatiado", enviado: "Enviado", imprimindo: "Imprimindo", concluido: "Concluído", cancelado: "Cancelado", falhou: "Falhou" };
+function historico() {
+	el().innerHTML = titulo("Meu espaço", "Histórico de impressões", "Cada envio para imprimir fica aqui. Quando a impressora não avisa o fim, marque como terminou para dar baixa nas bobinas.") +
+		'<div id="r" class="carregando" style="margin-top:18px">Carregando…</div>';
+	Filuna.nativo("historico.listar", { limite: 100 }).then(function (r) {
+		var l = r.trabalhos || [];
+		document.getElementById("r").outerHTML = '<div id="r" style="margin-top:18px">' + (l.length ? '<div class="etab"><table><tr><th>Quando</th><th>Produto</th><th>Impressora</th><th>Filamento</th><th>Tempo</th><th>Situação</th><th></th></tr>' +
+			l.map(function (t, k) {
+				var aberto = t.estado == "fatiado" || t.estado == "enviado" || t.estado == "imprimindo";
+				var dt = new Date(t.criado_em), quando = isNaN(dt) ? "" : dt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+				return "<tr><td>" + E(quando) + "</td><td><b>" + E(t.produto || "Sem nome") + "</b></td><td>" + E(t.impressora || "—") + "</td>" +
+					"<td>" + Filuna.gramas(aberto ? t.previsto_g : t.real_g) + (t.estimado ? " <span class='s'>(estimado)</span>" : "") + "</td>" +
+					"<td>" + (t.tempo_real_s != null ? Filuna.tempo(t.tempo_real_s) : t.tempo_previsto_s != null ? Filuna.tempo(t.tempo_previsto_s) : "—") + "</td>" +
+					"<td>" + E(ESTADO_TRAB[t.estado] || t.estado) + "</td>" +
+					"<td style='white-space:nowrap'>" + (aberto ? "<button class='btn peq primario' data-ok='" + k + "'>Terminou</button> <button class='btn peq' data-cancel='" + k + "'>Cancelada</button> <button class='btn peq' data-falha='" + k + "'>Falhou</button>" : "") + "</td></tr>";
+			}).join("") + "</table></div>" : '<div class="vazio">Nenhuma impressão registrada. Ao exportar ou enviar uma mesa com bobinas cadastradas, o Filuna pergunta de quais bobinas sai o filamento.</div>') + "</div>";
+		var fim = function (t, tipo) {
+			var dados = { id: t.id, fim: tipo };
+			if (tipo != "concluido") {
+				var p = window.prompt("Quanto chegou a imprimir, em %? (ex.: 50)");
+				if (p === null || p === "" || isNaN(Number(p.replace(",", ".")))) return;
+				dados.progresso = Math.max(0, Math.min(100, Number(p.replace(",", "."))));
+			}
+			Filuna.nativo("trabalho.finalizar", dados).then(historico, function (e) { falha(e); });
+		};
+		el().querySelectorAll("[data-ok]").forEach(function (x) { x.onclick = function () { fim(l[+x.dataset.ok], "concluido"); }; });
+		el().querySelectorAll("[data-cancel]").forEach(function (x) { x.onclick = function () { fim(l[+x.dataset.cancel], "cancelado"); }; });
+		el().querySelectorAll("[data-falha]").forEach(function (x) { x.onclick = function () { fim(l[+x.dataset.falha], "falhou"); }; });
+	}, function (e) { document.getElementById("r").outerHTML = '<div id="r" class="erro">' + E(e.erro || e.message) + "</div>"; });
+}
+
+// Painel (02-DADOS §9–§11): desperdício, produtos mais impressos, previsão de falta e manutenção.
+function painel() {
+	el().innerHTML = titulo("Meu espaço", "Painel", "Números deste computador, calculados das impressões registradas.") +
+		'<div class="me" style="margin-top:18px"><div class="col"><div class="bloco"><div class="bh"><span class="lbl">Desperdício nos últimos 30 dias</span></div><div class="bb" id="pDes"><div class="carregando">Carregando…</div></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">Produtos mais impressos</span></div><div class="bb" id="pTop"></div></div></div>' +
+		'<div class="col"><div class="bloco"><div class="bh"><span class="lbl">Vai faltar filamento?</span></div><div class="bb" id="pPrev"><div class="carregando">Carregando…</div></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">Manutenção</span></div><div class="bb" id="pMan"><div class="carregando">Carregando…</div></div></div></div></div>';
+	Filuna.nativo("painel.resumo", { dias: 30 }).then(function (r) {
+		document.getElementById("pDes").innerHTML = r.consumo_g > 0
+			? "<div style='font-size:28px;font-weight:800'>" + (r.taxa != null ? Math.round(r.taxa * 100) + "%" : "—") + "</div><div class='s'>" + Filuna.gramas(r.desperdicio_g) + " de " + Filuna.gramas(r.consumo_g) + " (purga e falhas)</div>"
+			: "<div class='vazio'>Sem impressões terminadas no período.</div>";
+		var p = r.produtos || [];
+		document.getElementById("pTop").innerHTML = p.length ? p.map(function (x) { return "<div class='linha' style='justify-content:space-between;padding:6px 0'><b>" + E(x.nome || "Sem nome") + "</b><span>" + x.concluidos + "× · " + Filuna.gramas(x.gramas) + "</span></div>"; }).join("")
+			: "<div class='vazio'>Nenhum produto impresso ainda.</div>";
+	}, function (e) { document.getElementById("pDes").innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
+	Filuna.nativo("previsao.filamentos").then(function (r) {
+		var l = (r.previsoes || []);
+		document.getElementById("pPrev").innerHTML = l.length ? l.map(function (x) {
+			var t = x.tipo || {}, nome = (t.material || "") + " " + (t.cor_nome || "");
+			var txt = !x.dados_suficientes ? "dados insuficientes (precisa de 3 impressões e 7 dias)" : x.sem_consumo ? "sem consumo recente" :
+				x.alerta ? "acaba em " + x.dias_de_estoque.toFixed(1).replace(".", ",") + " dias · faltam " + Filuna.gramas(x.falta_g) + " para 7 dias" : "dá para " + Math.floor(x.dias_de_estoque) + " dias";
+			return "<div class='linha' style='justify-content:space-between;padding:6px 0'><span><span class='dot' style='display:inline-block;width:10px;height:10px;border-radius:50%;background:" + E(t.cor_hex || "#ccc") + "'></span> <b>" + E(nome) + "</b></span><span" + (x.alerta ? " style='color:var(--warn);font-weight:700'" : "") + ">" + E(txt) + "</span></div>";
+		}).join("") : "<div class='vazio'>Cadastre bobinas para ver a previsão.</div>";
+	}, function (e) { document.getElementById("pPrev").innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
+	Filuna.nativo("manutencao.listar").then(function (r) {
+		var l = r.impressoras || [];
+		document.getElementById("pMan").innerHTML = l.length ? l.map(function (i) {
+			return "<div style='padding:6px 0'><b>" + E(i.nome) + "</b> <span class='s'>" + i.horas.toFixed(1).replace(".", ",") + " h de impressão</span>" +
+				(i.regras.length ? i.regras.map(function (g) {
+					return "<div class='linha' style='justify-content:space-between;padding:4px 0'><span>" + E(g.nome) + " · a cada " + g.intervalo_h + " h</span><span>" + E(g.situacao) +
+						(g.situacao != "em dia" ? "" : " · faltam " + Math.max(0, g.faltam_h).toFixed(0) + " h") + " <button class='btn peq' data-man='" + E(g.id) + "'>Feita</button></span></div>";
+				}).join("") : "<div class='s'>Sem regras. <a data-nova='" + E(i.id) + "'>Adicionar limpeza do bico a cada 100 h</a></div>") + "</div>";
+		}).join("") : "<div class='vazio'>As impressoras aparecem aqui depois da primeira impressão registrada.</div>";
+		el().querySelectorAll("[data-man]").forEach(function (x) { x.onclick = function () { Filuna.nativo("manutencao.registrar", { id: x.dataset.man }).then(painel, function (e) { falha(e); }); }; });
+		el().querySelectorAll("[data-nova]").forEach(function (x) { x.onclick = function () { Filuna.nativo("manutencao.adicionar", { impressora_id: x.dataset.nova, nome: "Limpar o bico", intervalo_h: 100 }).then(painel, function (e) { falha(e); }); }; });
+	}, function (e) { document.getElementById("pMan").innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
 }
 
 function fila() {
@@ -425,6 +541,7 @@ Filuna.ouvir("secao", function (d) { if (d.secao) { Filuna.nativo("secao.pendent
 Filuna.ouvir("preferencias", function () { st.prefs = null; if (st.secao == "estoque") desenhar(); });
 Filuna.ouvir("conexao", function () { menu(); });
 Filuna.ouvir("sincronizado", function () { if (st.secao == "estoque" || st.secao == "visao") desenhar(); });
+Filuna.ouvir("estoque", function () { if (st.secao == "estoque" || st.secao == "visao" || st.secao == "historico" || st.secao == "painel") desenhar(); });
 Filuna.ouvir("mostrar", function () { iniciais().then(function () { if (st.secao == "visao" || st.secao == "perfis") desenhar(); else menu(); }); });
 </script>
 </body>

@@ -631,15 +631,21 @@ std::string FilunaDb::criar_trabalho(const std::string& produto_id, const std::s
         .opcional(9, resumo.trocas_filamento).opcional(10, resumo.purga_total_g).executar();
     enfileirar("trabalho", id, "upsert");
 
+    // Purga por filamento informada pela fonte (exata); senão, rateio do total do G-code (estimado);
+    // sem nenhum dos dois, a purga fica desconhecida.
     RateioPurga rateio;
-    if (resumo.purga_total_g)
+    const bool  purga_exata = resumo.purga_g.size() == resumo.filamento_g.size() && !resumo.purga_g.empty();
+    const bool  tem_purga   = purga_exata || resumo.purga_total_g.has_value();
+    if (purga_exata)
+        rateio.purga_g = resumo.purga_g;
+    else if (resumo.purga_total_g)
         rateio = ratear_purga(resumo.filamento_g, *resumo.purga_total_g);
     for (std::size_t i = 0; i < resumo.filamento_g.size(); ++i) {
         const std::string fid = novo_uuid();
         Comando c(m_db, "INSERT INTO trabalho_filamento(id, criado_em, atualizado_em, trabalho_id, indice, previsto_g, purga_g, estimado) "
                         "VALUES(?1, ?2, ?2, ?3, ?4, ?5, ?6, ?7)");
         c.texto(1, fid).texto(2, ts).texto(3, id).inteiro(4, static_cast<std::int64_t>(i)).real(5, resumo.filamento_g[i]);
-        if (resumo.purga_total_g)
+        if (tem_purga)
             c.real(6, rateio.purga_g[i]);
         else
             c.nulo(6);
@@ -787,6 +793,168 @@ Previsao FilunaDb::previsao_tipo(const std::string& filamento_tipo_id, double li
             estoque = c.real_em(0);
     }
     return prever_estoque(gasto, estoque, trabalhos, dias_hist, limite_dias);
+}
+
+// --- Listagens para as telas -----------------------------------------------------------------------
+
+std::vector<FilunaDb::Bobina> FilunaDb::bobinas(bool incluir_inativas) const
+{
+    std::vector<Bobina> out;
+    Comando c(m_db, std::string("SELECT ") + COLUNAS_BOBINA + " FROM bobina WHERE excluido = 0" +
+                        (incluir_inativas ? "" : " AND estado IN ('lacrada','em_uso')") + " ORDER BY codigo");
+    while (c.passo())
+        out.push_back(ler_bobina(c));
+    return out;
+}
+
+void FilunaDb::descartar_bobina(const std::string& bobina_id, const std::string& obs)
+{
+    Transacao t(m_db);
+    const auto b = bobina(bobina_id);
+    if (!b)
+        throw std::runtime_error("FilunaDb: bobina não encontrada");
+    if (b->restante_g > 0.)
+        inserir_evento(bobina_id, "descarte", -b->restante_g, {}, false, obs);
+    Comando(m_db, "UPDATE bobina SET estado = 'descartada', atualizado_em = ?2 WHERE id = ?1").texto(1, bobina_id).texto(2, agora()).executar();
+    recalcular_bobina(bobina_id);
+    t.confirmar();
+}
+
+std::vector<FilunaDb::Evento> FilunaDb::eventos_da_bobina(const std::string& bobina_id) const
+{
+    std::vector<Evento> out;
+    Comando c(m_db, "SELECT id, tipo, criado_em, COALESCE(trabalho_id,''), COALESCE(obs,''), delta_g, estimado FROM estoque_evento "
+                    "WHERE bobina_id = ?1 AND excluido = 0 ORDER BY criado_em DESC, rowid DESC");
+    c.texto(1, bobina_id);
+    while (c.passo())
+        out.push_back({c.texto_em(0), c.texto_em(1), c.texto_em(2), c.texto_em(3), c.texto_em(4), c.real_em(5), c.inteiro_em(6) != 0});
+    return out;
+}
+
+namespace {
+const char* const COLUNAS_TIPO = "id, COALESCE(marca,''), COALESCE(material,''), COALESCE(nome_produto,''), COALESCE(cor_nome,''), "
+                                 "COALESCE(cor_hex,''), COALESCE(preset_orca,''), diametro_mm, COALESCE(densidade_g_cm3,0)";
+FilunaDb::TipoCadastrado ler_tipo(const Comando& c)
+{
+    FilunaDb::TipoCadastrado t;
+    t.id              = c.texto_em(0);
+    t.marca           = c.texto_em(1);
+    t.material        = c.texto_em(2);
+    t.nome_produto    = c.texto_em(3);
+    t.cor_nome        = c.texto_em(4);
+    t.cor_hex         = c.texto_em(5);
+    t.preset_orca     = c.texto_em(6);
+    t.diametro_mm     = c.real_em(7);
+    t.densidade_g_cm3 = c.real_em(8);
+    return t;
+}
+} // namespace
+
+std::vector<FilunaDb::TipoCadastrado> FilunaDb::tipos() const
+{
+    std::vector<TipoCadastrado> out;
+    Comando c(m_db, std::string("SELECT ") + COLUNAS_TIPO + " FROM filamento_tipo WHERE excluido = 0 ORDER BY material, cor_nome");
+    while (c.passo())
+        out.push_back(ler_tipo(c));
+    return out;
+}
+
+std::optional<FilunaDb::TipoCadastrado> FilunaDb::tipo(const std::string& id) const
+{
+    Comando c(m_db, std::string("SELECT ") + COLUNAS_TIPO + " FROM filamento_tipo WHERE id = ?1");
+    c.texto(1, id);
+    if (!c.passo())
+        return std::nullopt;
+    return ler_tipo(c);
+}
+
+std::string FilunaDb::tipo_igual_ou_novo(const FilamentoTipo& t)
+{
+    Transacao tr(m_db);
+    {
+        Comando c(m_db, "SELECT id FROM filamento_tipo WHERE excluido = 0 AND lower(COALESCE(marca,'')) = lower(?1) "
+                        "AND lower(COALESCE(material,'')) = lower(?2) AND lower(COALESCE(cor_nome,'')) = lower(?3) "
+                        "AND lower(COALESCE(cor_hex,'')) = lower(?4) AND abs(diametro_mm - ?5) < 0.001 LIMIT 1");
+        c.texto(1, t.marca).texto(2, t.material).texto(3, t.cor_nome).texto(4, t.cor_hex).real(5, t.diametro_mm);
+        if (c.passo())
+            return c.texto_em(0);
+    }
+    const std::string id = criar_filamento_tipo(t);
+    tr.confirmar();
+    return id;
+}
+
+std::vector<FilunaDb::ProdutoRanking> FilunaDb::produtos() const
+{
+    std::vector<ProdutoRanking> out;
+    Comando c(m_db, "SELECT p.id, COALESCE(p.nome,''), "
+                    "  (SELECT COUNT(*) FROM trabalho t WHERE t.produto_id = p.id AND t.estado = 'concluido' AND t.excluido = 0), "
+                    "  (SELECT COALESCE(SUM(f.real_g),0) FROM trabalho t JOIN trabalho_filamento f ON f.trabalho_id = t.id "
+                    "     WHERE t.produto_id = p.id AND t.estado = 'concluido' AND t.excluido = 0) "
+                    "FROM produto p WHERE p.excluido = 0 ORDER BY 3 DESC, 2");
+    while (c.passo())
+        out.push_back({c.texto_em(0), c.texto_em(1), static_cast<int>(c.inteiro_em(2)), c.real_em(3)});
+    return out;
+}
+
+std::vector<FilunaDb::TrabalhoLista> FilunaDb::trabalhos(int limite) const
+{
+    std::vector<TrabalhoLista> out;
+    {
+        Comando c(m_db, "SELECT t.id, COALESCE(t.produto_id,''), COALESCE(p.nome,''), COALESCE(t.impressora_id,''), COALESCE(i.nome,''), "
+                        "t.estado, t.criado_em, COALESCE(t.terminado_em,''), t.tempo_previsto_s, t.tempo_real_s, t.camadas_total, "
+                        "(SELECT COALESCE(SUM(previsto_g),0) FROM trabalho_filamento WHERE trabalho_id = t.id), "
+                        "(SELECT COALESCE(SUM(real_g),0) FROM trabalho_filamento WHERE trabalho_id = t.id), "
+                        "(SELECT COALESCE(MAX(estimado),0) FROM trabalho_filamento WHERE trabalho_id = t.id) "
+                        "FROM trabalho t LEFT JOIN produto p ON p.id = t.produto_id LEFT JOIN impressora i ON i.id = t.impressora_id "
+                        "WHERE t.excluido = 0 ORDER BY t.criado_em DESC, t.rowid DESC LIMIT ?1");
+        c.inteiro(1, limite);
+        while (c.passo()) {
+            TrabalhoLista t;
+            t.id              = c.texto_em(0);
+            t.produto_id      = c.texto_em(1);
+            t.produto_nome    = c.texto_em(2);
+            t.impressora_id   = c.texto_em(3);
+            t.impressora_nome = c.texto_em(4);
+            t.estado          = c.texto_em(5);
+            t.criado_em       = c.texto_em(6);
+            t.terminado_em    = c.texto_em(7);
+            if (!c.nulo_em(8)) t.tempo_previsto_s = c.inteiro_em(8);
+            if (!c.nulo_em(9)) t.tempo_real_s = c.inteiro_em(9);
+            if (!c.nulo_em(10)) t.camadas_total = static_cast<int>(c.inteiro_em(10));
+            t.previsto_g = c.real_em(11);
+            t.real_g     = c.real_em(12);
+            t.estimado   = c.inteiro_em(13) != 0;
+            out.push_back(std::move(t));
+        }
+    }
+    for (TrabalhoLista& t : out) {
+        Comando c(m_db, "SELECT COALESCE(bobina_id,'') FROM trabalho_filamento WHERE trabalho_id = ?1 ORDER BY indice");
+        c.texto(1, t.id);
+        while (c.passo())
+            t.bobinas.push_back(c.texto_em(0));
+    }
+    return out;
+}
+
+std::vector<FilunaDb::ImpressoraCadastrada> FilunaDb::impressoras() const
+{
+    std::vector<ImpressoraCadastrada> out;
+    Comando c(m_db, "SELECT id, nome, COALESCE(fabricante,''), COALESCE(modelo,''), horas_impressao_s FROM impressora WHERE excluido = 0 ORDER BY nome");
+    while (c.passo())
+        out.push_back({c.texto_em(0), c.texto_em(1), c.texto_em(2), c.texto_em(3), static_cast<double>(c.inteiro_em(4)) / 3600.});
+    return out;
+}
+
+std::string FilunaDb::impressora_por_nome(const std::string& nome, const std::string& fabricante, const std::string& modelo)
+{
+    {
+        Comando c(m_db, "SELECT id FROM impressora WHERE excluido = 0 AND nome = ?1 LIMIT 1");
+        c.texto(1, nome);
+        if (c.passo())
+            return c.texto_em(0);
+    }
+    return criar_impressora(nome, fabricante, modelo);
 }
 
 } // namespace Slic3r::Filuna
