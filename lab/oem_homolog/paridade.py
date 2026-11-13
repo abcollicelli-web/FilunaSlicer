@@ -60,12 +60,16 @@ def normalizado(p: Path) -> bytes:
         return m.group(1) + b"obj" + str(n).encode()
 
     # G-code binário (Prusa, binary_gcode=1) é aberto para texto antes de normalizar
-    for ln in bgcode.texto(p.read_bytes()).splitlines():
+    todas = bgcode.texto(p.read_bytes()).splitlines()
+    for k, ln in enumerate(todas):
         if CABECALHO.match(ln) or DATA_LIVRE.match(ln) or UUID_LIVRE.match(ln):
             linhas.append(b"; <cabecalho-normalizado>")
         else:
             m = M486.match(ln)
-            if m and m.group(1) != b"-1":
+            # a declaração "M486 S<n>" + "M486 A<nome>" do início fica como está (sempre 0..n-1);
+            # só os usos no corpo são renumerados pela ordem em que o objeto é impresso
+            declaracao = k + 1 < len(todas) and todas[k + 1].startswith(b"M486 A")
+            if m and m.group(1) != b"-1" and not declaracao:
                 n = rotulos.setdefault(m.group(1), len(rotulos))
                 ln = b"M486 S" + str(n).encode() + ln[m.end():]
             m = OBJ_INFO.match(ln)
