@@ -107,7 +107,18 @@ def normalizado(p: Path) -> bytes:
                 except ValueError:
                     pass
             linhas.append(ID_OBJETO.sub(troca, ln))
-    return b"\n".join(linhas)
+    # par "printing object X" / "stop printing object X" sem nada entre eles (objeto sem trecho naquela
+    # passada): a ordem em que esses pares vazios saem segue a mesma ordem por endereço; não imprime nada
+    saida, k = [], 0
+    while k < len(linhas):
+        a = linhas[k]
+        if (k + 1 < len(linhas) and a.startswith(b"; printing object ")
+                and linhas[k + 1] == b"; stop " + a[2:]):
+            k += 2
+            continue
+        saida.append(a)
+        k += 1
+    return b"\n".join(saida)
 
 
 # Linhas que só registram estimativas (tempo, filamento total, progresso) — derivam da ordem
