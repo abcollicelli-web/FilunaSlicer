@@ -69,6 +69,30 @@
 .un .btn{margin-top:auto;justify-content:flex-start;height:46px;padding:0 18px}
 .nota{margin-top:26px;color:var(--ink2);font-size:14px}
 .voltar{display:inline-flex;align-items:center;gap:6px;color:var(--ink2);font-weight:600;font-size:13.5px;margin-bottom:8px;cursor:pointer}
+/* Assistente de nova impressora (regra V2 §6): logos → modelos → complemento → LAN → card */
+.marcas{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.marca{background:#F1EEEA;border-radius:18px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;border:2px solid transparent;min-height:150px;justify-content:center}
+.marca:hover{border-color:var(--magenta-deep)}.marca img{max-width:150px;max-height:54px;object-fit:contain}.marca .nm{font-weight:800;font-size:17px}.marca .ct{font-size:12.5px;color:var(--ink2)}
+.marca.off{opacity:.55;cursor:not-allowed}
+.modelos{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.modelo{background:#F1EEEA;border-radius:18px;padding:16px;cursor:pointer;border:2px solid transparent;display:flex;flex-direction:column;gap:10px}
+.modelo:hover{border-color:var(--magenta-deep)}.modelo.off{opacity:.5;cursor:not-allowed}
+.modelo .ft{height:150px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}.modelo .ft img{max-width:100%;max-height:100%;object-fit:contain}
+.modelo .nm{font-weight:800;font-size:16px}.modelo .ms{font-size:12.5px;color:var(--warn)}
+.fotoGrande{width:min(420px,100%);height:280px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto}.fotoGrande img{max-width:100%;max-height:100%;object-fit:contain}
+.caixa{background:#F1EEEA;border-radius:18px;padding:24px;max-width:720px;margin:0 auto}
+.caixa h3{font-size:22px;font-weight:800}.caixa p{color:var(--ink2);font-size:14.5px;margin-top:8px}.caixa ul{margin:12px 0 0 18px;color:var(--ink2);font-size:14px}
+.caixa .acoes{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}.caixa .acoes .btn{height:46px;padding:0 22px}
+.progresso{margin-top:18px}.progresso .bar{height:10px}.progresso .et{font-size:13.5px;color:var(--ink2);margin-top:8px}
+.achadas{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:18px}
+.achada{background:#fff;border-radius:14px;padding:16px;border:2px solid transparent;cursor:pointer}.achada:hover{border-color:var(--magenta-deep)}
+.achada .nm{font-weight:800}.achada .ip{font-size:13px;color:var(--ink2)}
+.passosLan{margin-top:14px}.passosLan li{margin:8px 0 8px 18px;font-size:14.5px}
+.spin{width:22px;height:22px;border:3px solid #ddd;border-top-color:var(--magenta-deep);border-radius:50%;animation:gira 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
+@keyframes gira{to{transform:rotate(360deg)}}
+.un .cores{display:flex;gap:6px;flex-wrap:wrap;margin:-12px 0 16px}.un .cores .dot{width:16px;height:16px;border:1px solid rgba(0,0,0,.15)}
+.un .ft{height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}.un .ft img{max-height:150px;max-width:100%;object-fit:contain}
+.pillv{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:#E6E2DC;color:var(--ink2);margin-left:8px}.pillv.on{background:#DFF3E7;color:var(--good)}.pillv.imp{background:var(--rose);color:var(--magenta-deep)}
 </style>
 </head>
 <body>
@@ -78,13 +102,14 @@
 // Fluxo do Dispositivo: sem impressora → configuração (DEV-01); com impressoras → galeria de unidades (DEV-02);
 // ao abrir uma unidade → a tela aprovada (02-dispositivo). As impressoras cadastradas neste computador aparecem
 // mesmo sem internet; a leitura da Farm (estado, trabalho, slots) entra quando a conta está conectada.
-var estado = { vista: "lista", filtro: "todas", busca: "", unidades: [], imps: [], bobinas: [], locais: [], sel: null, local: null, confirmar: null };
+var estado = { vista: "lista", filtro: "todas", busca: "", unidades: [], imps: [], bobinas: [], locais: [], sel: null, local: null, confirmar: null, vivas: [], assist: null };
 var NOMES = { livre: "Livre", imprimindo: "Imprimindo", pausada: "Pausada", limpar_mesa: "Limpar a mesa", erro: "Com erro", offline: "Desconectada", falhou: "Falhou" };
 var TONS = { livre: "ok", imprimindo: "rosa", limpar_mesa: "rosa", pausada: "alerta", erro: "alerta", falhou: "alerta" };
 var E = Filuna.esc;
 
 function carregar() {
 	var pedidos = [
+		Filuna.nativo("dispositivos.estado").then(function (e) { estado.vivas = (e.impressoras || []).map(function (v) { v.foto = v.foto || fotoDoModelo(v.modelo_nome || v.modelo); return v; }); }).catch(function () {}),
 		Filuna.nativo("impressora.atual").then(function (r) { estado.local = r; }).catch(function () {}),
 		Filuna.nativo("impressoras.registradas").then(function (r) { estado.locais = r.impressoras || []; }).catch(function () { estado.locais = []; })
 	];
@@ -116,6 +141,13 @@ function juntar() {
 		if (u) { u.local = l; return; }
 		lista.push({ id: "l:" + l.nome, nome: l.nome, modelo: (l.perfis && l.perfis[0]) || "", local: l });
 	});
+	// impressoras conectadas/cadastradas pelo assistente (banco local + rede ao vivo)
+	estado.vivas.forEach(function (v) {
+		var u = por[chave(v.nome)];
+		if (u) { u.viva = v; u.foto = u.foto || v.foto; return; }
+		var nu = { id: "v:" + (v.cadastro_id || v.dev_id), nome: v.nome, modelo: v.modelo_nome || v.modelo || "", viva: v, foto: v.foto };
+		por[chave(v.nome)] = nu; lista.push(nu);
+	});
 	estado.unidades = lista;
 }
 
@@ -141,8 +173,8 @@ function configurar(app) {
 		'<div class="p"><b>Cadastrar</b><span>Associar a unidade, o modelo e o perfil, sem confundir cadastro com conexão.</span></div>' +
 		'<div class="p"><b>Parear</b><span>Acesso local do titular; a autorização de comandos é separada.</span></div>' +
 		'<div class="p"><b>Verificar</b><span>As capacidades são observadas antes de liberar comandos.</span></div>' +
-		'<button class="btn primario" id="adicionar">+ Adicionar impressora</button></div></div></div>';
-	app.querySelector("#adicionar").onclick = function () { Filuna.nativo("impressora.adicionar"); };
+		'<button class="btn primario" id="adicionar">+ Conectar nova impressora</button></div></div></div>';
+	app.querySelector("#adicionar").onclick = abrirAssistente;
 }
 
 function galeria(app) {
@@ -155,16 +187,21 @@ function galeria(app) {
 	});
 	app.innerHTML = '<div class="pg"><div class="topo entre"><div><div class="h1">Lista de unidades</div><div class="sub">' + estado.unidades.length +
 		(estado.unidades.length == 1 ? " impressora cadastrada" : " impressoras cadastradas") + (estado.semLeitura ? " · sem conexão, mostrando o último estado guardado" : "") + '</div></div>' +
-		'<button class="btn" id="adicionar">+ Adicionar impressora</button></div>' +
+		'<button class="btn primario" id="adicionar">+ Conectar nova impressora</button></div>' +
 		'<div class="filtros"><div class="campo"><label>Buscar unidade</label><input type="text" id="busca" placeholder="Nome, modelo ou identificador" value="' + E(estado.busca) + '"></div>' +
 		[["todas", "Todas"], ["disp", "Disponíveis"], ["sem", "Sem conexão"]].map(function (c) { return '<button class="chip' + (c[0] == f ? " on" : "") + '" data-f="' + c[0] + '">' + c[1] + "</button>"; }).join("") + "</div>" +
 		(vis.length ? '<div class="galeria">' + vis.map(function (u, k) {
-			var l = leitura(u);
-			return '<div class="un"><div class="ilu">' + ilustracao(240) + '</div><div class="n">' + E(u.nome) + '</div><div class="st' + (l.ok ? " ok" : "") + '">' + E(l.txt) + "</div>" +
+			var l = leitura(u), v = viva(u);
+			var st = v ? (v.estado == "imprimindo" ? "Imprimindo · " + (v.progresso || 0) + "%" + (v.restante_s ? " · " + Filuna.tempo(v.restante_s) + " restante" : "")
+				: v.estado == "pausada" ? "Pausada" : v.estado == "concluida" ? "Concluída · retire a peça" : v.ligada ? "Ligada · livre" : "Desligada ou fora da rede") : l.txt;
+			var pill = v ? '<span class="pillv' + (v.estado == "imprimindo" ? " imp" : v.ligada ? " on" : "") + '">' + (v.ligada ? (v.estado == "imprimindo" ? "imprimindo" : "ligada") : "desligada") + "</span>" : "";
+			var cores = v && v.cores && v.cores.length ? '<div class="cores">' + v.cores.map(function (c) { return '<span class="dot" title="' + E((c.material || "") + " " + (c.unidade || "") + "/" + (c.slot || "")) + '" style="background:' + E(c.cor || "#eee") + '"></span>'; }).join("") + "</div>" : "";
+			var foto = u.foto ? '<div class="ft"><img src="' + E(u.foto) + '" alt=""></div>' : '<div class="ilu">' + ilustracao(240) + '</div>';
+			return '<div class="un">' + foto + '<div class="n">' + E(u.nome) + pill + '</div><div class="st' + (v && v.ligada ? " ok" : l.ok ? " ok" : "") + '">' + E(st) + "</div>" + cores +
 				'<button class="btn' + (k == 0 ? " primario" : "") + '" data-u="' + E(u.id) + '">› &nbsp;Abrir unidade</button></div>';
 		}).join("") + "</div>" : '<div class="vazio">Nenhuma unidade neste filtro.</div>') +
 		'<div class="nota">Cadastro não é presença. Estado desconhecido não é apresentado como online.</div>' + (estado.erro ? '<div class="erro">' + E(estado.erro) + "</div>" : "") + "</div>";
-	app.querySelector("#adicionar").onclick = function () { Filuna.nativo("impressora.adicionar"); };
+	app.querySelector("#adicionar").onclick = abrirAssistente;
 	var b = app.querySelector("#busca"); b.oninput = function () { estado.busca = b.value; var pos = b.selectionStart; galeria(app); var nb = app.querySelector("#busca"); nb.focus(); nb.setSelectionRange(pos, pos); };
 	app.querySelectorAll("[data-f]").forEach(function (x) { x.onclick = function () { estado.filtro = x.dataset.f; galeria(app); }; });
 	app.querySelectorAll("[data-u]").forEach(function (x) { x.onclick = function () { estado.sel = x.dataset.u; estado.vista = "unidade"; estado.confirmar = null; estado.msg = ""; desenhar(); }; });
@@ -172,6 +209,7 @@ function galeria(app) {
 
 function desenhar() {
 	var app = document.getElementById("app");
+	if (estado.vista == "assistente") { assistente(app); return; }
 	if (!estado.unidades.length) { estado.vista = "lista"; configurar(app); return; }
 	var u = estado.unidades.filter(function (x) { return x.id == estado.sel; })[0];
 	if (estado.vista != "unidade" || !u) { estado.vista = "lista"; galeria(app); return; }
@@ -259,6 +297,150 @@ function materiais(i) {
 	}).join("");
 }
 
+
+// ---------- Estado ao vivo (cards) ----------
+function viva(u) { return u.viva || null; }
+Filuna.ouvir("dispositivos.estado", function (e) {
+	estado.vivas = (e.impressoras || []).map(function (v) { v.foto = v.foto || fotoDoModelo(v.modelo_nome || v.modelo); return v; });
+	juntar();
+	if (estado.vista == "lista" && !estado.confirmar && document.activeElement.id != "busca") desenhar();
+});
+var fotos = {};
+function fotoDoModelo(nome) { if (!nome) return ""; var k = Object.keys(fotos).filter(function (n) { return nome.indexOf(n) == 0 || n.indexOf(nome) == 0; })[0]; return k ? fotos[k] : ""; }
+
+// ---------- Assistente: conectar nova impressora ----------
+function abrirAssistente() { estado.assist = { passo: "marcas", marcas: [], marca: null, modelos: [], modelo: null, comp: null, prog: null, achadas: [], tentativas: 0, erro: "", ip: "", codigo: "", nome: "" }; estado.vista = "assistente"; desenhar(); }
+function assistente(app) {
+	var a = estado.assist, html = '<div class="pg"><div class="topo"><a class="voltar" id="voltarA">‹ ' + (a.passo == "marcas" ? "Impressoras" : "Voltar") + '</a>';
+	if (a.passo == "marcas") {
+		html += '<div class="h1">Conectar nova impressora</div><div class="sub">Escolha o fabricante. Só aparecem marcas com módulo homologado pelo Filuna.</div></div>';
+		if (!a.marcas.length) { html += '<div class="carregando"><span class="spin"></span>Lendo o catálogo…</div>'; Filuna.nativo("dispositivos.fabricantes").then(function (r) { a.marcas = r.fabricantes || []; a.conta = r.conta; desenhar(); }).catch(function (e) { a.erro = e.message; desenhar(); }); }
+		else if (!a.marcas.length) html += '<div class="vazio">Nenhum fabricante no catálogo desta conta.</div>';
+		else html += '<div class="marcas">' + a.marcas.map(function (m) {
+			return '<div class="marca' + (m.modelos_disponiveis ? "" : " off") + '" data-m="' + E(m.id) + '"><img src="' + E(m.logo) + '" alt="" onerror="this.style.display=\'none\'"><div class="nm">' + E(m.nome) + '</div><div class="ct">' + m.modelos_disponiveis + ' modelo(s) homologado(s)' + (m.modo_motor == "ORCA_NATIVO" ? " · motor Orca" : "") + '</div></div>';
+		}).join("") + "</div>" + (a.erro ? '<div class="erro">' + E(a.erro) + "</div>" : "");
+	} else if (a.passo == "modelos") {
+		html += '<div class="h1">' + E(a.marca.nome) + '</div><div class="sub">Modelos homologados internamente pelo Filuna. Os demais aparecem como não disponíveis.</div></div>';
+		if (!a.modelos.length) { html += '<div class="carregando"><span class="spin"></span>Carregando modelos…</div>'; Filuna.nativo("dispositivos.modelos", { fabricante: a.marca.id }).then(function (r) { a.modelos = r.modelos || []; a.modelos.forEach(function (m) { if (m.foto) fotos[m.nome] = m.foto; }); desenhar(); }).catch(function (e) { a.erro = e.message; desenhar(); }); }
+		else html += '<div class="modelos">' + a.modelos.map(function (m) {
+			return '<div class="modelo' + (m.disponivel ? "" : " off") + '" data-md="' + E(m.nome) + '"><div class="ft">' + (m.foto ? '<img src="' + E(m.foto) + '" alt="">' : ilustracao(160)) + '</div><div class="nm">' + E(m.nome) + '</div>' + (m.disponivel ? '<div class="ct" style="font-size:12.5px;color:var(--ink2)">Bicos: ' + E((m.bicos || []).join(", ")) + '</div>' : '<div class="ms">' + E(m.mensagem) + '</div>') + '</div>';
+		}).join("") + "</div>" + (a.erro ? '<div class="erro">' + E(a.erro) + "</div>" : "");
+	} else if (a.passo == "complemento") {
+		var c = a.comp, mb = c ? (c.bytes / 1048576).toFixed(1) : "";
+		html += '<div class="h1">' + E(a.modelo.nome) + '</div></div><div class="fotoGrande">' + (a.modelo.foto ? '<img src="' + E(a.modelo.foto) + '" alt="">' : ilustracao(260)) + '</div>';
+		if (!c) { html += '<div class="carregando"><span class="spin"></span>Verificando o complemento…</div>'; Filuna.nativo("dispositivos.complemento", { fabricante: a.marca.id }).then(function (r) { a.comp = r; if (r.instalado) { a.passo = "procurar"; preparar(); } desenhar(); }).catch(function (e) { a.erro = e.message; desenhar(); }); }
+		else if (a.prog) {
+			html += '<div class="caixa"><h3><span class="spin"></span>Baixando complemento ' + E(a.marca.nome) + '</h3><p>Não feche o Filuna. Estamos atualizando a base para a sua impressora.</p>' +
+				'<div class="progresso"><div class="bar"><i style="width:' + Math.round(100 * (a.prog.feito || 0) / Math.max(1, a.prog.total || 1)) + '%"></i></div><div class="et">' + E(a.prog.etapa || "") + '</div></div>' + (a.erro ? '<div class="erro">' + E(a.erro) + '</div><div class="acoes"><button class="btn" id="denovo">Tentar de novo</button></div>' : "") + "</div>";
+		} else {
+			html += '<div class="caixa" style="margin-top:22px"><h3>Baixar complemento</h3><p>Para a <b>' + E(a.modelo.nome) + '</b>, o Filuna precisa do complemento <b>' + E(a.marca.nome) + ' ' + E(c.versao || "") + '</b>' + (mb ? ' (' + mb + ' MB)' : '') + '. Depois disso o Filuna passa a ser nativo nesta impressora.</p>' +
+				'<ul>' + (c.libera || []).map(function (x) { return "<li>" + E(x) + "</li>"; }).join("") + '</ul>' +
+				'<div class="acoes"><button class="btn primario" id="baixar">Baixar e liberar</button><button class="btn" id="depois">Agora não</button></div>' + (a.erro ? '<div class="erro">' + E(a.erro) + "</div>" : "") + "</div>";
+		}
+	} else if (a.passo == "procurar") {
+		html += '<div class="h1">' + E(a.modelo.nome) + '</div><div class="sub">' + (a.achadas.length ? "Escolha a sua impressora." : "Procurando na sua rede local…") + '</div></div>';
+		html += '<div class="caixa"><h3>' + (a.achadas.length ? "Impressoras encontradas" : '<span class="spin"></span>Verificando a rede LAN') + '</h3><p>A impressora precisa estar ligada, na mesma rede e com o modo LAN ativo.</p>' +
+			(a.achadas.length ? '<div class="achadas">' + a.achadas.map(function (d) { return '<div class="achada" data-d="' + E(d.dev_id) + '"><div class="nm">' + E(d.nome) + '</div><div class="ip">' + E((d.modelo_nome || d.modelo || "") + " · " + d.ip) + (d.precisa_codigo ? " · pede código de acesso" : "") + '</div></div>'; }).join("") + "</div>" : "") +
+			(a.pedirCodigo ? '<div class="campo" style="margin-top:14px"><label>Código de acesso (está na tela da impressora)</label><input type="text" id="codigo" value="' + E(a.codigo) + '"></div><div class="acoes"><button class="btn primario" id="conectarCod">Conectar</button></div>' : "") +
+			'<div class="acoes">' + (a.tentativas >= 8 || a.achadas.length ? '<button class="btn" id="outros">Não achei · outros meios</button>' : "") + '<button class="btn" id="procurar">Procurar de novo</button></div>' + (a.erro ? '<div class="erro">' + E(a.erro) + "</div>" : "") + "</div>";
+	} else if (a.passo == "ip") {
+		html += '<div class="h1">Outros meios de conexão</div><div class="sub">Se a busca automática não achou, informe o endereço da impressora.</div></div>';
+		html += '<div class="caixa"><h3>Conectar pelo endereço IP</h3><p>O IP aparece na tela da impressora em Configurações › Rede.</p>' +
+			'<div class="campo" style="margin-top:14px"><label>Endereço IP</label><input type="text" id="ip" placeholder="192.168.0.50" value="' + E(a.ip) + '"></div>' +
+			'<div class="campo"><label>Código de acesso (se a impressora mostrar um)</label><input type="text" id="codigo" value="' + E(a.codigo) + '"></div>' +
+			'<div class="campo"><label>Nome da impressora no Filuna</label><input type="text" id="nome" placeholder="' + E(a.modelo.nome) + '" value="' + E(a.nome) + '"></div>' +
+			'<div class="acoes"><button class="btn primario" id="conectarIp">Conectar</button><button class="btn" id="ponte">Não conecta · me ensine a ligar o modo LAN</button></div>' + (a.erro ? '<div class="erro">' + E(a.erro) + "</div>" : "") + "</div>";
+	} else if (a.passo == "ponte") {
+		var pt = a.ponte || { titulo: "", passos: [] };
+		html += '<div class="h1">Ponte pela rede LAN</div><div class="sub">Passo a passo na sua ' + E(a.modelo.nome) + '.</div></div>';
+		html += '<div class="caixa"><h3>' + E(pt.titulo) + '</h3><ol class="passosLan">' + (pt.passos || []).map(function (x) { return "<li>" + E(x) + "</li>"; }).join("") + '</ol>' + (pt.nota ? '<p>' + E(pt.nota) + '</p>' : "") +
+			'<div class="acoes"><button class="btn primario" id="procurarP">Pronto, procurar de novo</button><button class="btn" id="irIp">Informar o IP</button></div></div>';
+	} else if (a.passo == "pronto") {
+		var v = a.conectada || {};
+		html += '<div class="h1">' + E(v.nome || a.modelo.nome) + ' conectada</div><div class="sub">O Filuna agora é nativo nesta impressora. Ela já aparece em Preparar.</div></div>';
+		html += '<div class="fotoGrande">' + (a.modelo.foto ? '<img src="' + E(a.modelo.foto) + '" alt="">' : ilustracao(260)) + '</div><div class="caixa" style="margin-top:22px"><h3>Tudo liberado</h3><ul><li>Rede: ' + E(v.ip || "") + '</li><li>Estado: ' + E(v.estado || "") + '</li><li>Cores: ' + ((v.cores || []).length || "sem sistema de cores detectado") + '</li><li>Câmera: ' + (v.camera ? "disponível" : "não detectada") + '</li></ul>' +
+			'<div class="acoes"><button class="btn primario" id="fim">Ir para as impressoras</button><button class="btn" data-aba="prepare">Abrir Preparar</button></div></div>';
+	}
+	html += "</div>";
+	app.innerHTML = html;
+	app.querySelector("#voltarA").onclick = function () {
+		if (a.passo == "marcas") { estado.vista = "lista"; desenhar(); return; }
+		a.erro = "";
+		a.passo = a.passo == "modelos" ? "marcas" : a.passo == "complemento" ? "modelos" : a.passo == "procurar" ? "complemento" : a.passo == "ip" ? "procurar" : a.passo == "ponte" ? "ip" : "marcas";
+		if (a.passo == "complemento") a.prog = null;
+		desenhar();
+	};
+	app.querySelectorAll("[data-m]").forEach(function (x) { x.onclick = function () { var m = a.marcas.filter(function (y) { return y.id == x.dataset.m; })[0]; if (!m || !m.modelos_disponiveis) return; a.marca = m; a.modelos = []; a.erro = ""; a.passo = "modelos"; desenhar(); }; });
+	app.querySelectorAll("[data-md]").forEach(function (x) { x.onclick = function () { var m = a.modelos.filter(function (y) { return y.nome == x.dataset.md; })[0]; if (!m) return; if (!m.disponivel) { a.erro = m.mensagem; desenhar(); return; } a.modelo = m; a.comp = null; a.prog = null; a.erro = ""; a.passo = "complemento"; desenhar(); }; });
+	var b;
+	if ((b = app.querySelector("#baixar"))) b.onclick = function () { a.erro = ""; a.prog = { etapa: "Iniciando…", feito: 0, total: 1 }; desenhar(); Filuna.nativo("dispositivos.complemento.baixar", { fabricante: a.marca.id }).catch(function (e) { a.erro = e.message; desenhar(); }); };
+	if ((b = app.querySelector("#denovo"))) b.onclick = function () { a.prog = null; a.erro = ""; desenhar(); };
+	if ((b = app.querySelector("#depois"))) b.onclick = function () { estado.vista = "lista"; desenhar(); };
+	if ((b = app.querySelector("#procurar"))) b.onclick = function () { a.erro = ""; a.tentativas = 0; preparar(); desenhar(); };
+	if ((b = app.querySelector("#procurarP"))) b.onclick = function () { a.erro = ""; a.tentativas = 0; a.passo = "procurar"; preparar(); desenhar(); };
+	if ((b = app.querySelector("#outros"))) b.onclick = function () { a.passo = "ip"; a.erro = ""; desenhar(); };
+	if ((b = app.querySelector("#irIp"))) b.onclick = function () { a.passo = "ip"; a.erro = ""; desenhar(); };
+	if ((b = app.querySelector("#ponte"))) b.onclick = function () { Filuna.nativo("dispositivos.ponte", { fabricante: a.marca.id }).then(function (r) { a.ponte = r; a.passo = "ponte"; desenhar(); }); };
+	if ((b = app.querySelector("#conectarIp"))) b.onclick = function () {
+		a.ip = app.querySelector("#ip").value.trim(); a.codigo = app.querySelector("#codigo").value.trim(); a.nome = app.querySelector("#nome").value.trim(); a.erro = "";
+		Filuna.nativo("dispositivos.conectar_ip", { fabricante: a.marca.id, modelo: a.modelo.nome, ip: a.ip, codigo: a.codigo, nome: a.nome }).then(function (r) { if (r.erro) { a.erro = r.erro; desenhar(); return; } concluir(r.impressora); }).catch(function (e) { a.erro = e.message; desenhar(); });
+	};
+	app.querySelectorAll("[data-d]").forEach(function (x) { x.onclick = function () {
+		var d = a.achadas.filter(function (y) { return y.dev_id == x.dataset.d; })[0]; if (!d) return;
+		a.escolhida = d; a.erro = "";
+		if (d.precisa_codigo && !a.codigo) { a.pedirCodigo = true; desenhar(); return; }
+		conectar(d.dev_id, a.codigo);
+	}; });
+	if ((b = app.querySelector("#conectarCod"))) b.onclick = function () { a.codigo = app.querySelector("#codigo").value.trim(); if (a.escolhida) conectar(a.escolhida.dev_id, a.codigo); };
+	if ((b = app.querySelector("#fim"))) b.onclick = function () { estado.vista = "lista"; estado.assist = null; carregar(); };
+	ligarComuns(app);
+
+	function preparar() {
+		a.achadas = []; a.pedirCodigo = false;
+		Filuna.nativo("dispositivos.preparar", { fabricante: a.marca.id, modelo: a.modelo.nome }).then(function (r) {
+			if (r.erro) { a.erro = r.erro; desenhar(); return; }
+			a.perfil = r.perfil; procurarCiclo();
+		}).catch(function (e) { a.erro = e.message; desenhar(); });
+	}
+	function procurarCiclo() {
+		if (estado.vista != "assistente" || a.passo != "procurar") return;
+		Filuna.nativo("dispositivos.descobertas").then(function (r) {
+			var achadas = (r.impressoras || []);
+			if (achadas.length) { a.achadas = achadas; desenhar(); return; }
+			a.tentativas++;
+			if (a.tentativas >= 8) { desenhar(); return; } // ~16 s sem resposta: oferece outros meios
+			setTimeout(procurarCiclo, 2000);
+		}).catch(function (e) { a.erro = e.message; desenhar(); });
+	}
+	function conectar(devId, codigo) {
+		a.erro = "";
+		Filuna.nativo("dispositivos.conectar", { dev_id: devId, codigo: codigo || "" }).then(function (r) { if (r.erro) { a.erro = r.erro; a.pedirCodigo = true; desenhar(); return; } concluir(r.impressora); }).catch(function (e) { a.erro = e.message; desenhar(); });
+	}
+	function concluir(imp) {
+		imp = imp || {};
+		var nome = a.nome || imp.nome || a.modelo.nome;
+		Filuna.nativo("dispositivos.registrar", { nome: nome, fabricante: a.marca.id, modelo: a.modelo.nome, dev_id: imp.dev_id || "" }).then(function () {
+			imp.nome = nome; a.conectada = imp; a.passo = "pronto"; desenhar();
+		}).catch(function (e) { a.erro = e.message; desenhar(); });
+	}
+}
+Filuna.ouvir("complemento.progresso", function (p) {
+	var a = estado.assist; if (!a || estado.vista != "assistente" || a.passo != "complemento") return;
+	if (p.ok) { a.prog = null; a.comp = a.comp || {}; a.comp.instalado = true; a.passo = "procurar"; desenhar(); Filuna.nativo("dispositivos.preparar", { fabricante: a.marca.id, modelo: a.modelo.nome }).then(function (r) { if (r.erro) { a.erro = r.erro; desenhar(); return; } a.perfil = r.perfil; a.tentativas = 0; desenhar(); pollDescobertas(); }); return; }
+	if (p.erro) { a.erro = p.erro; a.prog = a.prog || {}; desenhar(); return; }
+	a.prog = p; desenhar();
+});
+function pollDescobertas() {
+	var a = estado.assist; if (!a || estado.vista != "assistente" || a.passo != "procurar") return;
+	Filuna.nativo("dispositivos.descobertas").then(function (r) {
+		var achadas = r.impressoras || [];
+		if (achadas.length) { a.achadas = achadas; desenhar(); return; }
+		a.tentativas++;
+		if (a.tentativas >= 8) { desenhar(); return; }
+		setTimeout(pollDescobertas, 2000);
+	}).catch(function () {});
+}
+
 function rodape() {
 	return '<div class="rodape"><a style="color:var(--magenta-deep);font-weight:700" id="unidades">Impressoras</a><a data-aba="filuna.espaco" data-secao="estoque">Filamentos</a><a data-aba="filuna.espaco" data-secao="fila">Fila e histórico</a>' +
 		'<span class="r">Envio, fila e agenda não iniciam impressão.</span></div>';
@@ -277,7 +459,7 @@ function camera(iid) {
 	}).catch(function () {});
 }
 
-Filuna.ouvir("mostrar", carregar);
+Filuna.ouvir("mostrar", function () { Filuna.nativo("dispositivos.observar", { ligado: true }).catch(function () {}); carregar(); });
 Filuna.ouvir("impressoras", carregar);   // cadastrada agora em "Adicionar impressora"
 Filuna.ouvir("secao", function (d) { Filuna.nativo("secao.pendente").catch(function () {}); abrirPedido(d.secao); carregar(); });
 Filuna.iniciar().then(function () { return Filuna.nativo("secao.pendente").then(function (r) { abrirPedido(r.secao); }).catch(function () {}); }).then(carregar);

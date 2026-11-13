@@ -1,0 +1,83 @@
+{
+  "padrao": {
+    "titulo": "Ligar o modo LAN na impressora",
+    "passos": [
+      "Na tela da impressora, abra Configurações › Rede (ou Wi-Fi).",
+      "Conecte a impressora na mesma rede Wi-Fi deste computador.",
+      "Ative o modo LAN (rede local). Se aparecer um código de acesso, anote.",
+      "Anote também o endereço IP mostrado na tela.",
+      "Volte ao Filuna e toque em “Pronto, procurar de novo”. Se não achar, informe o IP."
+    ]
+  },
+  "anycubic": {
+    "titulo": "Kobra: ligar o modo LAN",
+    "passos": [
+      "Na tela da impressora, toque em Configurações › Rede.",
+      "Conecte no mesmo Wi-Fi deste computador (2,4 GHz).",
+      "Ative “Modo LAN” (LAN Mode). A impressora sai do aplicativo Anycubic e passa a aceitar comandos locais.",
+      "Anote o “WiFi IP” que aparece na mesma tela.",
+      "Volte ao Filuna: “Pronto, procurar de novo”. Se não achar, informe o IP."
+    ],
+    "nota": "Kobra 3, 3 V2, 3 Max, S1, S1 Max e Kobra X têm o modo LAN nas configurações de rede. Com o modo LAN ligado, o app Anycubic deixa de ver a impressora."
+  },
+  "bambu": {
+    "titulo": "Bambu Lab: modo LAN e código de acesso",
+    "passos": [
+      "Na tela da impressora, abra Configurações › Rede (WLAN).",
+      "Ative o “LAN Only Mode” (modo somente LAN).",
+      "Anote o “Access Code” (código de acesso) mostrado na tela.",
+      "Confira o IP na mesma tela.",
+      "Volte ao Filuna, procure de novo e informe o código quando pedido."
+    ],
+    "nota": "O Filuna fala com a impressora pela rede local (MQTT/FTPS), sem o plug-in de rede da Bambu."
+  },
+  "elegoo": {
+    "titulo": "Elegoo Centauri: rede local",
+    "passos": [
+      "Na tela da impressora, abra Configurações › Rede e conecte no Wi-Fi deste computador.",
+      "Anote o endereço IP mostrado.",
+      "Volte ao Filuna e procure de novo; se não achar, informe o IP."
+    ],
+    "nota": "Centauri Carbon 2 usa o protocolo LAN do SDK aberto Elegoo-Link; Centauri Carbon usa SDCP v3. Os dois são locais."
+  },
+  "flashforge": {
+    "titulo": "Flashforge: rede local",
+    "passos": [
+      "Na tela da impressora, abra Configurações › Rede e conecte no Wi-Fi.",
+      "Anote o IP e, se houver, o código de verificação (check code) em Configurações › Sobre.",
+      "Volte ao Filuna e procure de novo; se não achar, informe o IP e o código."
+    ]
+  },
+  "qidi": {
+    "titulo": "QIDI: rede local (Moonraker)",
+    "passos": [
+      "Na tela da impressora, abra Configurações › Rede e conecte no Wi-Fi.",
+      "Anote o IP mostrado na tela.",
+      "Volte ao Filuna e procure de novo; se não achar, informe o IP."
+    ]
+  },
+  "creality": {
+    "titulo": "Creality: rede local",
+    "passos": [
+      "Na tela da impressora, abra Configurações › Rede e conecte no Wi-Fi.",
+      "Anote o IP mostrado na tela.",
+      "Volte ao Filuna e procure de novo; se não achar, informe o IP."
+    ]
+  },
+  "snapmaker": {
+    "titulo": "Snapmaker: rede local",
+    "passos": [
+      "Na tela da impressora, conecte no Wi-Fi deste computador.",
+      "Anote o IP em Configurações › Rede.",
+      "Volte ao Filuna e procure de novo; se não achar, informe o IP. A impressora pode pedir confirmação na tela na primeira conexão."
+    ]
+  },
+  "prusa": {
+    "titulo": "Prusa: PrusaLink",
+    "passos": [
+      "Na tela da impressora, abra Configurações › Rede e conecte no Wi-Fi ou cabo.",
+      "Em Configurações › Rede › PrusaLink, anote o IP e a senha (API key).",
+      "Volte ao Filuna, informe o IP e use a senha como código de acesso."
+    ]
+  }
+}

@@ -5,6 +5,7 @@
 // page needs from the slicer itself (presets, slice result, calibration, tabs) goes through the bridge
 // handled here: the page posts {"filuna":1,"id","acao","dados"} and gets Filuna._resposta(id, ok, dados).
 
+#include <memory>
 #include <string>
 
 #include <nlohmann/json.hpp>
@@ -13,6 +14,8 @@
 #include <wx/webview.h>
 
 namespace Slic3r { namespace GUI {
+
+class wxTimer;
 
 class FilunaPanel : public wxPanel
 {
@@ -43,6 +46,7 @@ private:
     void reply(const std::string& id, bool ok, const nlohmann::json& data);
     nlohmann::json handle(const std::string& action, const nlohmann::json& data);
 
+    std::unique_ptr<wxTimer> m_estado_timer; // estado ao vivo dos cards de Dispositivos
     wxWebView*  m_browser{nullptr};
     wxString    m_url;
     bool        m_reset_on_show{false};

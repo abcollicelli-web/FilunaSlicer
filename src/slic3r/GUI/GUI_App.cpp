@@ -4359,6 +4359,16 @@ std::string GUI_App::resolve_printer_agent_id(const std::string& stored_id) cons
 {
     if (!stored_id.empty())
         return stored_id;
+    // Filuna (Dispositivos, regra V2 §6): o agente da marca escolhido ao conectar a impressora vale para o
+    // fabricante do perfil ativo (app_config "filuna_agente_<Vendor>"), sem editar o perfil do Orca.
+    if (preset_bundle && app_config) {
+        const Preset& p = preset_bundle->printers.get_edited_preset();
+        if (p.vendor != nullptr) {
+            const std::string filuna = app_config->get("filuna_agente_" + p.vendor->id);
+            if (!filuna.empty() && NetworkAgentFactory::is_printer_agent_registered(filuna))
+                return filuna;
+        }
+    }
     return (preset_bundle && preset_bundle->is_bbl_vendor()) ? BBL_PRINTER_AGENT_ID : ORCA_PRINTER_AGENT_ID;
 }
 

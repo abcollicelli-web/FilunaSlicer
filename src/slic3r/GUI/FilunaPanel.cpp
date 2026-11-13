@@ -3,6 +3,7 @@
 #include "slic3r/Filuna/FilunaRecursos.hpp"
 #include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
+#include "FilunaDispositivos.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -20,6 +21,7 @@
 #include <boost/nowide/fstream.hpp>
 
 #include <wx/sizer.h>
+#include <wx/timer.h>
 #include <wx/utils.h>
 #include <wx/base64.h>
 #include <wx/filedlg.h>
@@ -394,6 +396,8 @@ bool FilunaPanel::Show(bool show)
     const bool changed = wxPanel::Show(show);
     if (show)
         send_event("mostrar");
+    else if (m_estado_timer)
+        m_estado_timer->Stop();
     return changed;
 }
 
@@ -615,6 +619,71 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     }
     if (action == "calibracao.aplicar")
         return apply_calibration(d.value("opcao", std::string()), num(d, "valor", 0.));
+    // ---- Dispositivos (fluxo V2 §6): fabricante → modelos homologados → complemento → LAN → card ----
+    namespace FD = FilunaDispositivos;
+    if (action == "dispositivos.fabricantes")
+        return FD::fabricantes();
+    if (action == "dispositivos.modelos")
+        return FD::modelos(d.value("fabricante", std::string()));
+    if (action == "dispositivos.complemento")
+        return FD::complemento(d.value("fabricante", std::string()));
+    if (action == "dispositivos.complemento.baixar") {
+        // "Baixar complemento": update interno do módulo da marca, com progresso para a tela de carregamento
+        const std::string id = d.value("fabricante", std::string());
+        FilunaAtualizacao::instancia().instalar_modulo(id, [id](const json& p) {
+            json ev = p;
+            ev["fabricante"] = id;
+            wxGetApp().CallAfter([ev] { FilunaPanel::broadcast("complemento.progresso", ev); });
+        });
+        return json::object();
+    }
+    if (action == "dispositivos.preparar")
+        return FD::preparar(d.value("fabricante", std::string()), d.value("modelo", std::string()));
+    if (action == "dispositivos.descobertas")
+        return FD::descobertas();
+    if (action == "dispositivos.conectar")
+        return FD::conectar(d.value("dev_id", std::string()), d.value("codigo", std::string()));
+    if (action == "dispositivos.conectar_ip")
+        return FD::conectar_ip(d.value("fabricante", std::string()), d.value("modelo", std::string()), d.value("ip", std::string()),
+                               d.value("codigo", std::string()), d.value("nome", std::string()));
+    if (action == "dispositivos.ponte")
+        return FD::ponte_instrucoes(d.value("fabricante", std::string()));
+    if (action == "dispositivos.registrar")
+        return FD::registrar(d.value("nome", std::string()), d.value("fabricante", std::string()), d.value("modelo", std::string()),
+                             d.value("dev_id", std::string()));
+    if (action == "dispositivos.estado") {
+        json e = FD::estado();
+        FD::sincronizar_estado(e, cfg->get("filuna_token")); // conta → servidor → app Android (no máximo a cada 25 s)
+        return e;
+    }
+    if (action == "dispositivos.selecionar")
+        return FD::selecionar(d.value("dev_id", std::string()));
+    if (action == "dispositivos.observar") {
+        // a tela pede estado ao vivo enquanto está aberta; para quando sai
+        const bool ligar = d.value("ligado", false);
+        if (ligar) {
+            if (!m_estado_timer) {
+                m_estado_timer = std::make_unique<wxTimer>();
+                m_estado_timer->Bind(wxEVT_TIMER, [this](wxTimerEvent&) {
+                    json e = FD::estado();
+                    FD::sincronizar_estado(e, wxGetApp().app_config->get("filuna_token"));
+                    send_event("dispositivos.estado", e);
+                });
+            }
+            m_estado_timer->Start(3000);
+        } else if (m_estado_timer) {
+            m_estado_timer->Stop();
+        }
+        return json::object();
+    }
+    if (action == "camera.abrir") {
+        // câmera da impressora selecionada: a janela do Orca (Dispositivo/monitor) já faz o vídeo
+        CallAfter([] {
+            if (MainFrame* frame = wxGetApp().mainframe)
+                frame->select_filuna_tab(TAB_ID_MONITOR);
+        });
+        return json::object();
+    }
     if (action == "url.abrir") {
         const std::string url = d.value("url", std::string());
         if (url.rfind("https://", 0) != 0)

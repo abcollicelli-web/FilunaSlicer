@@ -7,8 +7,10 @@
 // descarta e fica como está — nunca aplica pela metade. O aviso de versão nova do programa
 // continua no canal que já existe (check_new_version_sf lendo /api/slicer/v1/versao).
 
+#include <functional>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 namespace Slic3r { namespace GUI {
 
@@ -31,6 +33,18 @@ public:
     void avisar(const std::string& token);
     void parar();
     Estado estado() const;
+
+    // Catálogo assinado mais recente (texto já verificado; vazio antes da primeira consulta ou sem
+    // conta) e os ids visíveis para esta conta. Usado pela tela de Dispositivos.
+    nlohmann::json catalogo() const;
+    std::vector<std::string> visiveis() const;
+    // Versão instalada de um módulo ("" se nenhuma) e se a versão do catálogo já está instalada.
+    std::string versao_instalada(const std::string& id) const;
+    bool        modulo_atualizado(const std::string& id) const;
+    // Baixa e ativa agora o módulo <id> do catálogo, numa thread própria ("Baixar complemento").
+    // 'progresso' recebe {"etapa": "...", "feito": n, "total": m, "ok": bool, "erro": "..."} e é
+    // chamado na thread de trabalho — quem usa despacha para a interface.
+    void instalar_modulo(const std::string& id, std::function<void(const nlohmann::json&)> progresso);
 
 private:
     FilunaAtualizacao() = default;
