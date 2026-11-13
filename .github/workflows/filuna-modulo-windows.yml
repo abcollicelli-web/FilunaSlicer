@@ -1,0 +1,114 @@
+name: Filuna módulo Windows (fatiador oficial headless, da fonte, tag homologada)
+# Arquitetura V2 (FILUNA/REGRA-CANONICA-ARQUITETURA-V2-...-20261113.md §1/§8): cada módulo = fatiador oficial
+# compilado DA FONTE no commit homologado (FILUNA/fabricantes/<id>/module.json → source.commit), usado em modo CLI
+# pela ponte do Filuna. Nada proprietário é baixado: só o repositório AGPL do fabricante e as dependências abertas.
+on:
+  workflow_dispatch:
+    inputs:
+      fabricantes:
+        description: "lista separada por espaço (snapmaker elegoo flashforge creality)"
+        default: "snapmaker"
+jobs:
+  modulo:
+    runs-on: windows-2022
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: snapmaker
+            repo: Snapmaker/OrcaSlicer
+            commit: bac6fd5c1
+            versao: "2.4.1"
+            script: build_release_vs2022.bat
+          - id: elegoo
+            repo: elegooofficial/ElegooSlicer
+            commit: 3f1042e9e
+            versao: "1.5.3.5"
+            script: build_release_vs2022.bat
+          - id: flashforge
+            repo: FlashForge/Orca-Flashforge
+            commit: 70f2359ba
+            versao: "1.7.9"
+            script: build_release_vs2022.bat
+          - id: creality
+            repo: CrealityOfficial/CrealityPrint
+            commit: 254250c01
+            versao: "7.3.1.6378"
+            script: build_release_vs2022.bat
+    steps:
+      - name: Só os fabricantes pedidos
+        id: sel
+        shell: bash
+        run: |
+          case " ${{ github.event.inputs.fabricantes }} " in *" ${{ matrix.id }} "*) echo "go=1" >> $GITHUB_OUTPUT;; *) echo "go=0" >> $GITHUB_OUTPUT;; esac
+      - name: Fonte oficial no commit homologado
+        if: steps.sel.outputs.go == '1'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          ref: ${{ matrix.commit }}
+          path: oem
+          submodules: recursive
+      - name: Ferramentas (Strawberry Perl p/ OpenSSL, NASM, Ninja)
+        if: steps.sel.outputs.go == '1'
+        shell: pwsh
+        run: choco install -y --no-progress strawberryperl nasm ninja
+      - name: Cache das dependências (por fabricante+commit)
+        if: steps.sel.outputs.go == '1'
+        id: deps
+        uses: actions/cache@v4
+        with:
+          path: oem/deps/build
+          key: deps-${{ matrix.id }}-${{ matrix.commit }}-v1
+      - name: Dependências (script do próprio fabricante)
+        if: steps.sel.outputs.go == '1' && steps.deps.outputs.cache-hit != 'true'
+        shell: cmd
+        working-directory: oem
+        run: call ${{ matrix.script }} deps
+      - name: Fatiador (script do próprio fabricante)
+        if: steps.sel.outputs.go == '1'
+        shell: cmd
+        working-directory: oem
+        run: call ${{ matrix.script }} slicer
+      - name: Empacotar módulo (pasta de instalação do build + manifesto)
+        if: steps.sel.outputs.go == '1'
+        shell: pwsh
+        run: |
+          $inst = Get-ChildItem -Path oem/build -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'resources') } | Select-Object -First 1
+          if (-not $inst) { throw "pasta de instalação não encontrada em oem/build" }
+          $exe = Get-ChildItem -Path $inst.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'validator|console' } | Select-Object -First 1
+          $zip = "${{ matrix.id }}-${{ matrix.versao }}-windows.zip"
+          Compress-Archive -Path (Join-Path $inst.FullName '*') -DestinationPath $zip -CompressionLevel Optimal
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          @{ schema=1; id="${{ matrix.id }}"; versao="${{ matrix.versao }}"; plataforma="windows-x64"; componente="engine_cli";
+             fonte=@{ repositorio="https://github.com/${{ matrix.repo }}"; commit="${{ matrix.commit }}"; licenca="AGPL-3.0" };
+             executavel=$exe.Name; modo="cli (--slice 0 --export-gcode)"; pacote=$zip; pacote_sha256=$sha; pacote_bytes=(Get-Item $zip).Length;
+             compilado_em=(Get-Date -Format o); runner="github-actions windows-2022" } | ConvertTo-Json -Depth 4 | Set-Content "${{ matrix.id }}-${{ matrix.versao }}-windows.manifest.json"
+          Get-Content "${{ matrix.id }}-${{ matrix.versao }}-windows.manifest.json"
+      - name: Prova rápida do CLI (fatia o cubo do Filuna)
+        if: steps.sel.outputs.go == '1'
+        uses: actions/checkout@v4
+        with:
+          path: filuna
+          sparse-checkout: fixtures/cube20.stl
+      - name: Executa --slice
+        if: steps.sel.outputs.go == '1'
+        shell: pwsh
+        run: |
+          $m = Get-Content "${{ matrix.id }}-${{ matrix.versao }}-windows.manifest.json" | ConvertFrom-Json
+          $inst = Get-ChildItem -Path oem/build -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'resources') } | Select-Object -First 1
+          $exe = Join-Path $inst.FullName $m.executavel
+          New-Item -ItemType Directory -Force prova | Out-Null
+          $p = Start-Process -FilePath $exe -ArgumentList @('--slice','0','--export-gcode','--outputdir','prova','filuna/fixtures/cube20.stl') -PassThru -Wait -NoNewWindow
+          "rc=$($p.ExitCode)"; Get-ChildItem prova
+      - name: Publicar artefatos
+        if: steps.sel.outputs.go == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: modulo-${{ matrix.id }}-${{ matrix.versao }}-windows
+          path: |
+            ${{ matrix.id }}-${{ matrix.versao }}-windows.zip
+            ${{ matrix.id }}-${{ matrix.versao }}-windows.manifest.json
+            prova/
+          retention-days: 30
