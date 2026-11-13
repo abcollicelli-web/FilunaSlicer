@@ -429,3 +429,71 @@ TEST_CASE("The product ranking puts the most printed product first", "[FilunaDad
     CHECK_THAT(r[0].gramas, WithinAbs(20., 1e-9));
     CHECK(db->impressora_por_nome("luca") == db->impressora_por_nome("luca"));
 }
+
+// --- Sincronização (03-SERVIDOR §4) ---------------------------------------------------------
+
+TEST_CASE("Fila de sincronização: envia, marca e não volta", "[FilunaDados]")
+{
+    auto db = banco_em_memoria();
+    const auto tipo = tipo_pla_branco(*db);
+    db->cadastrar_bobinas(tipo, 1, 1000.);
+    const auto fila = db->fila_para_enviar();
+    REQUIRE(fila.size() >= 3); // tipo, bobina, evento de entrada
+    CHECK(fila.front().tabela == "filamento_tipo");
+    CHECK(fila.front().payload_json.find("\"id\":\"" + tipo + "\"") != std::string::npos);
+    std::vector<std::int64_t> seqs;
+    for (const auto& i : fila)
+        seqs.push_back(i.seq);
+    db->marcar_enviados(seqs);
+    CHECK(db->pendentes_sincronizacao() == 0);
+    CHECK(db->fila_para_enviar().empty());
+    const std::string pc = db->id_do_computador();
+    CHECK(pc.size() == 36);
+    CHECK(db->id_do_computador() == pc);
+}
+
+TEST_CASE("Restauração num computador novo e eventos de outro computador", "[FilunaDados]")
+{
+    // Computador A grava; o que ele enviou é aplicado num banco vazio (B), como no receber?desde=0.
+    auto a = banco_em_memoria();
+    const auto tipo = tipo_pla_branco(*a);
+    const auto bob  = a->cadastrar_bobinas(tipo, 1, 1000.).front();
+    a->registrar_evento(bob, "consumo", -120.);
+    std::vector<FilunaDb::ItemRemoto> itens;
+    for (const auto& i : a->fila_para_enviar(500))
+        itens.push_back({i.tabela, i.id, i.payload_json});
+    auto b = banco_em_memoria();
+    CHECK(b->aplicar_remotos(itens) > 0);
+    REQUIRE(b->bobina(bob));
+    CHECK_THAT(b->bobina(bob)->restante_g, WithinAbs(880., 0.01));
+    CHECK(b->pendentes_sincronizacao() == 0); // o que veio de fora não volta para a fila
+    // Aplicar de novo não duplica eventos.
+    b->aplicar_remotos(itens);
+    CHECK(b->eventos_da_bobina(bob).size() == 2);
+    // Ajuste feito no app chega como evento: restante = soma dos eventos.
+    b->aplicar_remotos({{"estoque_evento", "srv-1",
+                         R"({"id":"srv-1","criado_em":"2026-11-02T10:00:00Z","atualizado_em":"2026-11-02T10:00:00Z","excluido":0,"rev":0,)"
+                         R"("bobina_id":")" + bob + R"(","tipo":"ajuste","delta_g":-80,"trabalho_id":null,"estimado":0,"obs":"app"})"}});
+    CHECK_THAT(b->bobina(bob)->restante_g, WithinAbs(800., 0.01));
+    // Versão mais velha do tipo não sobrescreve a mais nova; tabela desconhecida e JSON com outro id são ignorados.
+    CHECK(b->aplicar_remotos({{"filamento_tipo", tipo, R"({"id":")" + tipo + R"(","atualizado_em":"2000-01-01T00:00:00Z","cor_nome":"Velho"})"},
+                              {"sync_fila", "1", R"({"id":"1"})"},
+                              {"bobina", "x", R"({"id":"y"})"}}) == 0);
+    CHECK(b->tipo(tipo)->cor_nome != "Velho");
+}
+
+TEST_CASE("Código de bobina repetido vindo de outro computador ganha sufixo", "[FilunaDados]")
+{
+    auto a = banco_em_memoria(), b = banco_em_memoria();
+    const auto ta = tipo_pla_branco(*a);
+    const auto ba = a->cadastrar_bobinas(ta, 1, 1000.).front(); // B-0001 em A
+    const auto tb = tipo_pla_branco(*b);
+    b->cadastrar_bobinas(tb, 1, 1000.);                        // B-0001 em B
+    std::vector<FilunaDb::ItemRemoto> itens;
+    for (const auto& i : a->fila_para_enviar(500))
+        itens.push_back({i.tabela, i.id, i.payload_json});
+    b->aplicar_remotos(itens);
+    REQUIRE(b->bobina(ba));
+    CHECK(b->bobina(ba)->codigo == "B-0001-" + ba.substr(0, 4));
+    CHECK(b->bobinas().size() == 2);
+}

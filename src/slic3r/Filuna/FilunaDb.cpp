@@ -3,6 +3,7 @@
 #include <sqlite3.h>
 
 #include <cstdio>
+#include <map>
 #include <ctime>
 #include <algorithm>
 #include <random>
@@ -92,6 +93,11 @@ CREATE TABLE manutencao_registro(
 CREATE TABLE sync_fila(
     seq INTEGER PRIMARY KEY AUTOINCREMENT, tabela TEXT NOT NULL, registro_id TEXT NOT NULL,
     op TEXT NOT NULL, payload_json TEXT, enviado INTEGER NOT NULL DEFAULT 0);
+)SQL",
+    // 2 — sincronização com o servidor (03-SERVIDOR §4): identificação do computador e último rev recebido.
+    R"SQL(
+CREATE TABLE config_local(chave TEXT PRIMARY KEY, valor TEXT);
+CREATE INDEX sync_fila_pendente ON sync_fila(enviado, seq);
 )SQL",
 };
 
@@ -301,6 +307,155 @@ int FilunaDb::pendentes_sincronizacao() const
 {
     Comando c(m_db, "SELECT COUNT(*) FROM sync_fila WHERE enviado = 0");
     return c.passo() ? static_cast<int>(c.inteiro_em(0)) : 0;
+}
+
+std::vector<FilunaDb::ItemFila> FilunaDb::fila_para_enviar(int limite) const
+{
+    std::vector<ItemFila> l;
+    Comando c(m_db, "SELECT seq, tabela, registro_id, COALESCE(payload_json, 'null') FROM sync_fila WHERE enviado = 0 ORDER BY seq LIMIT ?1");
+    c.inteiro(1, limite);
+    while (c.passo())
+        l.push_back({c.inteiro_em(0), c.texto_em(1), c.texto_em(2), c.texto_em(3)});
+    return l;
+}
+
+void FilunaDb::marcar_enviados(const std::vector<std::int64_t>& seqs)
+{
+    Transacao t(m_db);
+    for (std::int64_t s : seqs)
+        Comando(m_db, "UPDATE sync_fila SET enviado = 1 WHERE seq = ?1").inteiro(1, s).executar();
+    // Guarda só os últimos 2000 itens já enviados: a fila não cresce para sempre.
+    executar("DELETE FROM sync_fila WHERE enviado = 1 AND seq < (SELECT COALESCE(MAX(seq), 0) - 2000 FROM sync_fila)");
+    t.confirmar();
+}
+
+std::string FilunaDb::config_local(const std::string& chave) const
+{
+    Comando c(m_db, "SELECT valor FROM config_local WHERE chave = ?1");
+    c.texto(1, chave);
+    return c.passo() ? c.texto_em(0) : std::string();
+}
+
+void FilunaDb::gravar_config_local(const std::string& chave, const std::string& valor)
+{
+    Comando(m_db, "INSERT INTO config_local(chave, valor) VALUES(?1, ?2) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor")
+        .texto(1, chave).texto(2, valor).executar();
+}
+
+std::string FilunaDb::id_do_computador()
+{
+    std::string id = config_local("pc_id");
+    if (id.empty()) {
+        id = novo_uuid();
+        gravar_config_local("pc_id", id);
+    }
+    return id;
+}
+
+int FilunaDb::aplicar_remotos(const std::vector<ItemRemoto>& itens)
+{
+    // Tabelas que vêm do servidor e, entre elas, as que só recebem inserção (nunca conflitam).
+    static const char* const PERMITIDAS[] = {"impressora", "filamento_tipo", "bobina", "estoque_evento", "arquivo_local", "produto",
+                                             "trabalho", "trabalho_filamento", "manutencao_regra", "manutencao_registro"};
+    static const char* const SO_INSERE[]  = {"estoque_evento", "trabalho_filamento", "manutencao_registro"};
+    auto contem = [](const auto& lista, const std::string& t) {
+        return std::any_of(std::begin(lista), std::end(lista), [&t](const char* x) { return t == x; });
+    };
+    // Os registros podem chegar antes dos que eles apontam (outro computador, outra ordem): sem checar
+    // chaves estrangeiras enquanto aplica. Só nesta conexão; volta a ligar no fim.
+    executar("PRAGMA foreign_keys=OFF");
+    int                      aplicados = 0;
+    std::vector<std::string> bobinas;
+    try {
+        Transacao t(m_db);
+        std::map<std::string, std::vector<std::string>> colunas;
+        for (const ItemRemoto& it : itens) {
+            if (!contem(PERMITIDAS, it.tabela) || it.id.empty())
+                continue;
+            auto& cols = colunas[it.tabela];
+            if (cols.empty()) {
+                Comando info(m_db, "PRAGMA table_info(" + it.tabela + ")");
+                while (info.passo())
+                    if (info.texto_em(2) != "BLOB")
+                        cols.push_back(info.texto_em(1));
+            }
+            std::string dados = it.dados_json;
+            {
+                Comando c(m_db, "SELECT json_valid(?1) AND json_extract(?1, '$.id') = ?2");
+                c.texto(1, dados).texto(2, it.id);
+                if (!c.passo() || !c.inteiro_em(0))
+                    continue;
+            }
+            // Códigos e assinaturas são únicos no banco; o mesmo código vindo de outro computador ganha um sufixo
+            // (bobina) ou fica sem assinatura (produto, que pode ser unido depois).
+            if (it.tabela == "bobina" || it.tabela == "produto") {
+                const std::string campo = it.tabela == "bobina" ? "codigo" : "assinatura";
+                Comando c(m_db, "SELECT 1 FROM " + it.tabela + " WHERE " + campo + " = json_extract(?1, '$." + campo + "') AND id <> ?2");
+                c.texto(1, dados).texto(2, it.id);
+                if (c.passo()) {
+                    Comando j(m_db, it.tabela == "bobina" ? "SELECT json_set(?1, '$.codigo', json_extract(?1, '$.codigo') || '-' || substr(?2, 1, 4))"
+                                                          : "SELECT json_set(?1, '$.assinatura', NULL)");
+                    j.texto(1, dados).texto(2, it.id);
+                    if (j.passo())
+                        dados = j.texto_em(0);
+                }
+            }
+            // Só as colunas que vieram no JSON (as que faltam ficam como estão; a miniatura nunca viaja).
+            std::vector<std::string> presentes;
+            for (const std::string& col : cols) {
+                Comando c(m_db, "SELECT json_type(?1, '$.' || ?2) IS NOT NULL");
+                c.texto(1, dados).texto(2, col);
+                if (c.passo() && c.inteiro_em(0))
+                    presentes.push_back(col);
+            }
+            std::string nomes, valores, atualiza;
+            for (std::size_t k = 0; k < presentes.size(); ++k) {
+                const std::string& col = presentes[k];
+                nomes += (k ? "," : "") + col;
+                valores += std::string(k ? "," : "") + "json_extract(?1, '$." + col + "')";
+                if (col != "id")
+                    atualiza += (atualiza.empty() ? "" : ",") + col + "=excluded." + col;
+            }
+            // "WHERE 1" separa o SELECT do ON CONFLICT (ambiguidade documentada do SQLite).
+            std::string sql = "INSERT INTO " + it.tabela + "(" + nomes + ") SELECT " + valores + " WHERE 1";
+            if (contem(SO_INSERE, it.tabela) || atualiza.empty())
+                sql += " ON CONFLICT(id) DO NOTHING";
+            else // vence o mais novo (03-SERVIDOR §4)
+                sql += " ON CONFLICT(id) DO UPDATE SET " + atualiza + " WHERE excluded.atualizado_em >= " + it.tabela + ".atualizado_em";
+            try {
+                Comando(m_db, sql).texto(1, dados).executar();
+            } catch (const std::runtime_error&) {
+                continue; // linha incompleta ou inválida: só ela fica de fora (o erro desfaz apenas este comando)
+            }
+            if (sqlite3_changes(m_db) > 0) {
+                ++aplicados;
+                if (it.tabela == "bobina")
+                    bobinas.push_back(it.id);
+                else if (it.tabela == "estoque_evento") {
+                    Comando c(m_db, "SELECT json_extract(?1, '$.bobina_id')");
+                    c.texto(1, dados);
+                    if (c.passo())
+                        bobinas.push_back(c.texto_em(0));
+                }
+            }
+        }
+        // O restante da bobina é a soma dos eventos (02-DADOS §5), sem voltar para a fila.
+        std::sort(bobinas.begin(), bobinas.end());
+        bobinas.erase(std::unique(bobinas.begin(), bobinas.end()), bobinas.end());
+        for (const std::string& b : bobinas)
+            Comando(m_db, "UPDATE bobina SET restante_g = max(0, (SELECT COALESCE(SUM(delta_g), 0) FROM estoque_evento "
+                          "WHERE bobina_id = ?1 AND excluido = 0)), "
+                          "estado = CASE WHEN estado IN ('descartada', 'lacrada') THEN estado "
+                          "              WHEN (SELECT COALESCE(SUM(delta_g), 0) FROM estoque_evento WHERE bobina_id = ?1 AND excluido = 0) <= 0 "
+                          "                   THEN 'vazia' ELSE 'em_uso' END WHERE id = ?1")
+                .texto(1, b).executar();
+        t.confirmar();
+    } catch (...) {
+        executar("PRAGMA foreign_keys=ON");
+        throw;
+    }
+    executar("PRAGMA foreign_keys=ON");
+    return aplicados;
 }
 
 // --- Impressoras e manutenção -----------------------------------------------------------------

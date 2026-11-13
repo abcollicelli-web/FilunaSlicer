@@ -1,4 +1,5 @@
 #include "FilunaPanel.hpp"
+#include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
 
 #include <algorithm>
@@ -423,6 +424,7 @@ void FilunaPanel::broadcast(const std::string& name, const json& data)
 
 void FilunaPanel::account_changed(const std::string& token, const FilunaPanel* source)
 {
+    FilunaSync::instancia().avisar(token); // entrou ou saiu da conta: sincroniza (ou para) com a conta nova
     for (FilunaPanel* p : panels())
         if (p != source)
             p->send_event("conta", {{"token", token}});

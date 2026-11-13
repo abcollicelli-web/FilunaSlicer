@@ -20,6 +20,8 @@ namespace GUI {
 
 // Banco local, aberto na primeira chamada. Lança std::runtime_error se não conseguir abrir.
 Filuna::FilunaDb& filuna_db();
+// Pede à sincronização com o servidor que suba o que mudou (em 5 segundos, agrupando rajadas).
+void filuna_sync_avisar();
 
 // Executa uma ação de dados da ponte (estoque.*, bobina.*, historico.*, trabalho.*, produto.*, painel.*,
 // previsao.*, manutencao.*, sync.*). Vazio quando a ação não é de dados.

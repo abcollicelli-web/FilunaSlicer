@@ -276,13 +276,31 @@ function bobinaParaLinha(x) {
 }
 function estoque() {
 	el().innerHTML = '<div class="etop"><div><div class="h1">Estoque de filamentos</div><div class="sub">Gerencie seus filamentos, quantidades e custos. A baixa é automática ao fim de cada impressão.</div></div>' +
-		'<button class="btn primario" id="novo" style="height:46px;padding:0 20px">+ Adicionar filamento</button></div><div id="r" class="carregando">Carregando…</div>';
+		'<button class="btn primario" id="novo" style="height:46px;padding:0 20px">+ Adicionar filamento</button></div>' +
+		'<div id="sinc" class="sub" style="margin:-4px 0 12px"></div><div id="r" class="carregando">Carregando…</div>';
 	document.getElementById("novo").onclick = function () { novaBobina(); };
+	estadoSincronizacao();
 	Promise.all([Filuna.nativo("estoque.listar", { incluir_arquivadas: !!st.verArquivadas }), prefs().catch(function () { return {}; })]).then(function (r) {
 		st.bobinas = (r[0].bobinas || []).map(bobinaParaLinha);
 		st.lim = r[1]["estoque.limite_baixo_g"] == null ? 150 : r[1]["estoque.limite_baixo_g"]; st.alerta = r[1]["estoque.alerta_baixo"] !== false;
 		tabelaEstoque();
 	}, function (e) { document.getElementById("r").outerHTML = '<div id="r" class="erro">' + E(e.erro || e.message) + "</div>"; });
+}
+// Cópia no servidor (03-SERVIDOR §4): o mesmo estoque aparece no site e no app Filuna do celular.
+function estadoSincronizacao() {
+	Filuna.nativo("sync.estado").then(function (e) {
+		var a = document.getElementById("sinc");
+		if (!a) return;
+		var txt;
+		if (!e.ligado) txt = "Entre na sua conta Filuna para ter cópia do estoque no site e no app do celular.";
+		else if (e.ultimo_erro) txt = "Cópia no filuna3d.com: não sincronizou (" + E(e.ultimo_erro) + "). Tenta de novo sozinho.";
+		else if (e.ultimo_ok) txt = "Cópia no filuna3d.com e no app: sincronizado às " + new Date(e.ultimo_ok).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) +
+			(e.pendentes ? " · " + (e.pendentes == 1 ? "1 alteração para subir" : e.pendentes + " alterações para subir") : "");
+		else txt = "Cópia no filuna3d.com e no app: sincronizando…";
+		a.innerHTML = txt + (e.ligado ? ' <a id="sincAgora" style="color:var(--mag);font-weight:600;cursor:pointer">Sincronizar agora</a>' : "");
+		var b = document.getElementById("sincAgora");
+		if (b) b.onclick = function () { Filuna.nativo("sync.agora").then(function () { a.textContent = "Sincronizando…"; setTimeout(estadoSincronizacao, 7000); }); };
+	}, function () {});
 }
 var MATERIAIS = ["PLA", "PETG", "ABS", "TPU", "ASA", "PA", "PC"];
 function novaBobina() {

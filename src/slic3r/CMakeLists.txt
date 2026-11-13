@@ -500,6 +500,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Project.cpp
     GUI/FilunaDados.cpp
     GUI/FilunaDados.hpp
+    GUI/FilunaSync.cpp
+    GUI/FilunaSync.hpp
     GUI/FilunaPanel.cpp
     GUI/FilunaPanel.hpp
     GUI/ProjectDirtyStateManager.cpp

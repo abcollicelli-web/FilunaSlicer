@@ -16,6 +16,7 @@
 #include "WebUserLoginDialog.hpp"
 #include "WebViewDialog.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaSync.hpp"
 #include "slic3r/Utils/BBLCloudServiceAgent.hpp"
 #include "slic3r/Utils/CloudDeleteQueue.hpp"
 #include "slic3r/Utils/NetworkAgent.hpp"
@@ -2930,6 +2931,8 @@ bool GUI_App::OnInit()
 
 int GUI_App::OnExit()
 {
+    // Filuna: última subida da fila de sincronização (no máximo 3 s).
+    FilunaSync::instancia().parar();
     stop_http_server();
     stop_sync_user_preset();
     if (m_startup_cloud_plugin_fetch_thread.joinable())

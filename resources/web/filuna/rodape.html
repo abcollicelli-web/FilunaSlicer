@@ -26,7 +26,7 @@ html,body{background:#fff;overflow:hidden;height:100%}
 	<div class="div"></div>
 	<div id="dica"></div>
 	<div id="detalhe" hidden></div>
-	<div class="dir"><a id="ia">IA Filuna</a><label><span id="autoTxt">Autoajuda ligada</span><span class="chave"><input type="checkbox" id="auto" checked><span></span></span></label></div>
+	<div class="dir"><span id="nuvem" style="font-size:12.5px;color:var(--ink2);white-space:nowrap"></span><a id="ia">IA Filuna</a><label><span id="autoTxt">Autoajuda ligada</span><span class="chave"><input type="checkbox" id="auto" checked><span></span></span></label></div>
 </div>
 <script src="ponte.js"></script>
 <script>
@@ -84,6 +84,17 @@ Filuna.ouvir("preferencias", function (d) { if (d.valores) { autoajuda = d.valor
 Filuna.iniciar().then(ler);
 setInterval(ler, 3000);
 Filuna.ouvir("preferencias", function () { prefsLidas = false; ler(); });
+// Estado discreto da cópia no servidor (guia-v1/04 Fase 6): só aparece com conta.
+function nuvem() {
+	Filuna.nativo("sync.estado").then(function (e) {
+		var a = document.getElementById("nuvem");
+		if (!e.ligado) { a.textContent = ""; return; }
+		a.textContent = e.ultimo_erro ? "Sem conexão — será enviado depois" : (e.pendentes ? "Salvando no servidor…" : (e.ultimo_ok ? "Salvo no servidor" : ""));
+		a.title = e.ultimo_erro || "";
+	}).catch(function () {});
+}
+nuvem();
+setInterval(nuvem, 15000);
 </script>
 </body>
 </html>

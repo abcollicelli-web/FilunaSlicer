@@ -159,6 +159,25 @@ public:
 
     // --- Sincronização (03-SERVIDOR §4) ---
     int pendentes_sincronizacao() const;
+    struct ItemFila
+    {
+        std::int64_t seq = 0;
+        std::string  tabela, id, payload_json; // payload_json: a linha inteira, como objeto JSON
+    };
+    std::vector<ItemFila> fila_para_enviar(int limite = 200) const;
+    void                  marcar_enviados(const std::vector<std::int64_t>& seqs);
+    struct ItemRemoto
+    {
+        std::string tabela, id, dados_json;
+    };
+    // Aplica linhas vindas do servidor sem pô-las na fila: só inserção nas tabelas de eventos, e nas outras
+    // vence o atualizado_em mais novo. Recalcula o restante das bobinas tocadas. Devolve quantas mudaram algo.
+    int aplicar_remotos(const std::vector<ItemRemoto>& itens);
+    // Chave e valor guardados no próprio banco (pc_id, rev da sincronização).
+    std::string config_local(const std::string& chave) const;
+    void        gravar_config_local(const std::string& chave, const std::string& valor);
+    // UUID do computador, criado na primeira vez (03-SERVIDOR §3).
+    std::string id_do_computador();
 
 private:
     explicit FilunaDb(sqlite3* db, Relogio relogio);

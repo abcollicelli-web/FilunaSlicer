@@ -1,6 +1,7 @@
 #include "FilunaDados.hpp"
 
 #include "FilunaPanel.hpp"
+#include "FilunaSync.hpp"
 #include "GUI.hpp"
 #include "GUI_App.hpp"
 #include "I18N.hpp"
@@ -55,9 +56,14 @@ F::FilunaDb& filuna_db()
         boost::filesystem::create_directories(pasta);
         db = F::FilunaDb::abrir((pasta / "filuna.db").string());
         BOOST_LOG_TRIVIAL(info) << "Filuna: banco local aberto, esquema " << db->versao_esquema();
+        // Cópia no servidor (03-SERVIDOR §4): a sincronização usa uma conexão própria do mesmo arquivo.
+        FilunaSync::instancia().iniciar((pasta / "filuna.db").string(), wxGetApp().app_config->get("filuna_token"),
+                                        [] { wxGetApp().CallAfter([] { FilunaPanel::broadcast("estoque"); }); });
     }
     return *db;
 }
+
+void filuna_sync_avisar() { FilunaSync::instancia().avisar(wxGetApp().app_config->get("filuna_token")); }
 
 namespace {
 
@@ -137,6 +143,11 @@ std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
         return std::nullopt;
 
     F::FilunaDb& db = filuna_db();
+    // Ações que gravam no banco: a sincronização sobe em 5 segundos (03-SERVIDOR §4).
+    static const char* const GRAVAM[] = {"estoque.criar", "estoque.pesar", "estoque.arquivar", "estoque.abrir", "estoque.local",
+                                         "trabalho.finalizar", "produto.unir", "manutencao.adicionar", "manutencao.registrar"};
+    if (std::any_of(std::begin(GRAVAM), std::end(GRAVAM), [&acao](const char* g) { return acao == g; }))
+        wxGetApp().CallAfter([] { filuna_sync_avisar(); });
 
     if (acao == "estoque.listar") {
         const auto tipos = mapa_tipos(db);
@@ -311,8 +322,15 @@ std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
         db.registrar_manutencao_feita(id, d.value("obs", std::string()));
         return json::object();
     }
-    if (acao == "sync.estado")
-        return json{{"pendentes", db.pendentes_sincronizacao()}};
+    if (acao == "sync.estado") {
+        const FilunaSync::Estado e = FilunaSync::instancia().estado();
+        return json{{"pendentes", db.pendentes_sincronizacao()}, {"ligado", e.ligado}, {"rev", e.rev},
+                    {"ultimo_ok", e.ultimo_ok}, {"ultimo_erro", e.ultimo_erro}};
+    }
+    if (acao == "sync.agora") {
+        filuna_sync_avisar();
+        return json::object();
+    }
     throw std::invalid_argument("ação de dados desconhecida: " + acao);
 }
 
@@ -508,6 +526,7 @@ void filuna_registrar_envio(wxWindow* parent)
                 db.confirmar_bobina(trabalho, static_cast<int>(i), escolhidas[i]);
         db.marcar_estado(trabalho, "enviado");
         avisar_telas();
+        filuna_sync_avisar();
     } catch (const std::exception& e) {
         BOOST_LOG_TRIVIAL(error) << "Filuna: registrar envio: " << e.what();
     }
