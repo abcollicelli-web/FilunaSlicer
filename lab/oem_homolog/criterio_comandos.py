@@ -26,11 +26,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from paridade import CAMADA, normalizado  # noqa: E402
 
 
-def comandos(p: Path) -> list[bytes]:
-    return [l for l in normalizado(p).splitlines() if l.strip() and not l.startswith(b";") and not l.startswith(b"M73")]
+def comandos(p: Path) -> list[str]:
+    return [l.decode("utf-8", "replace") for l in normalizado(p).splitlines()
+            if l.strip() and not l.startswith(b";") and not l.startswith(b"M73")]
 
 
-def camadas_cmd(p: Path) -> list[tuple[bytes, ...]]:
+def camadas_cmd(p: Path) -> list[tuple[bytes, ...]]:  # bytes: só igualdade, sem difflib
     out, cur = [], []
     for l in normalizado(p).splitlines():
         if CAMADA.match(l):
@@ -42,12 +43,12 @@ def camadas_cmd(p: Path) -> list[tuple[bytes, ...]]:
     return out
 
 
-def forma(l: bytes) -> bytes:
-    return re.sub(rb"[-\d.]+", b"#", l)
+def forma(l: str) -> str:
+    return re.sub(r"[-\d.]+", "#", l)
 
 
-def diferentes(a: list[bytes], b: list[bytes]) -> list[bytes]:
-    return [l for l in difflib.unified_diff(a, b, lineterm=b"", n=0) if l[:1] in b"+-" and l[:3] not in (b"+++", b"---")]
+def diferentes(a: list[str], b: list[str]) -> list[str]:
+    return [l for l in difflib.unified_diff(a, b, lineterm="", n=0) if l[:1] in "+-" and l[:3] not in ("+++", "---")]
 
 
 def main() -> int:
@@ -83,7 +84,7 @@ def main() -> int:
                     if entre_oficiais and dc and all(forma(l[1:]) in entre_oficiais for l in dc):
                         exemplo = sorted(entre_oficiais)[:3]
                         motivo = ("só linhas que o próprio oficial muda entre duas execuções: "
-                                  + ", ".join(e.decode("utf-8", "replace") for e in exemplo))
+                                  + ", ".join(exemplo))
             if motivo:
                 c["veredito_antes"], c["veredito"], c["criterio"] = c["veredito"], "IDENTICO_POR_COMANDO", motivo
                 rev += 1
