@@ -805,3 +805,8 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - Fase 7 (atualização automática pelo servidor Filuna);
   - Fase 8 (telas de Modelos e Paramétricos; o backup da configuração dos paramétricos entra junto com elas);
   - decisão sobre a Creality CFS.
+
+### Servidor — endurecimento de acesso (13/11/2026)
+- **Feito com ordem do proprietário:** entrada só por chave, bloqueio automático de quem erra a senha, firewall, backup diário com teste de restauração, prioridade de CPU para o site e atualização do sistema.
+- **Detalhes operacionais** (chaves, arquivos e procedimento de emergência): só no servidor e no repositório privado do site. Este repositório é público e não guarda detalhes de segurança.
+- **Ainda abertos:** cópia do backup fora do servidor, reinício do servidor para a atualização da libc, e o código do site no repositório privado `filuna-site`.
