@@ -747,6 +747,86 @@ std::string FilunaDb::produto_por_assinatura(const std::string& assinatura, cons
     return id;
 }
 
+// --- Vínculo de arquivos ---------------------------------------------------------------------
+
+std::string FilunaDb::registrar_arquivo(const ArquivoLocal& a)
+{
+    Transacao t(m_db);
+    const std::string pc = id_do_computador(), ts = agora();
+    {
+        Comando c(m_db, "SELECT id FROM arquivo_local WHERE pc_id = ?1 AND caminho = ?2 AND COALESCE(sha256, '') = ?3 AND excluido = 0");
+        c.texto(1, pc).texto(2, a.caminho).texto(3, a.sha256);
+        if (c.passo()) {
+            const std::string id = c.texto_em(0);
+            Comando(m_db, "UPDATE arquivo_local SET encontrado = 1, atualizado_em = ?2 WHERE id = ?1").texto(1, id).texto(2, ts).executar();
+            enfileirar("arquivo_local", id, "upsert");
+            t.confirmar();
+            return id;
+        }
+    }
+    const std::string id = novo_uuid();
+    Comando(m_db, "INSERT INTO arquivo_local(id, criado_em, atualizado_em, pc_id, caminho, nome, tamanho_bytes, sha256, modificado_em, encontrado) "
+                  "VALUES(?1, ?2, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1)")
+        .texto(1, id).texto(2, ts).texto(3, pc).texto(4, a.caminho).texto(5, a.nome).inteiro(6, a.tamanho_bytes)
+        .texto_ou_nulo(7, a.sha256).texto_ou_nulo(8, a.modificado_em).executar();
+    enfileirar("arquivo_local", id, "upsert");
+    t.confirmar();
+    return id;
+}
+
+namespace {
+const char* const COLUNAS_ARQUIVO = "a.id, COALESCE(a.pc_id, ''), COALESCE(a.caminho, ''), COALESCE(a.nome, ''), COALESCE(a.sha256, ''), "
+                                    "COALESCE(a.modificado_em, ''), COALESCE(a.tamanho_bytes, 0), a.encontrado";
+}
+
+std::optional<FilunaDb::ArquivoLocal> FilunaDb::arquivo(const std::string& id) const
+{
+    Comando c(m_db, std::string("SELECT ") + COLUNAS_ARQUIVO + " FROM arquivo_local a WHERE a.id = ?1 AND a.excluido = 0");
+    c.texto(1, id);
+    if (!c.passo())
+        return std::nullopt;
+    return ArquivoLocal{c.texto_em(0), c.texto_em(1), c.texto_em(2), c.texto_em(3), c.texto_em(4), c.texto_em(5), c.inteiro_em(6), c.inteiro_em(7) != 0};
+}
+
+std::optional<FilunaDb::ArquivoLocal> FilunaDb::arquivo_do_produto(const std::string& produto_id) const
+{
+    Comando c(m_db, std::string("SELECT ") + COLUNAS_ARQUIVO +
+                        " FROM produto p JOIN arquivo_local a ON a.id = p.arquivo_local_id AND a.excluido = 0 WHERE p.id = ?1");
+    c.texto(1, produto_id);
+    if (!c.passo())
+        return std::nullopt;
+    return ArquivoLocal{c.texto_em(0), c.texto_em(1), c.texto_em(2), c.texto_em(3), c.texto_em(4), c.texto_em(5), c.inteiro_em(6), c.inteiro_em(7) != 0};
+}
+
+void FilunaDb::vincular_arquivo_produto(const std::string& produto_id, const std::string& arquivo_id)
+{
+    Transacao t(m_db);
+    Comando(m_db, "UPDATE produto SET arquivo_local_id = ?2, atualizado_em = ?3 WHERE id = ?1 AND COALESCE(arquivo_local_id, '') <> ?2")
+        .texto(1, produto_id).texto(2, arquivo_id).texto(3, agora()).executar();
+    if (sqlite3_changes(m_db) > 0)
+        enfileirar("produto", produto_id, "upsert");
+    t.confirmar();
+}
+
+void FilunaDb::relocalizar_arquivo(const std::string& id, const std::string& caminho)
+{
+    Transacao t(m_db);
+    Comando(m_db, "UPDATE arquivo_local SET caminho = ?2, pc_id = ?3, encontrado = 1, atualizado_em = ?4 WHERE id = ?1")
+        .texto(1, id).texto(2, caminho).texto(3, id_do_computador()).texto(4, agora()).executar();
+    enfileirar("arquivo_local", id, "upsert");
+    t.confirmar();
+}
+
+void FilunaDb::marcar_arquivo_ausente(const std::string& id)
+{
+    Transacao t(m_db);
+    Comando(m_db, "UPDATE arquivo_local SET encontrado = 0, atualizado_em = ?2 WHERE id = ?1 AND encontrado = 1")
+        .texto(1, id).texto(2, agora()).executar();
+    if (sqlite3_changes(m_db) > 0)
+        enfileirar("arquivo_local", id, "upsert");
+    t.confirmar();
+}
+
 void FilunaDb::unir_produtos(const std::string& de, const std::string& para)
 {
     Transacao t(m_db);

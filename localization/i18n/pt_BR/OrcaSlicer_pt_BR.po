@@ -36635,3 +36635,11 @@ msgstr "Filamento %1% (%2%) — %3% g"
 # AI Translated
 msgid "Do not record this print"
 msgstr "Não registrar esta impressão"
+
+# AI Translated
+msgid "Locate file"
+msgstr "Localizar arquivo"
+
+# AI Translated
+msgid "This file is different from the original one. Use it anyway?"
+msgstr "Este arquivo é diferente do original. Usar mesmo assim?"

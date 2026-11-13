@@ -26,6 +26,8 @@
 #include <wx/button.h>
 #include <wx/choice.h>
 #include <wx/dialog.h>
+#include <wx/msgdlg.h>
+#include <wx/filedlg.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 
@@ -134,11 +136,23 @@ std::string agora_menos_dias(int dias)
 
 void avisar_telas() { FilunaPanel::broadcast("estoque"); }
 
+// Situação do arquivo do produto: "aqui" (abre), "ausente" (não está no caminho) ou "outro_pc".
+json arquivo_json(F::FilunaDb& db, const std::string& produto_id)
+{
+    const auto a = produto_id.empty() ? std::nullopt : db.arquivo_do_produto(produto_id);
+    if (!a)
+        return json();
+    std::string situacao = "outro_pc";
+    if (a->pc_id == db.id_do_computador())
+        situacao = boost::filesystem::exists(a->caminho) ? "aqui" : "ausente";
+    return json{{"nome", a->nome}, {"situacao", situacao}};
+}
+
 } // namespace
 
 std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
 {
-    static const char* const PREFIXOS[] = {"estoque.", "bobina.", "historico.", "trabalho.", "produto.", "painel.", "previsao.", "manutencao.", "sync."};
+    static const char* const PREFIXOS[] = {"estoque.", "bobina.", "historico.", "trabalho.", "produto.", "painel.", "previsao.", "manutencao.", "sync.", "arquivo."};
     if (std::none_of(std::begin(PREFIXOS), std::end(PREFIXOS), [&acao](const char* p) { return acao.rfind(p, 0) == 0; }))
         return std::nullopt;
 
@@ -241,7 +255,8 @@ std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
                          {"previsto_g", t.previsto_g},
                          {"real_g", t.real_g},
                          {"estimado", t.estimado},
-                         {"bobinas", t.bobinas}});
+                         {"bobinas", t.bobinas},
+                         {"arquivo", arquivo_json(db, t.produto_id)}});
         return json{{"trabalhos", l}};
     }
     if (acao == "trabalho.finalizar") {
@@ -321,6 +336,39 @@ std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
     if (acao == "manutencao.registrar") {
         db.registrar_manutencao_feita(id, d.value("obs", std::string()));
         return json::object();
+    }
+    if (acao == "arquivo.abrir" || acao == "arquivo.localizar") {
+        const auto a = db.arquivo_do_produto(d.value("produto_id", std::string()));
+        if (!a)
+            throw std::runtime_error("Este produto não tem arquivo ligado.");
+        std::string caminho = a->caminho;
+        if (acao == "arquivo.localizar") {
+            wxFileDialog dlg(wxGetApp().mainframe, _L("Locate file"), wxEmptyString, from_u8(a->nome),
+                             "3MF, STL, OBJ, STEP (*.3mf;*.stl;*.obj;*.step;*.stp)|*.3mf;*.3MF;*.stl;*.STL;*.obj;*.OBJ;*.step;*.STEP;*.stp;*.STP",
+                             wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+            if (dlg.ShowModal() != wxID_OK)
+                return json{{"aberto", false}};
+            caminho = into_u8(dlg.GetPath());
+            const std::string sha = F::sha256_de_arquivo(caminho);
+            if (!a->sha256.empty() && sha != a->sha256 &&
+                wxMessageDialog(wxGetApp().mainframe, _L("This file is different from the original one. Use it anyway?"), _L("Locate file"),
+                                wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION).ShowModal() != wxID_YES)
+                return json{{"aberto", false}};
+            db.relocalizar_arquivo(a->id, caminho);
+            filuna_sync_avisar();
+        } else if (a->pc_id != db.id_do_computador() || !boost::filesystem::exists(caminho)) {
+            if (a->pc_id == db.id_do_computador())
+                db.marcar_arquivo_ausente(a->id);
+            return json{{"aberto", false}, {"situacao", a->pc_id == db.id_do_computador() ? "ausente" : "outro_pc"}};
+        }
+        wxGetApp().CallAfter([caminho] {
+            Plater* plater = wxGetApp().plater();
+            if (boost::filesystem::path(caminho).extension().string() == ".3mf")
+                plater->load_project(from_u8(caminho));
+            else
+                plater->load_files(std::vector<boost::filesystem::path>{boost::filesystem::path(caminho)});
+        });
+        return json{{"aberto", true}};
     }
     if (acao == "sync.estado") {
         const FilunaSync::Estado e = FilunaSync::instancia().estado();
@@ -508,6 +556,18 @@ void filuna_registrar_envio(wxWindow* parent)
         if (nome_produto.empty() && !plater->model().objects.empty())
             nome_produto = plater->model().objects.front()->name;
         const std::string produto = assinatura.empty() ? std::string() : db.produto_por_assinatura(assinatura, nome_produto);
+        // Vínculo com o arquivo do projeto (ou do primeiro modelo): só caminho, nome, tamanho e SHA-256.
+        std::string arquivo = into_u8(plater->get_project_filename(".3mf"));
+        if ((arquivo.empty() || !boost::filesystem::exists(arquivo)) && !plater->model().objects.empty())
+            arquivo = plater->model().objects.front()->input_file;
+        if (!produto.empty() && !arquivo.empty() && boost::filesystem::exists(arquivo)) {
+            F::FilunaDb::ArquivoLocal a;
+            a.caminho       = arquivo;
+            a.nome          = boost::filesystem::path(arquivo).filename().string();
+            a.tamanho_bytes = static_cast<std::int64_t>(boost::filesystem::file_size(arquivo));
+            a.sha256        = F::sha256_de_arquivo(arquivo);
+            db.vincular_arquivo_produto(produto, db.registrar_arquivo(a));
+        }
 
         std::string impressora_nome = wxGetApp().preset_bundle->physical_printers.get_selected_printer_name();
         if (impressora_nome.empty())

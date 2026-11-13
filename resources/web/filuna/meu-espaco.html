@@ -422,7 +422,9 @@ function historico() {
 			l.map(function (t, k) {
 				var aberto = t.estado == "fatiado" || t.estado == "enviado" || t.estado == "imprimindo";
 				var dt = new Date(t.criado_em), quando = isNaN(dt) ? "" : dt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-				return "<tr><td>" + E(quando) + "</td><td><b>" + E(t.produto || "Sem nome") + "</b></td><td>" + E(t.impressora || "—") + "</td>" +
+				var arq = t.arquivo ? (t.arquivo.situacao == "aqui" ? "<br><a class='s' data-abrir='" + k + "' style='color:var(--mag);cursor:pointer'>Abrir " + E(t.arquivo.nome) + "</a>"
+					: "<br><span class='s'>" + (t.arquivo.situacao == "ausente" ? "Arquivo não encontrado neste computador" : "Arquivo em outro computador") + "</span> <a class='s' data-localizar='" + k + "' style='color:var(--mag);cursor:pointer'>Localizar arquivo</a>") : "";
+				return "<tr><td>" + E(quando) + "</td><td><b>" + E(t.produto || "Sem nome") + "</b>" + arq + "</td><td>" + E(t.impressora || "—") + "</td>" +
 					"<td>" + Filuna.gramas(aberto ? t.previsto_g : t.real_g) + (t.estimado ? " <span class='s'>(estimado)</span>" : "") + "</td>" +
 					"<td>" + (t.tempo_real_s != null ? Filuna.tempo(t.tempo_real_s) : t.tempo_previsto_s != null ? Filuna.tempo(t.tempo_previsto_s) : "—") + "</td>" +
 					"<td>" + E(ESTADO_TRAB[t.estado] || t.estado) + "</td>" +
@@ -440,6 +442,11 @@ function historico() {
 		el().querySelectorAll("[data-ok]").forEach(function (x) { x.onclick = function () { fim(l[+x.dataset.ok], "concluido"); }; });
 		el().querySelectorAll("[data-cancel]").forEach(function (x) { x.onclick = function () { fim(l[+x.dataset.cancel], "cancelado"); }; });
 		el().querySelectorAll("[data-falha]").forEach(function (x) { x.onclick = function () { fim(l[+x.dataset.falha], "falhou"); }; });
+		var arquivo = function (t, acao) {
+			Filuna.nativo(acao, { produto_id: t.produto_id }).then(function (r) { if (!r.aberto && r.situacao) historico(); }, function (e) { falha(e); });
+		};
+		el().querySelectorAll("[data-abrir]").forEach(function (x) { x.onclick = function () { arquivo(l[+x.dataset.abrir], "arquivo.abrir"); }; });
+		el().querySelectorAll("[data-localizar]").forEach(function (x) { x.onclick = function () { arquivo(l[+x.dataset.localizar], "arquivo.localizar"); }; });
 	}, function (e) { document.getElementById("r").outerHTML = '<div id="r" class="erro">' + E(e.erro || e.message) + "</div>"; });
 }
 

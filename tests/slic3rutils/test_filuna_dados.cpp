@@ -497,3 +497,38 @@ TEST_CASE("Código de bobina repetido vindo de outro computador ganha sufixo", "
     CHECK(b->bobina(ba)->codigo == "B-0001-" + ba.substr(0, 4));
     CHECK(b->bobinas().size() == 2);
 }
+
+TEST_CASE("Vínculo de arquivo do produto e Localizar arquivo", "[FilunaDados]")
+{
+    // SHA-256 do arquivo em blocos = SHA-256 do conteúdo.
+    const auto caminho = (boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("filuna-%%%%%%.stl")).string();
+    {
+        std::FILE* f = std::fopen(caminho.c_str(), "wb");
+        REQUIRE(f);
+        std::fputs("solid cubo", f);
+        std::fclose(f);
+    }
+    const std::string sha = sha256_de_arquivo(caminho);
+    CHECK(sha == sha256_hex("solid cubo"));
+    CHECK(sha256_de_arquivo(caminho + ".nao-existe").empty());
+
+    auto db = banco_em_memoria();
+    const std::string produto = db->produto_por_assinatura("abc", "Cubo");
+    FilunaDb::ArquivoLocal a;
+    a.caminho = caminho;
+    a.nome    = "cubo.stl";
+    a.sha256  = sha;
+    a.tamanho_bytes = 10;
+    const std::string arq = db->registrar_arquivo(a);
+    CHECK(db->registrar_arquivo(a) == arq); // mesmo arquivo neste computador: mesma linha
+    db->vincular_arquivo_produto(produto, arq);
+    REQUIRE(db->arquivo_do_produto(produto));
+    CHECK(db->arquivo_do_produto(produto)->caminho == caminho);
+    CHECK(db->arquivo_do_produto(produto)->pc_id == db->id_do_computador());
+    db->marcar_arquivo_ausente(arq);
+    CHECK_FALSE(db->arquivo(arq)->encontrado);
+    db->relocalizar_arquivo(arq, caminho + ".novo");
+    CHECK(db->arquivo(arq)->encontrado);
+    CHECK(db->arquivo(arq)->caminho == caminho + ".novo");
+    boost::filesystem::remove(caminho);
+}

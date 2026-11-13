@@ -146,6 +146,23 @@ public:
                                             std::optional<std::int64_t> tempo_informado_s = std::nullopt,
                                             std::optional<int>          camada_parada     = std::nullopt);
 
+    // --- Vínculo de arquivos (03-SERVIDOR §3): o arquivo 3D nunca sobe, só esta linha ---
+    struct ArquivoLocal
+    {
+        std::string  id, pc_id, caminho, nome, sha256, modificado_em;
+        std::int64_t tamanho_bytes = 0;
+        bool         encontrado    = true;
+    };
+    // Reaproveita a linha do mesmo arquivo neste computador (caminho e SHA-256) ou cria uma.
+    std::string registrar_arquivo(const ArquivoLocal& a);
+    std::optional<ArquivoLocal> arquivo(const std::string& id) const;
+    // Arquivo do produto (o último usado para imprimi-lo).
+    std::optional<ArquivoLocal> arquivo_do_produto(const std::string& produto_id) const;
+    void                        vincular_arquivo_produto(const std::string& produto_id, const std::string& arquivo_id);
+    // O cliente apontou onde o arquivo está agora (neste computador).
+    void relocalizar_arquivo(const std::string& id, const std::string& caminho);
+    void marcar_arquivo_ausente(const std::string& id);
+
     // --- Painel (§9, §10) ---
     struct Desperdicio
     {

@@ -129,6 +129,8 @@ struct VolumeMalha
     std::vector<std::int32_t> indices;  // 3 por triângulo
 };
 std::string sha256_hex(const std::string& dados);
+// SHA-256 do arquivo (caminho UTF-8), lido em blocos. Vazio se não abrir.
+std::string sha256_de_arquivo(const std::string& caminho_utf8);
 std::string assinatura_objeto(const std::vector<VolumeMalha>& volumes, double escala_x, double escala_y, double escala_z);
 std::string assinatura_produto(std::vector<std::string> assinaturas_objetos);
 inline std::string assinatura_catalogo(const std::string& id_catalogo) { return "catalogo:" + id_catalogo; }

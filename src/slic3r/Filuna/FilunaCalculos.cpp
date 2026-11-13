@@ -2,6 +2,8 @@
 
 #include <openssl/evp.h>
 
+#include <boost/nowide/fstream.hpp>
+
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -193,6 +195,35 @@ std::optional<std::string> sugerir_bobina(const std::vector<BobinaCandidata>& bo
     if (escolhida)
         return escolhida->id;
     return std::nullopt;
+}
+
+std::string sha256_de_arquivo(const std::string& caminho_utf8)
+{
+    boost::nowide::ifstream f(caminho_utf8, std::ios::binary);
+    if (!f)
+        return {};
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (!ctx || EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
+        EVP_MD_CTX_free(ctx);
+        return {};
+    }
+    std::vector<char> bloco(1 << 16);
+    while (f) {
+        f.read(bloco.data(), static_cast<std::streamsize>(bloco.size()));
+        if (f.gcount() > 0)
+            EVP_DigestUpdate(ctx, bloco.data(), static_cast<std::size_t>(f.gcount()));
+    }
+    unsigned char md[EVP_MAX_MD_SIZE];
+    unsigned int  n = 0;
+    EVP_DigestFinal_ex(ctx, md, &n);
+    EVP_MD_CTX_free(ctx);
+    static const char* const HEX = "0123456789abcdef";
+    std::string out;
+    for (unsigned int k = 0; k < n; ++k) {
+        out += HEX[md[k] >> 4];
+        out += HEX[md[k] & 15];
+    }
+    return out;
 }
 
 std::string sha256_hex(const std::string& dados)
