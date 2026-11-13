@@ -10,7 +10,8 @@ class MakerHttpHandle
 {
 public:
     static MakerHttpHandle& getInstance() { static MakerHttpHandle h; return h; }
-    void get_qidi_model_list(std::function<void(std::string, unsigned)>) {}
+    // aceita qualquer assinatura de retorno (sucesso, erro): nunca chama nenhum dos dois
+    template<class... A> void get_qidi_model_list(A&&...) {}
 };
 
 }} // namespace Slic3r::GUI
