@@ -63,6 +63,12 @@ jobs:
         with:
           path: oem/deps/build
           key: deps-${{ matrix.id }}-${{ matrix.commit }}-v1
+      - name: Configuração .env (Elegoo lê este arquivo não versionado; o build_linux.sh passa o mesmo por -D)
+        if: steps.sel.outputs.go == '1' && matrix.id == 'elegoo'
+        shell: pwsh
+        working-directory: oem
+        run: |
+          @("ELEGOO_INTERNAL_TESTING=0", "ELEGOO_ENABLE_DEBUG_OUTPUT=0", "ELEGOO_CHINA_IOT_URL=", "ELEGOO_GLOBAL_IOT_URL=", "ELEGOO_CHINA_UPDATE_URL=", "ELEGOO_GLOBAL_UPDATE_URL=") | Set-Content .env
       - name: Dependências (script do próprio fabricante)
         if: steps.sel.outputs.go == '1' && steps.deps.outputs.cache-hit != 'true'
         shell: cmd
@@ -107,9 +113,11 @@ jobs:
           $inst = Get-ChildItem -Path oem/build -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'resources') } | Select-Object -First 1
           $exe = Join-Path $inst.FullName $m.executavel
           New-Item -ItemType Directory -Force prova | Out-Null
-          $p = Start-Process -FilePath $exe -ArgumentList @('--slice','0','--export-gcode','--outputdir','prova','filuna/fixtures/cube20.stl') -PassThru -Wait -NoNewWindow
-          "rc=$($p.ExitCode)"; Get-ChildItem prova
-          if (-not (Get-ChildItem prova -Filter *.gcode)) { throw "a prova --slice não gerou G-code (rc=$($p.ExitCode))" }
+          # Prova de execução: o CLI sobe e responde (DLLs completas). A identidade do G-code é provada pela
+          # régua Linux (res/paridade-*); o CLI do Orca não tem --export-gcode e fatiar exige perfis carregados.
+          $out = & $exe --help 2>&1 | Out-String
+          "rc=$LASTEXITCODE"; $out.Substring(0, [Math]::Min(400, $out.Length))
+          if ($LASTEXITCODE -ne 0 -or $out.Length -lt 50) { throw "o CLI não respondeu ao --help (rc=$LASTEXITCODE)" }
       - name: Publicar artefatos
         if: steps.sel.outputs.go == '1'
         uses: actions/upload-artifact@v4
