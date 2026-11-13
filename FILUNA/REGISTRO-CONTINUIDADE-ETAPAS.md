@@ -735,3 +735,42 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - A barra de peso das cores muito claras usa `#9A948C`.
 - **Aprovado pelo proprietário:** "Agora está perfeita" (2ª versão; a 1ª foi recusada).
 - Vai no próximo pacote. O mesmo desenho deve ser usado no app Android, para a bobina ficar igual nos dois.
+
+### V1 — Etiqueta da bobina: QR, NFC e desenho no site e no app (13/11/2026)
+- **Pedido do proprietário:** o desenho da bobina no site e no Android; o estoque gera QR que o celular lê na etiqueta; o celular grava etiqueta NFC para as impressoras que leem bobina por RFID. Instrução: "Faça as que o sistema permite e coloque a informação no site e no Android quando o cliente ter uma impressora permitida".
+- **QR:** o texto é `FLN-<id da bobina>`, o mesmo que o scanner do app já procura.
+  - Gerador próprio `qr.js` (SVG, sem dependências; modo byte, correção M, versões 1 a 10). Conferido com zxing nas 10 versões e no print da etiqueta.
+  - No Slicer, `bobina.etiqueta` passa a devolver `FLN-<id local>`. **Decisão:** na sincronização (Fase 6), a bobina vai para `farm_bobinas` **com o mesmo id**. Assim a etiqueta impressa antes de sincronizar continua valendo.
+- **Formatos de etiqueta NFC:**
+
+  | Formato | Impressoras | Chip | Situação |
+  |---|---|---|---|
+  | ELEGOO Canvas | Centauri Carbon 2 | NTAG213, páginas 4–24 em bytes crus | Feito. Layout da comunidade (DnG-Crafts/ELG-RFID), conferido byte a byte com o canvas-rfid-tool (MIT). O guia oficial da ELEGOO não bate com o que a impressora lê. |
+  | OpenSpool | Snapmaker U1 com o firmware estendido da comunidade (paxx12), e leitores OpenSpool | NDEF `application/json` em NTAG215/216 | Feito |
+  | Bambu Lab | — | Etiqueta assinada pela fábrica | Impossível. O site mostra o aviso e indica o QR. |
+  | Creality CFS | — | MIFARE Classic com chave AES extraída pela comunidade | **Fora, até decisão do proprietário** (risco jurídico) |
+  | Anycubic ACE e QIDI | — | — | Formato ainda não pesquisado |
+
+  - A etiqueta não guarda o id da bobina, porque não cabe junto do formato da ELEGOO. Depois de gravar, o app liga o UID do chip à bobina (`app_tags_bobina`). Ler a etiqueta pelo celular abre a bobina.
+  - Uma etiqueta de fábrica lida e cadastrada também fica ligada à bobina.
+- **Site** (branch local `site-v2/etiquetas-nfc` no servidor, commit `fd59871`; **não publicado**):
+  - `app/etiquetas.py`: mapa de modelo para formato, páginas da ELEGOO, JSON do OpenSpool e leitura da ELEGOO.
+  - Estoque: desenho da bobina (`static/js/bobina.js`, o mesmo do Slicer), botão Etiqueta e aviso de NFC quando o cliente tem impressora compatível.
+  - `/farm/estoque/etiqueta/<id>`: etiqueta para imprimir (desenho, QR e código); dados da etiqueta NFC; comandos para gravar pelo iPhone com o app NFC Tools.
+  - API do app:
+    - `GET /app/estoque/nfc`
+    - `GET /app/estoque/nfc/<bobina>?formato=`
+    - `POST /app/estoque/nfc-gravada`
+    - `POST /app/estoque/nfc-ler`
+    - `/app/eu` traz `nfc`.
+  - Migração nova: tabela `app_tags_bobina`.
+  - Testes: 26 PASS (`test_etiquetas.py` e `test_etiqueta_qr_e_nfc`).
+- **App Android** (`/opt/filuna-app`, backup em `/root/filuna-app-antes-nfc-20261113.tgz`; **não compilado em APK nem publicado**):
+  - `Bobina.kt`: o mesmo desenho, em Compose. Substitui a bolinha de cor no Estoque, no scanner e no ajuste.
+  - `Nfc.kt`: gravar ELEGOO (páginas, com conferência lendo de volta), gravar OpenSpool (NDEF), ler etiqueta e cadastrar bobina de etiqueta de fábrica.
+  - As opções "Ler etiqueta NFC" e "Gravar etiqueta NFC" só aparecem quando o cliente tem impressora compatível. O app avisa quando o celular não tem NFC ou quando o NFC está desligado.
+  - Permissão `NFC`, com `android.hardware.nfc` opcional.
+  - `compileDebugKotlin` passou.
+- **Falta:**
+  - aprovação do proprietário para publicar o site, compilar e liberar o APK beta e enviar o próximo build do Slicer;
+  - teste real de gravação numa NTAG213 com a Centauri Carbon 2 do proprietário.
