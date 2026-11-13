@@ -44,8 +44,16 @@ UUID_LIVRE = re.compile(rb"^;\s*\w*uuid\s*[:=]\s*[0-9a-f-]{32,36}\s*$", re.I)
 ID_OBJETO = re.compile(rb"(id[:_])(\d{9,})")
 
 
+# Rótulos de "cancelar objeto" do PrusaSlicer (M486 S<n>, lista objects_info): a numeração sai de um
+# std::map indexado pelo ENDEREÇO de memória de cada ModelObject (LabelObjects::init), então muda entre
+# compilações do mesmo código. Mesmo tratamento do id: o número vira a ordem da primeira aparição, e a
+# lista objects_info é comparada em ordem canônica. A geometria de cada objeto continua conferida.
+M486 = re.compile(rb"^M486 S(\d+)")
+OBJ_INFO = re.compile(rb"^(; \[printer_metadata\] objects_info=)(.*)$")
+
+
 def normalizado(p: Path) -> bytes:
-    linhas, ordem = [], {}
+    linhas, ordem, rotulos = [], {}, {}
 
     def troca(m):
         n = ordem.setdefault(m.group(2), len(ordem) + 1)
@@ -56,6 +64,18 @@ def normalizado(p: Path) -> bytes:
         if CABECALHO.match(ln) or DATA_LIVRE.match(ln) or UUID_LIVRE.match(ln):
             linhas.append(b"; <cabecalho-normalizado>")
         else:
+            m = M486.match(ln)
+            if m and m.group(1) != b"-1":
+                n = rotulos.setdefault(m.group(1), len(rotulos))
+                ln = b"M486 S" + str(n).encode() + ln[m.end():]
+            m = OBJ_INFO.match(ln)
+            if m:
+                try:
+                    j = json.loads(m.group(2))
+                    j["objects"] = sorted(j.get("objects", []), key=lambda o: json.dumps(o, sort_keys=True))
+                    ln = m.group(1) + json.dumps(j, sort_keys=True, separators=(",", ":")).encode()
+                except ValueError:
+                    pass
             linhas.append(ID_OBJETO.sub(troca, ln))
     return b"\n".join(linhas)
 
