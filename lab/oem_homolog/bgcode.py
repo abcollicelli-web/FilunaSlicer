@@ -54,10 +54,9 @@ def _heatshrink(dados: bytes, w: int, l: int) -> bytes:
             if n is None:
                 break
             off, n = i + 1, n + 1
-            if off > len(saida):
-                raise ValueError("bgcode: referência heatshrink fora da janela")
+            # a janela do heatshrink começa preenchida com zeros: referência antes do início dá 0
             for _ in range(n):
-                saida.append(saida[-off])
+                saida.append(saida[-off] if off <= len(saida) else 0)
     return bytes(saida)
 
 
