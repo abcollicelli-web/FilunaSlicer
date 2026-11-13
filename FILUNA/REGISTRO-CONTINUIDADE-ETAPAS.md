@@ -845,7 +845,8 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - **Updater da Bambu desligado:** a chamada `preset_updater->sync(...)` (que gerava `[Orca Updater] status=400` no log) saiu; perfis e recursos passam a vir do canal Filuna. O `check_new_version_sf` continua (já aponta para o filuna3d.com).
   - `versoes.listar` agora devolve também os recursos instalados (id → versão); motor novo `atualizacao` (Filuna Atualização 1.0.0) em `FilunaVersoes`.
   - Testes: +2 casos `[FilunaDados]` (29 casos, 202 verificações, todos PASS): ponteiro/poda/validação e base64/Ed25519 com par gerado para o teste.
+- **Pacote `telas` no servidor (13/11):** `lab/oem_homolog/publicar_modulos.py` ganhou `--slicer-repo`/`--slicer-ref` (branch `filuna/homologacao-oem-8`, commit 32714e650): extrai `resources/web/filuna` do fork no ref dado, zipa na raiz (layout do FilunaRecursos) com datas fixas e publica como módulo `telas` com a versão do motor lida de `FilunaVersoes.hpp` no mesmo ref. Catálogo regenerado e assinado com `telas 1.2.0` (zip de 58 KB, 9 arquivos na raiz; assinatura conferida com `openssl pkeyutl -verify`; rota segue exigindo token). Canal do módulo começa em `beta` (só admin vê) — promover a `todos` em `/admin/modulos` depois do aceite.
 - **Falta para fechar a Fase 7:**
-  - empacotar `telas`, `autoajuda` e `perfis` no catálogo (hoje só há módulos de fabricante): estender `lab/oem_homolog/publicar_modulos.py` para incluir recursos de uma pasta extra, com os mesmos sha256/assinatura;
+  - `autoajuda` e `perfis` como recursos (é só acrescentar em `RECURSOS_SLICER` quando existirem como pasta no fork);
   - preencher `slicer_versoes` na config quando houver release (aviso de binário novo);
-  - aceite do guia: publicar um pacote `telas` de teste → o programa aplica sem reinstalar; corromper de propósito → recusa e mantém a versão.
+  - aceite do guia no PC do dono (QA v4, com o build que contiver e4b0469cb): pacote `telas` aplicado sem reinstalar; pacote corrompido de propósito → recusa e mantém a versão.
