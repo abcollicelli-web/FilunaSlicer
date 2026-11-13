@@ -202,16 +202,35 @@ def main() -> int:
             # O resultado medido fica junto, para ninguém confundir bloqueio com falta de teste.
             for k in ("motor", "cores"):
                 homolog[k] = {"estado": bloqueio["estado"], "motivo": bloqueio["motivo"], "medido": homolog[k]}
+        politica = mod.get("engine_policy")
+        if politica and politica.get("modo") == "ORCA_NATIVO":
+            # decisão do proprietário: o motor é o Orca nativo do Filuna (sem módulo de motor do fabricante);
+            # rede/controle/câmera/cores pelo módulo Filuna; só as máquinas com perfil Orca ficam disponíveis.
+            for k in ("motor", "cores"):
+                homolog[k] = {"estado": "HOMOLOGADO_MOTOR_ORCA", "modo": "ORCA_NATIVO", "nota": politica["nota_catalogo"],
+                              "gcode_identico_ao_oficial": False, "medido_no_oficial": homolog[k]}
+            homolog["impressao_fisica"] = {"estado": "PENDENTE_TESTE_DO_PROPRIETARIO",
+                                           "impressora": politica.get("teste_fisico", {}).get("impressora")}
+            # os perfis do binário oficial exigem o motor oficial (ex.: retraction_distances_when_cut=0 fora da faixa
+            # do Orca): não são servidos; valem os perfis Anycubic do Orca, já na base do Filuna
+            componentes = [c for c in componentes if c["tipo"] not in ("profiles", "engine")]
+            homolog["perfis"] = {"estado": "HOMOLOGADO_PERFIS_ORCA", "nota": politica["perfis"],
+                                 "impressoras": politica["impressoras_disponiveis"]}
         internos = [v["estado"] for k, v in homolog.items() if k != "impressao_fisica"]
         estado = ("HOMOLOGADO_INTERNO" if all(e.startswith("HOMOLOGADO") for e in internos)
                   else bloqueio["estado"] if bloqueio else "EM_TESTE")
+        if politica and politica.get("modo") == "ORCA_NATIVO" and estado == "HOMOLOGADO_INTERNO":
+            estado = "HOMOLOGADO_INTERNO_MOTOR_ORCA"
         modulos.append({
             "id": fid, "nome": NOMES[fid], "versao": versao, "estado": estado,
             "fonte": {"repositorio": src.get("repository"), "ref": src.get("tag") or src.get("branch"),
                       "commit": src.get("commit"), "licenca": src.get("license")},
             "conectividade": mod.get("connectivity", {}).get("path"),
             "componentes": componentes, "homologacao": homolog,
-            **({"excecoes": excecoes} if excecoes else {})})
+            **({"excecoes": excecoes} if excecoes else {}),
+            **({"politica_motor": {k: politica[k] for k in ("modo", "nota_catalogo", "impressoras_disponiveis",
+                                                              "impressoras_indisponiveis", "mensagem_indisponivel", "regra_cliente")}}
+               if politica else {})})
 
     if ns.slicer_repo:
         modulos += recursos_slicer(ns.slicer_repo, ns.slicer_ref, ns.destino)
