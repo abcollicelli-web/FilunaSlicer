@@ -1,0 +1,34 @@
+diff --git a/src/slic3r/Anycubic/plugins/info_manage/info_manage_plugin.cpp b/src/slic3r/Anycubic/plugins/info_manage/info_manage_plugin.cpp
+index e515af0b8..955b1f651 100644
+--- a/src/slic3r/Anycubic/plugins/info_manage/info_manage_plugin.cpp
++++ b/src/slic3r/Anycubic/plugins/info_manage/info_manage_plugin.cpp
+@@ -8,6 +8,7 @@
+ #include <slic3r/GUI/MainFrame.hpp>
+ #include <slic3r/GUI/Notebook.hpp>
+ #include <libslic3r/Semver.hpp>
++#include <libslic3r/format.hpp> /* Filuna: Slic3r::format usado nas linhas 394/401 */
+ #include <string>
+ 
+ #include <wx/filename.h>
+@@ -240,7 +241,7 @@ std::string InfoManage::GetModelSlicerInfoMap(bool isPrint, const wxString& last
+                     }
+                 }
+                 if ((isGcodeIndex ? filament_types.size() : info.filamentTypess_slicer.size()) > extruder_id) {
+-                    colorFilamentobjs.filament = isGcodeIndex ? filament_types[extruder_id] : info.filamentTypess_slicer.at(extruder_id);
++                    colorFilamentobjs.filament = isGcodeIndex ? filament_types[extruder_id] : info.filamentTypess_slicer.at(extruder_id).utf8_string(); /* Filuna: ?: com std::string e wxString */
+                 } else {
+                     colorFilamentobjs.filament = get_preset_filament(Slic3r::GUI::into_u8(colorFilamentobjsList[extruder_id].filament_type));
+                 }
+diff --git a/src/slic3r/Anycubic/protocol/check_protocol.cpp b/src/slic3r/Anycubic/protocol/check_protocol.cpp
+index 2d83cbeca..5da3d65dc 100644
+--- a/src/slic3r/Anycubic/protocol/check_protocol.cpp
++++ b/src/slic3r/Anycubic/protocol/check_protocol.cpp
+@@ -12,7 +12,7 @@
+ #include <iguana/json.hpp>
+ #include <utility/json/reader.hxx>
+ 
+-#include <libslic3r/SemVer.hpp>
++#include <libslic3r/Semver.hpp> /* Filuna: Linux distingue maiusculas */
+ #include <slic3r/Utils/Http.hpp>
+ 
+ #include <boost/log/trivial.hpp>
