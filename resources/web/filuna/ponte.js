@@ -226,6 +226,49 @@ var Filuna = (function () {
 
 	// utilidades de tela
 	function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+	// Desenho da bobina com a cor do filamento (hex "#RRGGBB" ou "rgb(r,g,b)"): abas perfuradas e o
+	// filamento com luz e sombra calculadas da cor, para qualquer cor (inclusive branco e preto).
+	var nBobina = 0;
+	function corRgb(c) {
+		c = String(c || "").trim();
+		var m = /^#?([0-9a-f]{6})$/i.exec(c);
+		if (m) return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16)];
+		m = /^#?([0-9a-f]{3})$/i.exec(c);
+		if (m) return [0, 1, 2].map(function (i) { return parseInt(m[1][i] + m[1][i], 16); });
+		m = /rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/i.exec(c);
+		if (m) return [+m[1], +m[2], +m[3]].map(function (v) { return Math.max(0, Math.min(255, v)); });
+		return [194, 24, 91];
+	}
+	function misturar(rgb, alvo, t) { return "rgb(" + rgb.map(function (v, i) { return Math.round(v + (alvo[i] - v) * t); }).join(",") + ")"; }
+	function bobinaSVG(cor, px) {
+		var id = "fb" + (++nBobina), c = corRgb(cor), lum = (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255;
+		var claro = misturar(c, [255, 255, 255], lum > 0.85 ? 0.7 : 0.5), escuro = misturar(c, [0, 0, 0], lum > 0.85 ? 0.2 : 0.45);
+		var base = "rgb(" + c.join(",") + ")", fio = misturar(c, [0, 0, 0], lum > 0.85 ? 0.18 : 0.3);
+		var aba = "#363B59", abaLuz = "#59628C", furo = "#23263B";
+		var furos = "";
+		for (var y = 10, lin = 0; y <= 110; y += 5.6, lin++)
+			for (var x = 74 + (lin % 2 ? 2.8 : 0); x <= 118; x += 5.6) {
+				var dx = (x - 96) / 22, dy = (y - 60) / 55, d = dx * dx + dy * dy;
+				if (d < 0.82 && d > 0.16) furos += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="1.15" fill="' + furo + '"/>';
+			}
+		var voltas = "";
+		for (var k = 0; k < 17; k++) { var yy = (14 + k * 5.7).toFixed(1); voltas += '<line x1="30" x2="96" y1="' + yy + '" y2="' + yy + '" stroke="' + fio + '" stroke-opacity=".22" stroke-width=".6"/>'; }
+		return '<svg class="bobina-svg" viewBox="0 0 124 120" width="' + (px || 64) + '" height="' + (px || 64) + '" aria-hidden="true">' +
+			'<defs><linearGradient id="' + id + 'f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + escuro + '"/><stop offset=".25" stop-color="' + claro + '"/>' +
+			'<stop offset=".55" stop-color="' + base + '"/><stop offset="1" stop-color="' + escuro + '"/></linearGradient>' +
+			'<linearGradient id="' + id + 'a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + abaLuz + '"/><stop offset="1" stop-color="' + aba + '"/></linearGradient></defs>' +
+			'<ellipse cx="30" cy="60" rx="19" ry="55" fill="' + aba + '"/>' +
+			'<path d="M30 8 H96 V112 H30 Z" fill="url(#' + id + 'f)"/>' + voltas +
+			'<path d="M30 8 H96" stroke="' + claro + '" stroke-opacity=".7" stroke-width="1"/>' +
+			'<ellipse cx="96" cy="60" rx="22" ry="55" fill="url(#' + id + 'a)"/>' + furos +
+			'<path d="M96 60 L87 11 A22 55 0 0 1 105 11 Z" fill="url(#' + id + 'f)"/>' +
+			'<path d="M96 60 L79 95 A22 55 0 0 0 88 113 Z" fill="url(#' + id + 'f)"/>' +
+			'<path d="M96 60 L113 95 A22 55 0 0 1 104 113 Z" fill="url(#' + id + 'f)"/>' +
+			'<ellipse cx="96" cy="60" rx="22" ry="55" fill="none" stroke="' + furo + '" stroke-opacity=".55" stroke-width="1.2"/>' +
+			'<ellipse cx="96" cy="60" rx="9" ry="21" fill="' + abaLuz + '"/><ellipse cx="96.6" cy="60" rx="5.5" ry="13" fill="' + furo + '"/>' +
+			'<ellipse cx="96.6" cy="60" rx="2.8" ry="7" fill="#12131F"/></svg>';
+	}
 	function gramas(g) { g = Number(g || 0); return g >= 1000 ? (g / 1000).toFixed(2).replace(".", ",") + " kg" : Math.round(g) + " g"; }
 	function tempo(s) { s = Math.max(0, Math.round(s || 0)); var h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); if (m == 60) { h++; m = 0; } return (h ? h + "h" : "") + (m < 10 && h ? "0" : "") + m + "min"; }
 	function reais(v) { return "R$ " + Number(v || 0).toFixed(2).replace(".", ","); }
@@ -272,5 +315,5 @@ var Filuna = (function () {
 
 	return { nativo: nativo, api: api, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
 		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
-		temToken: function () { return !!token; }, esc: esc, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, telaLogin: telaLogin };
+		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, telaLogin: telaLogin };
 })();

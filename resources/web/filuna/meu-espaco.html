@@ -42,6 +42,8 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 .selcard{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:11px 12px;margin-bottom:10px;cursor:pointer;width:100%;text-align:left}
 .selcard:hover{border-color:#d9d2c8}.selcard .n{font-weight:700;font-size:14px}.selcard .s{font-size:12px;color:var(--muted)}
 .selcard .av{width:30px;height:30px;border-radius:50%;background:var(--magenta-deep);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none;padding:0;border:0}
+.fn .bobina-svg{flex:0 0 auto;margin:-6px 4px -6px -6px;filter:drop-shadow(0 2px 3px rgba(44,42,40,.18))}
+.fil .bobina-svg{flex:0 0 auto;filter:drop-shadow(0 1px 2px rgba(44,42,40,.15))}
 .selcard .av-icone{border-radius:10px;background:var(--magenta-soft,#FDE3EC);color:var(--magenta-deep,#8E1243)}
 .status{padding:10px 8px 2px;font-size:13px}.status b{display:flex;align-items:center;gap:8px}.status b:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
 .status.off b:before{background:#CFC8BE}.status span{display:block;color:var(--muted);margin:2px 0 0 16px}
@@ -221,7 +223,7 @@ function visao() {
 	Filuna.nativo("estoque.listar").then(function (r) {
 		var b = (r.bobinas || []).map(bobinaParaLinha);
 		fs.innerHTML = b.length ? b.slice(0, 4).map(function (x) {
-			return '<div class="fil"><span class="reel" style="border-color:' + E(x.cor) + '"></span><div style="min-width:0"><div class="n">' + E((x.marca ? x.marca + " " : "") + x.material) +
+			return '<div class="fil">' + Filuna.bobinaSVG(x.cor, 46) + '<div style="min-width:0"><div class="n">' + E((x.marca ? x.marca + " " : "") + x.material) +
 				'</div><div class="s">' + E(x.cor_nome) + "</div></div></div>"; }).join("")
 			: '<div class="vazio" style="grid-column:1/-1">Nenhuma bobina cadastrada.</div>';
 	}, function (e) { fs.innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
@@ -288,7 +290,8 @@ function novaBobina() {
 		'<div class="bloco" style="margin-top:20px;max-width:760px"><div class="bb" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 18px">' +
 		'<div class="campo"><label>Material</label><select id="fMat">' + MATERIAIS.map(function (m) { return "<option>" + m + "</option>"; }).join("") + "</select></div>" +
 		'<div class="campo"><label>Marca</label><input type="text" id="fMarca" placeholder="Ex.: eSun"></div>' +
-		'<div class="campo"><label>Cor</label><div class="linha"><input type="color" id="fCor" value="#FFFFFF" style="width:54px;height:40px;padding:3px"><input type="text" id="fNomeCor" placeholder="Nome da cor (ex.: Branco)"></div></div>' +
+		'<div class="campo"><label>Cor</label><div class="linha"><span id="fPrev">' + Filuna.bobinaSVG("#FFFFFF", 56) + '</span><input type="color" id="fCor" value="#FFFFFF" style="width:54px;height:40px;padding:3px">' +
+		'<input type="text" id="fHex" value="#FFFFFF" maxlength="7" style="width:96px" aria-label="Cor em hexadecimal"><input type="text" id="fNomeCor" placeholder="Nome da cor (ex.: Branco)"></div></div>' +
 		'<div class="campo"><label>Preço por kg (R$)</label><input type="number" id="fPreco" min="0" step="0.01" placeholder="Opcional"></div>' +
 		'<div class="campo"><label>Peso de filamento da bobina (g)</label><input type="number" id="fPeso" min="1" step="1" value="1000"></div>' +
 		'<div class="campo"><label>Peso da bobina vazia — tara (g)</label><input type="number" id="fTara" min="0" step="1" placeholder="Opcional, para pesar depois"></div>' +
@@ -299,6 +302,10 @@ function novaBobina() {
 		'</div><div class="bb" style="border-top:1px solid var(--line);display:flex;gap:12px;align-items:center"><button class="btn primario" id="fSalvar">Salvar</button><button class="btn" id="fCancelar">Cancelar</button><span id="fMsg"></span></div></div>';
 	var volta = function () { st.secao = "estoque"; desenhar(); };
 	document.getElementById("voltar").onclick = volta; document.getElementById("fCancelar").onclick = volta;
+	var fCor = document.getElementById("fCor"), fHex = document.getElementById("fHex"), fPrev = document.getElementById("fPrev");
+	var pintar = function (c) { fPrev.innerHTML = Filuna.bobinaSVG(c, 56); };
+	fCor.oninput = function () { fHex.value = fCor.value.toUpperCase(); pintar(fCor.value); };
+	fHex.oninput = function () { var v = fHex.value.trim(); if (!/^#/.test(v)) v = "#" + v; if (/^#[0-9a-fA-F]{6}$/.test(v)) { fCor.value = v; pintar(v); } };
 	var sit = document.getElementById("fSit");
 	sit.onchange = function () {
 		document.getElementById("cQtd").style.display = sit.value == "nova" ? "" : "none";
@@ -337,13 +344,15 @@ function etiquetaBobina(x) {
 			'<div class="bloco" style="margin-top:20px;max-width:420px"><div class="bb" style="text-align:center">' +
 			'<div style="font-size:44px;font-weight:800;letter-spacing:1px">' + E(t.codigo) + '</div>' +
 			'<div style="margin-top:6px;font-weight:700">' + E(t.titulo) + "</div><div class='s' style='color:var(--muted)'>" + E(t.marca) + " · " + Filuna.gramas(t.capacidade_g) + "</div>" +
-			'<div style="height:14px;border-radius:7px;margin:14px 0 0;background:' + E(t.cor_hex || "#ccc") + ';border:1px solid var(--line)"></div></div>' +
+			'<div style="margin-top:12px">' + Filuna.bobinaSVG(t.cor_hex, 120) + '</div></div>' +
 			'<div class="bb" style="border-top:1px solid var(--line)"><button class="btn primario" id="imp">Imprimir etiqueta</button></div></div>';
 		document.getElementById("voltar").onclick = function () { estoque(); };
 		document.getElementById("imp").onclick = function () { window.print(); };
 	}, function (e) { falha(e); });
 }
 
+// Cor da barra de peso: cores muito claras (branco, natural) ficam visíveis com um cinza quente.
+function corBarra(c) { var r = Filuna.corRgb(c || "#C2185B"); return (0.299 * r[0] + 0.587 * r[1] + 0.114 * r[2]) / 255 > 0.85 ? "#9A948C" : c; }
 function tabelaEstoque() {
 	var b = (st.bobinas || []).slice(), ord = st.ordem || "nome", lim = st.lim, alerta = st.alerta;
 	var nome = function (x) { return (x.material + " " + x.cor_nome).toLowerCase(); };
@@ -356,10 +365,10 @@ function tabelaEstoque() {
 	var ESTADO = { lacrada: "lacrada", em_uso: "em uso", vazia: "vazia", descartada: "arquivada" };
 	var linhas = b.map(function (x, k) {
 		var pct = x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0, c = custo(x);
-		return "<tr><td><div class='fn'><span class='dot' style='background:" + E(x.cor) + "'></span><div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" +
+		return "<tr><td><div class='fn'>" + Filuna.bobinaSVG(x.cor, 52) + "<div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" +
 			E((x.marca ? x.marca + " · " : "") + "Bobina " + String(x.numero).replace("-", "\u2011") + " · " + (ESTADO[x.estado] || x.estado)) + "</div><span class='mat'>" + E(x.material) + "</span></div></div></td>" +
 			"<td class='loc'>" + (x.na_impressora ? "<b>Na impressora</b><span>" + E(x.na_impressora) + "</span>" : x.prateleira ? "<b>Guardada</b><span>" + E(x.prateleira) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>") + "</td>" +
-			"<td class='peso'><div class='bar'><i style='width:" + pct + "%;background:" + E(x.cor || "#C2185B") + "'></i></div>" + Filuna.gramas(x.restante_g) + " / " + Filuna.gramas(x.peso_inicial_g) +
+			"<td class='peso'><div class='bar'><i style='width:" + pct + "%;background:" + E(corBarra(x.cor)) + "'></i></div>" + Filuna.gramas(x.restante_g) + " / " + Filuna.gramas(x.peso_inicial_g) +
 			"<span>" + Math.round(pct) + "% restante" + (x.estimado ? " · estimado, pese para confirmar" : "") + "</span></td>" +
 			"<td class='custo'>" + (c != null ? "<b>" + Filuna.reais(c) + "</b><span>" + Filuna.reais(x.preco_kg / 1000) + " /g</span>" : "<b>—</b><span>sem preço cadastrado</span>") + "</td>" +
 			"<td>" + (baixo(x) ? "<span class='baixo'>Estoque baixo<br>&lt; " + E(lim) + " g</span>" : "") + "</td>" +
