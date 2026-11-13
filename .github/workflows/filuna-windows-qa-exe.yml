@@ -4,7 +4,7 @@ on:
   # O filtro de caminhos do push olha só os commits enviados; a primeira compilação de um branch novo
   # refaz as dependências uma vez e guarda o cache para as próximas.
   push:
-    branches: [filuna/oem-portable-first-qa-20261106, "filuna/v1-f00-*", "filuna/v1-f02-*", "filuna/v1-base-*"]
+    branches: [filuna/oem-portable-first-qa-20261106, "filuna/v1-f00-*", "filuna/v1-f02-*", "filuna/v1-base-*", "filuna/v1-teste-*"]
     paths:
       - "src/**"
       - "CMakeLists.txt"
@@ -66,6 +66,8 @@ jobs:
         run: |
           $ErrorActionPreference="Stop"
           $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\\","/")
+          # v1-teste-fisico (13/11): mesmo build da v1-base-unificada (6067534); os nomes de teste acentuados foram
+          # corrigidos (ctest no Windows não casava o filtro: "No tests ran"), e os testes continuam obrigatórios.
           .\build_win.bat -s -i --run-tests --arch x64 --deps-dir $deps --msvc --msbuild --jobs 4
           if ($LASTEXITCODE -ne 0) { throw "FILUNA_QA_EXE_BUILD_FAILED exit=$LASTEXITCODE" }
           Get-ChildItem -Recurse build/OrcaSlicer -Filter *.exe | Select-Object FullName
@@ -75,7 +77,7 @@ jobs:
           $mo | Select-Object FullName, Length
       - uses: actions/upload-artifact@v4
         with:
-          name: filuna-qa-windows-exe-${{ github.sha }}
+          name: filuna-teste-fisico-windows-exe-${{ github.sha }}
           path: build/OrcaSlicer/
           if-no-files-found: error
           retention-days: 7
@@ -107,7 +109,7 @@ jobs:
         if: startsWith(github.ref_name, 'filuna/v1-f01-') || startsWith(github.ref_name, 'filuna/v1-base-') || startsWith(github.head_ref, 'filuna/v1-base-')
         uses: actions/upload-artifact@v4
         with:
-          name: filuna-qa-windows-installer-${{ github.sha }}
+          name: filuna-teste-fisico-windows-installer-${{ github.sha }}
           path: build/FilunaSlicer_Windows_Installer_V*.exe
           if-no-files-found: error
           retention-days: 7
