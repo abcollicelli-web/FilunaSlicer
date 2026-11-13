@@ -210,7 +210,9 @@ std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
                     {"marca", t ? t->marca : std::string()},
                     {"cor_hex", t ? t->cor_hex : std::string()},
                     {"capacidade_g", b->capacidade_g},
-                    {"qr", "filuna:bobina:" + b->id}};
+                    // FLN-<id>: o mesmo texto que o app Filuna lê. A bobina vai para o servidor com este id,
+                    // então a etiqueta impressa antes da sincronização continua valendo depois.
+                    {"qr", "FLN-" + b->id}};
     }
     if (acao == "historico.listar") {
         json l = json::array();

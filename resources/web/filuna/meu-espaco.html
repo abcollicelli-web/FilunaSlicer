@@ -105,6 +105,7 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 	<div class="principal" id="tela"><div class="carregando">Carregando…</div></div>
 </div></div></div>
 <script src="ponte.js"></script>
+<script src="qr.js"></script>
 <script>
 var E = Filuna.esc;
 // Menu da referência (Meu espaço, Projetos, Perfis de impressão, Filamentos, Configurações) e, abaixo, as ferramentas Filuna.
@@ -340,11 +341,12 @@ function arquivarBobina(x) {
 function etiquetaBobina(x) {
 	Filuna.nativo("bobina.etiqueta", { id: x.id }).then(function (t) {
 		el().innerHTML = '<a class="voltar" id="voltar" style="color:var(--ink2);font-weight:600;font-size:13.5px">‹ Filamentos</a>' +
-			'<div class="h1" style="margin-top:6px">Etiqueta da bobina</div><div class="sub">Imprima e cole na bobina. O código identifica esta bobina na confirmação de cada impressão.</div>' +
+			'<div class="h1" style="margin-top:6px">Etiqueta da bobina</div><div class="sub">Imprima e cole na bobina. O código identifica esta bobina na confirmação de cada impressão, e o QR abre a bobina no app Filuna.</div>' +
 			'<div class="bloco" style="margin-top:20px;max-width:420px"><div class="bb" style="text-align:center">' +
 			'<div style="font-size:44px;font-weight:800;letter-spacing:1px">' + E(t.codigo) + '</div>' +
 			'<div style="margin-top:6px;font-weight:700">' + E(t.titulo) + "</div><div class='s' style='color:var(--muted)'>" + E(t.marca) + " · " + Filuna.gramas(t.capacidade_g) + "</div>" +
-			'<div style="margin-top:12px">' + Filuna.bobinaSVG(t.cor_hex, 120) + '</div></div>' +
+			'<div style="margin-top:12px;display:flex;gap:18px;justify-content:center;align-items:center">' + Filuna.bobinaSVG(t.cor_hex, 120) +
+			FilunaQR.svg(t.qr, 132) + '</div><div class="s" style="color:var(--muted);margin-top:6px">Leia o QR com o app Filuna no celular.</div></div>' +
 			'<div class="bb" style="border-top:1px solid var(--line)"><button class="btn primario" id="imp">Imprimir etiqueta</button></div></div>';
 		document.getElementById("voltar").onclick = function () { estoque(); };
 		document.getElementById("imp").onclick = function () { window.print(); };
