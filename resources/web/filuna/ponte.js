@@ -242,32 +242,60 @@ var Filuna = (function () {
 	}
 	function misturar(rgb, alvo, t) { return "rgb(" + rgb.map(function (v, i) { return Math.round(v + (alvo[i] - v) * t); }).join(",") + ")"; }
 	function bobinaSVG(cor, px) {
+		// Vista 3/4 pela frente-direita: aba de trás (só a borda aparece à esquerda), o filamento enrolado
+		// entre as abas e a aba da frente grande, perfurada, com três janelas que mostram o filamento.
 		var id = "fb" + (++nBobina), c = corRgb(cor), lum = (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255;
-		var claro = misturar(c, [255, 255, 255], lum > 0.85 ? 0.7 : 0.5), escuro = misturar(c, [0, 0, 0], lum > 0.85 ? 0.2 : 0.45);
-		var base = "rgb(" + c.join(",") + ")", fio = misturar(c, [0, 0, 0], lum > 0.85 ? 0.18 : 0.3);
-		var aba = "#363B59", abaLuz = "#59628C", furo = "#23263B";
-		var furos = "";
-		for (var y = 10, lin = 0; y <= 110; y += 5.6, lin++)
-			for (var x = 74 + (lin % 2 ? 2.8 : 0); x <= 118; x += 5.6) {
-				var dx = (x - 96) / 22, dy = (y - 60) / 55, d = dx * dx + dy * dy;
-				if (d < 0.82 && d > 0.16) furos += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="1.15" fill="' + furo + '"/>';
-			}
+		var claro = lum > 0.85 ? "#FFFFFF" : misturar(c, [255, 255, 255], 0.5);
+		var meio = "rgb(" + c.join(",") + ")";
+		var escuro = misturar(c, [0, 0, 0], lum > 0.85 ? 0.24 : 0.5), fundo = misturar(c, [0, 0, 0], lum > 0.85 ? 0.36 : 0.65);
+		var fio = misturar(c, [0, 0, 0], lum > 0.85 ? 0.2 : 0.35);
+		var A = { cx: 96, cy: 70, rx: 46, ry: 64 };   // aba da frente
+		var B = { cx: 50, cy: 70, rx: 46, ry: 64 };   // aba de trás (mesmo tamanho, deslocada)
+		var R = 0.84;                                // raio do filamento enrolado em relação à aba
+		function pt(e, f, graus) { var t = graus * Math.PI / 180; return [e.cx + e.rx * f * Math.sin(t), e.cy - e.ry * f * Math.cos(t)]; }
+		function janela(centro) {
+			var p = [], g;
+			for (g = centro - 30; g <= centro + 30; g += 5) p.push(pt(A, 0.82, g));
+			for (g = centro + 20; g >= centro - 20; g -= 5) p.push(pt(A, 0.4, g));
+			return "M" + p.map(function (q) { return q[0].toFixed(1) + " " + q[1].toFixed(1); }).join(" L") + " Z";
+		}
 		var voltas = "";
-		for (var k = 0; k < 17; k++) { var yy = (14 + k * 5.7).toFixed(1); voltas += '<line x1="30" x2="96" y1="' + yy + '" y2="' + yy + '" stroke="' + fio + '" stroke-opacity=".22" stroke-width=".6"/>'; }
-		return '<svg class="bobina-svg" viewBox="0 0 124 120" width="' + (px || 64) + '" height="' + (px || 64) + '" aria-hidden="true">' +
-			'<defs><linearGradient id="' + id + 'f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + escuro + '"/><stop offset=".25" stop-color="' + claro + '"/>' +
-			'<stop offset=".55" stop-color="' + base + '"/><stop offset="1" stop-color="' + escuro + '"/></linearGradient>' +
-			'<linearGradient id="' + id + 'a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + abaLuz + '"/><stop offset="1" stop-color="' + aba + '"/></linearGradient></defs>' +
-			'<ellipse cx="30" cy="60" rx="19" ry="55" fill="' + aba + '"/>' +
-			'<path d="M30 8 H96 V112 H30 Z" fill="url(#' + id + 'f)"/>' + voltas +
-			'<path d="M30 8 H96" stroke="' + claro + '" stroke-opacity=".7" stroke-width="1"/>' +
-			'<ellipse cx="96" cy="60" rx="22" ry="55" fill="url(#' + id + 'a)"/>' + furos +
-			'<path d="M96 60 L87 11 A22 55 0 0 1 105 11 Z" fill="url(#' + id + 'f)"/>' +
-			'<path d="M96 60 L79 95 A22 55 0 0 0 88 113 Z" fill="url(#' + id + 'f)"/>' +
-			'<path d="M96 60 L113 95 A22 55 0 0 1 104 113 Z" fill="url(#' + id + 'f)"/>' +
-			'<ellipse cx="96" cy="60" rx="22" ry="55" fill="none" stroke="' + furo + '" stroke-opacity=".55" stroke-width="1.2"/>' +
-			'<ellipse cx="96" cy="60" rx="9" ry="21" fill="' + abaLuz + '"/><ellipse cx="96.6" cy="60" rx="5.5" ry="13" fill="' + furo + '"/>' +
-			'<ellipse cx="96.6" cy="60" rx="2.8" ry="7" fill="#12131F"/></svg>';
+		for (var k = 1; k < 22; k++) {
+			var y = (A.cy - A.ry * R + k * (2 * A.ry * R) / 22).toFixed(1);
+			voltas += '<line x1="' + (B.cx - 6) + '" x2="' + A.cx + '" y1="' + y + '" y2="' + y + '" stroke="' + fio + '" stroke-opacity=".18" stroke-width=".7"/>';
+		}
+		var topo = A.cy - A.ry * R, base = A.cy + A.ry * R;
+		return '<svg class="bobina-svg" viewBox="0 0 150 140" width="' + (px || 64) + '" height="' + (px || 64) + '" aria-hidden="true">' +
+			'<defs>' +
+			'<linearGradient id="' + id + 'f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + escuro + '"/><stop offset=".18" stop-color="' + meio + '"/>' +
+			'<stop offset=".32" stop-color="' + claro + '"/><stop offset=".5" stop-color="' + meio + '"/><stop offset="1" stop-color="' + fundo + '"/></linearGradient>' +
+			'<linearGradient id="' + id + 'j" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + claro + '"/><stop offset=".45" stop-color="' + meio + '"/><stop offset="1" stop-color="' + escuro + '"/></linearGradient>' +
+			'<linearGradient id="' + id + 'a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5A6390"/><stop offset=".55" stop-color="#3E4568"/><stop offset="1" stop-color="#2B3050"/></linearGradient>' +
+			'<pattern id="' + id + 'p" width="5.2" height="9" patternUnits="userSpaceOnUse"><circle cx="1.3" cy="2.2" r="1.05" fill="#1E2136"/><circle cx="3.9" cy="6.7" r="1.05" fill="#1E2136"/></pattern>' +
+			'<clipPath id="' + id + 'c"><ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.9) + '" ry="' + (A.ry * 0.9) + '"/></clipPath>' +
+			'</defs>' +
+			// aba de trás: só a borda visível à esquerda
+			'<ellipse cx="' + B.cx + '" cy="' + B.cy + '" rx="' + B.rx + '" ry="' + B.ry + '" fill="#2B3050"/>' +
+			'<ellipse cx="' + (B.cx + 2.5) + '" cy="' + B.cy + '" rx="' + (B.rx - 2) + '" ry="' + (B.ry - 2) + '" fill="#363C60"/>' +
+			// filamento: cilindro entre as abas
+			'<path d="M' + B.cx + ' ' + topo.toFixed(1) + ' H' + A.cx + ' V' + base.toFixed(1) + ' H' + B.cx + ' Z" fill="url(#' + id + 'f)"/>' + voltas +
+			'<ellipse cx="' + B.cx + '" cy="' + A.cy + '" rx="' + (B.rx * R).toFixed(1) + '" ry="' + (A.ry * R).toFixed(1) + '" fill="url(#' + id + 'f)"/>' +
+			'<ellipse cx="' + B.cx + '" cy="' + A.cy + '" rx="' + (B.rx * R).toFixed(1) + '" ry="' + (A.ry * R).toFixed(1) + '" fill="none" stroke="' + fio + '" stroke-opacity=".25"/>' +
+			// espessura e face da aba da frente
+			'<ellipse cx="' + (A.cx - 3) + '" cy="' + A.cy + '" rx="' + A.rx + '" ry="' + A.ry + '" fill="#252946"/>' +
+			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + A.rx + '" ry="' + A.ry + '" fill="url(#' + id + 'a)"/>' +
+			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.95) + '" ry="' + (A.ry * 0.95) + '" fill="none" stroke="#7079A6" stroke-opacity=".55" stroke-width="1"/>' +
+			'<g clip-path="url(#' + id + 'c)"><rect x="' + (A.cx - A.rx) + '" y="' + (A.cy - A.ry) + '" width="' + (2 * A.rx) + '" height="' + (2 * A.ry) + '" fill="url(#' + id + 'p)" opacity=".85"/></g>' +
+			// janelas mostrando o filamento
+			[0, 120, 240].map(function (g) {
+				return '<path d="' + janela(g) + '" fill="url(#' + id + 'j)" stroke="#2B3050" stroke-width="3" stroke-linejoin="round"/>';
+			}).join("") +
+			// miolo
+			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.3) + '" ry="' + (A.ry * 0.3) + '" fill="#4B5380"/>' +
+			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.24) + '" ry="' + (A.ry * 0.24) + '" fill="none" stroke="#6C76A3" stroke-width="1"/>' +
+			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.18) + '" ry="' + (A.ry * 0.18) + '" fill="none" stroke="#6C76A3" stroke-opacity=".7" stroke-width=".8"/>' +
+			'<ellipse cx="' + (A.cx + 1) + '" cy="' + A.cy + '" rx="' + (A.rx * 0.12) + '" ry="' + (A.ry * 0.12) + '" fill="#171A2C"/>' +
+			'</svg>';
 	}
 	function gramas(g) { g = Number(g || 0); return g >= 1000 ? (g / 1000).toFixed(2).replace(".", ",") + " kg" : Math.round(g) + " g"; }
 	function tempo(s) { s = Math.max(0, Math.round(s || 0)); var h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); if (m == 60) { h++; m = 0; } return (h ? h + "h" : "") + (m < 10 && h ? "0" : "") + m + "min"; }

@@ -365,7 +365,7 @@ function tabelaEstoque() {
 	var ESTADO = { lacrada: "lacrada", em_uso: "em uso", vazia: "vazia", descartada: "arquivada" };
 	var linhas = b.map(function (x, k) {
 		var pct = x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0, c = custo(x);
-		return "<tr><td><div class='fn'>" + Filuna.bobinaSVG(x.cor, 52) + "<div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" +
+		return "<tr><td><div class='fn'>" + Filuna.bobinaSVG(x.cor, 64) + "<div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" +
 			E((x.marca ? x.marca + " · " : "") + "Bobina " + String(x.numero).replace("-", "\u2011") + " · " + (ESTADO[x.estado] || x.estado)) + "</div><span class='mat'>" + E(x.material) + "</span></div></div></td>" +
 			"<td class='loc'>" + (x.na_impressora ? "<b>Na impressora</b><span>" + E(x.na_impressora) + "</span>" : x.prateleira ? "<b>Guardada</b><span>" + E(x.prateleira) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>") + "</td>" +
 			"<td class='peso'><div class='bar'><i style='width:" + pct + "%;background:" + E(corBarra(x.cor)) + "'></i></div>" + Filuna.gramas(x.restante_g) + " / " + Filuna.gramas(x.peso_inicial_g) +
