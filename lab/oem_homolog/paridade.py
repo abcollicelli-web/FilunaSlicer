@@ -49,6 +49,8 @@ ID_OBJETO = re.compile(rb"(id[:_])(\d{9,})")
 # compilações do mesmo código. Mesmo tratamento do id: o número vira a ordem da primeira aparição, e a
 # lista objects_info é comparada em ordem canônica. A geometria de cada objeto continua conferida.
 M486 = re.compile(rb"^M486 S(\d+)")
+# mesma origem nos comentários do G-code ASCII: "; printing object <nome> id:<n> copy <c>" (n pequeno)
+ROTULO_ASCII = re.compile(rb"^(; (?:stop )?printing object .* id:)(\d{1,8})( copy \d+)")
 OBJ_INFO = re.compile(rb"^(; \[printer_metadata\] objects_info=)(.*)$")
 
 
@@ -72,6 +74,10 @@ def normalizado(p: Path) -> bytes:
             if m and m.group(1) != b"-1" and not declaracao:
                 n = rotulos.setdefault(m.group(1), len(rotulos))
                 ln = b"M486 S" + str(n).encode() + ln[m.end():]
+            m = ROTULO_ASCII.match(ln)
+            if m:
+                n = rotulos.setdefault(b"a" + m.group(2), len(rotulos))
+                ln = m.group(1) + b"rot" + str(n).encode() + m.group(3) + ln[m.end():]
             m = OBJ_INFO.match(ln)
             if m:
                 try:
