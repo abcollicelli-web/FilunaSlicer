@@ -659,3 +659,24 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - Barra cinza acima de "Impressora" na Preparação: era a barra de título do painel lateral (AUI), que serve para destacar o painel. Continua funcionando; no tema claro passou a ter a cor do painel e bordas na cor de linha Filuna (`AuiMgr::apply_color_mode`). O tema escuro não mudou.
   - Meu espaço: o cartão do perfil mostrava a inicial da conta. Agora mostra um ícone de perfil e o nome do perfil de processo em uso na Preparação, mesmo quando é do sistema (a ação `perfis.salvos` devolve `em_uso`).
 - **Nada alterado em** `src/libslic3r/**`, perfis, G-code ou motor. Nenhum merge, release, deploy ou impressão.
+
+### V1 — Validação no PC do build `c9f52c4a` (13/11/2026, 00:52–00:57)
+- **Build:** run `43315426705` — **PASS**. CTest 3022/3022, incluindo os 19 testes `[FilunaDados]`. Resultado em `filuna-qa-prints/builds/c9f52c4a` (15 prints em 1920×1080 com escala de 125%, `relatorio.md` e log).
+- **PASS:**
+  - barra única (logo, abas, Ajuda, Exportar, Fatiar mesa, engrenagem, botões da janela);
+  - Preparação sem a barra cinza acima de "Impressora";
+  - Dispositivo com a galeria;
+  - Projeto;
+  - Calibração (assistente Fluxo, passos 1 a 3);
+  - Meu espaço: cartão do perfil com ícone e nome do perfil em uso, Filamentos e Perfis;
+  - Preferências › Geral › Filuna;
+  - rodapé com Sugestão de venda, Peso, Custo, Tempo, Autoajuda e IA Filuna;
+  - Início sem o logo repetido.
+- **FAIL corrigido neste pacote (ainda não compilado):**
+  - Ajuda e engrenagem apareciam com um quadrado cinza em volta do círculo: a cor de fundo vinha da janela principal; agora é a cor da barra.
+  - As abas "Files" e "Behaviour" das Preferências estavam em inglês, porque faltavam no `.po`; entraram como "Arquivos" e "Comportamento".
+- **Em aberto:**
+  - Fatiar não concluiu no teste: Exportar ficou desabilitado e a Visualização ficou vazia. O log copiado era de 09/11, porque o script procurava em `%APPDATA%\OrcaSlicer`, mas este build grava em `%APPDATA%\Filuna`; o script foi corrigido. Sem o log certo, a causa ainda não é conhecida.
+  - O menu do logo não abriu no clique e não foi validado.
+  - A unidade aberta do Dispositivo não foi capturada.
+  - Início continua com textos do Orca ("Aberto Recentemente", "Criar Novo Projeto", "3mf") e o desenho dele ainda não foi aprovado.

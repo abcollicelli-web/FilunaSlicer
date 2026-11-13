@@ -1,5 +1,6 @@
 #include "MainFrame.hpp"
 #include "FilunaPanel.hpp"
+#include <initializer_list>
 
 #include <wx/event.h>
 #include "slic3r/GUI/Event.hpp"
@@ -2417,6 +2418,10 @@ wxBoxSizer* MainFrame::create_side_tools()
     gear_btn->SetCornerRadius(FromDIP(18));
     gear_btn->SetMinSize(FromDIP(wxSize(36, 36)));
     gear_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxGetApp().open_preferences(); });
+    // The round buttons are created with the frame's grey as their window colour, which shows as a grey
+    // square around the circle in the navbar; paint the corners with the navbar colour instead.
+    for (Button* round_btn : {help_btn, gear_btn})
+        round_btn->SetBackgroundColour(wxColour(255, 253, 251));
 
     auto* divider = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(1, 28)));
     divider->SetBackgroundColour(wxColour(236, 232, 226));

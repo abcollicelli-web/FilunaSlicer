@@ -36603,3 +36603,11 @@ msgstr "Preço máximo por kg"
 # AI Translated
 msgid "0 shows every price."
 msgstr "0 mostra todos os preços."
+
+# AI Translated
+msgid "Files"
+msgstr "Arquivos"
+
+# AI Translated
+msgid "Behaviour"
+msgstr "Comportamento"
