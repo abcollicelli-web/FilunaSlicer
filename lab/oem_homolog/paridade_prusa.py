@@ -57,7 +57,7 @@ def impressoras(secoes: dict, filtro: str = "") -> list[dict]:
         if not s.startswith("printer:") or s.startswith("printer:*"):
             continue
         nome = s.split(":", 1)[1]
-        if filtro and filtro not in nome:
+        if filtro and not re.search(filtro, nome):
             continue
         cfg = efetivo(secoes, "printer", nome)
         if not cfg.get("printer_model"):
@@ -266,8 +266,10 @@ def main() -> int:
                     # A CLI oficial 2.9.7 cai (SIGSEGV, rc 139) ao fatiar várias extrusoras COM torre de limpeza;
                     # o caso acima registra a mesma queda. A troca de cores (T, rampa, descarga/carga da MMU,
                     # G-code personalizado de troca) é provada sem a torre, com a mesma configuração.
+                    # --dont-arrange: as posições vêm do 3MF; com 4 objetos iguais o "arrange" da CLI escolhe a
+                    # ordem dos lugares de forma diferente no oficial e no compilado (mesma geometria, cores trocadas)
                     r["casos"].append(caso_um(imp, caso, "cores-sem-torre", caso / "cores.3mf", projeto=True, carregar=cfg,
-                                              extra=["--no-wipe-tower"]))
+                                              extra=["--no-wipe-tower", "--dont-arrange"]))
                 except (OSError, AssertionError, KeyError, ValueError) as e:
                     r["casos"].append({"modelo": "cores", "veredito": "OFICIAL_NAO_FATIOU", "detalhe": f"semente: {e}"})
             vs = [c["veredito"] for c in r["casos"]]
