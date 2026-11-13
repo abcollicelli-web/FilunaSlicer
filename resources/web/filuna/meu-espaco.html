@@ -133,6 +133,13 @@ function menu() {
 		? (Filuna.conexao().online ? '<div class="status"><b>Conectado</b>' : '<div class="status off"><b>Sem conexão</b>') + '<span id="nomeConta">' + E((st.conta && st.conta.nome) || "Conta Filuna") + '</span></div><button class="nav" id="sair" style="margin-top:4px;color:var(--ink2)">Sair desta conta</button>'
 		: '<div class="status off"><b>Sem conta</b><span>Entre para ver seus dados</span></div>';
 	var s = document.getElementById("sair"); if (s) s.onclick = function () { Filuna.sair().then(desenhar); };
+	if (!document.getElementById("versoes")) {
+		var v = document.createElement("div");
+		v.id = "versoes";
+		v.style.cssText = "margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5";
+		document.getElementById("conta").parentNode.appendChild(v);
+	}
+	mostrarVersoes();
 }
 function abrirSecao(id) {
 	if (id == "loja") { location.href = "loja.html"; return; }
@@ -287,6 +294,15 @@ function estoque() {
 	}, function (e) { document.getElementById("r").outerHTML = '<div id="r" class="erro">' + E(e.erro || e.message) + "</div>"; });
 }
 // Cópia no servidor (03-SERVIDOR §4): o mesmo estoque aparece no site e no app Filuna do celular.
+function mostrarVersoes() {
+	var alvo = document.getElementById("versoes");
+	if (!alvo) return;
+	Filuna.nativo("versoes.listar").then(function (v) {
+		var m = (v.motores || []).map(function (x) { return E(x.nome) + " " + E(x.versao); }).join(" · ");
+		alvo.textContent = "Filuna Slicer " + (v.versao || "") + (m ? " · " + m : "");
+		alvo.title = "Base Orca " + (v.base_orca || "") + " · esquema do banco " + (v.esquema_banco || "");
+	}).catch(function () {});
+}
 function estadoSincronizacao() {
 	Filuna.nativo("sync.estado").then(function (e) {
 		var a = document.getElementById("sinc");

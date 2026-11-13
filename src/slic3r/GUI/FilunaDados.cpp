@@ -18,6 +18,8 @@
 #include "slic3r/Filuna/FilunaDb.hpp"
 #include "slic3r/Filuna/FilunaGcodeResumo.hpp"
 #include "slic3r/Filuna/FilunaProduto.hpp"
+#include "slic3r/Filuna/FilunaVersoes.hpp"
+#include "libslic3r_version.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -152,7 +154,7 @@ json arquivo_json(F::FilunaDb& db, const std::string& produto_id)
 
 std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
 {
-    static const char* const PREFIXOS[] = {"estoque.", "bobina.", "historico.", "trabalho.", "produto.", "painel.", "previsao.", "manutencao.", "sync.", "arquivo."};
+    static const char* const PREFIXOS[] = {"estoque.", "bobina.", "historico.", "trabalho.", "produto.", "painel.", "previsao.", "manutencao.", "sync.", "arquivo.", "versoes."};
     if (std::none_of(std::begin(PREFIXOS), std::end(PREFIXOS), [&acao](const char* p) { return acao.rfind(p, 0) == 0; }))
         return std::nullopt;
 
@@ -369,6 +371,18 @@ std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
                 plater->load_files(std::vector<boost::filesystem::path>{boost::filesystem::path(caminho)});
         });
         return json{{"aberto", true}};
+    }
+    if (acao == "versoes.listar") {
+        // Identificação dos motores internos (FilunaVersoes.hpp): o suporte e a atualização por
+        // pacotes usam estes ids e versões.
+        json motores = json::array();
+        for (const auto& m : F::motores_filuna())
+            motores.push_back({{"id", m.id}, {"nome", m.nome}, {"versao", m.versao}});
+        return json{{"produto", "Filuna Slicer"},
+                    {"versao", F::VERSAO_FILUNA_SLICER},
+                    {"base_orca", SoftFever_VERSION},
+                    {"esquema_banco", db.versao_esquema()},
+                    {"motores", motores}};
     }
     if (acao == "sync.estado") {
         const FilunaSync::Estado e = FilunaSync::instancia().estado();

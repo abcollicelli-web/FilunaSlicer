@@ -826,3 +826,12 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - Nos testes, os conflitos foram só casos novos dos dois lados no mesmo lugar; ficaram os dois.
 - **Aba Design ligada por padrão no Filuna:** feito no `GUI_App.cpp`, uma única vez (chave `filuna_design_padrao`). Quem desligar nas Preferências continua desligado. O padrão do Orca em `AppConfig.cpp` não foi mexido.
 - **Risco e verificação:** as mudanças no motor são correções do próprio Orca, já lançadas na 2.5.0. O CTest completo do próximo build e o cubo de referência validam.
+
+### V1 — Motores com identidade própria e documento de criação fechado (13/11/2026)
+- **Decisão do proprietário:** o Filuna CAD compila dentro do Filuna Slicer, mas tem identificação e versão próprias (ex.: Filuna Slicer 1.2 · Filuna CAD 1.1), para atualizações independentes do motor no futuro.
+- **Feito:**
+  - `src/slic3r/Filuna/FilunaVersoes.hpp`: a camada Filuna é 1.2.0-beta e os motores internos têm id estável e versão própria — `cad` (Filuna CAD 1.1.0), `dados` (1.2.0), `sincronizacao` (1.0.0), `telas` (1.2.0). Os ids são a chave dos futuros pacotes de atualização (guia-v1/03 §5).
+  - Ponte: ação nova `versoes.listar` (produto, versão, base Orca, esquema do banco e motores).
+  - Meu espaço: o rodapé da barra lateral mostra "Filuna Slicer 1.2.0-beta · Filuna CAD 1.1.0 · …" (conferido no harness com captura).
+  - `FILUNA/DOCUMENTO-DE-CRIACAO-FILUNA-SLICER.md`: documento de criação consolidado e fechado — o que o produto é, arquitetura construída, as 8 telas aprovadas do Filuna CAD com ordem de implementação (1–3 e 5 → 8 → 6 → 4 → 7), as 10 decisões de criação e a lista do que falta com critério de "fechado". Esse documento só muda com decisão nova; o dia a dia continua aqui.
+- **Upgrade da maquete do CAD aprovado em conversa:** telas 5–8 (recorte por extrudar negativo, texto/SVG na face, roscas com folga calibrada para impressão 3D + encaixes prontos, esboço por plano e eixo com revolução).
