@@ -316,19 +316,18 @@ json preparar(const std::string& modulo_id, const std::string& modelo)
     Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER);
     if (tab != nullptr)
         tab->select_preset(p->name);
-    // Agente da marca ao vivo + busca na LAN
+    // Agente da marca ao vivo (GUI_App::switch_printer_agent lê o vínculo acima) + busca na LAN
+    if (!NetworkAgentFactory::is_printer_agent_registered(agente))
+        return {{"erro", "Agente de rede da marca não está disponível (" + agente + ")."}, {"perfil", p->name}};
+    wxGetApp().switch_printer_agent();
     NetworkAgent* net = wxGetApp().getAgent();
+    std::string ativo;
     if (net != nullptr) {
-        auto atual_ag = net->get_printer_agent();
-        if (!atual_ag || atual_ag->get_agent_info().id != agente) {
-            auto novo = NetworkAgentFactory::create_printer_agent_by_id(agente, net->get_cloud_agent(), data_dir());
-            if (!novo)
-                return {{"erro", "Agente de rede da marca não está disponível (" + agente + ")."}, {"perfil", p->name}};
-            wxGetApp().set_live_printer_agent(novo);
-        }
+        if (auto ag = net->get_printer_agent())
+            ativo = ag->get_agent_info().id;
         net->start_discovery(true, true);
     }
-    return {{"perfil", p->name}, {"agente", agente}, {"modelo_id", model_id}};
+    return {{"perfil", p->name}, {"agente", agente}, {"agente_ativo", ativo}, {"modelo_id", model_id}};
 }
 
 json descobertas()
@@ -414,6 +413,7 @@ json registrar(const std::string& nome, const std::string& modulo_id, const std:
     const std::string id = db.criar_impressora(nome, modulo_id, modelo, dev_id, modulo_id);
     if (AppConfig* cfg = wxGetApp().app_config)
         cfg->set(chave_vinculo(dev_id), id);
+    filuna_sync_avisar(); // cadastro sobe para a conta (servidor → app Android) em segundos
     return {{"id", id}, {"nome", nome}};
 }
 
