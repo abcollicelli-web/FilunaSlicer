@@ -18,22 +18,22 @@ jobs:
         include:
           - id: snapmaker
             repo: Snapmaker/OrcaSlicer
-            commit: bac6fd5c1
+            commit: bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c
             versao: "2.4.1"
             script: build_release_vs2022.bat
           - id: elegoo
             repo: elegooofficial/ElegooSlicer
-            commit: 3f1042e9e
+            commit: 3f1042e9e44c4ad10a721d7c9432c8fe15205202
             versao: "1.5.3.5"
             script: build_release_vs2022.bat
           - id: flashforge
             repo: FlashForge/Orca-Flashforge
-            commit: 70f2359ba
+            commit: 70f2359ba8b4bc8ff9e54818a4bb1d05e56e7856
             versao: "1.7.9"
             script: build_release_vs2022.bat
           - id: creality
             repo: CrealityOfficial/CrealityPrint
-            commit: 254250c01
+            commit: 254250c015a5f8c5b9bf3742e89066c8a7095565
             versao: "7.3.1.6378"
             script: build_release_vs2022.bat
     steps:
