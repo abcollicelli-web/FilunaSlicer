@@ -30,14 +30,14 @@ from pathlib import Path
 FABRICANTES = ("snapmaker", "bambu", "elegoo", "creality", "flashforge", "qidi", "anycubic", "prusa")
 NOMES = {"snapmaker": "Snapmaker", "bambu": "Bambu Lab", "elegoo": "Elegoo", "creality": "Creality",
          "flashforge": "Flashforge", "qidi": "QIDI", "anycubic": "Anycubic", "prusa": "Prusa"}
-ACEITOS_CASO = ("IDENTICO", "IDENTICO_POR_CAMADA", "MESMA_RECUSA_DO_OFICIAL")
+ACEITOS_CASO = ("IDENTICO", "IDENTICO_POR_CAMADA", "IDENTICO_POR_COMANDO", "MESMA_RECUSA_DO_OFICIAL")
 
 
 def sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
-def estado_motor(prova: Path, modelo: str) -> dict:
+def estado_motor(prova: Path, modelo: str, fora: tuple[str, ...] = ()) -> dict:
     """Paridade do G-code por caso da régua ('cubo' = motor, 'cores' = sistema de cores)."""
     if not prova.is_file():
         return {"estado": "PENDENTE", "motivo": "sem prova de paridade do binário compilado"}
@@ -49,6 +49,10 @@ def estado_motor(prova: Path, modelo: str) -> dict:
         casos = r.get("casos") or []
         if r.get("veredito") == "PERFIL_INCOMPLETO" and not casos:
             resumo["PERFIL_INCOMPLETO_DO_FABRICANTE"] = resumo.get("PERFIL_INCOMPLETO_DO_FABRICANTE", 0) + 1
+            continue
+        if r.get("maquina") in fora:
+            # máquina tirada da homologação por decisão do proprietário (module.json, homologation_exceptions)
+            resumo["FORA_POR_DECISAO"] = resumo.get("FORA_POR_DECISAO", 0) + 1
             continue
         for c in casos:
             # variantes do caso contam no mesmo grupo ("cores-sem-torre" é sistema de cores)
@@ -179,13 +183,15 @@ def main() -> int:
                 "fonte_igual_oficial": m.get("fonte_igual_oficial"),
                 "impressoras": [i["maquina"] for i in m.get("impressoras", []) if not i.get("erro")]})
         perfis = next((c for c in componentes if c["tipo"] == "profiles"), None)
+        excecoes = mod.get("homologation_exceptions", {})
+        fora = tuple(excecoes.get("maquinas_fora", []))
         homolog = {
-            "motor": estado_motor(ns.provas / f"paridade-{fid}" / "prova.json", "cubo"),
+            "motor": estado_motor(ns.provas / f"paridade-{fid}" / "prova.json", "cubo", fora),
             "perfis": ({"estado": "HOMOLOGADO" if perfis["fonte_igual_oficial"] else "HOMOLOGADO_DO_BINARIO_OFICIAL",
                         "nota": None if perfis["fonte_igual_oficial"] else
                         "perfis publicados na fonte diferem do binário oficial; o pacote leva os do binário oficial"}
                        if perfis else {"estado": "PENDENTE"}),
-            "cores": estado_motor(ns.provas / f"paridade-{fid}" / "prova.json", "cores"),
+            "cores": estado_motor(ns.provas / f"paridade-{fid}" / "prova.json", "cores", fora),
             "rede": estado_rede(ns.provas, fid),
             "preparar_enviar_controlar": estado_rede(ns.provas, fid),
             "impressao_fisica": {"estado": "PENDENTE_TESTE_DO_PROPRIETARIO"},
@@ -204,7 +210,8 @@ def main() -> int:
             "fonte": {"repositorio": src.get("repository"), "ref": src.get("tag") or src.get("branch"),
                       "commit": src.get("commit"), "licenca": src.get("license")},
             "conectividade": mod.get("connectivity", {}).get("path"),
-            "componentes": componentes, "homologacao": homolog})
+            "componentes": componentes, "homologacao": homolog,
+            **({"excecoes": excecoes} if excecoes else {})})
 
     if ns.slicer_repo:
         modulos += recursos_slicer(ns.slicer_repo, ns.slicer_ref, ns.destino)
