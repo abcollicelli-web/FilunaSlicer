@@ -433,7 +433,7 @@ TEST_CASE("The product ranking puts the most printed product first", "[FilunaDad
 
 // --- Sincronização (03-SERVIDOR §4) ---------------------------------------------------------
 
-TEST_CASE("Fila de sincronização: envia, marca e não volta", "[FilunaDados]")
+TEST_CASE("Fila de sincronizacao: envia, marca e nao volta", "[FilunaDados]")
 {
     auto db = banco_em_memoria();
     const auto tipo = tipo_pla_branco(*db);
@@ -453,7 +453,7 @@ TEST_CASE("Fila de sincronização: envia, marca e não volta", "[FilunaDados]")
     CHECK(db->id_do_computador() == pc);
 }
 
-TEST_CASE("Restauração num computador novo e eventos de outro computador", "[FilunaDados]")
+TEST_CASE("Restauracao num computador novo e eventos de outro computador", "[FilunaDados]")
 {
     // Computador A grava; o que ele enviou é aplicado num banco vazio (B), como no receber?desde=0.
     auto a = banco_em_memoria();
@@ -483,7 +483,7 @@ TEST_CASE("Restauração num computador novo e eventos de outro computador", "[F
     CHECK(b->tipo(tipo)->cor_nome != "Velho");
 }
 
-TEST_CASE("Código de bobina repetido vindo de outro computador ganha sufixo", "[FilunaDados]")
+TEST_CASE("Codigo de bobina repetido vindo de outro computador ganha sufixo", "[FilunaDados]")
 {
     auto a = banco_em_memoria(), b = banco_em_memoria();
     const auto ta = tipo_pla_branco(*a);
@@ -499,7 +499,7 @@ TEST_CASE("Código de bobina repetido vindo de outro computador ganha sufixo", "
     CHECK(b->bobinas().size() == 2);
 }
 
-TEST_CASE("Vínculo de arquivo do produto e Localizar arquivo", "[FilunaDados]")
+TEST_CASE("Vinculo de arquivo do produto e Localizar arquivo", "[FilunaDados]")
 {
     // SHA-256 do arquivo em blocos = SHA-256 do conteúdo.
     const auto caminho = (boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("filuna-%%%%%%.stl")).string();
@@ -536,7 +536,7 @@ TEST_CASE("Vínculo de arquivo do produto e Localizar arquivo", "[FilunaDados]")
 
 // --- Recursos atualizáveis (03-SERVIDOR §5 / Fase 7) -----------------------------------------
 
-TEST_CASE("Recursos: ponteiro atômico, poda e validação de nomes", "[FilunaDados]")
+TEST_CASE("Recursos: ponteiro atomico, poda e validacao de nomes", "[FilunaDados]")
 {
     namespace R = Slic3r::Filuna::Recursos;
     const auto raiz = (boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("filuna-rec-%%%%%%")).string();
@@ -568,7 +568,7 @@ TEST_CASE("Recursos: ponteiro atômico, poda e validação de nomes", "[FilunaDa
     boost::filesystem::remove_all(raiz);
 }
 
-TEST_CASE("Recursos: base64 e assinatura Ed25519 do catálogo", "[FilunaDados]")
+TEST_CASE("Recursos: base64 e assinatura Ed25519 do catalogo", "[FilunaDados]")
 {
     namespace R = Slic3r::Filuna::Recursos;
     const auto b = R::base64_decodificar("RmlsdW5h");
