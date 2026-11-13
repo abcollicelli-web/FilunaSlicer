@@ -116,6 +116,10 @@ def fatiar(cmd_base: list[str], pacote: Path, imp: dict, modelo: Path, pasta: Pa
             rc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, timeout=timeout, env=env, check=False).returncode
         except subprocess.TimeoutExpired:
             rc = 124
+    # morto por sinal: o subprocess dá -N quando o binário roda direto (compilado) e o shell do
+    # oficial (Flatpak) devolve 128+N; os dois são a mesma queda
+    if rc < 0:
+        rc = 128 - rc
     r = {"rc": rc, "segundos": round(time.time() - t0, 1), "gcodes": [str(out)] if out.is_file() else []}
     # falta de recurso da máquina de teste não é recusa do fatiador: o caso não vale
     if "Resource temporarily unavailable" in (pasta / "cli.log").read_text(encoding="utf-8", errors="replace"):
