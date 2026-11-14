@@ -68,8 +68,9 @@ jobs:
         shell: pwsh
         run: |
           $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-          "INCLUDE=$env:INCLUDE;$vs\DIA SDK\include" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
-          "LIB=$env:LIB;$vs\DIA SDK\lib\amd64" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          # projetos gerados pelo Visual Studio ignoram INCLUDE/LIB (só com /p:UseEnv); CL e LINK o compilador lê sempre
+          "CL=/I`"$vs\DIA SDK\include`"" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "LINK=/LIBPATH:`"$vs\DIA SDK\lib\amd64`"" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
           python -m pip install --quiet numpy
       - name: Configuração .env (Elegoo lê este arquivo não versionado; o build_linux.sh passa o mesmo por -D)
         if: steps.sel.outputs.go == '1' && matrix.id == 'elegoo'
