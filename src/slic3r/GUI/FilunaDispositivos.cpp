@@ -2,6 +2,7 @@
 
 #include "FilunaAtualizacao.hpp"
 #include "FilunaDados.hpp"
+#include "FilunaPanel.hpp"
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
 #include "Plater.hpp"
@@ -402,6 +403,10 @@ json preparar(const std::string& modulo_id, const std::string& modelo)
     Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER);
     if (tab != nullptr)
         tab->select_preset(p->name);
+    // Trocar para impressora que não é Bambu faz o Orca inserir a aba dele ("Printer panel", página de exemplo
+    // com imagem) logo depois da aba Dispositivo do Filuna, e a tela passava a mostrar essa página no meio do
+    // assistente (beta 14/11: os cliques do dono caíram na imagem). Volta para o Dispositivo do Filuna.
+    wxGetApp().CallAfter([] { FilunaPanel::open_tab("filuna.dispositivo", std::string()); });
     // Agente da marca ao vivo (GUI_App::switch_printer_agent lê o vínculo acima) + busca na LAN
     if (!NetworkAgentFactory::is_printer_agent_registered(agente))
         return {{"erro", "Agente de rede da marca não está disponível (" + agente + ")."}, {"perfil", p->name}};
