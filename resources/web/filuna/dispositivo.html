@@ -391,7 +391,7 @@ function assistente(app) {
 		// Só a Bambu exige código antes de conectar. Elegoo, Creality e as demais conectam direto, como no fatiador
 		// oficial; o código só é pedido se a impressora recusar (quem definiu um PIN nela).
 		if (d.precisa_codigo && !a.codigo && a.marca && a.marca.id == "bambu") { a.pedirCodigo = true; desenhar(); return; }
-		conectar(d.dev_id, a.codigo);
+		conectar(d.dev_id, a.codigo || codigoPadrao(a));
 	}; });
 	if ((b = app.querySelector("#conectarCod"))) b.onclick = function () { a.codigo = app.querySelector("#codigo").value.trim(); if (a.escolhida) conectar(a.escolhida.dev_id, a.codigo); };
 	if ((b = app.querySelector("#fim"))) b.onclick = function () { estado.vista = "lista"; estado.assist = null; carregar(); };
@@ -432,6 +432,9 @@ Filuna.ouvir("complemento.progresso", function (p) {
 	if (p.erro) { a.erro = p.erro; a.prog = a.prog || {}; desenhar(); return; }
 	a.prog = p; desenhar();
 });
+// Código que a própria marca usa quando o dono não definiu um: a Elegoo sai de fábrica com 123456 e o fatiador
+// oficial conecta sem perguntar. Sem um código o programa nem tenta a conexão (trata a impressora como sem acesso).
+function codigoPadrao(a) { return a && a.marca && a.marca.id == "elegoo" ? "123456" : ""; }
 // Impressoras achadas na rede que são da marca escolhida no assistente. A lista da rede do programa guarda as
 // achadas de outras marcas (ex.: a Elegoo de antes aparecia ao conectar uma Anycubic); o estado dá o agente de cada uma.
 function daMarca(a) {
