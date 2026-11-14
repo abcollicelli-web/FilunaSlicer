@@ -63,7 +63,7 @@ jobs:
         with:
           path: oem/deps/build
           key: deps-${{ matrix.id }}-${{ matrix.commit }}-v1
-      - name: DIA SDK e numpy (Creality: o Breakpad do binário oficial usa dia2.h; um script deles usa numpy)
+      - name: "DIA SDK e numpy (Creality — o Breakpad do binário oficial usa dia2.h; um script deles usa numpy)"
         if: steps.sel.outputs.go == '1' && matrix.id == 'creality'
         shell: pwsh
         run: |
