@@ -814,6 +814,7 @@ set(SLIC3R_GUI_SOURCES
     Utils/FilunaElegooCC2Agent.cpp
     Utils/FilunaAnycubicLanAgent.cpp
     Utils/FilunaAnycubicLanAgent.hpp
+    Utils/FilunaCameraUrls.hpp
     Utils/FilunaElegooCC2Agent.hpp
     Utils/FilunaElegooSDCPAgent.cpp
     Utils/FilunaElegooSDCPAgent.hpp

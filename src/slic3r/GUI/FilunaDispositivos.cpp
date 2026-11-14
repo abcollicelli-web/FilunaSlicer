@@ -19,6 +19,7 @@
 #include "slic3r/Utils/Http.hpp"
 #include "slic3r/Utils/NetworkAgent.hpp"
 #include "slic3r/Utils/NetworkAgentFactory.hpp"
+#include "slic3r/Utils/FilunaCameraUrls.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
@@ -257,6 +258,9 @@ json card(MachineObject* o)
         c["mesa"] = {{"atual", bed->GetBedTemp()}};
     if (DevExtderSystem* ext = o->GetExtderSystem())
         c["bico"] = {{"atual", ext->GetNozzleTempCurrent(0)}, {"alvo", ext->GetNozzleTempTarget(0)}};
+    const std::string cam = Filuna::camera_url(o->get_dev_id());
+    if (!cam.empty())
+        c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu
     return c;
 }
 

@@ -235,12 +235,13 @@ function unidade(app, u) {
 	}
 	var grau = function (x) { return x == null || isNaN(x) ? "—" : Math.round(x) + " °C"; };
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
-	var foto = i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
+	var camVivo = ativa && v.camera_url && !/\/flv(\?|$)/.test(v.camera_url) ? v.camera_url : ""; // FLV (Anycubic) ainda sem tocador
+	var foto = camVivo ? '<img alt="" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
 	var html = '<div style="padding:16px 32px 0"><a class="voltar" id="voltar">‹ Unidades</a></div>' + cabecalho(i.nome, i.estado, i.modelo || "", local) +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
 		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
-		'<div class="view">' + foto + '<div class="vtag">' + (i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
+		'<div class="view">' + foto + '<div class="vtag">' + (camVivo ? "Câmera ao vivo" : i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
 		'<div class="vbase"><div><div class="vk">Vista da impressão</div><div class="vv">' + (t ? "Mesa " + E(t.mesa || 1) + " de " + E(t.mesas || 1) : "Sem impressão agora") + "</div></div>" +
 		'<button class="vbtn" data-aba="monitor">' + (i.camera_em ? "Abrir câmera local" : "Abrir painel da impressora") + "</button></div></div>" +
 		'<div class="direita"><div class="lbl">Trabalho atual</div>' +
@@ -330,7 +331,11 @@ Filuna.ouvir("dispositivos.estado", function (e) {
 	estado.vivas = (e.impressoras || []).map(function (v) { v.foto = v.foto || fotoDoModelo(v.modelo_nome || v.modelo); return v; });
 	juntar();
 	if (estado.vista == "lista" && !estado.confirmar && document.activeElement.id != "busca") desenhar();
-	else if (estado.vista == "unidade" && !estado.confirmar) desenhar(); // cartão aberto acompanha a impressora ao vivo
+	else if (estado.vista == "unidade" && !estado.confirmar) {
+		// cartão aberto acompanha a impressora ao vivo; só redesenha quando algo mudou (não reinicia a câmera à toa)
+		var chave = JSON.stringify(estado.vivas);
+		if (chave != estado.vivasAntes) { estado.vivasAntes = chave; desenhar(); }
+	}
 });
 var fotos = {};
 function fotoDoModelo(nome) { if (!nome) return ""; var k = Object.keys(fotos).filter(function (n) { return nome.indexOf(n) == 0 || n.indexOf(nome) == 0; })[0]; return k ? fotos[k] : ""; }

@@ -18,6 +18,7 @@
 #include <openssl/evp.h>
 
 #include "FilunaMqttClient.hpp"
+#include "FilunaCameraUrls.hpp"
 
 namespace Slic3r {
 
@@ -119,6 +120,7 @@ json FilunaElegooCC2Agent::to_push_status(const json& s)
                 json tr;
                 tr["id"]         = std::to_string(t.value("tray_id", 0));
                 tr["tray_type"]  = t.value("filament_type", std::string());
+                tr["tray_info_idx"] = ""; // sem este campo o DeviceManager descarta o tipo (PLA, PETG, ABS…)
                 tr["tray_color"] = hex_rgba(t.value("filament_color", std::string()));
                 tr["tray_sub_brands"] = t.value("brand", std::string());
                 trays.push_back(tr);
@@ -196,6 +198,11 @@ void FilunaElegooCC2Agent::on_mqtt(const std::string& topic, const std::string& 
     json snapshot;
     {
         std::lock_guard<std::recursive_mutex> l(m_mutex);
+        // resposta do método 1042 (GetLivingVideoUrl): {"error_code":0,"url":"http://..."} — câmera ao vivo
+        if (result.contains("url") && result["url"].is_string() && result["url"].get<std::string>().rfind("http", 0) == 0) {
+            Filuna::set_camera_url(m_sn, result["url"].get<std::string>());
+            BOOST_LOG_TRIVIAL(info) << "FilunaElegooCC2Agent: câmera ao vivo em " << result["url"].get<std::string>();
+        }
         m_status.merge_patch(result);
         snapshot = m_status;
     }
@@ -292,6 +299,7 @@ int FilunaElegooCC2Agent::connect_printer(const PrinterConnectionParams& p)
     request(1001, json::object()); // atributos (negociação de versão)
     request(1002, json::object()); // estado
     request(2005, json::object()); // canvas (cores)
+    request(1042, json::object()); // endereço da câmera ao vivo
     dispatch_connect(ConnectStatusOk, "");
     if (m_on_connected)
         m_on_connected(base + "api_status");

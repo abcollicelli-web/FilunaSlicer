@@ -20,6 +20,7 @@
 #include <openssl/evp.h>
 
 #include "FilunaMqttClient.hpp"
+#include "FilunaCameraUrls.hpp"
 
 namespace Slic3r {
 
@@ -329,6 +330,7 @@ json FilunaAnycubicLanAgent::to_push_status(const json& e)
                 const std::string tipo = s.value("type", std::string());
                 if (!tipo.empty()) {
                     t["tray_type"]  = tipo;
+                    t["tray_info_idx"] = ""; // sem este campo o DeviceManager descarta o tipo (PLA, PETG, ABS…)
                     t["tray_color"] = cor_rgba(s.value("color", json::array()));
                     t["tray_sub_brands"] = s.value("sku", std::string());
                     if (s.contains("consumables_percent") && s["consumables_percent"].is_number())
@@ -440,10 +442,27 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
         return;
     const std::string tipo = semfim.substr(barra + 1);
     json              j    = json::parse(payload, nullptr, false);
+    if (j.is_object() && tipo == "video") {
+        // {"state":"initSuccess","code":200}: o vídeo ao vivo fica em http://<ip>:18088/flv (HTTP-FLV, H.264)
+        const std::string st = j.value("state", std::string());
+        std::string ip, serie;
+        {
+            std::lock_guard<std::recursive_mutex> l(m_mutex);
+            ip = m_ip, serie = m_s.serie;
+        }
+        BOOST_LOG_TRIVIAL(info) << "FilunaAnycubicLanAgent: câmera: " << st;
+        if (st == "initSuccess" && !ip.empty())
+            Filuna::set_camera_url(serie, "http://" + ip + ":18088/flv");
+        else if (st == "pushStopped")
+            Filuna::set_camera_url(serie, std::string());
+        return;
+    }
     if (!j.is_object() || !j.contains("data") || !j["data"].is_object())
         return;
     const json& d = j["data"];
     json        retrato;
+    if (tipo == "video")
+        return; // tratado antes (data pode ser nulo)
     {
         std::lock_guard<std::recursive_mutex> l(m_mutex);
         if (tipo == "multiColorBox") {
@@ -606,6 +625,8 @@ int FilunaAnycubicLanAgent::connect_printer(const PrinterConnectionParams& p)
     pedir("info", "query", nullptr);
     pedir("tempature", "query", nullptr);
     pedir("multiColorBox", "getInfo", nullptr); // "query" não devolve a caixa; "getInfo" devolve
+    // Câmera: "video/startCapture" abre http://<ip>:18088/flv (HTTP-FLV). A tela ainda não toca FLV (a página
+    // local não pode buscar esse fluxo sem um repasse nativo), então a captura não é ligada aqui.
     dispatch_connect(ConnectStatusOk, "");
     if (m_on_connected)
         m_on_connected(base + "/info/report");

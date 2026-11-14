@@ -1,0 +1,34 @@
+#pragma once
+
+// Filuna — endereço da câmera ao vivo que o agente de rede de cada marca descobre (ex.: Elegoo CC2 responde
+// ao método 1042 GetLivingVideoUrl). O DeviceManager não guarda esse dado; a tela de Dispositivos lê daqui.
+
+#include <map>
+#include <mutex>
+#include <string>
+
+namespace Slic3r { namespace Filuna {
+
+inline std::mutex& camera_urls_mutex()
+{
+    static std::mutex m;
+    return m;
+}
+inline std::map<std::string, std::string>& camera_urls_map()
+{
+    static std::map<std::string, std::string> m;
+    return m;
+}
+inline void set_camera_url(const std::string& dev_id, const std::string& url)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    camera_urls_map()[dev_id] = url;
+}
+inline std::string camera_url(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    auto it = camera_urls_map().find(dev_id);
+    return it == camera_urls_map().end() ? std::string() : it->second;
+}
+
+}} // namespace Slic3r::Filuna
