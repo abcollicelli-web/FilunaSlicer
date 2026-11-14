@@ -82,6 +82,30 @@ jobs:
           Write-Host ("WER_DUMP_COUNT=" + $entries.Count)
           if ($entries.Count -eq 0) { Write-Host 'WER_NO_DUMP_CAPTURED: no native stack evidence' }
           # Keep native dumps out of the artifact; only their SHA/size/path inventory is uploaded.
+      - name: Collect Windows Application Error event evidence (no OEM changes)
+        if: always()
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:GITHUB_WORKSPACE 'qa-snapmaker-u1-guard-probe'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          $events = @()
+          try {
+            $events = @(Get-WinEvent -FilterHashtable @{LogName='Application'; Id=1000,1001; StartTime=(Get-Date).AddMinutes(-40)} -ErrorAction Stop |
+              Where-Object { $_.Message -match 'snapmaker-orca' } |
+              Select-Object -First 12 |
+              ForEach-Object {
+                $msg = $_.Message
+                # Avoid storing absolute runner paths or usernames in the diagnostic artifact.
+                $msg = $msg -replace '(?i)[A-Z]:\\[^\s,;]+', '[REDACTED_PATH]'
+                [pscustomobject]@{ event_id=$_.Id; provider=$_.ProviderName; time_utc=$_.TimeCreated.ToUniversalTime().ToString('o'); message=$msg }
+              })
+          } catch {
+            Write-Host ('EVENT_QUERY_UNAVAILABLE: ' + $_.Exception.GetType().Name)
+          }
+          [pscustomobject]@{ event_count=$events.Count; events=$events } |
+            ConvertTo-Json -Depth 5 |
+            Set-Content -Path (Join-Path $root 'windows-application-error-events.json') -Encoding utf8
+          Write-Host ('SNAPMAKER_EVENT_COUNT=' + $events.Count)
       - name: Preserve diagnostic cases and logs (never installer)
         if: always()
         uses: actions/upload-artifact@v4
