@@ -2064,6 +2064,20 @@ StringObjectException Print::validate(std::vector<StringObjectException> *warnin
     if (extruders.empty())
         return { L("No extrusions under current settings.") };
 
+    // Only disabled cut-retraction can use the OEM sentinel 0. An enabled
+    // long cut-retraction still requires the original Orca 10..18 mm safety
+    // range; never coerce an OEM zero to 10 to make a profile load.
+    for (unsigned int extruder : extruders) {
+        if (!m_config.long_retractions_when_cut.get_at(extruder))
+            continue;
+        const double distance = m_config.retraction_distances_when_cut.get_at(extruder);
+        // Do not allow a non-finite distance to bypass range checks (NaN
+        // compares false to both bounds). Disabled OEM sentinel zero is still
+        // accepted above; an active cut always requires a finite 10..18 mm.
+        if (!std::isfinite(distance) || distance < 10.0 || distance > 18.0)
+            return { L("Enabled filament cut retraction requires a finite distance from 10 to 18 mm.") };
+    }
+
     // A flow ratio of 0 would extrude nothing, and a nil one would write NaN extrusion lengths.
     {
         const std::vector<double> &flow_ratios = m_config.filament_flow_ratio.values;

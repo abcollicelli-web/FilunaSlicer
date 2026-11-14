@@ -1,0 +1,49 @@
+name: Filuna Snapmaker U1 original Windows 40-run G-code stability stress
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_stress_repeat_qa.py"
+      - ".github/workflows/filuna-snapmaker-u1-40-run-stress.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-u1-40-run-stress
+  cancel-in-progress: true
+jobs:
+  original-oem-40-processes:
+    name: Original official Snapmaker 2.4.1, all input blobs immutable
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Source-only tests, no OEM motor compilation
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_stress_repeat_qa.py
+      - name: Restore SHA-locked original portable
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Exercise 40 independent original CLI processes
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_stress_repeat_qa.py --cache .oem-portable-cache --out qa-snapmaker-u1-40-run-stress
+          $code = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-u1-40-run-stress/RESUMO.md) {
+            Get-Content qa-snapmaker-u1-40-run-stress/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Preserve all original G-code, logs, provenance, path cases and any real diff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-40-original-cli-reproducibility
+          path: qa-snapmaker-u1-40-run-stress/
+          if-no-files-found: warn
+          retention-days: 30

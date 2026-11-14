@@ -1,0 +1,98 @@
+name: Filuna U1 OEM four-tool two functional variants dual safety (NO print)
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - ".github/workflows/filuna-u1-fourtool-variants-dual-safety.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  immutable-two-variant-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-core4-20-official-sha-proof
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42396616586
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .u1-fourtool-stress-official
+      - name: Compile immutable native C++17 safety scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            -o /tmp/filuna-two-variants-safety lab/test_snapmaker_native_gcode_safety.cpp
+      - name: Verify exact original OEM G-code SHA and compare both read-only detectors
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa-u1-variants
+          PYTHONPATH=lab python3 - <<'PY'
+          from pathlib import Path
+          from snapmaker_spatial_gcode_validator import policy_from_yaml,validate_gcode
+          import hashlib,subprocess,json
+          root=Path(".u1-fourtool-stress-official")
+          cases=(
+             ("predominant","stress-00/plate_1.gcode",
+              "6ea06f1943f78d707db651cf0811c210ebb96c1c9fdea87356432e95b76f63ce",106623),
+             ("rare","stress-09/plate_1.gcode",
+              "682e9a8f2b070ddb36f5bc1673c02106a1626cdf158d6ff54307a42ad427aa6a",106432)
+          )
+          proof=json.loads((root/"stress-proof.json").read_text(encoding="utf-8"))
+          assert proof["status"]=="FAIL_NON_TIMESTAMP_TOOLPATH_VARIANCE"
+          assert len(proof["samples"])==20
+          assert proof["unique_functional_toolpaths"]==2
+          policy=policy_from_yaml(Path("FILUNA/fabricantes/snapmaker/vendor.yaml"))
+          results=[]
+          for name,path,sha,line in cases:
+              file=root/path
+              original=file.read_bytes()
+              assert hashlib.sha256(original).hexdigest()==sha,("OEM_GCODE_SHA_MISMATCH",name)
+              py=validate_gcode(original,policy,source="official")
+              hits=[x for x in py["issues"]
+                    if x.get("code")=="TRAVEL_CROSSES_PRINTED_GEOMETRY"]
+              assert py["status"]=="BLOCK",(name,py["status"])
+              assert any(h.get("line")==line and h.get("layer")==99 for h in hits),(name,hits[:3])
+              native=subprocess.run(["/tmp/filuna-two-variants-safety",str(file)],
+                                    text=True,capture_output=True,check=False)
+              assert native.returncode==2,(name,"NATIVE_SCANNER_EXIT",native.returncode)
+              assert "NATIVE_STATUS=BLOCK" in native.stdout,(name,native.stdout[-1000:])
+              assert f"NATIVE_COLLISION line={line} layer=99" in native.stdout,(name,native.stdout[-1000:])
+              results.append({"variant":name,"original_gcode_sha256":sha,
+                              "python_status":"BLOCK","native_cpp17_status":"BLOCK",
+                              "original_collision_line":line,"original_collision_layer":99,
+                              "collision_xyz_mm":[132.044,141.691,20.05],
+                              "vendor_gcode_unmodified":True})
+              (Path("qa-u1-variants")/(name+"-native.log")).write_text(native.stdout)
+          output={"status":"PASS_DUAL_SCANNER_CORRECTLY_BLOCKS_BOTH_OEM_VARIANTS",
+                  "origin_run":42396616586,
+                  "oem_functional_repeatability":"FAIL",
+                  "safe_to_send":"BLOCK",
+                  "filuna_native_generator_parity":"NOT_RUN",
+                  "physical_approval":"NOT_RUN",
+                  "cases":results}
+          Path("qa-u1-variants/verified.json").write_text(
+              json.dumps(output,indent=2)+"\n",encoding="utf-8")
+          print(output["status"])
+          print("DO_NOT_REWRITE_VENDOR_GCODE_OR_PROMOTE_U1")
+          PY
+      - name: Persist evidence only, not a corrected G-code
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-u1-original-fourtool-two-variant-safety-evidence
+          path: qa-u1-variants/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Explicit nonpromotion gates
+        if: always()
+        shell: bash
+        run: |
+          echo "QA detector PASS must not imply safe vendor motion; original 20-run OEM repeatability FAIL and U1 upload remains BLOCKED." >> "$GITHUB_STEP_SUMMARY"

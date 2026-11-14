@@ -1,0 +1,40 @@
+name: Filuna native OEM source compatibility regression (no slicer compilation)
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "src/libslic3r/GCode.cpp"
+      - "src/libslic3r/Print.cpp"
+      - "src/libslic3r/PrintConfig.cpp"
+      - "src/libslic3r/PrintConfig.hpp"
+      - "src/libslic3r/PerimeterGenerator.cpp"
+      - "src/libslic3r/Fill/FillRectilinear.cpp"
+      - "lab/test_oem_native_source_contract.py"
+      - ".github/workflows/filuna-oem-native-source-contract-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-native-oem-source-regression
+  cancel-in-progress: true
+jobs:
+  source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Source-only guards for Anycubic cut, Snapmaker macros and opt-in Flashforge walls
+        run: |
+          python -m unittest discover -s lab -p 'test_oem_native_source_contract.py' -v
+      - name: Preserve truthful readiness level
+        if: always()
+        run: |
+          echo 'SOURCE_QA_ONLY: native C++ patch not compiled nor tested in final Filuna app.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No OEM motor compiled; no new Filuna binary; no profile rewritten to pass.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Anycubic, Flashforge, Snapmaker native G-code and network gates remain BLOCKED until real program evidence.' >> "$GITHUB_STEP_SUMMARY"

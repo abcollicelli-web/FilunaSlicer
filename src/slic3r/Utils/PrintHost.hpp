@@ -110,6 +110,9 @@ struct PrintHostJob
     std::unique_ptr<PrintHost> printhost;
     bool switch_to_device_tab{false};
     bool cancelled = false;
+    // Effective printer profile identity, captured before the job enters the
+    // background queue. It is NOT proof of paired hardware or firmware.
+    std::string filuna_effective_printer_model;
 
     PrintHostJob() {}
     PrintHostJob(const PrintHostJob&) = delete;
@@ -118,11 +121,11 @@ struct PrintHostJob
         , printhost(std::move(other.printhost))
         , switch_to_device_tab(other.switch_to_device_tab)
         , cancelled(other.cancelled)
+        , filuna_effective_printer_model(std::move(other.filuna_effective_printer_model))
     {}
 
-    PrintHostJob(DynamicPrintConfig *config)
-        : printhost(PrintHost::get_print_host(config))
-    {}
+    // Out-of-line because inspecting DynamicPrintConfig requires Config.hpp.
+    PrintHostJob(DynamicPrintConfig *config);
 
     PrintHostJob& operator=(const PrintHostJob&) = delete;
     PrintHostJob& operator=(PrintHostJob &&other)
@@ -131,6 +134,7 @@ struct PrintHostJob
         printhost   = std::move(other.printhost);
         switch_to_device_tab = other.switch_to_device_tab;
         cancelled = other.cancelled;
+        filuna_effective_printer_model = std::move(other.filuna_effective_printer_model);
         return *this;
     }
 

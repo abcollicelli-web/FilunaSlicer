@@ -255,6 +255,9 @@ enum class WallDirection
 {
     CounterClockwise,
     Clockwise,
+    // OEM Flashforge supports an automatic wall direction which is distinct
+    // from Orca's explicit CCW/CW choices. Append for existing enum stability.
+    Auto,
     Count,
 };
 
@@ -1754,6 +1757,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloats,              filament_cost))
     ((ConfigOptionStrings,             default_filament_colour))
     ((ConfigOptionInts,                temperature_vitrification))  //BBS
+    ((ConfigOptionBools,              filament_is_high_temperature)) // OEM: Snapmaker chamber mode, default false
     ((ConfigOptionFloats,              filament_max_volumetric_speed))
     ((ConfigOptionInts,                required_nozzle_HRC))
     ((ConfigOptionEnum<FilamentMapMode>, filament_map_mode))
@@ -1871,6 +1875,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                use_firmware_retraction))
     ((ConfigOptionBool,                use_relative_e_distances))
     ((ConfigOptionBool,                accel_to_decel_enable))
+    ((ConfigOptionBool,                klipper_emit_minimum_cruise_ratio))
     ((ConfigOptionPercent,             accel_to_decel_factor))
     ((ConfigOptionFloatsOrPercentsNullable, initial_layer_travel_speed))
     ((ConfigOptionFloatsOrPercentsNullable, initial_layer_travel_acceleration))
@@ -1956,6 +1961,11 @@ PRINT_CONFIG_CLASS_DEFINE(
 PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     PrintConfig,
     (MachineEnvelopeConfig, GCodeConfig),
+
+    // OEM: legacy consistent-fill anchor is scoped to print-level config.
+    // The Fill object carries PrintConfig*, not PrintRegionConfig*.
+    // Default false; enable only for verified OEM behavior.
+    ((ConfigOptionBool,                filuna_oem_legacy_infill_anchor))
 
     // Build plate tilt for off-axis gravity support generation (printer-level setting).
     ((ConfigOptionFloat,               build_plate_tilt_x))
@@ -2087,6 +2097,7 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloat,              spiral_finishing_flow_ratio))
     ((ConfigOptionFloat,              spiral_starting_flow_ratio))
     ((ConfigOptionInt,                standby_temperature_delta))
+    ((ConfigOptionBool,               tool_change_temprature_wait))
     ((ConfigOptionFloat,                preheat_time))
     ((ConfigOptionInt,                preheat_steps))
     ((ConfigOptionInts,               nozzle_temperature))

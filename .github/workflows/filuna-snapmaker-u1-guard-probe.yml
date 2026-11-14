@@ -1,0 +1,92 @@
+name: Filuna Snapmaker U1 vector-guard root-cause diagnostic
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_guard_probe.py"
+      - "lab/snapmaker_u1_inherit.py"
+      - ".github/workflows/filuna-snapmaker-u1-guard-probe.yml"
+      - "fixtures/oem/snapmaker/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-vector-guard-probe
+  cancel-in-progress: true
+jobs:
+  diagnostic:
+    name: Official unchanged control and one-field diagnostic COPY A/B
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore official SHA-pinned ZIP cache
+        id: portable-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Syntax check only; never compile manufacturer slicer
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_guard_probe.py
+      - name: Enable per-user Windows Error Reporting minidumps (diagnostic only)
+        shell: pwsh
+        run: |
+          $dumpDir = Join-Path $env:GITHUB_WORKSPACE 'qa-snapmaker-u1-guard-probe/crash-dumps'
+          New-Item -ItemType Directory -Force -Path $dumpDir | Out-Null
+          $werKey = 'HKCU:\\Software\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\snapmaker-orca.exe'
+          New-Item -Path $werKey -Force | Out-Null
+          New-ItemProperty -Path $werKey -Name DumpFolder -Value $dumpDir -PropertyType ExpandString -Force | Out-Null
+          New-ItemProperty -Path $werKey -Name DumpType -Value 1 -PropertyType DWord -Force | Out-Null
+          New-ItemProperty -Path $werKey -Name DumpCount -Value 4 -PropertyType DWord -Force | Out-Null
+          Write-Host 'WER minidump capture enabled for snapmaker-orca.exe only'
+      - name: Capture source-preserving U1 process guard diagnosis
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_guard_probe.py --cache .oem-portable-cache --out qa-snapmaker-u1-guard-probe
+          $code = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-u1-guard-probe/RESUMO.md) {
+            Get-Content qa-snapmaker-u1-guard-probe/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Inventory WER dumps after bounded capture wait
+        if: always()
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:GITHUB_WORKSPACE 'qa-snapmaker-u1-guard-probe'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          $werKey = 'HKCU:\Software\Microsoft\Windows\Windows Error Reporting\LocalDumps\snapmaker-orca.exe'
+          $configured = (Get-ItemProperty -Path $werKey -ErrorAction SilentlyContinue).DumpFolder
+          $paths = @($configured, (Join-Path $env:LOCALAPPDATA 'CrashDumps')) | Where-Object { $_ } | Select-Object -Unique
+          $entries = @()
+          foreach ($seconds in @(0, 3, 6, 12)) {
+            if ($seconds -gt 0) { Start-Sleep -Seconds $seconds }
+            $entries = @(
+              foreach ($dir in $paths) {
+                if (Test-Path -LiteralPath $dir) {
+                  Get-ChildItem -LiteralPath $dir -Filter 'snapmaker-orca*.dmp' -File -ErrorAction SilentlyContinue |
+                    ForEach-Object {
+                      [pscustomobject]@{ path=$_.FullName; bytes=$_.Length; sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
+                    }
+                }
+              }
+            )
+            if ($entries.Count -gt 0) { break }
+          }
+          $report = [pscustomobject]@{ configured_folder=$configured; searched_folders=$paths; dump_count=$entries.Count; dumps=$entries }
+          $report | ConvertTo-Json -Depth 6 | Set-Content -Path (Join-Path $root 'wer-dump-inventory.json') -Encoding utf8
+          Write-Host ("WER_DUMP_COUNT=" + $entries.Count)
+          if ($entries.Count -eq 0) { Write-Host 'WER_NO_DUMP_CAPTURED: no native stack evidence' }
+          # Keep native dumps out of the artifact; only their SHA/size/path inventory is uploaded.
+      - name: Preserve diagnostic cases and logs (never installer)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-vector-guard-one-field-diagnostic
+          path: qa-snapmaker-u1-guard-probe/
+          retention-days: 7
+          if-no-files-found: warn

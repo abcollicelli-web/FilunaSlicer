@@ -1,0 +1,55 @@
+name: Filuna Snapmaker U1 official v2.4.0 original 30-run regression reference
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_v240_original_repeat_qa.py"
+      - ".github/workflows/filuna-snapmaker-u1-v240-regression.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-u1-original-240
+  cancel-in-progress: true
+jobs:
+  unmodified-vendor-binary-original-presets:
+    name: Original 2.4.0 portable SHA-locked, 30 independent Windows U1 slices
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax check; NEVER compile OEM source
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_v240_original_repeat_qa.py
+      - name: Restore exact original Snapmaker 2.4.0 portable
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-snapmaker-240-cache
+          key: snapmaker-original-240-089b7ca20ccfc4be-20261107
+      - name: Slice 30x with official same-generation U1 profiles and report differences
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_v240_original_repeat_qa.py --cache .oem-snapmaker-240-cache --out qa-snapmaker-original-240-30 --runs 30
+          $code=$LASTEXITCODE
+          if (Test-Path qa-snapmaker-original-240-30/RESUMO.md) {
+            Get-Content qa-snapmaker-original-240-30/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Keep official 2.4.0 ZIP in cache for repeated diagnostic
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .oem-snapmaker-240-cache
+          key: snapmaker-original-240-089b7ca20ccfc4be-20261107
+      - name: Preserve raw original G-code, exact input SHA and negative findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-original-240-30-differential
+          path: qa-snapmaker-original-240-30/
+          if-no-files-found: warn
+          retention-days: 30

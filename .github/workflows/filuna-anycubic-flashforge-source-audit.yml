@@ -1,0 +1,73 @@
+name: Filuna Anycubic and Flashforge all-model OEM source audit
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - ".github/workflows/filuna-anycubic-flashforge-source-audit.yml"
+      - "FILUNA/tools/oem_universal_inventory.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-anycubic-flashforge-all-source
+  cancel-in-progress: true
+jobs:
+  all-sources:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - vendor: anycubic
+            repository: ANYCUBIC-3D/AnycubicSlicerNext
+            pinned_sha: 6103ed8b511609658d00d0538cc7f0609cdb57da
+            profiles: Anycubic
+          - vendor: flashforge
+            repository: FlashForge/Orca-Flashforge
+            pinned_sha: 70f2359ba8b4bc8ff9e54818a4bb1d05e56e7856
+            profiles: Flashforge
+    name: All source, network and profiles candidate audit - ${{ matrix.vendor }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Checkout immutable official source (never compile OEM slicer)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.pinned_sha }}
+          path: vendor-upstream
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify manufacturer commit
+        run: test "$(git -C vendor-upstream rev-parse HEAD)" = "${{ matrix.pinned_sha }}"
+      - name: Inventory complete vendor source and every profile with inheritance
+        run: |
+          set -euo pipefail
+          python FILUNA/tools/oem_universal_inventory.py \
+            --brand "${{ matrix.vendor }}" \
+            --official "$GITHUB_WORKSPACE/vendor-upstream" \
+            --base "$GITHUB_WORKSPACE" \
+            --profiles "$GITHUB_WORKSPACE/vendor-upstream/resources/profiles/${{ matrix.profiles }}" \
+            --out "$RUNNER_TEMP/filuna-${{ matrix.vendor }}-source" \
+            --copy
+          test -s "$RUNNER_TEMP/filuna-${{ matrix.vendor }}-source/source-manifest.json"
+          test -s "$RUNNER_TEMP/filuna-${{ matrix.vendor }}-source/all-models-all-profiles.json"
+          cat "$RUNNER_TEMP/filuna-${{ matrix.vendor }}-source/SUMMARY.json"
+          echo 'Inventory only; no OEM module integrated, built or printed.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload review manifest only, never redistribute original vendor sources
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-${{ matrix.vendor }}-all-model-source-review
+          path: |
+            ${{ runner.temp }}/filuna-${{ matrix.vendor }}-source/source-manifest.json
+            ${{ runner.temp }}/filuna-${{ matrix.vendor }}-source/all-models-all-profiles.json
+            ${{ runner.temp }}/filuna-${{ matrix.vendor }}-source/SUMMARY.json
+          if-no-files-found: warn
+          retention-days: 30

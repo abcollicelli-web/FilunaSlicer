@@ -164,10 +164,13 @@ def t1(brand,cfg,store,cache,os_name,rows):
   return
  emit(rows,brand,"T1","PENDENTE","FILUNA_NATIVE_CLI_COMPARISON_NOT_IMPLEMENTED"+("; OWNER_MULTICOLOR_PENDING" if owner_multicolor else ""),"","Completar comparação oficial×Filuna com os mesmos perfis e SHA normalizado")
 def contract(brand,cfg,store,native_binary,rows):
- if brand=="bambu":
-  for step in STEPS[1:]:
-   emit(rows,brand,step,"PENDENTE","OWNER_DEFERRED_BAMBUDDY_AUTHENTICATED", "", "Homologar Bambu autenticada ao final do lote")
-  return
+ # Owner decision: ONLY the authenticated Bambu/Bambuddy validation is
+ # intentionally deferred. Other Bambu OEM network/GUI/gcode tests remain
+ # in the active QA queue; never label all T3-T9 as "deferred".
+ if brand=="bambu" and cfg.get("flags",{}).get("defer_bambuddy_authenticated"):
+  emit(rows,brand,"BAMBUDDY_AUTH","PENDENTE",
+       "OWNER_DEFERRED_ONLY_BAMBU_BAMBUDDY_AUTHENTICATED",
+       "", "Executar validação autenticada com Bambuddy na etapa posterior definida pelo proprietário")
  if not native_binary or not native_binary.is_file():
   message="NATIVE_CPP_BINARY_NOT_COMPILED"
  elif not cfg.get("network",{}).get("contract_ready"):

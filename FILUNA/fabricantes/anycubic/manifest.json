@@ -4,14 +4,8 @@
   "module_id": "filuna-oem-anycubic",
   "abi": 1,
   "engine": "ORCA_SINGLE_ENGINE",
-  "state": "CANDIDATE_NOT_VALIDATED",
-  "models": [
-    {
-      "id": "ANYCUBIC-KOBRA3-V2",
-      "display": "Kobra 3 V2",
-      "firmware_verified": false
-    }
-  ],
+  "state": "OFFICIAL_OEM_QA_IN_PROGRESS_NATIVE_NOT_INTEGRATED",
+  "models": [],
   "module_is_compatible_overlay_only": true,
   "shared_engine": "src/libslic3r",
   "source_license_and_shas": "REVIEW_REQUIRED",
@@ -21,11 +15,180 @@
     "PROTOCOLS_FIRST_AUTHENTICATED",
     "LAN_CODE_ONLY_IF_NEEDED_AND_SUPPORTED"
   ],
-  "components": [],
+  "components": [
+    {
+      "kind": "universal_source_and_profile_catalog",
+      "path": "FILUNA/tools/oem_universal_inventory.py",
+      "status": "INVENTORY_CI_PASS_NOT_NATIVE_INTEGRATION"
+    },
+    {
+      "kind": "all_oem_code_and_network_candidates",
+      "path": ".github/workflows/filuna-anycubic-flashforge-source-audit.yml",
+      "status": "SOURCE_CLONE_AND_DELTA_INVENTORY_ONLY"
+    },
+    {
+      "kind": "official_portable_qa",
+      "path": "lab/anycubic_kobra_models_official_qa.py",
+      "status": "PASS_3_INDEPENDENT_ORIGINAL_A_B_SAMPLES_WITH_8_NEGATIVE_CHECKS_NOT_FILUNA_NATIVE"
+    }
+  ],
   "checks": {
     "module_loaded_in_prepare": "NOT_RUN",
     "gcode_equivalence": "NOT_RUN",
     "hardware": "NOT_RUN"
   },
-  "automatic_hardware_activation": false
+  "automatic_hardware_activation": false,
+  "manufacturer_id": "anycubic",
+  "version": "0.1.0-source-audit-candidate",
+  "model_catalog": {
+    "discovery": "AUTO_ALL_MODELS_ALL_PRESETS_FROM_VERIFIED_OFFICIAL_TREE",
+    "fixed_models_whitelist": false,
+    "official_profile_root": "resources/profiles/Anycubic",
+    "qa_samples": [
+      "Anycubic Kobra S1 0.4 nozzle",
+      "Anycubic Kobra 3 V2 0.4 nozzle",
+      "Anycubic Kobra 4 0.4 nozzle"
+    ],
+    "note": "QA sample names never limit supported catalog; compatibility and dynamic capability predicates must still be checked"
+  },
+  "upstream_provenance": {
+    "source_repo": "https://github.com/ANYCUBIC-3D/AnycubicSlicerNext",
+    "source_commit": "6103ed8b511609658d00d0538cc7f0609cdb57da",
+    "official_package": "Anycubic Slicer Next Linux 2.0.0.6 original .deb",
+    "official_sha256": "fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678",
+    "warning": "Source main has 19 machine candidates, binary 2.0.0.6 has 40; versions not proven equivalent. BLOCK before native port.",
+    "source_audit": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42319915138",
+    "source_files": 1428,
+    "source_deltas_staged": 1268,
+    "review_blockers": 65,
+    "published_binary_profiles": {
+      "machines": 40,
+      "processes": 191,
+      "filaments": 382,
+      "inheritance_issues": 0
+    },
+    "source_branches_audited": {
+      "main": {
+        "sha": "6103ed8b511609658d00d0538cc7f0609cdb57da",
+        "timestamp": "2026-02-02T08:32:28Z"
+      },
+      "develop_and_WL_Master": {
+        "sha": "987a3c2bf9ed13934137326bfd522896c70e5101",
+        "timestamp": "2026-02-02T10:20:41Z",
+        "version_inc": "SoftFever_VERSION=2.3.1.0"
+      }
+    },
+    "source_to_binary_exact_build_match": "BLOCKED_NO_VERIFIED_2_0_0_6_SOURCE_COMMIT"
+  },
+  "qa": {
+    "source_tree_inventory": "PASS_SOURCE_CANDIDATES_ONLY",
+    "all_binary_profiles_inventory": "PASS_LIST_AND_INHERITANCE_ONLY",
+    "sample_original_cli_ab": "PASS_KOBRA_S1_KOBRA3V2_KOBRA4_3_DISTINCT_ORIGINAL_AB_RAW_SHA_MATCH",
+    "sample_gcode_sha256": {
+      "kobra_s1_04": "cf60ff9d3412df392ed99077bf03e8a072e2b4c0fa273a76f6a3e5fdc6324401",
+      "kobra3_v2_04": "4abf9fdd344d0c08f39b23b2ecd98f264bed92e25bda3be55054e6bb7ea53d5c"
+    },
+    "filuna_native_slicing": "NOT_RUN",
+    "filuna_native_network": "NOT_RUN",
+    "full_oem_dependencies_review": "BLOCKED_65",
+    "internal_homologation": "BLOCKED_NATIVE_GCODE_NETWORK_AND_SOURCE_VERSION_MISMATCH",
+    "physical_beta": "NOT_RUN",
+    "kobra4_04": {
+      "official_package_sha256": "fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678",
+      "upstream_binary_version": "2.0.0.6",
+      "gcode_bytes": 215690,
+      "real_gcode_diff": "PASS_RAW_SHA256_IDENTICAL_WITHIN_SEPARATE_OFFICIAL_A_B",
+      "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323305372",
+      "strict_ci_validation": "PASS_RERUN_42323305372",
+      "native_filuna_gcode_parity": "NOT_RUN",
+      "native_network": "NOT_RUN"
+    },
+    "original_cli_three_model_ab": {
+      "status": "PASS_3_SAMPLES_ONLY_NATIVE_NOT_INTEGRATED",
+      "original_binary_version": "2.0.0.6",
+      "original_package_sha256": "fdb134a4e11fad7e795c8d425520ce1305321ccc0bf1375a651a1513f8854678",
+      "actions_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323143169",
+      "strict_comparator_negative_tests": "PASS_8",
+      "results": {
+        "kobra_s1_04": {
+          "gcode_bytes": 210094,
+          "sha256_raw": "f2fbc6bd2df371e91d1999b8f107dd8cac65e70b7063ad868dd49b120bfb3f5a",
+          "ab": "PASS_RAW"
+        },
+        "kobra_3_v2_04": {
+          "gcode_bytes": 325731,
+          "sha256_raw": "dc1ed1656e3a3cf314f5b003d61b82840d031d9f0b8d6c2deab19f2026d3c62b",
+          "ab": "PASS_RAW"
+        },
+        "kobra_4_04": {
+          "gcode_bytes": 215690,
+          "sha256_raw": "5d397648d5eab5827cfdb7404b504f8cebff82ffa9b47b64cbeab4d89427e3b4",
+          "ab": "PASS_RAW"
+        }
+      },
+      "static_profile_catalog": "40 machines / 191 process / 382 filament / 0 inheritance errors",
+      "hardcoded_model_whitelist": false,
+      "module_native_gcode_parity": "NOT_RUN",
+      "module_native_network_ack": "NOT_RUN",
+      "module_native_ace_multimaterial": "NOT_RUN",
+      "physical_beta": "NOT_RUN"
+    },
+    "original_model_cli_ab": "PASS_3_OFFICIAL_SAMPLES_ONLY",
+    "existing_pre_oem_filuna_windows_baseline": {
+      "source_binary_build": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42102469888",
+      "comparison_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324852127",
+      "status": "FAIL_PRE_OEM_FILUNA_PROFILE_NOT_IN_LOADED_BUNDLE",
+      "error": "can not resolve preset ... process.json: Preset was not found in the loaded bundle",
+      "note": "Existing Filuna pre-OEM portable baseline does not yet have Anycubic native module or on-demand catalog integrated; this is NOT the same executable as official Anycubic.",
+      "native_homologation": "BLOCKED"
+    },
+    "original_cli_stress_20_per_model": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325230868",
+      "status": "PASS_OEM_ORIGINAL_ONLY",
+      "models": [
+        "Kobra S1 0.4",
+        "Kobra 3 V2 0.4",
+        "Kobra 4 0.4"
+      ],
+      "additional_independent_runs": 60,
+      "normalization": "ONLY_VENDOR_HEADER_GENERATED_AT_TIMESTAMP",
+      "functional_gcode_variances": 0
+    },
+    "pre_oem_filuna_baseline": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325032419",
+      "status": "BLOCKED_NO_NATIVE_GCODE",
+      "root_first_error": "OEM process preset not in loaded bundle",
+      "temp_user_profile_diagnostic": "retraction_distances_when_cut: 0 rejected by core range 10-18",
+      "not_oem_integration": true
+    },
+    "native_filuna_engine_parity": "BLOCKED_OR_NOT_RUN",
+    "native_printer_network_control": "NOT_RUN",
+    "physical_homologation": "BETA_LATER_NOT_RUN",
+    "overall_internal_homologation": "BLOCKED"
+  },
+  "production_promotion": "BLOCKED_UNTIL_NATIVE_FILUNA_PARITY_NETWORK_AND_OWNER_APPROVAL",
+  "profile_delivery": "FUTURE_ON_DEMAND_SIGNED_PROFILE_DATA_NOT_FINAL_INSTALLER",
+  "native_engine_deltas_candidate": {
+    "core_source_pin": "ANYCUBIC-3D/AnycubicSlicerNext@6103ed8b511609658d00d0538cc7f0609cdb57da",
+    "original_linux_release": "2.0.0.6",
+    "exact_source_binary_provenance": "BLOCKED_UNVERIFIED_MATCH",
+    "source_port": [
+      {
+        "source": "disabled retraction_distances_when_cut 0 sentinel",
+        "target": "src/libslic3r/PrintConfig.cpp + Print.cpp",
+        "state": "SOURCE_PORT_STATIC_PASS_NATIVE_GCODE_NOT_RUN"
+      },
+      {
+        "source": "reject nonfinite retraction when long cut enabled",
+        "target": "src/libslic3r/Print.cpp",
+        "state": "CANDIDATE_ADDITIONAL_SAFETY_GUARD"
+      }
+    ],
+    "original_vendor_cli_stress": "PASS_60_OFFICIAL_SLICINGS_20_EACH_S1_KOBRA3V2_KOBRA4",
+    "zero_cut_is_not_forced_to_10": true,
+    "parity_qa": "NOT_RUN",
+    "hardware_activation": false,
+    "activation": "SIGNED_VERIFIED_OEM_MODULE_ONLY_AFTER_PASSED_RUNTIME_TESTS",
+    "overall_status": "CANDIDATE_SOURCE_ONLY_BETA_BLOCKED"
+  }
 }

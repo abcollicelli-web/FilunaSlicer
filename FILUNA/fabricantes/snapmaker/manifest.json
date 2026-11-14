@@ -1,0 +1,294 @@
+{
+  "schema": 1,
+  "manufacturer": "Snapmaker",
+  "manufacturer_id": "snapmaker",
+  "module_id": "filuna-oem-snapmaker",
+  "version": "0.1.0-source-candidate",
+  "abi": 1,
+  "engine": "ORCA_SHARED_WITH_ISOLATED_OEM_DELTAS",
+  "state": "SOURCE_AUDIT_AND_OFFICIAL_CLI_DIAGNOSTIC_ONLY_NOT_INTEGRATED",
+  "models": [],
+  "model_discovery": {
+    "mode": "FULL_AUTOMATIC_OFFICIAL_PROFILE_TREE",
+    "official_profile_root": "resources/profiles/Snapmaker",
+    "model_filter_policy": "ALL_VERIFIED_PROFILES_AND_VARIANTS_NOT_FIXED_LIST",
+    "model_fixture_qa": [
+      "Snapmaker U1 (0.4 nozzle)"
+    ],
+    "source_audit_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42316033247",
+    "machine_profile_candidates": 100,
+    "process_profiles": 112,
+    "filament_profiles": 312,
+    "profile_inheritance_issues_in_snapshot": 0,
+    "not_a_homologated_model_whitelist": true
+  },
+  "upstream": {
+    "repository": "https://github.com/Snapmaker/OrcaSlicer",
+    "tag": "v2.4.1",
+    "commit": "bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c",
+    "binary_sha256": "1f002e2168c576f800bcfd0509b5e164b5ad65a0963abc2bef8317d929d48c9d",
+    "source_files_inventory": 2115,
+    "changed_source_audit_candidates": 1978,
+    "review_items": 101,
+    "license_status": "PER_FILE_AND_DEPENDENCY_REVIEW_REQUIRED",
+    "base_orca_pin": "a620d804efbe74162c96ad29d755cdab2b823530"
+  },
+  "components": [
+    {
+      "kind": "all_vendor_sources_network_and_engine",
+      "path": "FILUNA/tools/oem_universal_inventory.py",
+      "status": "SOURCE_TREE_STAGE_PASS_NEEDS_DEPENDENCY_AND_LICENSE_REVIEW"
+    },
+    {
+      "kind": "specific_verified_cli_crash",
+      "path": "lab/snapmaker_u1_wipe_tower_probe.py",
+      "status": "ROOT_CAUSE_DIFFERENTIAL_PASS"
+    },
+    {
+      "kind": "generic_runtime_profile_workaround",
+      "path": "lab/snapmaker_runtime_nozzle_guard_qa.py",
+      "status": "DIAGNOSTIC_GCODE_AB_PASS_NOT_APP_INTEGRATED"
+    },
+    {
+      "kind": "native_source_patch_candidate",
+      "path": "FILUNA/fabricantes/snapmaker/patches/0001-guard-nozzle-diameter-process-load.patch",
+      "status": "CANDIDATE_NOT_APPLIED_NOT_BUILT"
+    },
+    {
+      "kind": "official_gateway_network_source_map",
+      "path": "FILUNA/qa/SNAPMAKER-U1-REDE-CONTROLE-FONTES-20261107.md",
+      "status": "SOURCES_VERIFIED_NOT_INTEGRATED"
+    },
+    {
+      "kind": "cross_job_gcode_variance_negative_evidence",
+      "path": "lab/snapmaker_u1_cross_minute_qa.py",
+      "status": "CROSS_MINUTE_PASS_BUT_CROSS_JOB_FAIL"
+    },
+    {
+      "kind": "final_purge_safety_issue_patch_candidate",
+      "path": "FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch",
+      "status": "SOURCE_APPLY_TEST_PASS_ONLY_NOT_COMPILED_NOT_VALIDATED_NOT_PRODUCTION"
+    }
+  ],
+  "capabilities": {
+    "discovery": "NOT_RUN",
+    "pairing": "NOT_RUN",
+    "access": "NOT_RUN",
+    "network": "NOT_RUN",
+    "upload": "NOT_RUN",
+    "ack": "NOT_RUN",
+    "start_pause_resume_stop": "NOT_RUN",
+    "camera": "NOT_RUN",
+    "multi_material": "NOT_RUN",
+    "native_slicing": "NOT_RUN"
+  },
+  "qa": {
+    "source_inventory": "PASS",
+    "source_review_complete": "NOT_RUN",
+    "all_models_profile_candidates_discovered": "PASS_INVENTORY_ONLY",
+    "all_models_profiles_validated_in_app": "NOT_RUN",
+    "u1_official_cli_unmodified": "FAIL_ACCESS_VIOLATION",
+    "u1_source_causal_reproduction": "PASS",
+    "u1_official_cli_temporary_guard_ab": "PASS_DIAGNOSTIC_ONLY",
+    "u1_filuna_native_gcode_parity": "NOT_RUN",
+    "u1_network_protocol": "NOT_RUN",
+    "internal_homologation": "BLOCKED_EXTERNAL_SPATIAL_QA_PASS_NATIVE_INTEGRATION_PARITY_AND_FIRMWARE_NOT_RUN",
+    "physical_beta": "NOT_RUN",
+    "u1_spaced_second_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
+    "u1_cross_minute_ab": "PASS_HEADER_ONLY_TIMESTAMP_DIFFERENCE",
+    "u1_cross_actions_run_gcode_reproducibility": "FAIL_SAME_RUNNER_SAME_INPUTS_MULTIPLE_FUNCTIONAL_GCODE_VARIANTS_PROVEN",
+    "u1_cross_actions_run_size_bytes": [
+      250183,
+      249098,
+      250183
+    ],
+    "u1_same_workflow_rerun_attempt2": "PASS_NORMALIZED_HEADER_ONLY_MATCHES_ATTEMPT1",
+    "u1_cross_minute_vs_rerun": "PASS_NORMALIZED_HEADER_ONLY_MATCHES",
+    "u1_cross_workflow_variants": {
+      "first_and_rerun_sha256_normalized": "2774becee1246529474db12c7439cc1d46a501bfe797c31a5e53936db705db4a",
+      "other_temporal_workflow_sha256_normalized": "06687a6b84ee16d0d7ceb75f8c631272b649f452313ce4395864893e372247d7",
+      "note": "Exact original Windows workflow on two attempts is stable. Different workflow has changed toolpaths; not just timestamps. Need isolate CLI paths/runner/runtime."
+    },
+    "u1_original_cli_10_repeat": "FAIL_SAME_EXACT_INPUT_FILES_NON_TIMESTAMP_GCODE_VARIANTS",
+    "u1_original_cli_40_run_stress": "FAIL_INTERMITTENT_REAL_TOOLPATH_VARIANTS",
+    "u1_known_normalized_gcode_sha256": [
+      "2774becee1246529474db12c7439cc1d46a501bfe797c31a5e53936db705db4a",
+      "06687a6b84ee16d0d7ceb75f8c631272b649f452313ce4395864893e372247d7",
+      "c122c77d994d157b7d7fd8e9f1e3282775c351627ab4ee595349ee8c05d00f4d",
+      "9bf76f58cb59d678c3f2630d71ade1df77f94dfff4b07b8b33b9541b97b6a8fb",
+      "3ad124ed6bbb02f6a8d89f9daf08f1787f1e2c45b7c77cf5ecbf63206316a7f0"
+    ],
+    "u1_path_is_cause": "REFUTED_NOT_SUFFICIENT_SAME_PATH_CAN_PRODUCE_DIFFERENT_GCODE",
+    "stress_run_link": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321783683",
+    "stress_scope": "40 independent official Snapmaker 2.4.1 CLI fatiamentos; no Filuna-native engine; guard only process load",
+    "u1_original_cpu_affinity_diagnostic": {
+      "action_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323435503",
+      "result": "FAIL_BOTH_DEFAULT_AND_SINGLE_CPU_HAVE_REAL_TOOLPATH_VARIANCE",
+      "default_cpu": {
+        "trials": 24,
+        "variants": 3,
+        "majority_runs": 22
+      },
+      "assigned_single_cpu": {
+        "trials": 24,
+        "variants": 2,
+        "majority_runs": 23
+      },
+      "conclusion": "CPU affinity does not eliminate OEM toolpath difference, cannot promote U1"
+    },
+    "u1_final_purge_safety_regression": {
+      "official_issue": "https://github.com/Snapmaker/OrcaSlicer/issues/1149",
+      "vendor_issue_status_at_check": "OPEN",
+      "severity": "HARDWARE_SAFETY_BLOCKER_MULTICOLOR_FINAL_PURGE",
+      "source_location": "src/libslic3r/GCode.cpp WipeTowerIntegration::append_tcr2",
+      "source_version": "v2.4.1",
+      "candidate_patch": "FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch",
+      "source_only_ci": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323500007",
+      "source_check": "PASS_APPLY_REVERSE_ONLY",
+      "simulated_firmware_gcode_safety": "NOT_RUN",
+      "compiled_native_version": "NOT_RUN",
+      "physical_beta": "NOT_RUN",
+      "production_activation": false
+    },
+    "u1_seam_wipe_factor_diagnostic": {
+      "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42323700744",
+      "status": "FAIL_ALL_FOUR_GROUPS_REAL_GCODE_VARIANTS",
+      "trials": 80,
+      "groups": {
+        "baseline": {
+          "trials": 20,
+          "distinct_normalized_sha256": 2
+        },
+        "wipe_off_only": {
+          "trials": 20,
+          "distinct_normalized_sha256": 3
+        },
+        "nearest_seam_only": {
+          "trials": 20,
+          "distinct_normalized_sha256": 2
+        },
+        "wipe_off_and_nearest": {
+          "trials": 20,
+          "distinct_normalized_sha256": 3
+        }
+      },
+      "diagnostic_only": true,
+      "experimental_settings_not_for_release": true,
+      "conclusion": "Neither wipe-off nor nearest seam singly or together fixes intermittent original OEM CLI G-code non-repeatability"
+    },
+    "u1_root_cause": "SAME_OUTPUT_INSTABILITY_CONFIRMED_IN_2_4_0_AND_2_4_1_NOT_ISOLATED",
+    "u1_original_240_portable_regression_reference": {
+      "release": "v2.4.0",
+      "binary_name": "Snapmaker_Orca_Windows_V2.4.0_portable.zip",
+      "official_zip_sha256": "089b7ca20ccfc4be57ffb5a7f9f81e3a2b55db3a9622755fee2b20208bfcb8c2",
+      "official_source_profiles": "from same immutable v2.4.0 ZIP resources Snapmaker",
+      "diagnostic_only_guard": "process-only nozzle_diameter inherited from machine when required",
+      "action_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324349445",
+      "result": "FAIL_REAL_NON_TIMESTAMP_GCODE_VARIANTS",
+      "independent_attempts": 30,
+      "distinct_normalized_gcodes": 4,
+      "histogram_counts": [
+        27,
+        1,
+        1,
+        1
+      ],
+      "examples_bytes": [
+        248825,
+        248197,
+        247867,
+        247789
+      ],
+      "source_diff": "different feedrate F/motion/wipe trajectories and M73 positions, not only time",
+      "conclusion": "2.4.0 also has occasional genuine toolpath non-repeatability in U1 official CLI; not unique to 2.4.1, no fallback homologation"
+    },
+    "existing_pre_oem_filuna_windows_baseline": {
+      "source_binary_build": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42102469888",
+      "comparison_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42324852127",
+      "status": "FAIL_PRE_OEM_FILUNA_CUSTOM_GCODE_PARSER_INCOMPATIBLE",
+      "error": "machine_start_gcode Parsing error at line 10: Not a variable name {if chamber_cooling_mode==0}",
+      "note": "Actual original OEM G-code and source profiles compared to pre-OEM Windows Filuna portable; new native OEM integration not yet linked, so this negative baseline is not a test of a completed OEM module.",
+      "native_homologation": "BLOCKED"
+    },
+    "original_cli_stress_40": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321783683",
+      "status": "FAIL_REAL_SEMANTIC_GCODE_VARIANCE",
+      "versions_also_fail": [
+        "v2.4.0",
+        "v2.4.1"
+      ],
+      "fixed_n_cpus_no_resolution": true,
+      "experimental_seam_wipe_no_resolution": true
+    },
+    "pre_oem_filuna_baseline": {
+      "run_url": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42325032419",
+      "status": "BLOCKED_NO_NATIVE_GCODE",
+      "unknown_oem_placeholder": "chamber_cooling_mode",
+      "not_oem_integration": true
+    },
+    "native_filuna_engine_parity": "BLOCKED_OR_NOT_RUN",
+    "native_printer_network_control": "NOT_RUN",
+    "physical_homologation": "BETA_LATER_NOT_RUN",
+    "overall_internal_homologation": "BLOCKED"
+  },
+  "automatic_hardware_activation": false,
+  "production_promotion": "BLOCKED_UNTIL_TOOLPATH_SAFETY_AND_NATIVE_NETWORK_VALIDATED",
+  "guardrails": [
+    "No full OEM secondary slicer binary shipped",
+    "No OEM source compiled for this initial portable QA",
+    "No LAN credentials or access bypass",
+    "No physical prints before supervised beta",
+    "No success inferred from profile list, code clone, or guarded OEM CLI"
+  ],
+  "native_engine_deltas_candidate": {
+    "core_source_pin": "Snapmaker/OrcaSlicer@bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c",
+    "portable_zip_sha256": "1f002e2168c576f800bcfd0509b5e164b5ad65a0963abc2bef8317d929d48c9d",
+    "source_port": [
+      {
+        "source": "Snapmaker start macro chamber_cooling_mode",
+        "target": "src/libslic3r/GCode.cpp + PrintConfig.{hpp,cpp}",
+        "state": "SOURCE_PORT_STATIC_PASS_NOT_COMPILED_OR_PROVED"
+      },
+      {
+        "source": "Snapmaker original unmodified final purge G-code",
+        "target": "lab/snapmaker_spatial_gcode_validator.py",
+        "state": "EXTERNAL_READ_ONLY_GEOMETRY_VALIDATOR_CI_PASS_NOT_NATIVE_DEVICEBRIDGE_INTEGRATED"
+      }
+    ],
+    "original_oem_functional_variability": "FAIL_2_4_0_AND_2_4_1_MULTIPLE_OUTPUT_HASHES_WITH_SAME_INPUTS",
+    "server_qa_manifest_bug": "2026-11-06 server script expects Snapmaker Orca.exe, while verified portable contains snapmaker-orca.exe + Snapmaker_Orca.dll; server false missing flag is not genuine missing portable",
+    "parity_qa": "NOT_RUN",
+    "hardware_activation": false,
+    "activation": "SIGNED_VERIFIED_OEM_MODULE_ONLY_AFTER_PASSED_RUNTIME_TESTS",
+    "overall_status": "CANDIDATE_SOURCE_ONLY_BETA_BLOCKED",
+    "no_gcode_rewriting": true,
+    "removed_old_guard": true,
+    "upstream_1150_not_applied": "Original OEM collision is vendor behavior; no postprocessing or toolpath patch allowed under binding owner rule"
+  },
+  "geometry_safety_validator": {
+    "file": "lab/snapmaker_spatial_gcode_validator.py",
+    "vendor_policy": "FILUNA/fabricantes/snapmaker/vendor.yaml",
+    "report": "FILUNA/qa/SNAPMAKER-U1-GCODE-IMUTAVEL-VALIDADOR-GEOMETRICO-20261107.md",
+    "workflow": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42345082502",
+    "synthetic_tests": "PASS_16_OF_16",
+    "source_contract_tests": "PASS_18_OF_18",
+    "original_official_mono_cube": "PASS_NO_FALSE_BLOCK",
+    "original_official_two_color": "BLOCK_CONFIRMED_OEM_FINAL_PURGE_LINE_38911_LAYER_14",
+    "original_two_color_gcode_sha256": "05f227dd12598bd99626dd60a29e3ecdc2a97ae65db803d6e4f9520587254f48",
+    "original_collision_position_mm": [
+      63.569,
+      147.185,
+      3.05
+    ],
+    "original_collision_printed_top_z_mm": 3.05,
+    "crossbrand_bambu_original_cube": "PASS_GEOMETRY_ONLY",
+    "crossbrand_creality_original_cube": "PASS_GEOMETRY_ONLY",
+    "four_color_oem_final_purge_safe": "NOT_PROVEN",
+    "real_firmware_macro_config": "NOT_RUN",
+    "filuna_native_slicing_parity": "NOT_RUN",
+    "native_devicebridge_integration": "NOT_RUN",
+    "automatic_hardware_activation": false,
+    "physical_beta": "NOT_RUN",
+    "owner_rule": "NEVER_MODIFY_VENDOR_GCODE_FOR_SAFETY"
+  }
+}

@@ -1,0 +1,30 @@
+name: Filuna Snapmaker U1 pinned source gateway localhost HTTP contract
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_gateway_local_contract.py"
+      - "lab/test_snapmaker_gateway_local_contract.py"
+      - ".github/workflows/filuna-snapmaker-gateway-local-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-source-local-gateway:
+    name: Snapmaker 2.4.1 GET health and cache/all only, 14 localhost negative tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run source-level API shape tests; no executable, account or physical printer
+        run: |
+          python -m py_compile lab/snapmaker_gateway_local_contract.py lab/test_snapmaker_gateway_local_contract.py
+          python -m unittest discover -s lab -p test_snapmaker_gateway_local_contract.py -v
+      - name: Preserve truthful test boundary
+        run: |
+          echo 'Loopback-only test of the Snapmaker Orca 2.4.1 application local gateway contract. Not native Filuna adapter, not actual U1 LAN, not MQTT/JSON-RPC WebSocket, not upload ACK, not print.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Origin: Snapmaker/OrcaSlicer@bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c GatewayService and GatewayDevice source.' >> "$GITHUB_STEP_SUMMARY"

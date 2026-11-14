@@ -1,0 +1,74 @@
+name: Filuna Flashforge native-vs-OEM motion root cause reference (portable only)
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/flashforge_motion_parity_probe.py"
+      - "lab/test_flashforge_motion_parity_probe.py"
+      - ".github/workflows/filuna-flashforge-motion-delta-reference.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: filuna-flashforge-real-motion-delta-ref
+  cancel-in-progress: true
+jobs:
+  compare-real-gcode:
+    name: "Flashforge AD5X vs original AppImage 1.7.9, pre-OEM portable"
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Strict source-only negative regression
+        shell: pwsh
+        run: |
+          python -m py_compile lab/flashforge_motion_parity_probe.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p 'test_flashforge_motion_parity_probe.py' -v
+          exit $LASTEXITCODE
+      - name: Download actual immutable Flashforge original G-code
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-flashforge-179-ad5x-ad5m-actual-oem-cli-ab
+          run-id: 42321095370
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .actual-flashforge-original
+      - name: Download actual immutable previous Filuna portable diagnostic
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-existing-windows-base-versus-3-official-oem-gcodes
+          run-id: 42336460665
+          repository: abcollicelli-web/FilunaSlicer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .actual-filuna-previous
+      - name: Generate real per-layer trajectory E F difference report
+        shell: pwsh
+        run: |
+          python lab/flashforge_motion_parity_probe.py --official ".actual-flashforge-original/ad5x_04/run-A/plate_1.gcode" --filuna ".actual-filuna-previous/flashforge/Filuna-flat-User-run/plate_1.gcode" --output "qa-flashforge-source-port-reference/AD5X-gcode-motion-delta.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -c "import json; d=json.load(open('qa-flashforge-source-port-reference/AD5X-gcode-motion-delta.json')); assert d['status']=='FAIL_REAL_GCODE_PARITY' and d['geometry_changed_blocks']>0 and d['native_parity']=='NOT_PROVEN' and d['embedded_runtime_config_differences']['wall_direction']=={'official':'auto','filuna':'ccw'}, d"
+          exit $LASTEXITCODE
+      - name: Export proof only (not G-code or executable)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-flashforge-ad5x-motion-delta-root-cause-evidence
+          path: qa-flashforge-source-port-reference/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Report immutable evidence and blockade
+        if: always()
+        shell: pwsh
+        run: |
+          "QA_OBJECTIVE=SOURCE_PORT_CAUSAL_REFERENCE (pre-OEM Filuna only), NOT PARITY FIX." | Add-Content $env:GITHUB_STEP_SUMMARY
+          "OEM binary: 1.7.9 original. Filuna binary: 2026-11-05 pre-OEM portable." | Add-Content $env:GITHUB_STEP_SUMMARY
+          "No OEM build, no new Filuna build, no postprocess, no native OEM module, no LAN/print." | Add-Content $env:GITHUB_STEP_SUMMARY
+          "Native Flashforge G-code parity remains FAIL; geometry differences block promotion." | Add-Content $env:GITHUB_STEP_SUMMARY

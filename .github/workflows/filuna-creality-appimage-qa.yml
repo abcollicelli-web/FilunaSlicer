@@ -1,0 +1,61 @@
+name: Filuna Creality K2 Plus official AppImage portable QA (no build)
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/creality_linux_portable_qa.py"
+      - "lab/test_creality_linux_portable_qa.py"
+      - "fixtures/oem/creality/**"
+      - ".github/workflows/filuna-creality-appimage-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: creality-official-appimage-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  official-creality-appimage:
+    name: Creality 7.3.1 Linux official portable A/B — no compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime display libraries only (no compiler or build tools)
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb xauth libgl1 libegl1 libopengl0 libglu1-mesa libgl1-mesa-dri libgtk-3-0 libxkbcommon-x11-0 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libsoup-3.0-0 libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 libx264-164 libsrtp2-1 libspeexdsp1 libwayland-server0
+      - name: Restore verified official AppImage cache
+        id: restore-creality
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-appimage-cache
+          key: filuna-creality-7.3.1.6378-official-appimage-v1
+      - name: Verify script syntax
+        run: python -m py_compile lab/creality_linux_portable_qa.py
+      - name: Verify metadata-only G-code normalization rejects functional changes
+        run: python -m unittest discover -s lab -p test_creality_linux_portable_qa.py -v
+      - name: Extract and test official portable Creality K2 Plus twice
+        run: |
+          set +e
+          python lab/creality_linux_portable_qa.py --cache .oem-appimage-cache --out qa-creality-linux
+          status=$?
+          if [ -f qa-creality-linux/RESUMO.md ]; then cat qa-creality-linux/RESUMO.md >> "$GITHUB_STEP_SUMMARY"; fi
+          exit "$status"
+      - name: Save official AppImage cache even when evidence fails
+        if: always() && steps.restore-creality.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .oem-appimage-cache
+          key: filuna-creality-7.3.1.6378-official-appimage-v1
+      - name: Publish only evidence (no release)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-creality-7.3.1-official-portable-qa
+          path: qa-creality-linux/
+          retention-days: 30
+          if-no-files-found: warn

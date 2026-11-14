@@ -1,0 +1,84 @@
+name: Filuna U1 four-tool official G-code collision detection contract (NO printing)
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - ".github/workflows/filuna-snapmaker-four-core-block-proof.yml"
+      - "lab/snapmaker_u1_fourtool_original_qa.py"
+      - "lab/snapmaker_spatial_gcode_validator.py"
+      - "src/slic3r/Utils/FilunaGCodeSafety.hpp"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  four-tool-read-only-block:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-original-241-fourtool-exact-gcodes
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42396105609
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .u1-four-core
+      - name: Verify SHA of real OEM 4-tool G-code, Python validator MUST BLOCK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa-u1-four-core-safety
+          PYTHONPATH=lab python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          from snapmaker_spatial_gcode_validator import policy_from_yaml,validate_gcode
+          path=Path(".u1-four-core/four-core-3mf-control/plate_1.gcode")
+          raw=path.read_bytes()
+          expected="4fa28fc03d4e9c728ed4391d3654ca705d790bd1cf7146e2ff8422cd564fe55d"
+          actual=hashlib.sha256(raw).hexdigest()
+          assert actual==expected,(actual,"WRONG_OFFICIAL_GCODE_ARTIFACT")
+          report=validate_gcode(raw,policy_from_yaml(
+              Path("FILUNA/fabricantes/snapmaker/vendor.yaml")),source="official")
+          hits=[x for x in report["issues"]
+                if x.get("code")=="TRAVEL_CROSSES_PRINTED_GEOMETRY"]
+          assert report["status"]=="BLOCK",report["status"]
+          assert any(x.get("line")==106623 and x.get("layer")==99 for x in hits),hits[:4]
+          result={"status":"QA_VALIDATOR_CORRECTLY_BLOCKED_OFFICIAL_4TOOL_GCODE",
+                  "vendor_gcode_sha256":actual,"vendor_engine_original":True,
+                  "vendor_gcode_unchanged":True,"python_status":report["status"],
+                  "collision_line":106623,"collision_layer":99,
+                  "filuna_native_parity":"NOT_PROVEN",
+                  "firmware_and_device_ack":"NOT_RUN","physical_beta":"NOT_RUN"}
+          Path("qa-u1-four-core-safety/python.json").write_text(
+              json.dumps(result,indent=2)+"\n")
+          print(result["status"],actual)
+          PY
+      - name: Compile independent native C++17 checker and require same BLOCK
+        shell: bash
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            -o /tmp/filuna-u1-four-core-safety lab/test_snapmaker_native_gcode_safety.cpp
+          set +e
+          /tmp/filuna-u1-four-core-safety \
+            .u1-four-core/four-core-3mf-control/plate_1.gcode \
+            > qa-u1-four-core-safety/native.log
+          code=$?
+          set -e
+          cat qa-u1-four-core-safety/native.log
+          test "$code" -eq 2
+          grep -q "NATIVE_STATUS=BLOCK" qa-u1-four-core-safety/native.log
+          grep -q "NATIVE_COLLISION line=106623 layer=99" qa-u1-four-core-safety/native.log
+          echo "NATIVE_READ_ONLY_FOUR_CORE_BLOCK_DETECTED=PASS" >> "$GITHUB_STEP_SUMMARY"
+          echo "THIS_IS_PROOF_OF_DETECTION, NOT SAFE_GCODE_OR_U1_HOMOLOGATION" >> "$GITHUB_STEP_SUMMARY"
+      - name: Archive read-only evidence (no G-code rewriting)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-u1-four-core-dual-scanner-collision-proof
+          path: qa-u1-four-core-safety/
+          retention-days: 30
+          if-no-files-found: warn

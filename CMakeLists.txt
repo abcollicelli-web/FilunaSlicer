@@ -124,6 +124,16 @@ option(SLIC3R_ASAN              "Enable ASan on Clang and GCC" 0)
 # Python stubgen module
 option(ORCA_BUILD_PYTHON_STUBGEN_MODULE "Build importable Python module for pybind11-stubgen" ON)
 set(ORCA_BUNDLED_UV_EXECUTABLE "" CACHE FILEPATH "Path to a uv executable to bundle for Python package installation. Leave empty to auto-download.")
+# CI-only: use a pinned uv installed by the QA workflow when GitHub release
+# downloads are unavailable. Never silently substitute an unpinned executable.
+if(DEFINED ENV{FILUNA_QA_USE_PATH_UV} AND "$ENV{FILUNA_QA_USE_PATH_UV}" STREQUAL "1" AND NOT ORCA_BUNDLED_UV_EXECUTABLE)
+    find_program(_filuna_qa_uv NAMES uv REQUIRED)
+    execute_process(COMMAND "${_filuna_qa_uv}" --version OUTPUT_VARIABLE _filuna_qa_uv_version OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE _filuna_qa_uv_result)
+    if(NOT _filuna_qa_uv_result EQUAL 0 OR NOT _filuna_qa_uv_version MATCHES "^uv 0\\.11\\.21( |$)")
+        message(FATAL_ERROR "FILUNA_QA_UV_VERSION_MISMATCH: ${_filuna_qa_uv_version}")
+    endif()
+    set(ORCA_BUNDLED_UV_EXECUTABLE "${_filuna_qa_uv}" CACHE FILEPATH "Pinned uv for Windows QA" FORCE)
+endif()
 
 # Auto-download uv if not provided by the user.
 # uv is pinned: the executable ships inside the signed app, so the build must

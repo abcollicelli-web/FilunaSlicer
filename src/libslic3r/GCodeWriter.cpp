@@ -105,6 +105,7 @@ bool GCodeWriter::supports_separate_travel_acceleration(GCodeFlavor flavor)
 void GCodeWriter::apply_print_config(const PrintConfig &print_config)
 {
     this->config.apply(print_config, true);
+    m_snapmaker_u1_native_spiral = print_config.printer_model.value == "Snapmaker U1";
 
     // Some machine limits are stride-2 (normal, silent) pairs, here we extract the value that will be used,
     // which is always normal mode at the moment
@@ -457,7 +458,7 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
         gcode += "SET_VELOCITY_LIMIT ACCEL=";
         gcode += value;
         if (this->config.accel_to_decel_enable) {
-            append_klipper_accel_to_decel(gcode, acceleration, this->config.accel_to_decel_factor.value);
+            append_klipper_accel_to_decel(gcode, acceleration, this->config.accel_to_decel_factor.value, this->config.klipper_emit_minimum_cruise_ratio.value);
             if (GCodeWriter::full_gcode_comment)
                 gcode += " ; adjust ACCEL_TO_DECEL";
         }
@@ -472,12 +473,14 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
     return gcode;
 }
 
-void GCodeWriter::append_klipper_accel_to_decel(std::string &gcode, unsigned int acceleration, double accel_to_decel_factor)
+void GCodeWriter::append_klipper_accel_to_decel(std::string &gcode, unsigned int acceleration, double accel_to_decel_factor, bool emit_minimum_cruise_ratio)
 {
     gcode += " ACCEL_TO_DECEL=";
     gcode += float_to_string_decimal_point(acceleration * accel_to_decel_factor / 100);
-    gcode += " MINIMUM_CRUISE_RATIO=";
-    gcode += float_to_string_decimal_point(1. - accel_to_decel_factor / 100);
+    if (emit_minimum_cruise_ratio) {
+        gcode += " MINIMUM_CRUISE_RATIO=";
+        gcode += float_to_string_decimal_point(1. - accel_to_decel_factor / 100);
+    }
 }
 
 std::string GCodeWriter::set_jerk_xy(double jerk)
@@ -561,7 +564,7 @@ std::string GCodeWriter::set_accel_and_jerk(unsigned int acceleration, double je
         gcode += " ACCEL=";
         gcode += std::to_string(acceleration);
         if (this->config.accel_to_decel_enable)
-            append_klipper_accel_to_decel(gcode, acceleration, this->config.accel_to_decel_factor.value);
+            append_klipper_accel_to_decel(gcode, acceleration, this->config.accel_to_decel_factor.value, this->config.klipper_emit_minimum_cruise_ratio.value);
         m_last_acceleration = acceleration;
     }
     if (set_jerk) {
@@ -1222,7 +1225,11 @@ std::string GCodeWriter::_spiral_travel_to_z(double z, const Vec2d &ij_offset, c
                                  : this->config.travel_speed.get_at(m_cached_extruder_idx);
     }
 
-    if (this->config.enable_arc_fitting.value == ArcFittingMode::Disabled) { // Orca: if arc fitting is disabled, approximate the arc with small linear segments
+    // Snapmaker U1 OEM 2.4.1 emits a native G17/G3 spiral lift even when
+    // general arc fitting is disabled. Keep the Orca segmented fallback for all
+    // other printers; the axis-remap safety guard above still takes precedence.
+    const bool snapmaker_u1_native_spiral = m_snapmaker_u1_native_spiral;
+    if (!snapmaker_u1_native_spiral && this->config.enable_arc_fitting.value == ArcFittingMode::Disabled) { // Orca: if arc fitting is disabled, approximate the arc with small linear segments
         const double z_start = m_pos(2); // starting Z height
 
         const double px = m_pos(0) - m_x_offset;        // take plate offset into consideration

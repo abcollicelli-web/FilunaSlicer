@@ -1,0 +1,54 @@
+name: Filuna Snapmaker universal OEM nozzle-normalization CLI A/B
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_runtime_nozzle_guard_qa.py"
+      - "lab/test_snapmaker_runtime_nozzle_guard_qa.py"
+      - ".github/workflows/filuna-snapmaker-runtime-nozzle-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-runtime-nozzle-qa
+  cancel-in-progress: true
+jobs:
+  guarded-oem-cli:
+    name: Generic model-derived CLI-only workaround with positive/negative tests
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Regression tests and syntax
+        shell: pwsh
+        run: |
+          python -m py_compile lab/snapmaker_runtime_nozzle_guard_qa.py lab/test_snapmaker_runtime_nozzle_guard_qa.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p test_snapmaker_runtime_nozzle_guard_qa.py -v
+          exit $LASTEXITCODE
+      - name: Restore exact SHA-pinned Snapmaker 2.4.1 official portable cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Two independent Windows official CLI runs with generated process copy
+        shell: pwsh
+        run: |
+          python lab/snapmaker_runtime_nozzle_guard_qa.py --cache .oem-portable-cache --out qa-snapmaker-runtime-nozzle-guard
+          $result = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-runtime-nozzle-guard/RESUMO.md) {
+            Get-Content qa-snapmaker-runtime-nozzle-guard/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $result
+      - name: Preserve originals hashes, runtime copies, CLI logs, real G-code per run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-runtime-nozzle-guard-two-gcodes
+          path: qa-snapmaker-runtime-nozzle-guard/
+          retention-days: 30
+          if-no-files-found: warn

@@ -1,0 +1,72 @@
+name: Filuna Windows QA executable (NO installer)
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - ".github/workflows/filuna-windows-qa-exe.yml"
+      - "src/libslic3r/**"
+      - "CMakeLists.txt"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-qa-windows-exe-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build-filuna-windows-qa-exe:
+    runs-on: windows-2022
+    timeout-minutes: 360
+    steps:
+      - name: Checkout current QA branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          lfs: false
+      - uses: lukka/get-cmake@latest
+      - uses: microsoft/setup-msbuild@v2
+      - name: Install pinned uv for offline-safe CMake configuration
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.21"
+      - name: Enable pinned CI uv for CMake
+        shell: pwsh
+        run: |
+          "FILUNA_QA_USE_PATH_UV=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Restore exact native Windows MSVC dependencies
+        id: deps
+        uses: actions/cache/restore@v4
+        with:
+          path: deps/build/OrcaSlicer_dep
+          key: windows-x64-msvc-deps-cad-v2-${{ hashFiles('deps/CMakeLists.txt', 'deps/*.cmake', 'deps/*/CMakeLists.txt', 'build_win.bat') }}
+          fail-on-cache-miss: false
+      - name: Build pinned Orca Windows deps on this QA branch when the cache is unavailable
+        if: steps.deps.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\","/")
+          .\build_win.bat -d --arch x64 --deps-dir $deps --msvc --msbuild --jobs 4
+          if ($LASTEXITCODE -ne 0) {
+            throw "FILUNA_QA_WINDOWS_DEPENDENCIES_FAILED exit=$LASTEXITCODE"
+          }
+      - name: Cache exact dependencies for repeatable QA (optional; never blocks compilation)
+        if: steps.deps.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: deps/build/OrcaSlicer_dep
+          key: windows-x64-msvc-deps-cad-v2-${{ hashFiles('deps/CMakeLists.txt', 'deps/*.cmake', 'deps/*/CMakeLists.txt', 'build_win.bat') }}
+      - name: Build full Filuna QA executable (no installer)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\\","/")
+          .\build_win.bat -s -i --arch x64 --deps-dir $deps --msvc --msbuild --no-gettext --jobs 4
+          if ($LASTEXITCODE -ne 0) { throw "FILUNA_QA_EXE_BUILD_FAILED exit=$LASTEXITCODE" }
+          Get-ChildItem -Recurse build/OrcaSlicer -Filter *.exe | Select-Object FullName
+      - uses: actions/upload-artifact@v4
+        with:
+          name: filuna-qa-windows-exe-${{ github.sha }}
+          path: build/OrcaSlicer/
+          if-no-files-found: error
+          retention-days: 7

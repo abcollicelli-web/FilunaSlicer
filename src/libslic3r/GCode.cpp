@@ -517,7 +517,7 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
     std::string OozePrevention::post_toolchange(GCode& gcodegen)
     {
         return (gcodegen.config().standby_temperature_delta.value != 0) ?
-            gcodegen.writer().set_temperature(this->_get_temp(gcodegen), true, gcodegen.writer().filament()->id()) :
+            gcodegen.writer().set_temperature(this->_get_temp(gcodegen), gcodegen.config().tool_change_temprature_wait.value, gcodegen.writer().filament()->id()) :
             std::string();
     }
 
@@ -1120,6 +1120,34 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
         Vec2f wipe_tower_offset   = (tcr.priming ? Vec2f::Zero() : m_wipe_tower_pos) + m_rib_offset;
         float wipe_tower_rotation = tcr.priming ? 0.f : alpha;
 
+        // Opt-in U1 QA diagnostic only: stderr, never G-code; no motion changes.
+        if (!tcr.priming && std::getenv("FILUNA_U1_TRACE_FIRST_TCR") != nullptr) {
+            static bool first_u1_tcr_traced = false;
+            if (!first_u1_tcr_traced) {
+                first_u1_tcr_traced = true;
+                const Vec2f local_toolchange = tcr.is_tool_change ? tcr.tool_change_start_pos : tcr.start_pos;
+                const Vec2f rotated_start = Eigen::Rotation2Df(alpha) * tcr.start_pos;
+                const Vec2f rotated_rib = Eigen::Rotation2Df(alpha) * m_rib_offset;
+                std::fprintf(stderr,
+                    "FILUNA_U1_TCR_TRACE first_nonpriming=1 is_tool_change=%d is_finish_first=%d "
+                    "local_start=(%.6f,%.6f) local_toolchange=(%.6f,%.6f) "
+                    "tower=(%.6f,%.6f) rib=(%.6f,%.6f) rotation_deg=%.6f "
+                    "plate_origin=(%.6f,%.6f) object_origin=(%.6f,%.6f) "
+                    "rotated_local=(%.6f,%.6f) rotated_rib=(%.6f,%.6f) "
+                    "mapped_start=(%.6f,%.6f) mapped_toolchange=(%.6f,%.6f) "
+                    "postprocess_offset=(%.6f,%.6f) postprocess_rotation_rad=%.6f\n",
+                    int(tcr.is_tool_change), int(tcr.is_finish_first),
+                    tcr.start_pos.x(), tcr.start_pos.y(), local_toolchange.x(), local_toolchange.y(),
+                    m_wipe_tower_pos.x(), m_wipe_tower_pos.y(), m_rib_offset.x(), m_rib_offset.y(),
+                    double(m_wipe_tower_rotation), m_plate_origin(0), m_plate_origin(1),
+                    gcodegen.origin()(0), gcodegen.origin()(1),
+                    rotated_start.x(), rotated_start.y(), rotated_rib.x(), rotated_rib.y(),
+                    start_pos.x(), start_pos.y(), tool_change_start_pos.x(), tool_change_start_pos.y(),
+                    wipe_tower_offset.x(), wipe_tower_offset.y(), double(wipe_tower_rotation));
+                std::fflush(stderr);
+            }
+        }
+
         std::string tcr_rotated_gcode = post_process_wipe_tower_moves(tcr, wipe_tower_offset, wipe_tower_rotation);
 
         // BBS: add partplate logic
@@ -1683,6 +1711,45 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
         float wipe_tower_rotation = tcr.priming ? 0.f : alpha;
         Vec2f plate_origin_2d(m_plate_origin(0), m_plate_origin(1));
 
+        // QA-only Type2 frame trace: stderr only, opt-in, no G-code or motion changes.
+        // Emit both the first tower visit and the first actual tool change if different.
+        if (!tcr.priming && std::getenv("FILUNA_U1_TRACE_FIRST_TCR") != nullptr) {
+            static bool first_nonpriming_type2_traced = false;
+            static bool first_toolchange_type2_traced = false;
+            const bool first_nonpriming = !first_nonpriming_type2_traced;
+            const bool first_toolchange = tcr.is_tool_change && !first_toolchange_type2_traced;
+            if (first_nonpriming || first_toolchange) {
+                first_nonpriming_type2_traced = true;
+                if (tcr.is_tool_change)
+                    first_toolchange_type2_traced = true;
+                const Vec2f local_toolchange = tcr.is_tool_change ? tcr.tool_change_start_pos : tcr.start_pos;
+                const Vec2f rotated_start = Eigen::Rotation2Df(alpha) * tcr.start_pos;
+                const Vec2f rotated_rib = Eigen::Rotation2Df(alpha) * m_rib_offset;
+                const Vec2f mapped_toolchange = transform_wt2_pt(local_toolchange);
+                std::fprintf(stderr,
+                    "FILUNA_U1_TCR2_TRACE first_nonpriming=%d first_toolchange=%d is_tool_change=%d "
+                    "initial_tool=%d new_tool=%d print_z=%.6f "
+                    "local_start=(%.6f,%.6f) local_end=(%.6f,%.6f) local_toolchange=(%.6f,%.6f) "
+                    "tower=(%.6f,%.6f) rib=(%.6f,%.6f) rotation_deg=%.6f "
+                    "plate_origin=(%.6f,%.6f) object_origin=(%.6f,%.6f) "
+                    "rotated_local=(%.6f,%.6f) rotated_rib=(%.6f,%.6f) "
+                    "mapped_start=(%.6f,%.6f) mapped_end=(%.6f,%.6f) mapped_toolchange=(%.6f,%.6f) "
+                    "postprocess_offset=(%.6f,%.6f) postprocess_rotation_rad=%.6f gcode_bytes=%zu\n",
+                    int(first_nonpriming), int(first_toolchange), int(tcr.is_tool_change),
+                    int(tcr.initial_tool), int(tcr.new_tool), double(tcr.print_z),
+                    tcr.start_pos.x(), tcr.start_pos.y(), tcr.end_pos.x(), tcr.end_pos.y(),
+                    local_toolchange.x(), local_toolchange.y(),
+                    m_wipe_tower_pos.x(), m_wipe_tower_pos.y(), m_rib_offset.x(), m_rib_offset.y(),
+                    double(m_wipe_tower_rotation), m_plate_origin(0), m_plate_origin(1),
+                    gcodegen.origin()(0), gcodegen.origin()(1),
+                    rotated_start.x(), rotated_start.y(), rotated_rib.x(), rotated_rib.y(),
+                    start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y(),
+                    mapped_toolchange.x(), mapped_toolchange.y(),
+                    wipe_tower_offset.x(), wipe_tower_offset.y(), double(wipe_tower_rotation),
+                    tcr.gcode.size());
+                std::fflush(stderr);
+            }
+        }
 
         std::string tcr_rotated_gcode = post_process_wipe_tower_moves(tcr, wipe_tower_offset, wipe_tower_rotation);
 
@@ -1711,6 +1778,29 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
 
         const Point start_wipe_pos     = wipe_tower_point_to_object_point(gcodegen, start_pos + plate_origin_2d);
         const bool travel_to_tower_now = should_travel_to_tower || gcodegen.m_need_change_layer_lift_z;
+        // U1 QA: capture the actual Type2 tower-travel decision, without changing G-code.
+        if (!tcr.priming && std::getenv("FILUNA_U1_TRACE_FIRST_TCR") != nullptr) {
+            static bool first_nonpriming_decision_traced = false;
+            static bool first_toolchange_decision_traced = false;
+            const bool first_visit = !first_nonpriming_decision_traced;
+            const bool first_change = tcr.is_tool_change && !first_toolchange_decision_traced;
+            if (first_visit || first_change) {
+                first_nonpriming_decision_traced = true;
+                if (tcr.is_tool_change)
+                    first_toolchange_decision_traced = true;
+                std::fprintf(stderr,
+                    "FILUNA_U1_TCR2_DECISION first_nonpriming=%d first_toolchange=%d is_tool_change=%d "
+                    "is_finish_first=%d force_travel=%d needs_toolchange=%d will_go_down=%d "
+                    "is_ramming=%d tool_change_on_wipe_tower=%d need_change_layer_lift_z=%d "
+                    "should_travel_to_tower=%d travel_to_tower_now=%d current_z=%.6f target_z=%.6f\\n",
+                    int(first_visit), int(first_change), int(tcr.is_tool_change),
+                    int(tcr.is_finish_first), int(tcr.force_travel), int(needs_toolchange),
+                    int(will_go_down), int(is_ramming), int(tool_change_on_wipe_tower),
+                    int(gcodegen.m_need_change_layer_lift_z), int(should_travel_to_tower),
+                    int(travel_to_tower_now), current_z, z);
+                std::fflush(stderr);
+            }
+        }
         if (travel_to_tower_now) {
             // FIXME: It would be better if the wipe tower set the force_travel flag for all toolchanges,
             // then we could simplify the condition and make it more readable.
@@ -4375,6 +4465,29 @@ void GCode::_do_export(Print& print, GCodeOutputStream &file, ThumbnailsGenerato
         file.write(m_writer.set_fan(0));
         //BBS: disable additional fan
         file.write(m_writer.set_additional_fan(0));
+    }
+
+    // Snapmaker OEM start G-code references chamber_cooling_mode, which is
+    // calculated from the used filaments rather than being a profile setting.
+    // Evaluate only when a start macro requests it; ordinary Orca printers
+    // retain their existing G-code and placeholder behavior unchanged.
+    if (print.config().machine_start_gcode.value.find("chamber_cooling_mode") != std::string::npos) {
+        constexpr int kStrongCoolingVitrification = 50;
+        constexpr int kWeakCoolingVitrification   = 70;
+        int chamber_cooling_mode = 0; // keep warm
+        for (unsigned int extruder : tool_ordering.all_extruders()) {
+            const size_t fi = get_filament_config_index(extruder);
+            if (m_config.filament_is_high_temperature.get_at(fi))
+                continue;
+            const int vitrification = m_config.temperature_vitrification.get_at(fi);
+            if (vitrification <= kStrongCoolingVitrification) {
+                chamber_cooling_mode = 2; // strong cooling
+                break;
+            }
+            if (vitrification <= kWeakCoolingVitrification)
+                chamber_cooling_mode = 1; // weak cooling
+        }
+        this->placeholder_parser().set("chamber_cooling_mode", new ConfigOptionInt(chamber_cooling_mode));
     }
 
     std::string machine_start_gcode = this->placeholder_parser_process("machine_start_gcode", print.config().machine_start_gcode.value, initial_extruder_id);

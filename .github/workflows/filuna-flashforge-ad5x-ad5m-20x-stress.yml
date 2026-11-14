@@ -1,0 +1,59 @@
+name: Filuna Flashforge AD5X AD5M 20x original OEM G-code stability
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/flashforge_original_ad5x_ad5m_cli_qa.py"
+      - ".github/workflows/filuna-flashforge-ad5x-ad5m-20x-stress.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-flashforge-ad5x-ad5m-stress-20
+  cancel-in-progress: true
+jobs:
+  original-two-models:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Use runner preinstalled runtime (no OEM install/compile)
+        run: |
+          command -v xvfb-run || echo 'xvfb-run is absent; report CLI failure, no secret dependencies'
+          python -m py_compile lab/flashforge_original_ad5x_ad5m_cli_qa.py
+          python -m unittest discover -s lab -p 'test_flashforge_original_ab_qa.py' -v
+      - name: Provide only libgstvideo original AppImage runtime requirement
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends libgstreamer-plugins-base1.0-0 libwebkit2gtk-4.1-0
+          ldconfig -p | grep -F 'libgstvideo-1.0.so.0'
+          ldconfig -p | grep -F 'libwebkit2gtk-4.1.so.0'
+      - name: Restore immutable Flashforge original Linux AppImage by SHA
+        uses: actions/cache/restore@v4
+        with:
+          path: .flashforge-appimage-cache
+          key: filuna-flashforge-original-linux-179-96578656466416adc-20261107
+      - name: Exact profiles derived automatically, two independent slice runs per model
+        run: |
+          python lab/flashforge_original_ad5x_ad5m_cli_qa.py \
+            --cache .flashforge-appimage-cache \
+            --out qa-flashforge-ad5x-ad5m-ab \
+            --timeout 210 --stress-count 20
+          code=$?
+          if test -s qa-flashforge-ad5x-ad5m-ab/RESUMO.md; then
+            cat qa-flashforge-ad5x-ad5m-ab/RESUMO.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$code"
+      - name: Upload actual logs, profile hashes and G-code; no vendor binary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-flashforge-179-ad5x-ad5m-original-20x-stress
+          path: qa-flashforge-ad5x-ad5m-ab/
+          if-no-files-found: warn
+          retention-days: 30

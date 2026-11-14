@@ -1,0 +1,65 @@
+name: Filuna Snapmaker v2.4.1 issue 1149 final-purge safety patch source-only
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch"
+      - ".github/workflows/filuna-snapmaker-final-purge-source-guard.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-source-conformance:
+    name: Immutable official Snapmaker source patch check, NO OEM compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Snapmaker/OrcaSlicer
+          ref: bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c
+          path: original-snapmaker
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Validate isolated source pin and patch against exact original tag
+        run: |
+          set -euo pipefail
+          test "$(git -C original-snapmaker rev-parse HEAD)" = "bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c"
+          cp FILUNA/fabricantes/snapmaker/patches/0002-candidate-final-purge-z-lift-safety.patch /tmp/filuna-snapmaker-final-purge.patch
+          cd original-snapmaker
+          git apply --check /tmp/filuna-snapmaker-final-purge.patch
+          git apply /tmp/filuna-snapmaker-final-purge.patch
+          test "$(git diff --name-only)" = "src/libslic3r/GCode.cpp"
+          python3 - <<'PY'
+          from pathlib import Path
+          data=Path("src/libslic3r/GCode.cpp").read_text(encoding="utf-8")
+          section=data[data.index("const bool will_go_down = !is_approx(z, current_z);"):]
+          section=section[:1500]
+          assert "const bool is_final_purge = new_extruder_id < 0;" in section
+          assert "gcodegen.m_need_change_layer_lift_z" in section
+          assert "gcode += gcodegen.retract();" in section
+          assert "gcode += gcodegen.travel_to(move_pos,erMixed" in section
+          print("SNAPMAKER_FINAL_PURGE_SOURCE_ONLY PASS protected branch exists")
+          PY
+          git diff --check
+          git diff -- src/libslic3r/GCode.cpp > ../snapmaker-final-purge-review.diff
+          git apply -R /tmp/filuna-snapmaker-final-purge.patch
+          test -z "$(git status --porcelain)"
+          cd ..
+          sha256sum snapmaker-final-purge-review.diff > snapmaker-final-purge-diff.sha256
+          echo 'SOURCE-ONLY PASS is NOT firmware motion safety or a physical print pass.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Official issue: https://github.com/Snapmaker/OrcaSlicer/issues/1149' >> "$GITHUB_STEP_SUMMARY"
+      - name: Archive only source patch review proof (not OEM binary)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-issue-1149-source-only-candidate
+          path: |
+            snapmaker-final-purge-review.diff
+            snapmaker-final-purge-diff.sha256
+          if-no-files-found: warn
+          retention-days: 30
