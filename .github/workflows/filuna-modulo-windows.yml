@@ -138,7 +138,9 @@ jobs:
             $out = ((Get-Content prova/out.txt -Raw -ErrorAction SilentlyContinue) + (Get-Content prova/err.txt -Raw -ErrorAction SilentlyContinue))
             if ($null -eq $out) { $out = '' }
             "rc=$($p.ExitCode)"; if ($out.Length -gt 0) { $out.Substring(0, [Math]::Min(400, $out.Length)) }
-            if ($p.ExitCode -ne 0 -or $out.Length -lt 50) { throw "o CLI não respondeu ao --help (rc=$($p.ExitCode))" }
+            # rc!=0 com saída longa = app inicializou (ex.: CrealityPrint sonda OpenGL e sai sem GPU no runner).
+            # Falha de DLL não produz saída: reprova só quando rc!=0 E saída curta.
+            if ($p.ExitCode -ne 0 -and $out.Length -lt 50) { throw "o CLI não respondeu ao --help (rc=$($p.ExitCode))" }
           }
       - name: Publicar artefatos
         if: steps.sel.outputs.go == '1'
