@@ -388,7 +388,9 @@ function assistente(app) {
 	app.querySelectorAll("[data-d]").forEach(function (x) { x.onclick = function () {
 		var d = a.achadas.filter(function (y) { return y.dev_id == x.dataset.d; })[0]; if (!d) return;
 		a.escolhida = d; a.erro = "";
-		if (d.precisa_codigo && !a.codigo) { a.pedirCodigo = true; desenhar(); return; }
+		// Só a Bambu exige código antes de conectar. Elegoo, Creality e as demais conectam direto, como no fatiador
+		// oficial; o código só é pedido se a impressora recusar (quem definiu um PIN nela).
+		if (d.precisa_codigo && !a.codigo && a.marca && a.marca.id == "bambu") { a.pedirCodigo = true; desenhar(); return; }
 		conectar(d.dev_id, a.codigo);
 	}; });
 	if ((b = app.querySelector("#conectarCod"))) b.onclick = function () { a.codigo = app.querySelector("#codigo").value.trim(); if (a.escolhida) conectar(a.escolhida.dev_id, a.codigo); };
