@@ -26,6 +26,7 @@
 #include <chrono>
 #include <map>
 #include <mutex>
+#include <sstream>
 
 namespace Slic3r { namespace GUI { namespace FilunaDispositivos {
 
@@ -113,6 +114,52 @@ const VendorProfile* vendor_profile(const std::string& vendor_id)
         return nullptr;
     auto it = bundle->vendors.find(vendor_id);
     return it == bundle->vendors.end() ? nullptr : &it->second;
+}
+
+// Modelos da base de perfis (resources/profiles/<Vendor>.json), presentes em TODA instalação.
+// bundle->vendors só tem fabricantes já instalados pelo usuário — num Filuna recém-instalado está
+// vazio e o assistente mostrava "0 modelo(s)" para tudo (beta 14/11). A base é a fonte da lista.
+struct ModeloBase
+{
+    std::string              id, nome, familia;
+    std::vector<std::string> bicos;
+};
+
+std::vector<ModeloBase> modelos_da_base(const std::string& vendor_id)
+{
+    std::vector<ModeloBase> out;
+    const boost::filesystem::path dir = boost::filesystem::path(resources_dir()) / "profiles";
+    boost::filesystem::ifstream   f(dir / (vendor_id + ".json"), std::ios::binary);
+    if (!f.good())
+        return out;
+    json v = json::parse(f, nullptr, false);
+    if (v.is_discarded())
+        return out;
+    for (const auto& e : v.value("machine_model_list", json::array())) {
+        ModeloBase m;
+        m.nome = e.value("name", std::string());
+        if (m.nome.empty())
+            continue;
+        const std::string sub = e.value("sub_path", std::string());
+        if (!sub.empty()) {
+            boost::filesystem::ifstream fs(dir / vendor_id / sub, std::ios::binary);
+            if (fs.good()) {
+                json d = json::parse(fs, nullptr, false);
+                if (!d.is_discarded()) {
+                    m.id      = d.value("model_id", std::string());
+                    m.familia = d.value("family", vendor_id);
+                    std::string       nd = d.value("nozzle_diameter", std::string());
+                    std::stringstream ss(nd);
+                    std::string       b;
+                    while (std::getline(ss, b, ';'))
+                        if (!b.empty())
+                            m.bicos.push_back(b);
+                }
+            }
+        }
+        out.push_back(std::move(m));
+    }
+    return out;
 }
 
 // Caminho relativo à página (resources/web/filuna/) para a foto oficial do modelo (cover do Orca).
@@ -222,13 +269,12 @@ json fabricantes()
         if (id.empty() || !VENDOR.count(id))
             continue;
         const std::string vid = vendor_orca(id);
-        const VendorProfile* vp = vendor_profile(vid);
+        const auto base = modelos_da_base(vid);
         const auto ok = homologados(m);
         int disponiveis = 0;
-        if (vp != nullptr)
-            for (const auto& pm : vp->models)
-                if (std::any_of(ok.begin(), ok.end(), [&](const std::string& n) { return nome_cobre_modelo(n, pm.name) || n == pm.id; }))
-                    ++disponiveis;
+        for (const auto& pm : base)
+            if (std::any_of(ok.begin(), ok.end(), [&](const std::string& n) { return nome_cobre_modelo(n, pm.nome) || (!pm.id.empty() && n == pm.id); }))
+                ++disponiveis;
         lista.push_back({{"id", id}, {"nome", m.value("nome", vid)}, {"versao", m.value("versao", std::string())},
                          {"estado", m.value("estado", std::string())},
                          {"logo", std::string(SITE) + "/api/slicer/v1/modulos/logos/" + id},
@@ -248,25 +294,25 @@ json modelos(const std::string& modulo_id)
     if (m == nullptr)
         return {{"erro", "Fabricante fora do catálogo desta conta."}};
     const std::string vid = vendor_orca(modulo_id);
-    const VendorProfile* vp = vendor_profile(vid);
-    if (vp == nullptr)
+    const auto base = modelos_da_base(vid);
+    if (base.empty())
         return {{"erro", "Perfis do fabricante não estão nesta versão do Filuna."}};
     const auto ok = homologados(*m);
     const auto fora = indisponiveis(*m);
     json lista = json::array();
-    for (const auto& pm : vp->models) {
-        const bool disponivel = std::any_of(ok.begin(), ok.end(), [&](const std::string& n) { return nome_cobre_modelo(n, pm.name) || n == pm.id; }) &&
-                                std::none_of(fora.begin(), fora.end(), [&](const std::string& n) { return n == pm.name; });
+    for (const auto& pm : base) {
+        const bool disponivel = std::any_of(ok.begin(), ok.end(), [&](const std::string& n) { return nome_cobre_modelo(n, pm.nome) || (!pm.id.empty() && n == pm.id); }) &&
+                                std::none_of(fora.begin(), fora.end(), [&](const std::string& n) { return n == pm.nome; });
         json bicos = json::array();
-        for (const auto& v : pm.variants)
-            bicos.push_back(v.name);
-        lista.push_back({{"id", pm.id}, {"nome", pm.name}, {"familia", pm.family}, {"foto", cover(vid, pm.id)},
+        for (const auto& v : pm.bicos)
+            bicos.push_back(v);
+        lista.push_back({{"id", pm.id}, {"nome", pm.nome}, {"familia", pm.familia}, {"foto", cover(vid, pm.id)},
                          {"bicos", bicos}, {"disponivel", disponivel},
                          {"mensagem", disponivel ? std::string() : mensagem_indisponivel(*m)}});
     }
     // modelos citados no catálogo que não têm perfil nesta base (ex.: lista oficial maior que a do Orca)
     for (const auto& n : fora)
-        if (std::none_of(vp->models.begin(), vp->models.end(), [&](const VendorProfile::PrinterModel& pm) { return pm.name == n; }))
+        if (std::none_of(base.begin(), base.end(), [&](const ModeloBase& pm) { return pm.nome == n; }))
             lista.push_back({{"id", n}, {"nome", n}, {"foto", std::string()}, {"disponivel", false}, {"mensagem", mensagem_indisponivel(*m)}});
     std::sort(lista.begin(), lista.end(), [](const json& a, const json& b) {
         if (a["disponivel"] != b["disponivel"])
