@@ -685,3 +685,8 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Workflow corrigido (filuna/main 559e305f8 + sync filuna/v1-teste-fisico e5b638e2a): prova agora usa Start-Process com WaitForExit(120 s); processo vivo após 120 s = DLLs completas (aprova e mata); saída rápida mantém o critério rc=0 + ≥50 chars.
 - Relançado só creality: run 43577170088 (cache de deps provavelmente perdido no cancelamento; ~3 h).
 - Portão de liberação segue: publicar módulo creality → avisar beta (run Filuna 43557253145).
+
+## 2026-11-14 11:40 UTC — Creality: build passou, pacote reprovado na auditoria; novo run
+- Run 43577170088 passou (prova GUI OK), mas a auditoria local reprovou o pacote: zip trazia vcredist_x64.exe e MicrosoftEdgeSetup.exe (redistribuíveis Microsoft) e o manifesto apontava executavel=vcredist_x64.exe (seletor pegou o maior exe). Artefato descartado — nada publicado.
+- Workflow corrigido (filuna/main + sync v1-teste-fisico): remoção inclui vcredist|MicrosoftEdgeSetup|STLThumb-Windows; seletor de exe ignora vcredist|setup|curl|thumb|installer.
+- Novo run só creality: 43590893177 (cache de deps agora salvo → rápido).
