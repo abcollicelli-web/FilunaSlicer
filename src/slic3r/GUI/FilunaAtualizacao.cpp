@@ -178,6 +178,13 @@ struct FilunaAtualizacao::Impl
             }
             if (F::Recursos::versao_atual(raiz, id) == versao)
                 continue;
+            // Módulo de fabricante (motor CLI, 160–190 MB) só é baixado quando o cliente conecta a impressora em
+            // Dispositivos ("Baixar complemento"); aqui, em segundo plano, apenas ATUALIZA o que já está instalado.
+            // Recursos leves (telas, perfis de módulo já instalado) continuam automáticos.
+            const bool pesado = std::any_of(m.value("componentes", json::array()).begin(), m.value("componentes", json::array()).end(),
+                                            [](const json& c) { return c.value("tipo", std::string()) == "engine_cli"; });
+            if (pesado && F::Recursos::versao_atual(raiz, id).empty())
+                continue;
             const std::string erro = instalar(conta, m, id, versao);
             if (!erro.empty() && primeiro_erro.empty())
                 primeiro_erro = id + ": " + erro;
