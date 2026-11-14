@@ -1,0 +1,107 @@
+name: Filuna Windows compilação rápida (só o que mudou)
+# Correção pequena não recompila o programa inteiro: restaura a árvore de compilação guardada pelo build completo
+# (ou pela última rápida), marca como alterados só os arquivos que mudaram desde aquele commit e compila.
+# Se a árvore não estiver no cache, falha logo e avisa: aí vale o build completo (filuna-windows-qa-exe.yml).
+on:
+  workflow_dispatch:
+    inputs:
+      ramo:
+        description: "branch a compilar"
+        default: "filuna/v1-teste-fisico"
+permissions:
+  contents: read
+concurrency:
+  group: filuna-rapido-${{ inputs.ramo }}
+  cancel-in-progress: false
+jobs:
+  rapido:
+    runs-on: windows-2022
+    timeout-minutes: 180
+    steps:
+      - name: Checkout current QA branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ramo }}
+          fetch-depth: 0
+          persist-credentials: false
+          lfs: false
+      - uses: lukka/get-cmake@latest
+        with:
+          # CMake 4.x recusa o source_group do Boost.Locale 1.84 ("is not a prefix of file") ao reconstruir as
+          # dependências (branch nova não herda o cache da v1-base-unificada); mesma faixa que compilou a base.
+          cmakeVersion: "~3.31.0"
+      - uses: microsoft/setup-msbuild@v2
+      - name: Install pinned uv for offline-safe CMake configuration
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.21"
+      - name: Enable pinned CI uv for CMake
+        shell: pwsh
+        run: |
+          "FILUNA_QA_USE_PATH_UV=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Restore exact native Windows MSVC dependencies
+        id: deps
+        uses: actions/cache/restore@v4
+        with:
+          path: deps/build/OrcaSlicer_dep
+          key: windows-x64-msvc-deps-cad-v2-${{ hashFiles('deps/CMakeLists.txt', 'deps/*.cmake', 'deps/*/CMakeLists.txt', 'build_win.bat') }}
+          fail-on-cache-miss: true
+      - name: Restaurar a árvore de compilação mais recente
+        id: arvore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            build
+            !build/OrcaSlicer
+            !build/*.exe
+            !build/_CPack_Packages
+          key: filuna-win-arvore-v1-nunca-bate
+          restore-keys: |
+            filuna-win-arvore-v1-
+      - name: Marcar só os arquivos alterados desde o commit da árvore
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          if (-not (Test-Path build/.filuna-commit)) { throw "FILUNA_RAPIDO_SEM_ARVORE: rode o build completo uma vez (filuna-windows-qa-exe.yml)" }
+          $base = (Get-Content build/.filuna-commit -Raw).Trim()
+          git cat-file -e "$base^{commit}"
+          if ($LASTEXITCODE -ne 0) { throw "FILUNA_RAPIDO_COMMIT_DESCONHECIDO $base" }
+          git config core.quotepath false
+          $velho = [DateTime]::new(2020,1,1,0,0,0,[DateTimeKind]::Utc)
+          $n = 0
+          foreach ($f in (git ls-files)) { if (Test-Path -LiteralPath $f -PathType Leaf) { [IO.File]::SetLastWriteTimeUtc((Join-Path $PWD $f), $velho); $n++ } }
+          $agora = [DateTime]::UtcNow
+          $mudou = @(git diff --name-only $base HEAD)
+          foreach ($f in $mudou) { if (Test-Path -LiteralPath $f -PathType Leaf) { [IO.File]::SetLastWriteTimeUtc((Join-Path $PWD $f), $agora) } }
+          Write-Host "arvore de $base; $n arquivos antigos; alterados desde entao: $($mudou.Count)"
+          $mudou | Select-Object -First 60
+      - name: Compilar só o que mudou
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\\","/")
+          .\build_win.bat -s -i --run-tests --arch x64 --deps-dir $deps --msvc --msbuild --jobs 4
+          if ($LASTEXITCODE -ne 0) { throw "FILUNA_RAPIDO_BUILD_FAILED exit=$LASTEXITCODE" }
+          $mo = Get-ChildItem -Recurse build/OrcaSlicer -Filter OrcaSlicer.mo | Where-Object { $_.FullName -match '[\\/]pt_BR[\\/]' }
+          if (-not $mo) { throw "FILUNA_PTBR_MO_MISSING" }
+          $sha = (git rev-parse HEAD).Trim()
+          "FILUNA_SHA=$sha" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $json = '{"build":"' + $sha.Substring(0, 9) + '","versao":"2.5.0-beta.r${{ github.run_number }}"}'
+          [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE "build/OrcaSlicer/filuna-build.json"), $json, (New-Object Text.UTF8Encoding($false)))
+          $sha | Out-File -FilePath build/.filuna-commit -Encoding ascii -NoNewline
+      - uses: actions/upload-artifact@v4
+        with:
+          name: filuna-rapido-windows-exe-${{ env.FILUNA_SHA }}
+          path: build/OrcaSlicer/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Guardar a árvore de compilação para a próxima correção (opcional)
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build
+            !build/OrcaSlicer
+            !build/*.exe
+            !build/_CPack_Packages
+          key: filuna-win-arvore-v1-${{ env.FILUNA_SHA }}

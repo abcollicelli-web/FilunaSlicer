@@ -17,6 +17,7 @@
 #include "WebViewDialog.hpp"
 #include "FilunaPanel.hpp"
 #include "FilunaAtualizacao.hpp"
+#include "FilunaManutencao.hpp"
 #include "FilunaSync.hpp"
 #include "slic3r/Utils/BBLCloudServiceAgent.hpp"
 #include "slic3r/Utils/CloudDeleteQueue.hpp"
@@ -1139,6 +1140,7 @@ void GUI_App::post_init()
             // a consulta do PresetUpdater ao servidor da Bambu ficava em erro 400 no log e foi desligada.
 
             this->check_new_version_sf();
+            FilunaManutencao::iniciar();
             FilunaAtualizacao::instancia().iniciar((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(),
                                                    app_config->get("filuna_token"));
             if (!cw_showed)
@@ -5570,6 +5572,11 @@ std::string GUI_App::handle_web_request(std::string cmd)
                     app_config->save();
                     CallAfter([token] { FilunaPanel::account_changed(token); });
                 }
+                return "";
+            }
+            if (command_str == "filuna_manutencao") { // Filuna: atualização do programa, diagnóstico e preferências
+                const std::string corpo = root.get<std::string>("corpo", "{}");
+                CallAfter([corpo] { FilunaManutencao::comando_home(corpo); });
                 return "";
             }
             if (command_str == "filuna_aba") {

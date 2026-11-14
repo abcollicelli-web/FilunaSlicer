@@ -408,7 +408,7 @@ function assistente(app) {
 			var achadas = (r.impressoras || []);
 			if (achadas.length) { a.achadas = achadas; desenhar(); return; }
 			a.tentativas++;
-			if (a.tentativas >= 8) { desenhar(); return; } // ~16 s sem resposta: oferece outros meios
+			if (a.tentativas >= 8) { semImpressoraNaRede(a, r); desenhar(); return; } // ~16 s sem resposta: oferece outros meios
 			setTimeout(procurarCiclo, 2000);
 		}).catch(function (e) { a.erro = e.message; desenhar(); });
 	}
@@ -430,13 +430,18 @@ Filuna.ouvir("complemento.progresso", function (p) {
 	if (p.erro) { a.erro = p.erro; a.prog = a.prog || {}; desenhar(); return; }
 	a.prog = p; desenhar();
 });
+// Diagnóstico: a busca na rede terminou sem achar a impressora — vai para o servidor com marca, modelo e agente.
+function semImpressoraNaRede(a, r) {
+	Filuna.nativo("diagnostico.enviar", { etapa: "dispositivos.procurar", mensagem: "Busca na rede local terminou sem achar a impressora",
+		contexto: { fabricante: a.marca && a.marca.id, modelo: a.modelo && a.modelo.nome, perfil: a.perfil || "", agente: (r && r.agente) || "" } }).catch(function () {});
+}
 function pollDescobertas() {
 	var a = estado.assist; if (!a || estado.vista != "assistente" || a.passo != "procurar") return;
 	Filuna.nativo("dispositivos.descobertas").then(function (r) {
 		var achadas = r.impressoras || [];
 		if (achadas.length) { a.achadas = achadas; desenhar(); return; }
 		a.tentativas++;
-		if (a.tentativas >= 8) { desenhar(); return; }
+		if (a.tentativas >= 8) { semImpressoraNaRede(a, r); desenhar(); return; }
 		setTimeout(pollDescobertas, 2000);
 	}).catch(function () {});
 }

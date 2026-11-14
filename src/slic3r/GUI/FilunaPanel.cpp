@@ -4,6 +4,7 @@
 #include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaDispositivos.hpp"
+#include "FilunaManutencao.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -438,6 +439,7 @@ void FilunaPanel::account_changed(const std::string& token, const FilunaPanel* s
 {
     FilunaSync::instancia().avisar(token); // entrou ou saiu da conta: sincroniza (ou para) com a conta nova
     FilunaAtualizacao::instancia().avisar(token); // e confere se há recursos ou módulos novos
+    FilunaManutencao::conta(token);               // e se há versão nova do programa
     for (FilunaPanel* p : panels())
         if (p != source)
             p->send_event("conta", {{"token", token}});
@@ -462,9 +464,19 @@ void FilunaPanel::on_script_message(wxWebViewEvent& evt)
     const std::string action = msg.value("acao", std::string());
     const json data          = msg.contains("dados") && msg["dados"].is_object() ? msg["dados"] : json::object();
     try {
-        reply(id, true, handle(action, data));
+        json r;
+        if (!FilunaManutencao::acao(action, data, r))
+            r = handle(action, data);
+        // Diagnóstico: resposta com "erro" também vai para o servidor (o dono vê em /admin/diagnostico)
+        if (r.is_object() && r.contains("erro") && r["erro"].is_string())
+            FilunaManutencao::diagnostico(action, r["erro"].get<std::string>(), {{"dados", data}});
+        reply(id, true, r);
     } catch (const std::exception& e) {
         BOOST_LOG_TRIVIAL(warning) << "Filuna bridge " << action << ": " << e.what();
+        // erros de rotina de conta/sincronia sem internet não são defeito do programa
+        if (action.rfind("dispositivos.", 0) == 0 || action.rfind("atualizacao.", 0) == 0 || action.rfind("camera.", 0) == 0 ||
+            action.rfind("fatiar", 0) == 0 || action.rfind("imprimir", 0) == 0)
+            FilunaManutencao::diagnostico(action, e.what(), {{"dados", data}});
         reply(id, false, {{"erro", e.what()}});
     }
 }
@@ -633,6 +645,8 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         FilunaAtualizacao::instancia().instalar_modulo(id, [id](const json& p) {
             json ev = p;
             ev["fabricante"] = id;
+            if (!p.value("ok", true) && p.contains("erro"))
+                FilunaManutencao::diagnostico("dispositivos.complemento.baixar", p.value("erro", std::string()), {{"fabricante", id}});
             wxGetApp().CallAfter([ev] { FilunaPanel::broadcast("complemento.progresso", ev); });
         });
         return json::object();

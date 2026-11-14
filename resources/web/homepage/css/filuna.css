@@ -300,3 +300,28 @@ body, button, input
 /* Cartão de impressora: abre a unidade no Dispositivo. */
 .FlImp { cursor: pointer; }
 .FlImp:hover { border-color: #d9d2c8; }
+
+/*---- Manutenção: aviso de atualização (canto inferior esquerdo), janela de novidades, primeira instalação ----*/
+#FlUpdAviso { position: fixed; left: 14px; bottom: 34px; z-index: 900; display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+	background: var(--filuna-framboesa); color: #fff; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: var(--filuna-sombra); }
+#FlUpdAviso b { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: FlPulso 1.4s infinite; }
+@keyframes FlPulso { 50% { opacity: .35; } }
+#FlVersaoAtual { position: fixed; left: 14px; bottom: 10px; z-index: 899; font-size: 11px; color: var(--fg-color-disabled); }
+.FlJan { position: fixed; inset: 0; z-index: 1000; background: rgba(46, 42, 39, .38); display: flex; align-items: center; justify-content: center; }
+.FlJan .cx { width: min(460px, 86vw); max-height: 84vh; overflow: auto; background: var(--bg-color-sidebar); border: 1px solid var(--border-color);
+	border-radius: 18px; padding: 24px 26px; box-shadow: 0 18px 60px rgba(58, 40, 30, .28); color: var(--fg-color-text); }
+.FlJan small { color: var(--filuna-framboesa); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }
+.FlJan h2 { margin: 6px 0 14px; font-size: 22px; }
+.FlJan h4 { margin: 0 0 6px; font-size: 13px; color: var(--fg-color-label); }
+.FlJan ul { margin: 0 0 12px; padding-left: 18px; font-size: 14px; line-height: 1.55; }
+.FlJan p { margin: 8px 0 0; font-size: 12.5px; color: var(--fg-color-label); }
+.FlJan p.erro { color: #B00020; }
+.FlJan label { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; font-size: 14px; line-height: 1.4; cursor: pointer; }
+.FlJan .bt { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.FlJan button { border: 0; border-radius: 999px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--filuna-framboesa); color: #fff; }
+.FlJan button.sec { background: var(--focus-bg-item); color: var(--filuna-framboesa); }
+.FlJan button:disabled { opacity: .5; cursor: default; }
+#FlUpdInternos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+#FlUpdInternos span { font-size: 11.5px; padding: 4px 10px; border-radius: 999px; background: var(--focus-bg-item); color: var(--fg-color-label); }
+#FlUpdBarra { height: 8px; border-radius: 999px; background: var(--focus-bg-item); overflow: hidden; margin-top: 12px; }
+#FlUpdBarra i { display: block; height: 100%; width: 0; background: var(--filuna-framboesa); transition: width .3s; }

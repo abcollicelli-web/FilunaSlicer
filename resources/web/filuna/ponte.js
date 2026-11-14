@@ -338,6 +338,11 @@ var Filuna = (function () {
 	document.addEventListener("contextmenu", function (e) { if (!/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) e.preventDefault(); });
 	document.addEventListener("dragstart", function (e) { if (e.target.tagName == "IMG" || e.target.tagName == "A") e.preventDefault(); });
 	window.addEventListener("online", function () { enviarFila(); });
+	// Diagnóstico: erro de script em qualquer tela Filuna vai para o servidor (o dono vê em /admin/diagnostico).
+	window.addEventListener("error", function (ev) {
+		nativo("diagnostico.enviar", { etapa: location.pathname.split("/").pop(), mensagem: String(ev.message || "erro de script"),
+			contexto: { arquivo: String(ev.filename || "").split("/").pop(), linha: ev.lineno || 0 } }).catch(function () {});
+	});
 	setInterval(function () { if (conexao.pendentes) enviarFila(); }, 60000);
 	ouvir("preferencias.locais", function () { enviarPrefs().then(function () { _evento("preferencias", {}); }); });
 

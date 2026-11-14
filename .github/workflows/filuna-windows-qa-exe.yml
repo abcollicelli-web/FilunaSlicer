@@ -79,6 +79,13 @@ jobs:
           $mo = Get-ChildItem -Recurse build/OrcaSlicer -Filter OrcaSlicer.mo | Where-Object { $_.FullName -match '[\\/]pt_BR[\\/]' }
           if (-not $mo) { throw "FILUNA_PTBR_MO_MISSING" }
           $mo | Select-Object FullName, Length
+      - name: Identidade do build (o programa lê para pedir ao servidor só o que mudou)
+        shell: pwsh
+        run: |
+          $id = "${{ github.sha }}".Substring(0, 9)
+          $json = '{"build":"' + $id + '","versao":"2.5.0-beta.${{ github.run_number }}"}'
+          [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE "build/OrcaSlicer/filuna-build.json"), $json, (New-Object Text.UTF8Encoding($false)))
+          Get-Content build/OrcaSlicer/filuna-build.json
       - uses: actions/upload-artifact@v4
         with:
           name: filuna-teste-fisico-windows-exe-${{ github.sha }}
@@ -117,3 +124,22 @@ jobs:
           path: build/FilunaSlicer_Windows_Installer_V*.exe
           if-no-files-found: error
           retention-days: 7
+      # Árvore de compilação guardada para a "compilação rápida" (filuna-windows-rapido.yml): a próxima correção
+      # recompila só os arquivos alterados. Opcional: se não couber no cache, nada quebra.
+      - name: Marcar o commit da árvore de compilação
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          "${{ github.sha }}" | Out-File -FilePath build/.filuna-commit -Encoding ascii -NoNewline
+      - name: Guardar a árvore de compilação (opcional; nunca bloqueia)
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build
+            !build/OrcaSlicer
+            !build/*.exe
+            !build/_CPack_Packages
+          key: filuna-win-arvore-v1-${{ github.sha }}
+

@@ -3,6 +3,7 @@
 #include "FilunaPanel.hpp"
 #include "GUI_App.hpp"
 
+#include "libslic3r/AppConfig.hpp"
 #include "libslic3r/miniz_extension.hpp"
 #include "slic3r/Filuna/FilunaCalculos.hpp"
 #include "slic3r/Filuna/FilunaDb.hpp"
@@ -182,6 +183,10 @@ struct FilunaAtualizacao::Impl
             catalogo = this->catalogo;
             visiveis.insert(this->visiveis.begin(), this->visiveis.end());
         }
+        // Primeira instalação: o cliente pode desligar a atualização automática do suporte a impressoras
+        // (o catálogo continua vindo; "Baixar complemento" em Dispositivos segue funcionando).
+        if (wxGetApp().app_config != nullptr && wxGetApp().app_config->get("filuna_pref_auto_dispositivos") == "0")
+            return std::string();
         std::string primeiro_erro;
         for (const auto& m : catalogo.value("modulos", json::array())) {
             const std::string id = m.value("id", std::string()), versao = m.value("versao", std::string());

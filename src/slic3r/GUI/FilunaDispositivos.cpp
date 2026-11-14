@@ -23,6 +23,7 @@
 #include <boost/log/trivial.hpp>
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <map>
 #include <mutex>
@@ -63,6 +64,24 @@ std::string minusculas(std::string s)
 bool nome_cobre_modelo(const std::string& nome_perfil, const std::string& modelo)
 {
     return nome_perfil == modelo || nome_perfil.rfind(modelo + " ", 0) == 0;
+}
+
+// Catálogo e base de perfis nem sempre escrevem a marca igual ("Q1 Pro 0.4 nozzle" × "Qidi Q1 Pro",
+// "Original Prusa MINI" × "Prusa MINI"): compara sem o prefixo da marca e sem diferença de maiúsculas.
+std::string sem_marca(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+    for (const char* p : {"original prusa ", "prusa ", "qidi ", "original "})
+        if (s.rfind(p, 0) == 0) {
+            s.erase(0, std::string(p).size());
+            break;
+        }
+    return s;
+}
+
+bool casa_modelo(const std::string& nome_perfil, const std::string& modelo)
+{
+    return nome_cobre_modelo(nome_perfil, modelo) || nome_cobre_modelo(sem_marca(nome_perfil), sem_marca(modelo));
 }
 
 const json* modulo_do_catalogo(const json& cat, const std::string& id, json& guarda)
@@ -274,7 +293,7 @@ json fabricantes()
         const auto ok = homologados(m);
         int disponiveis = 0;
         for (const auto& pm : base)
-            if (std::any_of(ok.begin(), ok.end(), [&](const std::string& n) { return nome_cobre_modelo(n, pm.nome) || (!pm.id.empty() && n == pm.id); }))
+            if (std::any_of(ok.begin(), ok.end(), [&](const std::string& n) { return casa_modelo(n, pm.nome) || (!pm.id.empty() && n == pm.id); }))
                 ++disponiveis;
         lista.push_back({{"id", id}, {"nome", m.value("nome", vid)}, {"versao", m.value("versao", std::string())},
                          {"estado", m.value("estado", std::string())},
@@ -302,7 +321,7 @@ json modelos(const std::string& modulo_id)
     const auto fora = indisponiveis(*m);
     json lista = json::array();
     for (const auto& pm : base) {
-        const bool disponivel = std::any_of(ok.begin(), ok.end(), [&](const std::string& n) { return nome_cobre_modelo(n, pm.nome) || (!pm.id.empty() && n == pm.id); }) &&
+        const bool disponivel = std::any_of(ok.begin(), ok.end(), [&](const std::string& n) { return casa_modelo(n, pm.nome) || (!pm.id.empty() && n == pm.id); }) &&
                                 std::none_of(fora.begin(), fora.end(), [&](const std::string& n) { return n == pm.nome; });
         json bicos = json::array();
         for (const auto& v : pm.bicos)

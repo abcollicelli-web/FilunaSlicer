@@ -189,3 +189,89 @@ $(function () {
 		FlMostrar(false);
 	}
 });
+
+/* ---- Manutenção: atualização do programa, primeira instalação e diagnóstico ----
+ * O Filuna Slicer (FilunaManutencao.cpp) consulta o servidor, baixa só o que mudou e, ao aplicar, fecha e abre
+ * de novo sozinho. Aqui fica o aviso no canto inferior esquerdo, a janela com as novidades e as três perguntas
+ * da primeira instalação. Coisas internas aparecem só pelo rótulo ("update de segurança" etc.). */
+var m_FlUpd = { situacao: "ocioso" }, m_FlPrefs = null;
+
+function FlManut(acao, dados) {
+	try { window.wx.postMessage(JSON.stringify({ command: "filuna_manutencao", corpo: JSON.stringify({ acao: acao, dados: dados || {} }) })); } catch (e) { }
+}
+
+function FlMB(b) { return (Math.max(0, b || 0) / 1048576).toFixed(1).replace(".", ",") + " MB"; }
+
+function FlUpdDesenhar() {
+	var e = m_FlUpd, s = e.situacao;
+	var mostra = s == "disponivel" || s == "baixando" || s == "aplicando" || s == "erro";
+	$("#FlUpdAviso").toggle(mostra);
+	$("#FlUpdAviso .t").text(s == "baixando" ? "Baixando atualização… " + (e.feito || 0) + "%" : s == "aplicando" ? "Aplicando atualização…" : s == "erro" ? "Atualização não concluída" : "Atualização disponível");
+	$("#FlVersaoAtual").text(e.versao ? "Versão " + e.versao + " · " + (e.build || "") : "");
+	if (!$("#FlUpdJanela").is(":visible")) return;
+	$("#FlUpdTitulo").text("Filuna Slicer " + (e.nova_versao || ""));
+	var h = "";
+	(e.notas || []).forEach(function (n) { h += "<li>" + FlEsc(n) + "</li>"; });
+	$("#FlUpdNotas").html(h || "<li>Melhorias e correções.</li>");
+	h = "";
+	(e.internos || []).forEach(function (n) { h += "<span>" + FlEsc(n) + "</span>"; });
+	$("#FlUpdInternos").html(h).toggle(!!h);
+	$("#FlUpdTam").text(e.tamanho ? "Download: " + FlMB(e.tamanho) + (e.tipo == "delta" ? " (só o que mudou)" : "") : "");
+	var ocupado = s == "baixando" || s == "aplicando";
+	$("#FlUpdBarra").toggle(ocupado); $("#FlUpdBarra i").css("width", (s == "aplicando" ? 100 : (e.feito || 0)) + "%");
+	$("#FlUpdMsg").text(s == "baixando" ? "Baixando… " + (e.feito || 0) + "%" : s == "aplicando" ? "Pronto. O Filuna vai fechar e abrir de novo sozinho." : s == "erro" ? (e.erro || "Não deu certo.") + " O erro já foi enviado para a Filuna." : "O Filuna fecha, atualiza e abre de novo sozinho.").toggleClass("erro", s == "erro");
+	$("#FlUpdAgora").prop("disabled", ocupado).text(s == "erro" ? "Tentar de novo" : "Atualizar agora");
+	$("#FlUpdDepois").prop("disabled", ocupado);
+}
+
+function FlPrimeiraDesenhar() {
+	var p = m_FlPrefs || {};
+	if (p.primeira_ok == "1" || !FlToken()) { $("#FlPrimeira").hide(); return; }
+	$("#FlPrimeira").show();
+}
+
+// Chamado pelo Filuna Slicer (C++): {tipo: "estado", estado: {...}} ou {tipo: "preferencias", preferencias: {...}}
+function FlManutencao(m) {
+	if (!m) return;
+	if (m.tipo == "estado" && m.estado) { m_FlUpd = m.estado; FlUpdDesenhar(); }
+	if (m.tipo == "preferencias" && m.preferencias) {
+		m_FlPrefs = m.preferencias;
+		// "manter a conta logada" desligado: a conta sai quando o programa abre de novo
+		try {
+			if (m_FlPrefs.manter_login == "0" && !window.sessionStorage.getItem("fl_sessao")) { FlGuardaToken(""); FlMostrar(false); }
+			window.sessionStorage.setItem("fl_sessao", "1");
+		} catch (e) { }
+		FlPrimeiraDesenhar();
+	}
+}
+
+$(function () {
+	$("body").append(
+		'<div id="FlUpdAviso" style="display:none"><b></b><span class="t">Atualização disponível</span></div>' +
+		'<div id="FlVersaoAtual"></div>' +
+		'<div id="FlUpdJanela" class="FlJan" style="display:none"><div class="cx">' +
+		'<small>Atualização do Filuna Slicer</small><h2 id="FlUpdTitulo"></h2>' +
+		'<h4>Novidades</h4><ul id="FlUpdNotas"></ul><div id="FlUpdInternos"></div>' +
+		'<div id="FlUpdBarra" style="display:none"><i></i></div><p id="FlUpdMsg"></p><p id="FlUpdTam"></p>' +
+		'<div class="bt"><button id="FlUpdDepois" class="sec">Depois</button><button id="FlUpdAgora">Atualizar agora</button></div></div></div>' +
+		'<div id="FlPrimeira" class="FlJan" style="display:none"><div class="cx">' +
+		'<small>Primeira vez neste computador</small><h2>Como você quer usar o Filuna?</h2>' +
+		'<label><input type="checkbox" id="FlPrefWin"> Abrir o Filuna junto com o Windows</label>' +
+		'<label><input type="checkbox" id="FlPrefLogin" checked> Manter minha conta conectada neste computador</label>' +
+		'<label><input type="checkbox" id="FlPrefDisp" checked> Atualizar sozinho os dispositivos e o suporte às minhas impressoras</label>' +
+		'<p>Você muda isso depois, quando quiser.</p>' +
+		'<div class="bt"><button id="FlPrefSalvar">Salvar</button></div></div></div>');
+	$("#FlUpdAviso").on("click", function () { $("#FlUpdJanela").show(); FlUpdDesenhar(); });
+	$("#FlUpdDepois").on("click", function () { $("#FlUpdJanela").hide(); });
+	$("#FlUpdAgora").on("click", function () { FlManut(m_FlUpd.situacao == "erro" ? "atualizacao.verificar" : "atualizacao.aplicar"); });
+	$("#FlPrefSalvar").on("click", function () {
+		FlManut("preferencias.gravar", { inicio_windows: $("#FlPrefWin").prop("checked"), manter_login: $("#FlPrefLogin").prop("checked"), auto_dispositivos: $("#FlPrefDisp").prop("checked") });
+		$("#FlPrimeira").hide();
+	});
+	setTimeout(function () { FlManut("preferencias.ler"); FlManut("atualizacao.estado"); }, 800);
+	setInterval(function () { if (!document.hidden) FlManut("atualizacao.estado"); }, 60000);
+	// erro de script nesta tela também vai para o diagnóstico
+	window.addEventListener("error", function (ev) {
+		FlManut("diagnostico.enviar", { etapa: "inicio", mensagem: String(ev.message || "erro de script"), contexto: { arquivo: String(ev.filename || ""), linha: ev.lineno || 0 } });
+	});
+});
