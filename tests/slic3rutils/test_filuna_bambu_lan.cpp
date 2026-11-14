@@ -255,9 +255,11 @@ TEST_CASE("Connecting with the access code subscribes to the report and asks for
     }
 
     // comandos de controle vão como o DeviceManager os escreve
-    for (const char* cmd : {"pause", "resume", "stop"})
-        REQUIRE(agent.send_message_to_printer("01P00A123456789", std::string(R"({"print":{"sequence_id":"1","command":")") + cmd + "\"}}", 0, 0) ==
-                BAMBU_NETWORK_SUCCESS);
+    for (const char* cmd : {"pause", "resume", "stop"}) {
+        // string montada fora do REQUIRE: o pré-processador tradicional do MSVC não aceita raw string dentro do macro
+        const std::string corpo = std::string(R"({"print":{"sequence_id":"1","command":")") + cmd + "\"}}";
+        REQUIRE(agent.send_message_to_printer("01P00A123456789", corpo, 0, 0) == BAMBU_NETWORK_SUCCESS);
+    }
     REQUIRE(broker.wait_published(4));
     const auto pub = broker.published();
     CHECK(nlohmann::json::parse(pub[1].second)["print"]["command"] == "pause");
