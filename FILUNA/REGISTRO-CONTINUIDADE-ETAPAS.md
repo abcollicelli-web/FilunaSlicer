@@ -679,3 +679,9 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   4. **Transparência do update:** ao clicar em "Atualizar", janela flutuante com a **versão nova e os recursos novos**, com nomes claros. Segredos internos, regras, módulos, chaves e afins **não aparecem em detalhe**: entram como "update de segurança", "update de recursos internos", "update base Filuna" etc. Só recursos visíveis ao cliente são listados por nome.
   - Base já existente para aproveitar: catálogo assinado + `FilunaAtualizacao` (baixa por componente com SHA-256 e ativa por ponteiro — é o mecanismo diferencial), canal beta por módulo no admin, "Filuna pacote rápido" (recursos sem recompilar). Falta: empacotar diffs da base (binário), o aplicador fecha/aplica/reabre, o aviso na Home, as 3 perguntas da primeira instalação e a janela de notas de versão com a classificação pública/interna.
 - **Regra de liberação (proprietário, 14/11 05:54 Roma):** esta rotina fecha no **beta**; se o teste físico aprovar, **o proprietário assina a versão**; o **público geral** só recebe depois de homologado tudo. Canal "todos" permanece fechado até essa assinatura — nada vai a cliente comum sem ela.
+
+## 2026-11-14 08:45 UTC — Creality: prova travada em app GUI; correção e relançamento
+- Run 43561697942: creality compilou tudo, mas travou >25 min na prova `--help` — o CrealityPrint.exe é app GUI e não sai sozinho. Run cancelado (snapmaker/elegoo/flashforge já tinham passado e os artefatos persistem).
+- Workflow corrigido (filuna/main 559e305f8 + sync filuna/v1-teste-fisico e5b638e2a): prova agora usa Start-Process com WaitForExit(120 s); processo vivo após 120 s = DLLs completas (aprova e mata); saída rápida mantém o critério rc=0 + ≥50 chars.
+- Relançado só creality: run 43577170088 (cache de deps provavelmente perdido no cancelamento; ~3 h).
+- Portão de liberação segue: publicar módulo creality → avisar beta (run Filuna 43557253145).
