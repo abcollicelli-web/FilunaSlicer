@@ -742,3 +742,15 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Publicado: base 1784dfe41 (2.5.0-beta.53), r1 (suporte remoto, 18,8 KB) e r2. Medida real: delta de código 692c624f1→r2 = 44,2 MB; delta de telas 1784dfe41→r2 = 5 arquivos, poucos KB.
 - Relato do proprietário no build novo: a busca na rede ACHOU a Elegoo (perfil ao conectar funcionou), mas o assistente pediu "código LAN" — errado: o fatiador oficial não pede. Causa: tela pedia código para qualquer marca quando precisa_codigo; o agente CC2 já usa o código padrão 123456 sozinho. Correção só de tela (dispositivo.html, commit no branch): só a Bambu pede código antes; as demais conectam direto e o código só aparece se a impressora recusar. Entregue no r2.
 - NÃO verificado: aplicação do update no PC do proprietário e a conexão da CC2 sem código.
+
+## 2026-11-14 22:10 UTC — Auto-update e suporte remoto PROVADOS no PC do proprietário; r3/r4; 1ª compilação rápida em curso
+- 1ª consulta do programa respondeu "atual" por erro do site: a variável FILUNA_APP_DIR já era do app Android e desviava a pasta. Corrigido (site 1077357: FILUNA_SLICER_UPDATE_DIR). Depois disso: 21:30 UTC documento, 21:31:00 pacote de 32 KB, 21:31:09 programa reaberto em r2 → AUTO-UPDATE FUNCIONA (fecha, copia, reabre). r3 também aplicou.
+- Suporte remoto provado: proprietário autorizou "até eu desligar" (sessão 1); ações coletar/descobertas/diagnostico.enviar executadas em <30 s; diagnóstico com fim do registro chegou (slc_diagnostico id 1). Estado visto: Centauri Carbon 2 achada em 192.168.1.42, agente filuna_elegoo_cc2, livre, ainda não conectada.
+- Defeitos achados no teste e destino:
+  (a) aviso "pede código de acesso" na impressora achada aparecia para toda marca → r3 (tela);
+  (b) ao preparar impressora não-Bambu o Orca insere a aba "Printer panel" (página de exemplo com imagem A4Max Pro) e a tela pula para ela → correção em código (FilunaDispositivos::preparar volta para a aba Dispositivo do Filuna), commit ae1a86c87, na compilação rápida;
+  (c) assistente da Anycubic mostrava a Elegoo achada antes (lista da rede guarda achadas de outras marcas) e "voltar" caía em "Baixar complemento" já instalado → r4 (tela): busca filtra pelo agente da marca; voltar vai para modelos;
+  (d) processo antigo do Filuna não encerrou ao fechar (PID 25624) — causa NÃO investigada; afeta o update (o roteiro espera o processo sair).
+- Compilação rápida: run 43644114623 falhou em 1 min (cache só vale no branch que o gravou; disparo foi pelo filuna/main). Redisparado com --ref filuna/v1-teste-fisico: run 43644282092, em curso. Build completo automático do push cancelado (43644075552).
+- Quando a rápida passar: publicar_app.py --run 43644282092 --build ae1a86c87 e, por cima, sobrepor resources do r4 (o artefato compilado traz as telas do commit dele).
+- Canal beta agora: 1784dfe41-r4 (2.5.0-beta.53.4).
