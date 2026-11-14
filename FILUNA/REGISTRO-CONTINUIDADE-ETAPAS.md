@@ -695,3 +695,9 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Run 43590893177: empacotamento OK (removidos vcredist_x64, MicrosoftEdgeSetup, WebView2, STLThumb; executavel=CrealityPrint.exe), mas a prova reprovou: o CrealityPrint inicializou, sondou OpenGL (GDI Generic — runner sem GPU) e saiu rc=255 com saída longa. DLLs completas provadas pela própria saída.
 - Critério ajustado (filuna/main + sync v1-teste-fisico): reprova só quando rc!=0 E saída <50 chars (falha de DLL não produz saída).
 - Novo run só creality: 43597147118 (cache quente, ~1h10).
+
+## 2026-11-14 14:25 UTC — BETA LIBERADO: Creality publicada; portão "até Creality" fechado
+- Run 43597147118 passou; auditoria OK: executavel=CrealityPrint.exe; zip sem vcredist/MicrosoftEdgeSetup/WebView2 Installer/STLThumb exe (WebView2Loader.dll e STLThumbWinShellExtension.dll permanecem — redistribuível/open source, mesmo precedente do snapmaker publicado); sha 0477fc31…
+- Publicado em /var/lib/filuna-v2/modulos/creality/7.3.1.6378/ via publicar_modulos.py (catálogo re-assinado Ed25519). Catálogo: 8 fabricantes HOMOLOGADO_INTERNO (anycubic = MOTOR_ORCA), engine_cli ativos: snapmaker, elegoo, flashforge, creality.
+- Beta do Filuna Slicer liberado p/ teste do proprietário: run 43557253145 (installer 164MB / exe 212MB, commit 1210b7e com download sob demanda).
+- Próximo: teste físico Kobra 3 V2 (proprietário) + Creality Hi (cliente beta via canal beta no /admin/modulos); depois, pedido agendado do auto-update diferencial.
