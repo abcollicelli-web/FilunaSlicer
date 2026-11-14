@@ -53,6 +53,35 @@ jobs:
             Get-Content qa-snapmaker-u1-guard-probe/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
           }
           exit $code
+      - name: Inventory WER dumps after bounded capture wait
+        if: always()
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:GITHUB_WORKSPACE 'qa-snapmaker-u1-guard-probe'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          $werKey = 'HKCU:\Software\Microsoft\Windows\Windows Error Reporting\LocalDumps\snapmaker-orca.exe'
+          $configured = (Get-ItemProperty -Path $werKey -ErrorAction SilentlyContinue).DumpFolder
+          $paths = @($configured, (Join-Path $env:LOCALAPPDATA 'CrashDumps')) | Where-Object { $_ } | Select-Object -Unique
+          $entries = @()
+          foreach ($seconds in @(0, 3, 6, 12)) {
+            if ($seconds -gt 0) { Start-Sleep -Seconds $seconds }
+            $entries = @(
+              foreach ($dir in $paths) {
+                if (Test-Path -LiteralPath $dir) {
+                  Get-ChildItem -LiteralPath $dir -Filter 'snapmaker-orca*.dmp' -File -ErrorAction SilentlyContinue |
+                    ForEach-Object {
+                      [pscustomobject]@{ path=$_.FullName; bytes=$_.Length; sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
+                    }
+                }
+              }
+            )
+            if ($entries.Count -gt 0) { break }
+          }
+          $report = [pscustomobject]@{ configured_folder=$configured; searched_folders=$paths; dump_count=$entries.Count; dumps=$entries }
+          $report | ConvertTo-Json -Depth 6 | Set-Content -Path (Join-Path $root 'wer-dump-inventory.json') -Encoding utf8
+          Write-Host ("WER_DUMP_COUNT=" + $entries.Count)
+          if ($entries.Count -eq 0) { Write-Host 'WER_NO_DUMP_CAPTURED: no native stack evidence' }
+          # Keep native dumps out of the artifact; only their SHA/size/path inventory is uploaded.
       - name: Preserve diagnostic cases and logs (never installer)
         if: always()
         uses: actions/upload-artifact@v4
