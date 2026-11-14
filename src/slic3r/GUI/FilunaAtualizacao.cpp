@@ -125,8 +125,8 @@ struct FilunaAtualizacao::Impl
         }
     }
 
-    // Devolve "" quando tudo deu certo (mesmo sem nada para baixar).
-    std::string ciclo(const std::string& conta)
+    // Busca e confere o catálogo assinado; guarda em memória e em disco. "" = ok.
+    std::string buscar(const std::string& conta)
     {
         const Resposta r = baixar(std::string(SITE) + "/api/slicer/v1/modulos", conta);
         if (r.status == 401)
@@ -166,7 +166,22 @@ struct FilunaAtualizacao::Impl
             boost::filesystem::ofstream out(fs::path(raiz) / "catalogo.json", std::ios::binary | std::ios::trunc);
             out << json({{"catalogo", catalogo}, {"visiveis", json(this->visiveis)}}).dump();
         } catch (const std::exception&) {}
+        return std::string();
+    }
 
+    // Devolve "" quando tudo deu certo (mesmo sem nada para baixar).
+    std::string ciclo(const std::string& conta)
+    {
+        const std::string falhou = buscar(conta);
+        if (!falhou.empty())
+            return falhou;
+        json catalogo;
+        std::set<std::string> visiveis;
+        {
+            std::lock_guard<std::mutex> g(trava);
+            catalogo = this->catalogo;
+            visiveis.insert(this->visiveis.begin(), this->visiveis.end());
+        }
         std::string primeiro_erro;
         for (const auto& m : catalogo.value("modulos", json::array())) {
             const std::string id = m.value("id", std::string()), versao = m.value("versao", std::string());
@@ -181,8 +196,9 @@ struct FilunaAtualizacao::Impl
             // Módulo de fabricante (motor CLI, 160–190 MB) só é baixado quando o cliente conecta a impressora em
             // Dispositivos ("Baixar complemento"); aqui, em segundo plano, apenas ATUALIZA o que já está instalado.
             // Recursos leves (telas, perfis de módulo já instalado) continuam automáticos.
-            const bool pesado = std::any_of(m.value("componentes", json::array()).begin(), m.value("componentes", json::array()).end(),
-                                            [](const json& c) { return c.value("tipo", std::string()) == "engine_cli"; });
+            const json comps_m = m.value("componentes", json::array());
+            const bool pesado  = std::any_of(comps_m.begin(), comps_m.end(),
+                                             [](const json& c) { return c.value("tipo", std::string()) == "engine_cli"; });
             if (pesado && F::Recursos::versao_atual(raiz, id).empty())
                 continue;
             const std::string erro = instalar(conta, m, id, versao);
@@ -351,7 +367,21 @@ void FilunaAtualizacao::instalar_modulo(const std::string& id, std::function<voi
     std::thread([impl, conta, alvo, id, versao, progresso] {
         std::string erro;
         try {
-            erro = impl->instalar(conta, alvo, id, versao, progresso);
+            json        alvo_atual = alvo;
+            std::string versao_atual = versao;
+            if (impl->buscar(conta).empty()) { // catálogo fresco; sem rede, segue com o que tinha
+                json cat;
+                {
+                    std::lock_guard<std::mutex> g(impl->trava);
+                    cat = impl->catalogo;
+                }
+                for (const auto& mod : cat.value("modulos", json::array()))
+                    if (mod.value("id", std::string()) == id && !mod.value("versao", std::string()).empty()) {
+                        alvo_atual   = mod;
+                        versao_atual = mod.value("versao", std::string());
+                    }
+            }
+            erro = impl->instalar(conta, alvo_atual, id, versao_atual, progresso);
         } catch (const std::exception& e) {
             erro = e.what();
         }

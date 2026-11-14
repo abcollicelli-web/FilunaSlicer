@@ -26,6 +26,7 @@
 #include <chrono>
 #include <map>
 #include <mutex>
+#include <set>
 #include <sstream>
 
 namespace Slic3r { namespace GUI { namespace FilunaDispositivos {
@@ -344,11 +345,31 @@ json complemento(const std::string& modulo_id)
 json preparar(const std::string& modulo_id, const std::string& modelo)
 {
     const std::string vid = vendor_orca(modulo_id);
-    const Preset* p = preset_do_modelo(vid, modelo);
-    if (p == nullptr)
-        return {{"erro", "Não há perfil de máquina para " + modelo + " nesta versão do Filuna."}};
     AppConfig* cfg = wxGetApp().app_config;
     PresetBundle* bundle = wxGetApp().preset_bundle;
+    const Preset* p = preset_do_modelo(vid, modelo);
+    if (p == nullptr && cfg != nullptr && bundle != nullptr) {
+        // Fabricante ainda não instalado neste computador (bundle->printers só tem os instalados):
+        // instala o modelo como o assistente do Orca faz (PresetBundle::apply_vendor_config) e procura de novo.
+        std::set<std::string> bicos;
+        for (const auto& pm : modelos_da_base(vid))
+            if (pm.nome == modelo)
+                bicos.insert(pm.bicos.begin(), pm.bicos.end());
+        if (bicos.empty())
+            bicos.insert("0.4");
+        const std::map<std::string, std::map<std::string, std::set<std::string>>> novos{{vid, {{modelo, bicos}}}};
+        try {
+            if (bundle->apply_vendor_config(novos, std::map<std::string, std::string>(), cfg, false)) {
+                cfg->save();
+                wxGetApp().load_current_presets();
+            }
+        } catch (const std::exception& e) {
+            BOOST_LOG_TRIVIAL(error) << "Filuna: instalar perfis de " << vid << ": " << e.what();
+        }
+        p = preset_do_modelo(vid, modelo);
+    }
+    if (p == nullptr)
+        return {{"erro", "Não há perfil de máquina para " + modelo + " nesta versão do Filuna."}};
     const std::string model_id = p->config.has("printer_model") ? p->config.opt_string("printer_model") : std::string();
     const std::string variant  = p->config.has("printer_variant") ? p->config.opt_string("printer_variant") : std::string();
     // Instala o modelo (como no assistente do Orca) e seleciona o perfil em Preparar.
