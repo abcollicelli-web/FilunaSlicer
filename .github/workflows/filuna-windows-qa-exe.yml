@@ -86,7 +86,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Generate Filuna NSIS installer (Fase 1 QA only — no release)
-        if: startsWith(github.ref_name, 'filuna/v1-f01-') || startsWith(github.ref_name, 'filuna/v1-base-') || startsWith(github.head_ref, 'filuna/v1-base-')
+        if: startsWith(github.ref_name, 'filuna/v1-f01-') || startsWith(github.ref_name, 'filuna/v1-base-') || startsWith(github.ref_name, 'filuna/v1-teste-') || startsWith(github.head_ref, 'filuna/v1-base-')
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -110,7 +110,7 @@ jobs:
             Get-FileHash -Algorithm SHA256 $package.FullName | Format-List
           }
       - name: Upload Filuna installer as QA artifact (not a release)
-        if: startsWith(github.ref_name, 'filuna/v1-f01-') || startsWith(github.ref_name, 'filuna/v1-base-') || startsWith(github.head_ref, 'filuna/v1-base-')
+        if: startsWith(github.ref_name, 'filuna/v1-f01-') || startsWith(github.ref_name, 'filuna/v1-base-') || startsWith(github.ref_name, 'filuna/v1-teste-') || startsWith(github.head_ref, 'filuna/v1-base-')
         uses: actions/upload-artifact@v4
         with:
           name: filuna-teste-fisico-windows-installer-${{ github.sha }}
