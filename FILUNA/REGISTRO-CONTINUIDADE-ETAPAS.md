@@ -714,3 +714,9 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Correção sem build: lab/oem_homolog/reempacotar_pastas.py reempacotou os 12 zips (pasta antes dos arquivos, mesmo conteúdo, testzip OK), manifestos com sha/bytes novos, catálogo republicado e re-assinado; 0 divergências sha/bytes entre catálogo e arquivos servidos. Originais em /srv/filuna-homolog/modulos-bak-ordem.
 - Cliente precisa REABRIR o Filuna (catálogo fica em memória; sha antigo daria "SHA-256 não confere").
 - Pendências anotadas: (1) QIDI com 0 modelos no assistente (casamento de nomes/vendor a investigar); (2) extrator pula arquivos de 0 bytes; (3) publicar_modulos.py deve chamar o reempacotamento sempre; (4) no próximo build, o cliente deve criar a pasta-pai ao extrair; (5) regra do proprietário: nunca mais 2 h de build por correção pequena → cache de compilação no CI + auto-update diferencial.
+
+## 2026-11-14 19:05 UTC — Beta 692c624f: extração OK após reabrir; novo bloqueio "Não há perfil de máquina"
+- Proprietário reabriu o Filuna: catálogo novo, download+extração do engine_cli Elegoo passaram (correção de servidor confirmada em Windows). Antes de reabrir dava "SHA-256 não confere" (catálogo em memória de 18:27 UTC × zip novo — log nginx).
+- Novo erro em preparar(): "Não há perfil de máquina para Elegoo Centauri Carbon 2" — preset_do_modelo procura em bundle->printers, que só tem fabricantes instalados (mesma classe do bug dos 0 modelos).
+- Correção (filuna/v1-teste-fisico 440d17846, objetos validados no Linux Release): preparar() instala o modelo via PresetBundle::apply_vendor_config (merge) + load_current_presets; instalar_modulo() busca catálogo fresco antes de baixar; corrigido any_of sobre temporários no ciclo(). Build Windows: run 43629055034.
+- Contorno imediato passado ao proprietário (sem esperar build): adicionar a impressora pelo seletor de impressoras do Preparar (instala o fabricante), depois repetir o assistente.
