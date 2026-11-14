@@ -50,6 +50,8 @@ jobs:
           ref: ${{ matrix.commit }}
           path: oem
           submodules: recursive
+          fetch-depth: 0        # a versão dos forks vem do "git describe" (tags): sem elas o libslic3r_version.h sai inválido
+          fetch-tags: true
       - name: Ferramentas (Strawberry Perl p/ OpenSSL, NASM, Ninja)
         if: steps.sel.outputs.go == '1'
         shell: pwsh
@@ -61,6 +63,25 @@ jobs:
         with:
           path: oem/deps/build
           key: deps-${{ matrix.id }}-${{ matrix.commit }}-v1
+      - name: "DIA SDK e numpy (Creality — o Breakpad do binário oficial usa dia2.h; um script deles usa numpy)"
+        if: steps.sel.outputs.go == '1' && matrix.id == 'creality'
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          # projetos gerados pelo Visual Studio ignoram INCLUDE/LIB (só com /p:UseEnv); CL e LINK o compilador lê sempre
+          "CL=/I`"$vs\DIA SDK\include`"" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "LINK=/LIBPATH:`"$vs\DIA SDK\lib\amd64`"" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          python -m pip install --quiet numpy
+          # o install da Creality copia o redistribuível WebView2 que os devs deles têm fora do repositório;
+          # preenchimento vazio só para o install passar — é retirado do pacote no empacotamento
+          New-Item -ItemType Directory -Force oem/package/runtime | Out-Null
+          New-Item -ItemType File -Force oem/package/runtime/MicrosoftEdgeWebView2RuntimeInstallerX64.exe | Out-Null
+      - name: Configuração .env (Elegoo lê este arquivo não versionado; o build_linux.sh passa o mesmo por -D)
+        if: steps.sel.outputs.go == '1' && matrix.id == 'elegoo'
+        shell: pwsh
+        working-directory: oem
+        run: |
+          @("ELEGOO_INTERNAL_TESTING=0", "ELEGOO_ENABLE_DEBUG_OUTPUT=0", "ELEGOO_CHINA_IOT_URL=", "ELEGOO_GLOBAL_IOT_URL=", "ELEGOO_CHINA_UPDATE_URL=", "ELEGOO_GLOBAL_UPDATE_URL=") | Set-Content .env
       - name: Dependências (script do próprio fabricante)
         if: steps.sel.outputs.go == '1' && steps.deps.outputs.cache-hit != 'true'
         shell: cmd
@@ -77,7 +98,12 @@ jobs:
         run: |
           $inst = Get-ChildItem -Path oem/build -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'resources') } | Select-Object -First 1
           if (-not $inst) { throw "pasta de instalação não encontrada em oem/build" }
-          $exe = Get-ChildItem -Path $inst.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'validator|console' } | Select-Object -First 1
+          # Nada proprietário no pacote (REGRA-CANONICA-CONECTIVIDADE-OPEN): o script da Snapmaker baixa o binário fechado
+          # snapmaker_control_*.exe (connect bundle) para resources/ — removido; qualquer outro .exe/.dll fechado conhecido idem.
+          Get-ChildItem -Path $inst.FullName -Recurse -File | Where-Object { $_.Name -match 'snapmaker_control|FlashNetwork|pgLibConnect|bambu_networking|MicrosoftEdgeWebView2RuntimeInstaller' } | ForEach-Object { Write-Host "removido (fechado): $($_.FullName)"; Remove-Item -Force $_.FullName }
+          $exe = Get-ChildItem -Path $inst.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'validator|console|crashpad|handler|control|updater|uninstall' } | Sort-Object Length -Descending | Select-Object -First 1
+          if (-not $exe) { throw "executável do fatiador não encontrado" }
+          Write-Host "executavel: $($exe.Name)"
           $zip = "${{ matrix.id }}-${{ matrix.versao }}-windows.zip"
           Compress-Archive -Path (Join-Path $inst.FullName '*') -DestinationPath $zip -CompressionLevel Optimal
           $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
@@ -100,8 +126,20 @@ jobs:
           $inst = Get-ChildItem -Path oem/build -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'resources') } | Select-Object -First 1
           $exe = Join-Path $inst.FullName $m.executavel
           New-Item -ItemType Directory -Force prova | Out-Null
-          $p = Start-Process -FilePath $exe -ArgumentList @('--slice','0','--export-gcode','--outputdir','prova','filuna/fixtures/cube20.stl') -PassThru -Wait -NoNewWindow
-          "rc=$($p.ExitCode)"; Get-ChildItem prova
+          # Prova de execução: o CLI sobe e responde (DLLs completas). A identidade do G-code é provada pela
+          # régua Linux (res/paridade-*); o CLI do Orca não tem --export-gcode e fatiar exige perfis carregados.
+          # Alguns fatiadores (CrealityPrint) são GUI e não saem no --help: subir e continuar vivo 120 s
+          # também prova que todas as DLLs carregaram — mata o processo e aprova.
+          $p = Start-Process -FilePath $exe -ArgumentList '--help' -WorkingDirectory $inst.FullName -RedirectStandardOutput prova/out.txt -RedirectStandardError prova/err.txt -PassThru
+          if (-not $p.WaitForExit(120000)) {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            "prova: processo subiu e ficou vivo 120 s (app GUI); DLLs completas"
+          } else {
+            $out = ((Get-Content prova/out.txt -Raw -ErrorAction SilentlyContinue) + (Get-Content prova/err.txt -Raw -ErrorAction SilentlyContinue))
+            if ($null -eq $out) { $out = '' }
+            "rc=$($p.ExitCode)"; if ($out.Length -gt 0) { $out.Substring(0, [Math]::Min(400, $out.Length)) }
+            if ($p.ExitCode -ne 0 -or $out.Length -lt 50) { throw "o CLI não respondeu ao --help (rc=$($p.ExitCode))" }
+          }
       - name: Publicar artefatos
         if: steps.sel.outputs.go == '1'
         uses: actions/upload-artifact@v4
