@@ -31,6 +31,7 @@
 #include <mutex>
 #include <set>
 #include <sstream>
+#include <vector>
 
 namespace Slic3r { namespace GUI { namespace FilunaDispositivos {
 
@@ -54,6 +55,15 @@ const std::map<std::string, std::string> AGENTE = {
     {"qidi", "qidi"},
     {"prusa", "filuna_prusalink"},
     {"snapmaker", "snapmaker"},
+};
+
+// Controles que cada motor de rede sabe executar na impressora (a tela só mostra os que existem).
+// CC2: métodos do SDK Elegoo-Link (1026 home, 1027 mover, 1028 temperatura, 1029 luz, 1030 ventiladores, 1031
+// velocidade, 2001/2002 carregar/descarregar pelo Canvas, 1007 parada). Anycubic Modo LAN: print/update e light/control.
+const std::map<std::string, std::vector<std::string>> CONTROLES = {
+    {"filuna_elegoo_cc2", {"bico", "mesa", "home", "mover", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade",
+                           "carregar", "descarregar", "emergencia"}},
+    {"filuna_anycubic_lan", {"bico", "mesa", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade"}},
 };
 
 std::string minusculas(std::string s)
@@ -258,6 +268,8 @@ json card(MachineObject* o)
         c["mesa"] = {{"atual", bed->GetBedTemp()}};
     if (DevExtderSystem* ext = o->GetExtderSystem())
         c["bico"] = {{"atual", ext->GetNozzleTempCurrent(0)}, {"alvo", ext->GetNozzleTempTarget(0)}};
+    auto ctl = CONTROLES.find(o->printer_agent_id);
+    c["controles"] = ctl == CONTROLES.end() ? json::array() : json(ctl->second);
     const std::string cam = Filuna::camera_url(o->get_dev_id());
     if (!cam.empty())
         c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu
@@ -618,6 +630,56 @@ json comando(const std::string& dev_id, const std::string& cmd)
         r = o->command_task_abort();
     else
         return {{"erro", "Comando desconhecido."}};
+    if (r != 0)
+        return {{"erro", "A impressora não aceitou o comando (" + std::to_string(r) + ")."}};
+    return {{"ok", true}};
+}
+
+// Controle direto da impressora ATIVA: temperatura, eixos, luz, ventiladores, velocidade, carregar/descarregar.
+// O pedido vai como {"filuna": {"command": tipo, ...}} para o motor de rede da marca, que traduz para o protocolo dela.
+json controle(const std::string& dev_id, const json& d)
+{
+    DeviceManager* dev = wxGetApp().getDeviceManager();
+    if (dev == nullptr)
+        return {{"erro", "Gerenciador de dispositivos indisponível."}};
+    MachineObject* o = dev->get_selected_machine();
+    if (o == nullptr || (!dev_id.empty() && o->get_dev_id() != dev_id))
+        return {{"erro", "Abra o cartão da impressora antes de comandar."}};
+    const std::string tipo = d.value("tipo", std::string());
+    auto ctl = CONTROLES.find(o->printer_agent_id);
+    if (ctl == CONTROLES.end() || std::find(ctl->second.begin(), ctl->second.end(), tipo) == ctl->second.end())
+        return {{"erro", "Este controle ainda não existe para esta impressora."}};
+    auto limitar = [&](const char* k, double lo, double hi) {
+        double v = d.contains(k) && d[k].is_number() ? d[k].get<double>() : 0.0;
+        return std::max(lo, std::min(hi, v));
+    };
+    json f = {{"command", tipo}};
+    if (tipo == "bico")
+        f["valor"] = int(limitar("valor", 0, 320));
+    else if (tipo == "mesa")
+        f["valor"] = int(limitar("valor", 0, 120));
+    else if (tipo == "ventilador" || tipo == "ventilador_aux" || tipo == "ventilador_caixa")
+        f["valor"] = int(limitar("valor", 0, 100));
+    else if (tipo == "velocidade")
+        f["valor"] = int(limitar("valor", 0, 3));
+    else if (tipo == "luz")
+        f["ligar"] = d.value("ligar", false);
+    else if (tipo == "home") {
+        std::string e = minusculas(d.value("eixos", std::string("xyz")));
+        if (e.empty() || e.find_first_not_of("xyz") != std::string::npos)
+            e = "xyz";
+        f["eixos"] = e;
+    } else if (tipo == "mover") {
+        const std::string e = minusculas(d.value("eixo", std::string()));
+        if (e != "x" && e != "y" && e != "z")
+            return {{"erro", "Eixo inválido."}};
+        f["eixo"]      = e;
+        f["distancia"] = limitar("distancia", -100, 100);
+    } else if (tipo == "carregar" || tipo == "descarregar") {
+        f["unidade"] = int(limitar("unidade", 0, 15));
+        f["slot"]    = int(limitar("slot", 0, 15));
+    }
+    const int r = o->publish_json(json{{"filuna", f}}, 1);
     if (r != 0)
         return {{"erro", "A impressora não aceitou o comando (" + std::to_string(r) + ")."}};
     return {{"ok", true}};

@@ -328,6 +328,44 @@ int FilunaElegooCC2Agent::send_message_to_printer(std::string, std::string json_
         std::lock_guard<std::recursive_mutex> l(m_mutex);
         id = m_next_id;
     }
+    // Controles do Filuna ({"filuna": {...}}) -> métodos da CC2 (SDK Elegoo-Link)
+    if (cmd.contains("filuna") && cmd["filuna"].is_object()) {
+        const json&       f = cmd["filuna"];
+        const std::string c = f.value("command", std::string());
+        int               metodo = 0;
+        json              params = json::object();
+        if (c == "bico")
+            metodo = 1028, params = {{"extruder", f.value("valor", 0)}};
+        else if (c == "mesa")
+            metodo = 1028, params = {{"heater_bed", f.value("valor", 0)}};
+        else if (c == "home")
+            metodo = 1026, params = {{"homed_axes", f.value("eixos", std::string("xyz"))}};
+        else if (c == "mover")
+            metodo = 1027, params = {{"axes", f.value("eixo", std::string("x"))}, {"distance", f.value("distancia", 0.0)}};
+        else if (c == "luz")
+            metodo = 1029, params = {{"power", f.value("ligar", false) ? 1 : 0}};
+        else if (c == "ventilador")
+            metodo = 1030, params = {{"fan", f.value("valor", 0)}};
+        else if (c == "ventilador_aux")
+            metodo = 1030, params = {{"aux_fan", f.value("valor", 0)}};
+        else if (c == "ventilador_caixa")
+            metodo = 1030, params = {{"box_fan", f.value("valor", 0)}};
+        else if (c == "velocidade")
+            metodo = 1031, params = {{"mode", f.value("valor", 1)}};
+        else if (c == "carregar")
+            metodo = 2001, params = {{"canvas_id", f.value("unidade", 0)}, {"tray_id", f.value("slot", 0)}};
+        else if (c == "descarregar")
+            metodo = 2002, params = {{"canvas_id", f.value("unidade", 0)}, {"tray_id", f.value("slot", 0)}};
+        else if (c == "emergencia")
+            metodo = 1007;
+        if (!metodo)
+            return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+        BOOST_LOG_TRIVIAL(info) << "FilunaElegooCC2Agent: controle " << c << " -> método " << metodo << " " << params.dump();
+        if (!request(metodo, params))
+            return BAMBU_NETWORK_ERR_CONNECT_FAILED;
+        request(1002, json::object()); // estado atualizado depois do comando
+        return BAMBU_NETWORK_SUCCESS;
+    }
     json r = to_cc2_request(cmd, id);
     if (r.empty())
         return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;

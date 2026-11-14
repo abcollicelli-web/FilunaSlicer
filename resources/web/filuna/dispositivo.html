@@ -90,6 +90,7 @@
 .passosLan{margin-top:14px}.passosLan li{margin:8px 0 8px 18px;font-size:14.5px}
 .spin{width:22px;height:22px;border:3px solid #ddd;border-top-color:var(--magenta-deep);border-radius:50%;animation:gira 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
 @keyframes gira{to{transform:rotate(360deg)}}
+.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
 .un .cores{display:flex;gap:6px;flex-wrap:wrap;margin:-12px 0 16px}.un .cores .dot{width:16px;height:16px;border:1px solid rgba(0,0,0,.15)}
 .un .ft{height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}.un .ft img{max-height:150px;max-width:100%;object-fit:contain}
 .pillv{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:#E6E2DC;color:var(--ink2);margin-left:8px}.pillv.on{background:#DFF3E7;color:var(--good)}.pillv.imp{background:var(--rose);color:var(--magenta-deep)}
@@ -234,6 +235,27 @@ function unidade(app, u) {
 			i.trabalho = { descricao: v.arquivo || "Impressão em andamento", progresso: v.progresso || 0, resta_s: v.restante_s || 0, estado: "imprimindo", cor: (v.cores && v.cores[0] && v.cores[0].cor) || "" };
 	}
 	var grau = function (x) { return x == null || isNaN(x) ? "—" : Math.round(x) + " °C"; };
+	// Controles diretos (só os que o motor de rede desta marca executa de verdade)
+	var tem = function (k) { return ativa && (v.controles || []).indexOf(k) >= 0; };
+	var painel = "";
+	if (ativa && v.controles && v.controles.length) {
+		var bt = function (rot, k, extra) { return '<button class="btn peq" data-ctl="' + k + '"' + (extra || "") + ">" + rot + "</button>"; };
+		painel = '<div class="ctlvivo"><h4>Controles da impressora</h4>';
+		if (tem("bico")) painel += '<div class="lin"><label>Bico</label><input type="number" id="cBico" min="0" max="320" value="' + (v.bico && v.bico.alvo ? Math.round(v.bico.alvo) : 200) + '"><span>°C</span>' + bt("Aquecer", "bico") + bt("Desligar", "bico0") + "</div>";
+		if (tem("mesa")) painel += '<div class="lin"><label>Mesa</label><input type="number" id="cMesa" min="0" max="120" value="' + (v.mesa && v.mesa.alvo ? Math.round(v.mesa.alvo) : 60) + '"><span>°C</span>' + bt("Aquecer", "mesa") + bt("Desligar", "mesa0") + "</div>";
+		if (tem("home")) painel += '<div class="lin"><label>Eixos</label>' + bt("Zerar tudo (home)", "home") +
+			(tem("mover") ? '<select id="cPasso"><option value="1">1 mm</option><option value="10" selected>10 mm</option><option value="50">50 mm</option></select>' +
+				["x", "y", "z"].map(function (e) { return bt(e.toUpperCase() + " −", "mover", ' data-e="' + e + '" data-s="-1"') + bt(e.toUpperCase() + " +", "mover", ' data-e="' + e + '" data-s="1"'); }).join("") : "") + "</div>";
+		if (tem("luz")) painel += '<div class="lin"><label>Luz</label>' + bt("Ligar", "luz", ' data-on="1"') + bt("Desligar", "luz", ' data-on="0"') + "</div>";
+		[["ventilador", "Ventilador da peça"], ["ventilador_aux", "Ventilador auxiliar"], ["ventilador_caixa", "Ventilador da câmara"]].forEach(function (f) {
+			if (tem(f[0])) painel += '<div class="lin"><label>' + f[1] + '</label><input type="number" id="cFan_' + f[0] + '" min="0" max="100" value="0"><span>%</span>' + bt("Aplicar", f[0]) + "</div>";
+		});
+		if (tem("velocidade")) painel += '<div class="lin"><label>Velocidade</label><select id="cVel" style="width:150px">' +
+			(v.agente == "filuna_anycubic_lan" ? '<option value="1">Silencioso</option><option value="2" selected>Padrão</option><option value="3">Esportivo</option>'
+				: '<option value="0">Silencioso</option><option value="1" selected>Equilibrado</option><option value="2">Esportivo</option><option value="3">Máximo</option>') + "</select>" + bt("Aplicar", "velocidade") + "</div>";
+		if (tem("emergencia")) painel += '<div class="lin">' + bt("Parada de emergência", "emergencia", ' style="color:#B00020"') + "</div>";
+		painel += (estado.ctlMsg ? '<div class="okmsg">' + E(estado.ctlMsg) + "</div>" : "") + "</div>";
+	}
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
 	var camVivo = ativa && v.camera_url && !/\/flv(\?|$)/.test(v.camera_url) ? v.camera_url : ""; // FLV (Anycubic) ainda sem tocador
 	var foto = camVivo ? '<img alt="" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
@@ -256,6 +278,7 @@ function unidade(app, u) {
 			'<div><div class="lbl">Mesa</div><div class="v">' + grau(v.mesa && v.mesa.atual) + '</div><div class="a">' + (v.mesa && v.mesa.alvo ? "alvo " + grau(v.mesa.alvo) : "leitura ao vivo") + '</div></div></div>'
 		: '<div class="temps"><div><div class="lbl">Bico</div><div class="v">—</div><div class="a">' + (aoVivo ? "conectando…" : "sem dado da impressora") + '</div></div>' +
 			'<div><div class="lbl">Mesa</div><div class="v">—</div><div class="a">' + (aoVivo ? "conectando…" : "sem dado da impressora") + '</div></div></div>') +
+		painel +
 		'<div class="ctl"><h4>Controle local</h4><p>' + (aoVivo ? "Comando direto para a impressora pela rede local." : "O pedido vai pela sua conta até a impressora.") + ' Nada é feito sem você confirmar.</p><div class="btns">' +
 		(i.estado == "pausada" ? '<button class="btn" data-cmd="retomar">Revisar retomada</button>' : '<button class="btn" data-cmd="pausar"' + (i.estado != "imprimindo" ? " disabled" : "") + ">Revisar pausa</button>") +
 		'<button class="btn" data-cmd="cancelar"' + (["imprimindo", "pausada"].indexOf(i.estado) < 0 ? " disabled" : "") + ">Revisar cancelamento</button></div>" +
@@ -266,11 +289,28 @@ function unidade(app, u) {
 		'<div class="mats"><div class="lbl">' + (aoVivo && v.cores && v.cores.length ? "Sistema de cores" : "Materiais") + '</div>' +
 		(aoVivo && v.cores && v.cores.length ? '<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">' + v.cores.map(function (c) {
 			return '<span style="display:inline-flex;align-items:center;gap:8px"><span class="dot" style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.18);background:' + corCss(c.cor) + '"></span>' +
-				'<span>Entrada ' + (parseInt(c.slot, 10) + 1 || "") + (c.material ? " · " + E(c.material) : "") + (c.vazio ? " · vazia" : "") + "</span></span>"; }).join("") + "</div>"
+				'<span>Entrada ' + (parseInt(c.slot, 10) + 1 || "") + (c.material ? " · " + E(c.material) : "") + (c.vazio ? " · vazia" : "") + "</span>" +
+				(tem("carregar") ? '<button class="btn peq" data-ctl="carregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '">Carregar</button><button class="btn peq" data-ctl="descarregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '">Descarregar</button>' : "") + "</span>"; }).join("") + "</div>"
 			: materiais(i)) + "</div></div></div>" + rodape();
 	app.innerHTML = html;
 	if (i.camera_em) camera(i.id);
 	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
+	app.querySelectorAll("[data-ctl]").forEach(function (b) { b.onclick = function () {
+		var k = b.dataset.ctl, d = { dev_id: v.dev_id, tipo: k }, q = function (id) { var el = app.querySelector(id); return el ? +el.value : 0; };
+		if (k == "bico0") { d.tipo = "bico"; d.valor = 0; } else if (k == "mesa0") { d.tipo = "mesa"; d.valor = 0; }
+		else if (k == "bico") d.valor = q("#cBico"); else if (k == "mesa") d.valor = q("#cMesa");
+		else if (k == "mover") { d.eixo = b.dataset.e; d.distancia = (+b.dataset.s) * q("#cPasso"); }
+		else if (k == "luz") d.ligar = b.dataset.on == "1";
+		else if (k.indexOf("ventilador") == 0) d.valor = q("#cFan_" + k);
+		else if (k == "velocidade") d.valor = q("#cVel");
+		else if (k == "carregar" || k == "descarregar") { d.unidade = +b.dataset.u || 0; d.slot = +b.dataset.sl || 0; }
+		else if (k == "emergencia") {
+			if (estado.confEmerg != v.dev_id) { estado.confEmerg = v.dev_id; estado.ctlMsg = "Clique de novo em Parada de emergência para confirmar."; desenhar(); return; }
+			estado.confEmerg = null;
+		}
+		estado.ctlMsg = "Enviando…"; desenhar();
+		Filuna.nativo("dispositivos.controle", d).then(function (r) { estado.ctlMsg = r && r.erro ? r.erro : "Comando enviado para a impressora."; desenhar(); }, function (e) { estado.ctlMsg = e.message; desenhar(); });
+	}; });
 	app.querySelectorAll("[data-cmd]").forEach(function (b) { if (!u.farm && !ativa) b.disabled = true; b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
 	var sim = app.querySelector("#sim"); if (sim) sim.onclick = function () {
 		var c = estado.confirmar; estado.confirmar = null;
@@ -333,7 +373,8 @@ Filuna.ouvir("dispositivos.estado", function (e) {
 	if (estado.vista == "lista" && !estado.confirmar && document.activeElement.id != "busca") desenhar();
 	else if (estado.vista == "unidade" && !estado.confirmar) {
 		// cartão aberto acompanha a impressora ao vivo; só redesenha quando algo mudou (não reinicia a câmera à toa)
-		var chave = JSON.stringify(estado.vivas);
+		var chave = JSON.stringify(estado.vivas), foco = document.activeElement;
+		if (foco && foco.closest && foco.closest(".ctlvivo") && /^(INPUT|SELECT)$/.test(foco.tagName)) return; // não atrapalha quem está digitando um valor
 		if (chave != estado.vivasAntes) { estado.vivasAntes = chave; desenhar(); }
 	}
 });

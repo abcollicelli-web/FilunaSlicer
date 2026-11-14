@@ -650,6 +650,27 @@ int FilunaAnycubicLanAgent::send_message_to_printer(std::string, std::string jso
     json cmd = json::parse(json_str, nullptr, false);
     if (!cmd.is_object())
         return BAMBU_NETWORK_ERR_INVALID_HANDLE;
+    // Controles do Filuna ({"filuna": {...}}) -> print/update e light/control do Modo LAN
+    if (cmd.contains("filuna") && cmd["filuna"].is_object()) {
+        const json&       f  = cmd["filuna"];
+        const std::string fc = f.value("command", std::string());
+        const char*       chave = fc == "bico" ? "target_nozzle_temp" : fc == "mesa" ? "target_hotbed_temp" :
+                                  fc == "ventilador" ? "fan_speed_pct" : fc == "ventilador_aux" ? "aux_fan_speed_pct" :
+                                  fc == "ventilador_caixa" ? "box_fan_level" : fc == "velocidade" ? "print_speed_mode" : nullptr;
+        bool feito = false;
+        if (chave != nullptr) {
+            int v = f.value("valor", 0);
+            if (fc == "velocidade")
+                v = std::max(1, std::min(3, v)); // 1 silencioso, 2 padrão, 3 esportivo
+            feito = pedir("print", "update", json{{"taskid", "-1"}, {"settings", {{chave, v}}}});
+        } else if (fc == "luz") {
+            const bool on = f.value("ligar", false);
+            feito = pedir("light", "control", json{{"type", 2}, {"status", on ? 1 : 0}, {"brightness", on ? 100 : 0}});
+        } else
+            return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+        BOOST_LOG_TRIVIAL(info) << "FilunaAnycubicLanAgent: controle " << fc << (feito ? " enviado" : " falhou");
+        return feito ? BAMBU_NETWORK_SUCCESS : BAMBU_NETWORK_ERR_CONNECT_FAILED;
+    }
     std::string c;
     if (cmd.contains("print") && cmd["print"].is_object())
         c = cmd["print"].value("command", std::string());
