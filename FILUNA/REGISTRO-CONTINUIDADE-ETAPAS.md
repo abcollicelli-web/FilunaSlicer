@@ -701,3 +701,9 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Publicado em /var/lib/filuna-v2/modulos/creality/7.3.1.6378/ via publicar_modulos.py (catálogo re-assinado Ed25519). Catálogo: 8 fabricantes HOMOLOGADO_INTERNO (anycubic = MOTOR_ORCA), engine_cli ativos: snapmaker, elegoo, flashforge, creality.
 - Beta do Filuna Slicer liberado p/ teste do proprietário: run 43557253145 (installer 164MB / exe 212MB, commit 1210b7e com download sob demanda).
 - Próximo: teste físico Kobra 3 V2 (proprietário) + Creality Hi (cliente beta via canal beta no /admin/modulos); depois, pedido agendado do auto-update diferencial.
+
+## 2026-11-14 16:30 UTC — Beta 14/11 reprovado pelo proprietário; causa achada e corrigida
+- Relatório do proprietário (filuna-qa-prints/beta-kobra-elegoo, commit 82048d9): login/sync OK, cadastros OK, mas assistente com "0 modelo(s) homologado(s)" em todas as marcas → clique morto, sem busca LAN, sem download de complemento. Elegoo ligada não aparecia. Instalador bloqueado por UAC (testou o portátil).
+- Diagnóstico: catálogo do servidor correto (76/73/99 impressoras por componente; API devolve catálogo assinado completo). O cliente contava modelos contra preset_bundle->vendors, que só tem fabricantes JÁ INSTALADOS — vazio em instalação nova → 0 em tudo. Casamento de nomes conferido à parte (19/19 snapmaker, 21 anycubic).
+- Correção (filuna/v1-teste-fisico 692c624f1): fabricantes()/modelos() agora leem a base resources/profiles/<Vendor>.json (machine_model_list + model_id/família/bicos dos jsons de máquina), presente em toda instalação. Objeto validado no Linux incremental (compilou limpo).
+- Novo build Windows: run 43615948023.
