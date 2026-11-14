@@ -736,3 +736,9 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - PROGRAMA (filuna/v1-teste-fisico 731982e5b, só resources/ — não dispara build): ponte.js ganha o agente (roda no rodapé; pergunta a fila a cada 30 s com autorização, 5 min sem); página inicial ganha "Suporte remoto" (janela de autorização + histórico do que o suporte fez).
 - Pacote r1 pronto em /srv/filuna-homolog/overlay/r1 (3 arquivos). Roteiro: lab/oem_homolog/primeiro-update.sh <run> <build> — publica o build completo como base e o r1 por cima no canal beta. NÃO executado: espera o run 43630918204 passar e o aviso do proprietário.
 - Limite conhecido: reparos que precisam de código novo no programa (limpar cache, reinstalar módulo à força, refazer perfil) não entram no r1; ficam para update com compilação.
+
+## 2026-11-14 21:15 UTC — Build 1784dfe41 PASSOU; canal beta = 1784dfe41-r2 (1º update automático, sem compilar)
+- Run 43630918204 sucesso (inclui trecho só-Windows do auto-update e testes). Artefatos: exe 212 MB, instalador 164 MB. Árvore de compilação coube no cache (3,4 GB; total 8 de 10 GB) → compilação rápida viável, ainda NÃO testada.
+- Publicado: base 1784dfe41 (2.5.0-beta.53), r1 (suporte remoto, 18,8 KB) e r2. Medida real: delta de código 692c624f1→r2 = 44,2 MB; delta de telas 1784dfe41→r2 = 5 arquivos, poucos KB.
+- Relato do proprietário no build novo: a busca na rede ACHOU a Elegoo (perfil ao conectar funcionou), mas o assistente pediu "código LAN" — errado: o fatiador oficial não pede. Causa: tela pedia código para qualquer marca quando precisa_codigo; o agente CC2 já usa o código padrão 123456 sozinho. Correção só de tela (dispositivo.html, commit no branch): só a Bambu pede código antes; as demais conectam direto e o código só aparece se a impressora recusar. Entregue no r2.
+- NÃO verificado: aplicação do update no PC do proprietário e a conexão da CC2 sem código.
