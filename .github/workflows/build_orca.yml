@@ -21,6 +21,14 @@ on:
           required: false
           type: boolean
           default: false
+        windows-installer:
+          required: false
+          type: boolean
+          default: true
+        attest-windows-portable:
+          required: false
+          type: boolean
+          default: false
 
 jobs:
   build_orca:
@@ -440,14 +448,14 @@ jobs:
       # PATH also makes cpack use it over the NSIS preinstalled on some images.
       - name: Restore NSIS
         id: nsis-cache
-        if: runner.os == 'Windows' && !vars.SELF_HOSTED
+        if: runner.os == 'Windows' && inputs.windows-installer && !vars.SELF_HOSTED
         uses: actions/cache/restore@v6
         with:
           path: ${{ runner.temp }}/nsis
           key: nsis-${{ env.NSIS_VERSION }}
 
       - name: Install NSIS
-        if: runner.os == 'Windows' && !vars.SELF_HOSTED
+        if: runner.os == 'Windows' && inputs.windows-installer && !vars.SELF_HOSTED
         shell: pwsh
         run: |
           dir "C:/Program Files (x86)/Windows Kits/10/Include"
@@ -467,7 +475,7 @@ jobs:
           $nsisDir | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Save NSIS
-        if: runner.os == 'Windows' && !vars.SELF_HOSTED && steps.nsis-cache.outputs.cache-hit != 'true'
+        if: runner.os == 'Windows' && inputs.windows-installer && !vars.SELF_HOSTED && steps.nsis-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: ${{ runner.temp }}/nsis
@@ -511,7 +519,7 @@ jobs:
       # NSIS is x86-only; it runs (and the installer it emits runs) under ARM64's
       # x86 emulation, packaging the native arm64 payload from build-arm64.
       - name: Create installer Win
-        if: runner.os == 'Windows' && !vars.SELF_HOSTED
+        if: runner.os == 'Windows' && inputs.windows-installer && !vars.SELF_HOSTED
         working-directory: ${{ github.workspace }}/${{ env.BUILD_DIR }}
         run: |
           cpack -G NSIS
@@ -533,10 +541,38 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: OrcaSlicer_Windows_${{ env.ver }}${{ env.ARCH_SUFFIX }}_portable
-          path: ${{ github.workspace }}/${{ env.BUILD_DIR }}/OrcaSlicer
+          path: ${{ github.workspace }}/${{ env.BUILD_DIR }}/${{ inputs.attest-windows-portable && format('OrcaSlicer_Windows_{0}{1}_portable.zip', env.ver, env.ARCH_SUFFIX) || 'OrcaSlicer' }}
+
+      - name: Attest Windows portable build through GitHub
+        id: filuna-build-attestation
+        if: runner.os == 'Windows' && inputs.attest-windows-portable
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ github.workspace }}/${{ env.BUILD_DIR }}/OrcaSlicer_Windows_${{ env.ver }}${{ env.ARCH_SUFFIX }}_portable.zip
+
+      - name: Verify Windows portable build provenance
+        if: runner.os == 'Windows' && inputs.attest-windows-portable
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = Join-Path (Join-Path $env:GITHUB_WORKSPACE $env:BUILD_DIR) ('OrcaSlicer_Windows_{0}{1}_portable.zip' -f $env:ver, $env:ARCH_SUFFIX)
+          gh attestation verify $package --repo $env:GITHUB_REPOSITORY --signer-workflow "$env:GITHUB_REPOSITORY/.github/workflows/build_orca.yml" --source-digest $env:GITHUB_SHA --signer-digest $env:GITHUB_SHA --source-ref $env:GITHUB_REF --deny-self-hosted-runners --format json > filuna-build-attestation-verification.json
+          if ($LASTEXITCODE -ne 0) { throw 'GITHUB_BUILD_PROVENANCE_VERIFICATION_FAILED' }
+
+      - name: Preserve Windows portable attestation evidence
+        if: runner.os == 'Windows' && inputs.attest-windows-portable
+        uses: actions/upload-artifact@v7
+        with:
+          name: filuna-build-attestation-${{ github.sha }}
+          path: |
+            ${{ steps.filuna-build-attestation.outputs.bundle-path }}
+            filuna-build-attestation-verification.json
+          if-no-files-found: error
 
       - name: Upload artifacts Win installer
-        if: runner.os == 'Windows' && !vars.SELF_HOSTED
+        if: runner.os == 'Windows' && inputs.windows-installer && !vars.SELF_HOSTED
         uses: actions/upload-artifact@v7
         with:
           name: OrcaSlicer_Windows_${{ env.ver }}${{ env.ARCH_SUFFIX }}
@@ -572,7 +608,7 @@ jobs:
           content_type: application/x-zip-compressed
 
       - name: Deploy Windows release installer
-        if: github.repository == 'OrcaSlicer/OrcaSlicer' && github.ref == 'refs/heads/main' && runner.os == 'Windows' && !vars.SELF_HOSTED
+        if: github.repository == 'OrcaSlicer/OrcaSlicer' && github.ref == 'refs/heads/main' && runner.os == 'Windows' && inputs.windows-installer && !vars.SELF_HOSTED
         uses: ./.github/actions/deploy-nightly
         with:
           asset_path: ${{ github.workspace }}/${{ env.BUILD_DIR }}/OrcaSlicer_Windows_Installer_${{ env.ver }}${{ env.ARCH_SUFFIX }}.exe
@@ -588,7 +624,7 @@ jobs:
           content_type: application/x-msdownload
 
       - name: Build MSIX Store package Win
-        if: runner.os == 'Windows' && !vars.SELF_HOSTED
+        if: runner.os == 'Windows' && inputs.windows-installer && !vars.SELF_HOSTED
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: |
@@ -601,7 +637,7 @@ jobs:
             -PublisherDisplayName "${{ vars.ORCA_MSIX_PUBLISHER_DISPLAY_NAME || 'OrcaSlicer' }}"
 
       - name: Upload artifacts Win MSIX
-        if: runner.os == 'Windows' && !vars.SELF_HOSTED
+        if: runner.os == 'Windows' && inputs.windows-installer && !vars.SELF_HOSTED
         uses: actions/upload-artifact@v7
         with:
           name: OrcaSlicer_Windows_MSIX_${{ env.ver }}${{ env.ARCH_SUFFIX }}

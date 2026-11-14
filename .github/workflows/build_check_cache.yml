@@ -19,6 +19,16 @@ on:
       force-build:
         required: false
         type: boolean
+      windows-installer:
+        description: "Package Windows installers; disable for portable-only QA"
+        required: false
+        type: boolean
+        default: true
+      attest-windows-portable:
+        description: "Generate GitHub build provenance for the portable ZIP"
+        required: false
+        type: boolean
+        default: false
   
 # Read by scripts/ci_deps_cache.sh.
 env:
@@ -195,4 +205,6 @@ jobs:
       compiler: ${{ inputs.compiler }}
       build-deps-only: ${{ inputs.build-deps-only }}
       force-build: ${{ inputs.force-build }}
+      windows-installer: ${{ inputs.windows-installer }}
+      attest-windows-portable: ${{ inputs.attest-windows-portable }}
     secrets: inherit

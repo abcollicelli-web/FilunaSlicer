@@ -1,0 +1,131 @@
+name: Filuna first beta signing gate (NO publication)
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Approved Filuna Windows QA run ID"
+        required: true
+        type: string
+      source_sha:
+        description: "Complete 40-char approved binary commit SHA"
+        required: true
+        type: string
+      release_version:
+        description: "Approved numeric version MAJOR.MINOR.PATCH"
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+  attestations: write
+jobs:
+  sign:
+    if: github.ref == 'refs/heads/filuna/main'
+    runs-on: windows-2022
+    environment: filuna-first-beta-approval
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require exact QA and owner approval
+        shell: pwsh
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          VERSION: ${{ inputs.release_version }}
+          SIGNING_ENDPOINT: ${{ vars.FILUNA_SIGNING_ENDPOINT }}
+          SIGNING_ACCOUNT: ${{ vars.FILUNA_SIGNING_ACCOUNT }}
+          SIGNING_PROFILE: ${{ vars.FILUNA_SIGNING_PROFILE }}
+          SIGNER_SUBJECT: ${{ vars.FILUNA_SIGNER_SUBJECT }}
+          AZURE_TENANT: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_SUB: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if ($env:SOURCE_SHA -notmatch '^[a-fA-F0-9]{40}$' -or
+              $env:VERSION -notmatch '^\d+\.\d+\.\d+$') { throw "INVALID_SHA_OR_VERSION" }
+          $evidence="FILUNA/QA/first-beta-release-evidence.json"
+          if (-not (Test-Path $evidence)) { throw "BLOCKED_NO_OWNER_RELEASE_APPROVAL" }
+          $gate=Get-Content $evidence -Raw | ConvertFrom-Json
+          if ($gate.source_sha -ne $env:SOURCE_SHA -or
+              $gate.release_version -ne $env:VERSION -or
+              $gate.channel -ne "owner-beta" -or
+              $gate.owner_approved -ne $true -or
+              $gate.windows_qa_pass -ne $true -or
+              $gate.rollback_qa_pass -ne $true -or
+              $gate.legal_review_pass -ne $true -or
+              $gate.installer_necessary -ne $true -or
+              [string]::IsNullOrWhiteSpace($gate.installer_reason)) {
+            throw "BLOCKED_RELEASE_GATES_NOT_ALL_PASS"
+          }
+          foreach($value in @($env:SIGNING_ENDPOINT,$env:SIGNING_ACCOUNT,$env:SIGNING_PROFILE,
+                             $env:SIGNER_SUBJECT,$env:AZURE_TENANT,$env:AZURE_CLIENT,$env:AZURE_SUB)){
+            if([string]::IsNullOrWhiteSpace($value)){throw "BLOCKED_NO_TRUSTED_WINDOWS_SIGNING_IDENTITY"}
+          }
+      - name: Verify source run success AND SHA
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          if($env:RUN_ID -notmatch '^[0-9]+$'){throw "INVALID_SOURCE_RUN_ID"}
+          $run=gh api "/repos/$env:GITHUB_REPOSITORY/actions/runs/$env:RUN_ID" | ConvertFrom-Json
+          if($run.conclusion -ne "success" -or $run.head_sha -ne $env:SOURCE_SHA -or
+             $run.name -ne "Filuna Windows QA executable (NO installer)"){throw "SOURCE_RUN_UNAPPROVED"}
+      - name: Download the exact QA build (not an installer)
+        uses: actions/download-artifact@v4
+        with:
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.source_run_id }}
+          name: filuna-qa-windows-exe-${{ inputs.source_sha }}
+          github-token: ${{ github.token }}
+          path: qa-bin
+      - name: Ensure executable is present before signing
+        shell: pwsh
+        run: |
+          $exe=Get-ChildItem qa-bin -Recurse -File -Filter orca-slicer.exe | Select-Object -First 1
+          if(-not $exe){throw "FILUNA_BINARY_MISSING"}
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Authenticode signing with the verified publisher
+        uses: azure/artifact-signing-action@v2
+        with:
+          endpoint: ${{ vars.FILUNA_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.FILUNA_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.FILUNA_SIGNING_PROFILE }}
+          files-folder: ${{ github.workspace }}\qa-bin
+          files-folder-filter: exe,dll
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+      - name: Validate Windows signatures AND expected publisher
+        shell: pwsh
+        env:
+          SIGNER_SUBJECT: ${{ vars.FILUNA_SIGNER_SUBJECT }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $native=Get-ChildItem qa-bin -Recurse -File | Where-Object { $_.Extension -in @('.exe','.dll') }
+          if(-not $native){throw "NO_SIGNED_BINARIES"}
+          foreach($file in $native){
+            $sig=Get-AuthenticodeSignature -LiteralPath $file.FullName
+            if($sig.Status -ne 'Valid' -or -not $sig.SignerCertificate -or
+               $sig.SignerCertificate.Subject -ne $env:SIGNER_SUBJECT){
+              throw "WINDOWS_AUTHENTICODE_OR_PUBLISHER_INVALID: $($file.Name)"
+            }
+          }
+      - name: Package signed QA binary, not public installer
+        shell: pwsh
+        run: |
+          Compress-Archive -Path qa-bin\* -DestinationPath filuna-beta-signed-QA.zip
+          Get-FileHash filuna-beta-signed-QA.zip -Algorithm SHA256 | Format-List
+      - uses: actions/attest@v4
+        with:
+          subject-path: filuna-beta-signed-QA.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: filuna-beta-signed-QA-${{ inputs.source_sha }}
+          path: filuna-beta-signed-QA.zip
+          retention-days: 7

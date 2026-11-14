@@ -1140,7 +1140,10 @@ void GUI_App::post_init()
                 this->preset_updater->sync(http_url, language, network_ver, sys_preset ? preset_bundle : nullptr);
             }
 
-            this->check_new_version_sf();
+            // Filuna update source is the authenticated Filuna release service, not
+            // Orca's upstream version endpoint. Keep auto-update disabled until
+            // independent trust/verifier/helper integration is homologated.
+            // Do not report a newer Orca release as a signed Filuna update.
             if (!cw_showed)
                 this->check_legacy_user_filament_presets(false);
             const auto cloud_provider = get_printer_cloud_provider();

@@ -1,0 +1,103 @@
+name: Filuna GitHub artifact attestation (QA only)
+on:
+  push:
+    branches: ["filuna/native-update-first-beta-20261108"]
+    paths: [".github/workflows/filuna-github-attestation.yml"]
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Completed Filuna Windows GUI build run"
+        required: true
+        type: string
+      source_sha:
+        description: "Exact 40-character source SHA of that build"
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+  attestations: write
+jobs:
+  attest:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: ${{ inputs.source_run_id }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+    steps:
+      - name: Require successful same-repository build and exact artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          repo = os.environ['GITHUB_REPOSITORY']
+          run_id, sha = os.environ['SOURCE_RUN'], os.environ['SOURCE_SHA']
+          if not re.fullmatch(r'[0-9]+', run_id) or not re.fullmatch(r'[a-f0-9]{40}', sha):
+              raise SystemExit('INVALID_SOURCE_REFERENCE')
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/{path}']))
+          run = api(f'actions/runs/{run_id}')
+          if (run['status'] != 'completed' or run['conclusion'] != 'success'
+              or run['head_sha'] != sha or run['repository']['full_name'] != repo
+              or run['head_repository']['full_name'] != repo
+              or run['path'] != '.github/workflows/filuna-native-update-gui-build.yml'
+              or run['head_branch'] != 'filuna/native-update-first-beta-20261108'):
+              raise SystemExit('SOURCE_BUILD_NOT_APPROVED_FOR_QA_ATTESTATION')
+          artifacts = api(f'actions/runs/{run_id}/artifacts?per_page=100')
+          if artifacts['total_count'] > 100:
+              raise SystemExit('ARTIFACT_LIST_TOO_LARGE')
+          candidates = [a for a in artifacts['artifacts'] if
+              re.fullmatch(r'OrcaSlicer_Windows_[A-Za-z0-9_.+-]+_x64_portable', a['name'])
+              and not a['expired']]
+          if len(candidates) != 1:
+              raise SystemExit('EXACTLY_ONE_PORTABLE_ARTIFACT_REQUIRED')
+          artifact = candidates[0]
+          if not re.fullmatch(r'sha256:[a-f0-9]{64}', artifact.get('digest') or ''):
+              raise SystemExit('ARTIFACT_DIGEST_MISSING')
+          with open(os.environ['GITHUB_ENV'], 'a') as out:
+              out.write(f"ARTIFACT_ID={int(artifact['id'])}\nARTIFACT_DIGEST={artifact['digest'][7:]}\n")
+          # This statement describes import/integrity, not a new build or Windows signature.
+          evidence = {'schema': 'filuna.github-artifact-import.v1', 'repository': repo,
+              'source_run_id': int(run_id), 'source_sha': sha, 'source_run_url': run['html_url'],
+              'artifact_id': artifact['id'], 'artifact_digest': artifact['digest'],
+              'authenticode': 'NOT_PERFORMED', 'release_approval': 'NOT_GRANTED',
+              'scope': 'QA_ONLY_NO_SITE_PUBLICATION'}
+          with open('source-evidence.json', 'w') as out:
+              json.dump(evidence, out, indent=2)
+          PY
+      - name: Retrieve existing bytes and verify GitHub archive digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > filuna-qa-candidate.zip
+          printf '%s  filuna-qa-candidate.zip\n' "$ARTIFACT_DIGEST" | sha256sum --check --strict
+      - name: Attest imported candidate integrity through GitHub
+        id: attest
+        uses: actions/attest@v4
+        with:
+          subject-path: filuna-qa-candidate.zip
+          predicate-type: https://filuna3d.com/attestations/github-artifact-import/v1
+          predicate-path: source-evidence.json
+      - name: Verify signed attestation and workflow identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh attestation verify filuna-qa-candidate.zip --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/filuna-github-attestation.yml" \
+            --source-digest "$GITHUB_SHA" --signer-digest "$GITHUB_SHA" --source-ref "$GITHUB_REF" \
+            --deny-self-hosted-runners \
+            --predicate-type https://filuna3d.com/attestations/github-artifact-import/v1 \
+            --format json > verification.json
+      - name: Preserve QA attestation evidence without redistributing the binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-github-attestation-evidence-${{ inputs.source_run_id }}
+          path: |
+            source-evidence.json
+            verification.json
+            ${{ steps.attest.outputs.bundle-path }}
+          if-no-files-found: error
+          retention-days: 30
