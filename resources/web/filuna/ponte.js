@@ -346,6 +346,43 @@ var Filuna = (function () {
 	setInterval(function () { if (conexao.pendentes) enviarFila(); }, 60000);
 	ouvir("preferencias.locais", function () { enviarPrefs().then(function () { _evento("preferencias", {}); }); });
 
+	// ---- Suporte remoto (só com autorização do cliente, dada na tela inicial; prazo e registro ficam no servidor) ----
+	// O suporte da Filuna enfileira ações de uma LISTA FECHADA; este programa executa só as que estão aqui e devolve
+	// o resultado. Nada de comando livre, nada fora do Filuna. Sem autorização em vigor o servidor não entrega nada.
+	var SUP_ACOES = ["coletar", "diagnostico.enviar", "atualizacao.verificar", "atualizacao.aplicar", "dispositivos.fabricantes",
+		"dispositivos.modelos", "dispositivos.complemento", "dispositivos.complemento.baixar", "dispositivos.preparar",
+		"dispositivos.descobertas", "dispositivos.estado", "recarregar"];
+	function supSeguro(acao, dados) { return nativo(acao, dados).catch(function (e) { return { erro: (e && e.message) || "falhou" }; }); }
+	function supExecutar(c) {
+		if (SUP_ACOES.indexOf(c.acao) < 0) return Promise.resolve({ erro: "ação fora da lista permitida" });
+		var d = c.dados || {};
+		if (c.acao == "recarregar") { setTimeout(function () { location.reload(); }, 1500); return Promise.resolve({ recarregando: true }); }
+		if (c.acao == "diagnostico.enviar") return supSeguro("diagnostico.enviar", { etapa: "suporte-remoto", mensagem: "Registro pedido pelo suporte", contexto: {} });
+		if (c.acao == "coletar")
+			return Promise.all([supSeguro("atualizacao.estado"), supSeguro("dispositivos.fabricantes"), supSeguro("dispositivos.estado"),
+				supSeguro("dispositivos.descobertas"), supSeguro("preferencias.ler")]).then(function (r) {
+				return { programa: r[0], marcas: r[1], impressoras: r[2], rede_local: r[3], preferencias: r[4],
+					tela: location.pathname.split("/").pop(), sistema: navigator.userAgent, hora: new Date().toISOString() };
+			});
+		return supSeguro(c.acao, { fabricante: d.fabricante || "", modelo: d.modelo || "" });
+	}
+	function supCiclo() {
+		if (!token) { setTimeout(supCiclo, 120000); return; }
+		rede("GET", "/suporte/fila").then(function (r) {
+			var fila = (r && r.acoes) || [], espera = r && r.ativa ? 30000 : 300000;
+			var cadeia = Promise.resolve();
+			fila.forEach(function (c) {
+				cadeia = cadeia.then(function () { return supExecutar(c); }).then(function (res) {
+					return rede("POST", "/suporte/resultado", { id: c.id, ok: !(res && res.erro), resultado: res }).catch(function () {});
+				});
+			});
+			cadeia.then(function () { setTimeout(supCiclo, fila.length ? 5000 : espera); });
+		}, function () { setTimeout(supCiclo, 300000); });
+	}
+	// um só agente por programa: o rodapé está sempre carregado
+	if (/rodape\.html$/.test(location.pathname)) setTimeout(supCiclo, 20000);
+	ouvir("suporte.agora", function () { supCiclo(); });
+
 	return { nativo: nativo, api: api, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
 		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
 		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, telaLogin: telaLogin };

@@ -325,3 +325,10 @@ body, button, input
 #FlUpdInternos span { font-size: 11.5px; padding: 4px 10px; border-radius: 999px; background: var(--focus-bg-item); color: var(--fg-color-label); }
 #FlUpdBarra { height: 8px; border-radius: 999px; background: var(--focus-bg-item); overflow: hidden; margin-top: 12px; }
 #FlUpdBarra i { display: block; height: 100%; width: 0; background: var(--filuna-framboesa); transition: width .3s; }
+
+/*---- Suporte remoto (autorização do cliente) ----*/
+#FlSupLink { position: fixed; left: 14px; bottom: 76px; z-index: 898; font-size: 12px; color: var(--fg-color-label); cursor: pointer; text-decoration: underline; }
+#FlSupLink.on { color: var(--filuna-framboesa); font-weight: 600; text-decoration: none; }
+.FlJan p.ok { color: #1B7F4B; font-size: 14px; }
+.FlSupOp { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.FlJan #FlSupCorpo ul { font-size: 12.5px; color: var(--fg-color-label); }

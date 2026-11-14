@@ -275,3 +275,50 @@ $(function () {
 		FlManut("diagnostico.enviar", { etapa: "inicio", mensagem: String(ev.message || "erro de script"), contexto: { arquivo: String(ev.filename || ""), linha: ev.lineno || 0 } });
 	});
 });
+
+/* ---- Suporte remoto: o cliente autoriza aqui, por prazo, e encerra quando quiser ----
+ * Com a autorização em vigor, o suporte da Filuna pode ler os dados do Filuna Slicer deste computador e pedir
+ * ações de reparo de uma lista fechada (ver ponte.js). Tudo o que for feito aparece no histórico abaixo. */
+function FlSupData(iso) { try { return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
+
+function FlSupDesenhar(r) {
+	var h = "";
+	if (r.ativa) {
+		h += '<p class="ok">Suporte remoto <b>autorizado</b> ' + (r.permanente ? "até você desligar" : "até " + FlEsc(FlSupData(r.expira_em))) + '.</p>' +
+			'<div class="bt"><button id="FlSupEncerrar" class="sec">Encerrar agora</button></div>';
+	} else {
+		h += '<p>Escolha por quanto tempo o suporte da Filuna pode acessar o Filuna Slicer deste computador:</p><div class="FlSupOp">' +
+			'<button data-h="1">1 hora</button><button data-h="24">24 horas</button><button data-h="168">7 dias</button>' +
+			(r.pode_permanente ? '<button data-p="1" class="sec">Até eu desligar</button>' : "") + '</div>';
+	}
+	var hist = (r.historico || []).slice(0, 12);
+	if (hist.length) {
+		h += "<h4>O que o suporte fez</h4><ul>";
+		hist.forEach(function (i) { h += "<li>" + FlEsc(FlSupData(i.criado_em)) + " · " + FlEsc(i.acao) + (i.concluido_em ? (i.ok ? " · feito" : " · não concluiu") : " · aguardando") + "</li>"; });
+		h += "</ul>";
+	}
+	$("#FlSupCorpo").html(h);
+	$("#FlSupLink").text(r.ativa ? "Suporte remoto: autorizado" : "Suporte remoto").toggleClass("on", !!r.ativa);
+	$("#FlSupCorpo [data-h], #FlSupCorpo [data-p]").on("click", function () {
+		var b = $(this), corpo = b.data("p") ? { permanente: true } : { horas: parseInt(b.data("h"), 10) };
+		FlChamar("POST", "/suporte/autorizar", corpo).then(FlSupCarregar).catch(function (e) { $("#FlSupCorpo").prepend('<p class="erro">' + FlEsc(e.message) + "</p>"); });
+	});
+	$("#FlSupEncerrar").on("click", function () { FlChamar("POST", "/suporte/encerrar", {}).then(FlSupCarregar).catch(function () { }); });
+}
+
+function FlSupCarregar() {
+	if (!FlToken()) { $("#FlSupLink").hide(); return Promise.resolve(); }
+	$("#FlSupLink").show();
+	return FlChamar("GET", "/suporte/estado").then(FlSupDesenhar).catch(function () { });
+}
+
+$(function () {
+	$("body").append('<div id="FlSupLink" style="display:none">Suporte remoto</div>' +
+		'<div id="FlSup" class="FlJan" style="display:none"><div class="cx"><small>Suporte remoto da Filuna</small><h2>Você decide quando e por quanto tempo</h2>' +
+		'<p>Com a sua autorização, o suporte da Filuna pode <b>ler os dados do Filuna Slicer</b> deste computador (versão, impressoras, módulos, registro de erros) e <b>fazer reparos de uma lista fechada</b> (reinstalar o suporte de uma marca, refazer a conexão, atualizar o programa). O suporte <b>não vê a sua tela, não acessa seus arquivos e não roda comandos</b> no seu computador. Você pode encerrar a qualquer momento.</p>' +
+		'<div id="FlSupCorpo"></div><div class="bt"><button id="FlSupFechar" class="sec">Fechar</button></div></div></div>');
+	$("#FlSupLink").on("click", function () { $("#FlSup").show(); FlSupCarregar(); });
+	$("#FlSupFechar").on("click", function () { $("#FlSup").hide(); });
+	setTimeout(FlSupCarregar, 1500);
+	setInterval(function () { if (!document.hidden) FlSupCarregar(); }, 120000);
+});
