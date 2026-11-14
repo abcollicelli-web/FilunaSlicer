@@ -366,7 +366,7 @@ function assistente(app) {
 	app.querySelector("#voltarA").onclick = function () {
 		if (a.passo == "marcas") { estado.vista = "lista"; desenhar(); return; }
 		a.erro = "";
-		a.passo = a.passo == "modelos" ? "marcas" : a.passo == "complemento" ? "modelos" : a.passo == "procurar" ? "complemento" : a.passo == "ip" ? "procurar" : a.passo == "ponte" ? "ip" : "marcas";
+		a.passo = a.passo == "modelos" ? "marcas" : a.passo == "complemento" ? "modelos" : a.passo == "procurar" ? (a.comp && a.comp.instalado ? "modelos" : "complemento") : a.passo == "ip" ? "procurar" : a.passo == "ponte" ? "ip" : "marcas";
 		if (a.passo == "complemento") a.prog = null;
 		desenhar();
 	};
@@ -401,12 +401,12 @@ function assistente(app) {
 		a.achadas = []; a.pedirCodigo = false;
 		Filuna.nativo("dispositivos.preparar", { fabricante: a.marca.id, modelo: a.modelo.nome }).then(function (r) {
 			if (r.erro) { a.erro = r.erro; desenhar(); return; }
-			a.perfil = r.perfil; procurarCiclo();
+			a.perfil = r.perfil; a.agente = r.agente || ""; procurarCiclo();
 		}).catch(function (e) { a.erro = e.message; desenhar(); });
 	}
 	function procurarCiclo() {
 		if (estado.vista != "assistente" || a.passo != "procurar") return;
-		Filuna.nativo("dispositivos.descobertas").then(function (r) {
+		daMarca(a).then(function (r) {
 			var achadas = (r.impressoras || []);
 			if (achadas.length) { a.achadas = achadas; desenhar(); return; }
 			a.tentativas++;
@@ -428,10 +428,20 @@ function assistente(app) {
 }
 Filuna.ouvir("complemento.progresso", function (p) {
 	var a = estado.assist; if (!a || estado.vista != "assistente" || a.passo != "complemento") return;
-	if (p.ok) { a.prog = null; a.comp = a.comp || {}; a.comp.instalado = true; a.passo = "procurar"; desenhar(); Filuna.nativo("dispositivos.preparar", { fabricante: a.marca.id, modelo: a.modelo.nome }).then(function (r) { if (r.erro) { a.erro = r.erro; desenhar(); return; } a.perfil = r.perfil; a.tentativas = 0; desenhar(); pollDescobertas(); }); return; }
+	if (p.ok) { a.prog = null; a.comp = a.comp || {}; a.comp.instalado = true; a.passo = "procurar"; desenhar(); Filuna.nativo("dispositivos.preparar", { fabricante: a.marca.id, modelo: a.modelo.nome }).then(function (r) { if (r.erro) { a.erro = r.erro; desenhar(); return; } a.perfil = r.perfil; a.agente = r.agente || ""; a.tentativas = 0; desenhar(); pollDescobertas(); }); return; }
 	if (p.erro) { a.erro = p.erro; a.prog = a.prog || {}; desenhar(); return; }
 	a.prog = p; desenhar();
 });
+// Impressoras achadas na rede que são da marca escolhida no assistente. A lista da rede do programa guarda as
+// achadas de outras marcas (ex.: a Elegoo de antes aparecia ao conectar uma Anycubic); o estado dá o agente de cada uma.
+function daMarca(a) {
+	return Promise.all([Filuna.nativo("dispositivos.descobertas"), Filuna.nativo("dispositivos.estado").catch(function () { return {}; })]).then(function (v) {
+		var r = v[0] || {}, ag = {};
+		((v[1] || {}).impressoras || []).forEach(function (i) { if (i.dev_id) ag[i.dev_id] = i.agente || ""; });
+		if (a && a.agente) r.impressoras = (r.impressoras || []).filter(function (d) { return !ag[d.dev_id] || ag[d.dev_id] == a.agente; });
+		return r;
+	});
+}
 // Diagnóstico: a busca na rede terminou sem achar a impressora — vai para o servidor com marca, modelo e agente.
 function semImpressoraNaRede(a, r) {
 	Filuna.nativo("diagnostico.enviar", { etapa: "dispositivos.procurar", mensagem: "Busca na rede local terminou sem achar a impressora",
@@ -439,7 +449,7 @@ function semImpressoraNaRede(a, r) {
 }
 function pollDescobertas() {
 	var a = estado.assist; if (!a || estado.vista != "assistente" || a.passo != "procurar") return;
-	Filuna.nativo("dispositivos.descobertas").then(function (r) {
+	daMarca(a).then(function (r) {
 		var achadas = r.impressoras || [];
 		if (achadas.length) { a.achadas = achadas; desenhar(); return; }
 		a.tentativas++;
