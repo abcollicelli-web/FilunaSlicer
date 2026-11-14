@@ -39,6 +39,7 @@ add_executable(${_TEST_NAME}_tests
     test_qidi_printer_agent.cpp
     test_filuna_module_store.cpp
     test_filuna_bambu_lan.cpp
+    test_filuna_anycubic_lan.cpp
     test_plugin_install.cpp
     test_plugin_lifecycle.cpp
     test_plugin_resource_texture.cpp

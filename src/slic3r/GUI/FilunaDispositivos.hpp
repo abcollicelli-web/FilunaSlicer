@@ -42,6 +42,7 @@ json registrar(const std::string& nome, const std::string& modulo_id, const std:
 json estado();
 // Troca a impressora ativa (Preparar + agente + perfil) para a cadastrada.
 json selecionar(const std::string& dev_id);
+json comando(const std::string& dev_id, const std::string& cmd);
 // Envia o estado resumido para a conta (servidor → app Android). Pouco tráfego: chamar a cada ~30 s.
 void sincronizar_estado(const json& estado, const std::string& token);
 

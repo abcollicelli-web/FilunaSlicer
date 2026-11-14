@@ -45,7 +45,7 @@ const std::map<std::string, std::string> VENDOR = {
 
 // módulo -> agente de rede da marca (ids em NetworkAgentFactory::register_all_agents)
 const std::map<std::string, std::string> AGENTE = {
-    {"anycubic", "moonraker"},          // família Klipper; ACE Pro via lane_data (rede-anycubic-moonraker)
+    {"anycubic", "filuna_anycubic_lan"}, // Modo LAN de fábrica (porta 18910 + MQTT/TLS); Moonraker só existe com Rinkhals
     {"bambu", "filuna_bambu_lan"},      // LAN aberto (MQTT/FTPS), sem plug-in fechado
     {"creality", "crealityprint"},
     {"elegoo", "filuna_elegoo_cc2"},    // Centauri Carbon 2; CC/Neptune: SDCP (ver agente_da_marca)
@@ -436,6 +436,20 @@ json descobertas()
     return {{"impressoras", lista}, {"agente", dev->get_current_printer_agent_id()}};
 }
 
+// O programa só trata como "acessível" a impressora de rede que tem um código gravado (herança do modo LAN da
+// Bambu). Marcas que conectam sem código precisam de um valor: a Centauri Carbon 2 usa 123456 de fábrica; no
+// Modo LAN da Anycubic e no SDCP da Elegoo a senha não é usada (as credenciais vêm do aperto de mão).
+void garantir_codigo(MachineObject* o)
+{
+    if (o == nullptr || !o->get_access_code().empty())
+        return;
+    const std::string ag = o->printer_agent_id;
+    if (ag == "filuna_elegoo_cc2")
+        o->set_access_code("123456", false);
+    else if (ag == "filuna_anycubic_lan" || ag == "filuna_elegoo_sdcp")
+        o->set_access_code("lan", false);
+}
+
 json conectar(const std::string& dev_id, const std::string& codigo)
 {
     DeviceManager* dev = wxGetApp().getDeviceManager();
@@ -448,6 +462,8 @@ json conectar(const std::string& dev_id, const std::string& codigo)
         return {{"erro", "Impressora não está mais na rede."}};
     if (!codigo.empty())
         o->set_access_code(codigo, false);
+    else
+        garantir_codigo(o);
     if (!dev->set_selected_machine(dev_id))
         return {{"erro", "Não foi possível conectar. Confira o modo LAN e o código de acesso."}};
     dev->set_local_selected_machine(dev_id);
@@ -552,21 +568,55 @@ json selecionar(const std::string& dev_id)
     const std::string agente = o->printer_agent_id;
     for (const auto& [mid, ag] : AGENTE)
         if (ag == agente || (agente == "filuna_elegoo_sdcp" && mid == "elegoo")) {
-            const Preset* p = preset_do_modelo(vendor_orca(mid), o->printer_type);
+            const std::string vid = vendor_orca(mid);
+            // a impressora diz "Centauri Carbon 2"; o perfil chama "Elegoo Centauri Carbon 2"
+            const Preset* p = preset_do_modelo(vid, o->printer_type);
+            if (p == nullptr)
+                p = preset_do_modelo(vid, vid + " " + o->printer_type);
             if (p == nullptr) {
                 const wxString nome = o->get_printer_type_display_str();
-                p = preset_do_modelo(vendor_orca(mid), std::string(nome.ToUTF8().data()));
+                p = preset_do_modelo(vid, std::string(nome.ToUTF8().data()));
             }
+            // O programa mantém UMA impressora ativa: abrir o cartão dela traz de volta o agente de rede e o
+            // perfil da marca dela (antes ficava no da última marca usada e ela aparecia desconectada).
+            if (AppConfig* cfg = wxGetApp().app_config)
+                cfg->set("filuna_agente_" + vid, agente);
             if (p != nullptr)
                 if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER))
                     tab->select_preset(p->name);
+            wxGetApp().switch_printer_agent();
             break;
         }
+    garantir_codigo(o);
     if (!dev->set_selected_machine(dev_id))
         return {{"erro", "Não foi possível conectar."}};
+    dev->set_local_selected_machine(dev_id);
     if (NetworkAgent* net = wxGetApp().getAgent())
         net->set_user_selected_machine(dev_id);
     return {{"ok", true}, {"impressora", card(o)}};
+}
+
+// Pausar, retomar ou parar a impressão da impressora ATIVA (a do cartão aberto).
+json comando(const std::string& dev_id, const std::string& cmd)
+{
+    DeviceManager* dev = wxGetApp().getDeviceManager();
+    if (dev == nullptr)
+        return {{"erro", "Gerenciador de dispositivos indisponível."}};
+    MachineObject* o = dev->get_selected_machine();
+    if (o == nullptr || (!dev_id.empty() && o->get_dev_id() != dev_id))
+        return {{"erro", "Abra o cartão da impressora antes de comandar."}};
+    int r = -1;
+    if (cmd == "pausar")
+        r = o->command_task_pause();
+    else if (cmd == "retomar")
+        r = o->command_task_resume();
+    else if (cmd == "cancelar" || cmd == "parar")
+        r = o->command_task_abort();
+    else
+        return {{"erro", "Comando desconhecido."}};
+    if (r != 0)
+        return {{"erro", "A impressora não aceitou o comando (" + std::to_string(r) + ")."}};
+    return {{"ok", true}};
 }
 
 void sincronizar_estado(const json& estado, const std::string& token)

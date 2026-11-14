@@ -204,7 +204,7 @@ function galeria(app) {
 	app.querySelector("#adicionar").onclick = abrirAssistente;
 	var b = app.querySelector("#busca"); b.oninput = function () { estado.busca = b.value; var pos = b.selectionStart; galeria(app); var nb = app.querySelector("#busca"); nb.focus(); nb.setSelectionRange(pos, pos); };
 	app.querySelectorAll("[data-f]").forEach(function (x) { x.onclick = function () { estado.filtro = x.dataset.f; galeria(app); }; });
-	app.querySelectorAll("[data-u]").forEach(function (x) { x.onclick = function () { estado.sel = x.dataset.u; estado.vista = "unidade"; estado.confirmar = null; estado.msg = ""; desenhar(); }; });
+	app.querySelectorAll("[data-u]").forEach(function (x) { x.onclick = function () { estado.sel = x.dataset.u; estado.vista = "unidade"; estado.confirmar = null; estado.msg = ""; estado.selecionando = null; desenhar(); }; });
 }
 
 function desenhar() {
@@ -220,6 +220,19 @@ function unidade(app, u) {
 	var local = estado.local || {}, lista = "";
 	// Unidade só cadastrada neste computador (ou sem conexão): mesma tela, sem leitura da Farm.
 	var i = u.farm || { id: "", nome: u.nome, modelo: u.modelo, estado: "offline", slots: [], na_fila: 0 };
+	// Impressora conectada pela rede local: os dados AO VIVO dela valem sobre a leitura da Farm. Abrir o cartão
+	// torna esta a impressora ativa do programa (agente de rede e perfil da marca dela).
+	var v = u.viva || null, aoVivo = !!(v && v.dev_id), ativa = aoVivo && !!v.selecionada;
+	if (aoVivo) {
+		if (!ativa && estado.selecionando != v.dev_id) {
+			estado.selecionando = v.dev_id;
+			Filuna.nativo("dispositivos.selecionar", { dev_id: v.dev_id }).then(function (r) { if (r && r.erro) { estado.msg = r.erro; desenhar(); } }, function (e) { estado.msg = e.message; desenhar(); });
+		}
+		i = Object.assign({}, i, { estado: ativa ? (v.estado || "livre") : "offline", modelo: i.modelo || v.modelo_nome || v.modelo || "" });
+		if (ativa && (v.estado == "imprimindo" || v.estado == "pausada") && !i.trabalho)
+			i.trabalho = { descricao: v.arquivo || "Impressão em andamento", progresso: v.progresso || 0, resta_s: v.restante_s || 0, estado: "imprimindo", cor: (v.cores && v.cores[0] && v.cores[0].cor) || "" };
+	}
+	var grau = function (x) { return x == null || isNaN(x) ? "—" : Math.round(x) + " °C"; };
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
 	var foto = i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
@@ -237,9 +250,11 @@ function unidade(app, u) {
 			: '<div class="titulo" style="color:var(--muted)">Nada imprimindo</div><div class="arq">' + (i.na_fila ? i.na_fila + " mesa(s) esperando na fila · " + Filuna.tempo(i.carga_s) : "Fila vazia") + "</div>") +
 		'<div class="passos">' + passos.map(function (p, k) { return '<div class="passo' + (k > nivel ? " off" : "") + '"><div class="d"></div>' + p + "</div>"; }).join("") + "</div>" +
 		// A Farm ainda não recebe as temperaturas da impressora: mostra "sem dado" em vez de inventar números.
-		'<div class="temps"><div><div class="lbl">Bico</div><div class="v">—</div><div class="a">sem dado da impressora</div></div>' +
-		'<div><div class="lbl">Mesa</div><div class="v">—</div><div class="a">sem dado da impressora</div></div></div>' +
-		'<div class="ctl"><h4>Controle local</h4><p>O pedido vai pela sua conta até a impressora. Nada é feito sem você confirmar.</p><div class="btns">' +
+		(ativa ? '<div class="temps"><div><div class="lbl">Bico</div><div class="v">' + grau(v.bico && v.bico.atual) + '</div><div class="a">' + (v.bico && v.bico.alvo ? "alvo " + grau(v.bico.alvo) : "desligado") + '</div></div>' +
+			'<div><div class="lbl">Mesa</div><div class="v">' + grau(v.mesa && v.mesa.atual) + '</div><div class="a">' + (v.mesa && v.mesa.alvo ? "alvo " + grau(v.mesa.alvo) : "leitura ao vivo") + '</div></div></div>'
+		: '<div class="temps"><div><div class="lbl">Bico</div><div class="v">—</div><div class="a">' + (aoVivo ? "conectando…" : "sem dado da impressora") + '</div></div>' +
+			'<div><div class="lbl">Mesa</div><div class="v">—</div><div class="a">' + (aoVivo ? "conectando…" : "sem dado da impressora") + '</div></div></div>') +
+		'<div class="ctl"><h4>Controle local</h4><p>' + (aoVivo ? "Comando direto para a impressora pela rede local." : "O pedido vai pela sua conta até a impressora.") + ' Nada é feito sem você confirmar.</p><div class="btns">' +
 		(i.estado == "pausada" ? '<button class="btn" data-cmd="retomar">Revisar retomada</button>' : '<button class="btn" data-cmd="pausar"' + (i.estado != "imprimindo" ? " disabled" : "") + ">Revisar pausa</button>") +
 		'<button class="btn" data-cmd="cancelar"' + (["imprimindo", "pausada"].indexOf(i.estado) < 0 ? " disabled" : "") + ">Revisar cancelamento</button></div>" +
 		'<div class="trava"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>Ação específica só após confirmação do titular.</div>' +
@@ -250,9 +265,13 @@ function unidade(app, u) {
 	app.innerHTML = html;
 	if (i.camera_em) camera(i.id);
 	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
-	app.querySelectorAll("[data-cmd]").forEach(function (b) { if (!u.farm) b.disabled = true; b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
+	app.querySelectorAll("[data-cmd]").forEach(function (b) { if (!u.farm && !ativa) b.disabled = true; b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
 	var sim = app.querySelector("#sim"); if (sim) sim.onclick = function () {
 		var c = estado.confirmar; estado.confirmar = null;
+		if (ativa) {
+			Filuna.nativo("dispositivos.comando", { dev_id: v.dev_id, cmd: c }).then(function (r) { estado.msg = r && r.erro ? r.erro : "Comando enviado para a impressora."; desenhar(); }, function (e) { estado.msg = e.message; desenhar(); });
+			return;
+		}
 		Filuna.api("POST", "/impressoras/" + encodeURIComponent(i.id) + "/comando", { comando: c }).then(function () { estado.msg = "Pedido de " + c + " enviado. A impressora recebe em segundos."; desenhar(); },
 			function (e) { estado.msg = e.erro; desenhar(); });
 	};
@@ -304,6 +323,7 @@ Filuna.ouvir("dispositivos.estado", function (e) {
 	estado.vivas = (e.impressoras || []).map(function (v) { v.foto = v.foto || fotoDoModelo(v.modelo_nome || v.modelo); return v; });
 	juntar();
 	if (estado.vista == "lista" && !estado.confirmar && document.activeElement.id != "busca") desenhar();
+	else if (estado.vista == "unidade" && !estado.confirmar) desenhar(); // cartão aberto acompanha a impressora ao vivo
 });
 var fotos = {};
 function fotoDoModelo(nome) { if (!nome) return ""; var k = Object.keys(fotos).filter(function (n) { return nome.indexOf(n) == 0 || n.indexOf(nome) == 0; })[0]; return k ? fotos[k] : ""; }
@@ -434,7 +454,7 @@ Filuna.ouvir("complemento.progresso", function (p) {
 });
 // Código que a própria marca usa quando o dono não definiu um: a Elegoo sai de fábrica com 123456 e o fatiador
 // oficial conecta sem perguntar. Sem um código o programa nem tenta a conexão (trata a impressora como sem acesso).
-function codigoPadrao(a) { return a && a.marca && a.marca.id == "elegoo" ? "123456" : ""; }
+function codigoPadrao(a) { var m = a && a.marca && a.marca.id; return m == "elegoo" ? "123456" : m == "anycubic" ? "lan" : ""; }
 // Impressoras achadas na rede que são da marca escolhida no assistente. A lista da rede do programa guarda as
 // achadas de outras marcas (ex.: a Elegoo de antes aparecia ao conectar uma Anycubic); o estado dá o agente de cada uma.
 function daMarca(a) {

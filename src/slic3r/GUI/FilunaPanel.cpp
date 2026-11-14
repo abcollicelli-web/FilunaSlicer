@@ -670,6 +670,8 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         FD::sincronizar_estado(e, cfg->get("filuna_token")); // conta → servidor → app Android (no máximo a cada 25 s)
         return e;
     }
+    if (action == "dispositivos.comando")
+        return FD::comando(d.value("dev_id", std::string()), d.value("cmd", std::string()));
     if (action == "dispositivos.selecionar")
         return FD::selecionar(d.value("dev_id", std::string()));
     if (action == "dispositivos.observar") {
