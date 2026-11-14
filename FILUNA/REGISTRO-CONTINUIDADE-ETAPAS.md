@@ -690,3 +690,8 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
 - Run 43577170088 passou (prova GUI OK), mas a auditoria local reprovou o pacote: zip trazia vcredist_x64.exe e MicrosoftEdgeSetup.exe (redistribuíveis Microsoft) e o manifesto apontava executavel=vcredist_x64.exe (seletor pegou o maior exe). Artefato descartado — nada publicado.
 - Workflow corrigido (filuna/main + sync v1-teste-fisico): remoção inclui vcredist|MicrosoftEdgeSetup|STLThumb-Windows; seletor de exe ignora vcredist|setup|curl|thumb|installer.
 - Novo run só creality: 43590893177 (cache de deps agora salvo → rápido).
+
+## 2026-11-14 12:58 UTC — Creality: pacote limpo confirmado; prova ajustada p/ runner sem GPU
+- Run 43590893177: empacotamento OK (removidos vcredist_x64, MicrosoftEdgeSetup, WebView2, STLThumb; executavel=CrealityPrint.exe), mas a prova reprovou: o CrealityPrint inicializou, sondou OpenGL (GDI Generic — runner sem GPU) e saiu rc=255 com saída longa. DLLs completas provadas pela própria saída.
+- Critério ajustado (filuna/main + sync v1-teste-fisico): reprova só quando rc!=0 E saída <50 chars (falha de DLL não produz saída).
+- Novo run só creality: 43597147118 (cache quente, ~1h10).
