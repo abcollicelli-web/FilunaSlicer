@@ -72,6 +72,10 @@ jobs:
           "CL=/I`"$vs\DIA SDK\include`"" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
           "LINK=/LIBPATH:`"$vs\DIA SDK\lib\amd64`"" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
           python -m pip install --quiet numpy
+          # o install da Creality copia o redistribuível WebView2 que os devs deles têm fora do repositório;
+          # preenchimento vazio só para o install passar — é retirado do pacote no empacotamento
+          New-Item -ItemType Directory -Force oem/package/runtime | Out-Null
+          New-Item -ItemType File -Force oem/package/runtime/MicrosoftEdgeWebView2RuntimeInstallerX64.exe | Out-Null
       - name: Configuração .env (Elegoo lê este arquivo não versionado; o build_linux.sh passa o mesmo por -D)
         if: steps.sel.outputs.go == '1' && matrix.id == 'elegoo'
         shell: pwsh
@@ -96,7 +100,7 @@ jobs:
           if (-not $inst) { throw "pasta de instalação não encontrada em oem/build" }
           # Nada proprietário no pacote (REGRA-CANONICA-CONECTIVIDADE-OPEN): o script da Snapmaker baixa o binário fechado
           # snapmaker_control_*.exe (connect bundle) para resources/ — removido; qualquer outro .exe/.dll fechado conhecido idem.
-          Get-ChildItem -Path $inst.FullName -Recurse -File | Where-Object { $_.Name -match 'snapmaker_control|FlashNetwork|pgLibConnect|bambu_networking' } | ForEach-Object { Write-Host "removido (fechado): $($_.FullName)"; Remove-Item -Force $_.FullName }
+          Get-ChildItem -Path $inst.FullName -Recurse -File | Where-Object { $_.Name -match 'snapmaker_control|FlashNetwork|pgLibConnect|bambu_networking|MicrosoftEdgeWebView2RuntimeInstaller' } | ForEach-Object { Write-Host "removido (fechado): $($_.FullName)"; Remove-Item -Force $_.FullName }
           $exe = Get-ChildItem -Path $inst.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'validator|console|crashpad|handler|control|updater|uninstall' } | Sort-Object Length -Descending | Select-Object -First 1
           if (-not $exe) { throw "executável do fatiador não encontrado" }
           Write-Host "executavel: $($exe.Name)"
