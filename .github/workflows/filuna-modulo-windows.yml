@@ -100,8 +100,8 @@ jobs:
           if (-not $inst) { throw "pasta de instalação não encontrada em oem/build" }
           # Nada proprietário no pacote (REGRA-CANONICA-CONECTIVIDADE-OPEN): o script da Snapmaker baixa o binário fechado
           # snapmaker_control_*.exe (connect bundle) para resources/ — removido; qualquer outro .exe/.dll fechado conhecido idem.
-          Get-ChildItem -Path $inst.FullName -Recurse -File | Where-Object { $_.Name -match 'snapmaker_control|FlashNetwork|pgLibConnect|bambu_networking|MicrosoftEdgeWebView2RuntimeInstaller' } | ForEach-Object { Write-Host "removido (fechado): $($_.FullName)"; Remove-Item -Force $_.FullName }
-          $exe = Get-ChildItem -Path $inst.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'validator|console|crashpad|handler|control|updater|uninstall' } | Sort-Object Length -Descending | Select-Object -First 1
+          Get-ChildItem -Path $inst.FullName -Recurse -File | Where-Object { $_.Name -match 'snapmaker_control|FlashNetwork|pgLibConnect|bambu_networking|MicrosoftEdgeWebView2RuntimeInstaller|vcredist|MicrosoftEdgeSetup|STLThumb-Windows' } | ForEach-Object { Write-Host "removido (fechado/redistribuível): $($_.FullName)"; Remove-Item -Force $_.FullName }
+          $exe = Get-ChildItem -Path $inst.FullName -Filter *.exe | Where-Object { $_.Name -notmatch 'validator|console|crashpad|handler|control|updater|uninstall|vcredist|setup|curl|thumb|installer' } | Sort-Object Length -Descending | Select-Object -First 1
           if (-not $exe) { throw "executável do fatiador não encontrado" }
           Write-Host "executavel: $($exe.Name)"
           $zip = "${{ matrix.id }}-${{ matrix.versao }}-windows.zip"
