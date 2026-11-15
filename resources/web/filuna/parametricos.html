@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paramétricos</title>
+<link rel="stylesheet" href="base.css">
+<style>
+/* modelo aprovado: FILUNA/design/visual-c/ui/modelos-parametricos.html */
+.wrap{padding:30px 34px}
+.wrap h1{font-size:30px;font-weight:800;margin:0}
+.sub{color:var(--ink2);font-size:15px;margin-top:8px}
+.chips{display:flex;gap:10px;margin:22px 0;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:1px solid var(--line);border-radius:11px;font-size:14.5px;font-weight:500;background:#fff;cursor:pointer;font-family:inherit;color:var(--ink)}
+.chip.on{background:#C2185B;color:#fff;border-color:#C2185B;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.m{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;text-align:left;font-family:inherit;padding:0;color:var(--ink)}
+.m:hover{border-color:#F6C6D8;box-shadow:0 10px 24px rgba(60,50,40,.08)}
+.thumb{height:150px;display:flex;align-items:center;justify-content:center;color:#B9A9A0;background:#FCFAF7}
+.b{display:flex;align-items:center;padding:12px 16px;border-top:1px solid var(--line);gap:8px}
+.n{font-size:15.5px;font-weight:700}
+.s{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.sp{margin-left:auto;font-size:11.5px;font-weight:700;color:#C2185B;background:#FDE3EC;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.sp.bloq{color:#6B6660;background:#F1EEE9}
+.aviso{margin:14px 0;padding:12px 14px;border-radius:12px;background:#FFF8F0;color:var(--ink2)}
+.vazio{padding:40px;text-align:center;color:var(--ink2);border:1px dashed var(--line);border-radius:14px}
+</style>
+</head>
+<body>
+<div class="wrap" id="conteudo">
+  <h1>Modelos paramétricos</h1><div class="sub">Personalize cada modelo com parâmetros: a peça é gerada aqui no seu computador e vai direto para a mesa da Preparação.</div>
+  <div class="chips" id="c"></div>
+  <div id="msg"></div>
+  <div class="grid" id="g"><div class="vazio">Carregando os modelos…</div></div>
+</div>
+<script src="ponte.js"></script>
+<script>
+var E = Filuna.esc, itens = [], cat = "Todos";
+var ICONE = '<svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>';
+function desenhar() {
+	var cats = ["Todos"];
+	itens.forEach(function (i) { if (i.categoria && cats.indexOf(i.categoria) < 0) cats.push(i.categoria); });
+	document.getElementById("c").innerHTML = cats.map(function (c) { return '<button class="chip' + (c == cat ? " on" : "") + '" data-c="' + E(c) + '">' + E(c) + "</button>"; }).join("");
+	document.querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { cat = b.dataset.c; desenhar(); }; });
+	var l = itens.filter(function (i) { return cat == "Todos" || i.categoria == cat; });
+	document.getElementById("g").innerHTML = l.length ? l.map(function (i, k) {
+		return '<button class="m" data-k="' + itens.indexOf(i) + '"><div class="thumb">' + ICONE + '</div><div class="b"><div><div class="n">' + E(i.nome) + '</div><div class="s">' + E(i.categoria || "Paramétrico") +
+			" · " + E(i.versao) + "</div></div>" + (i.liberado ? (i.novo ? '<span class="sp">Novo</span>' : "") : '<span class="sp bloq">Plano</span>') + "</div></button>";
+	}).join("") : '<div class="vazio">Nenhum modelo paramétrico liberado para a sua conta ainda.</div>';
+	document.querySelectorAll("[data-k]").forEach(function (b) { b.onclick = function () { abrir(itens[+b.dataset.k]); }; });
+}
+function abrir(i) {
+	var m = document.getElementById("msg");
+	if (!i.liberado || !i.url) { m.innerHTML = '<div class="aviso">' + E(i.mensagem || "Este modelo não está liberado no seu plano.") + "</div>"; return; }
+	m.innerHTML = '<div class="aviso">Abrindo ' + E(i.nome) + "…</div>";
+	Filuna.nativo("parametrico.abrir", { id: i.id, versao: i.versao, sha256: i.sha256, url: i.url, entrada: i.entrada || "index.html" })
+		.catch(function (e) { m.innerHTML = '<div class="aviso">Não abriu: ' + E((e && (e.erro || e.message)) || "erro") + "</div>"; });
+}
+function carregar() {
+	if (!Filuna.temToken()) { Filuna.telaLogin(document.getElementById("conteudo"), carregar, "Entre na sua conta Filuna para usar os paramétricos."); return; }
+	Filuna.api("GET", "/recursos").then(function (r) {
+		itens = (r.itens || []).filter(function (i) { return i.tipo == "parametrico"; });
+		desenhar();
+	}, function (e) { document.getElementById("g").innerHTML = '<div class="vazio">' + E(e.erro || "Sem conexão.") + "</div>"; });
+}
+Filuna.iniciar().then(carregar);
+Filuna.ouvir("conta", carregar);
+Filuna.ouvir("parametrico.erro", function (d) { document.getElementById("msg").innerHTML = '<div class="aviso">Não abriu: ' + E(d.erro || "erro") + "</div>"; });
+</script>
+</body>
+</html>

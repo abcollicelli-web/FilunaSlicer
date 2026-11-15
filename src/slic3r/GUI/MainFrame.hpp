@@ -58,6 +58,8 @@
 #define TAB_ID_FILUNA_CALIB  "filuna.calibracao"
 #define TAB_ID_FILUNA_SPACE  "filuna.espaco"
 #define TAB_ID_FILUNA_STORE  "filuna.loja"
+#define TAB_ID_FILUNA_FARM   "filuna.farm"
+#define TAB_ID_FILUNA_PARAM  "filuna.parametricos"
 
 #define ENABEL_PRINT_ALL 0
 
@@ -546,6 +548,8 @@ public:
     LazyPage<FilunaPanel>* m_filuna_space_page { nullptr };
     LazyPage<FilunaPanel>* m_filuna_project_page { nullptr };
     LazyPage<FilunaPanel>* m_filuna_store_page { nullptr };
+    LazyPage<FilunaPanel>* m_filuna_farm_page { nullptr };
+    LazyPage<FilunaPanel>* m_filuna_param_page { nullptr };
     LazyPage<PrinterWebView>* m_printer_view_page{nullptr};
     PluginPages           m_plugin_pages;
     wxLogWindow*          m_log_window { nullptr };

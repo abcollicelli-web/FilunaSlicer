@@ -1631,6 +1631,18 @@ void MainFrame::init_tabpanel() {
     m_lazy_pages.push_back(m_filuna_device_page);
     m_tabpanel->AddPage(TAB_ID_FILUNA_DEVICE, m_filuna_device_page, _L_CONTEXT("Device", "Filuna tab"), "tab_monitor_active");
 
+    // Filuna Farm: o mesmo painel do site (wizard do pedido, fila, impressoras), aberto aqui com a conta do Slicer
+    m_filuna_farm_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_FARM, 23,
+                                                   [](wxWindow* parent) { return new FilunaPanel(parent, "farm.html"); });
+    m_lazy_pages.push_back(m_filuna_farm_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_FARM, m_filuna_farm_page, wxString::FromUTF8("Farm"), "tab_auxiliary_active");
+
+    // Paramétricos: modelos do servidor que geram a peça aqui no computador e a põem na mesa da Preparação
+    m_filuna_param_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_PARAM, 24,
+                                                    [](wxWindow* parent) { return new FilunaPanel(parent, "parametricos.html"); });
+    m_lazy_pages.push_back(m_filuna_param_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_PARAM, m_filuna_param_page, wxString::FromUTF8("Paramétricos"), "tab_auxiliary_active");
+
     m_monitor_page = new LazyPage<MonitorPanel>(m_tabpanel, TAB_ID_MONITOR, 20);
     m_lazy_pages.push_back(m_monitor_page);
     m_tabpanel->AddPage(TAB_ID_MONITOR, m_monitor_page, _L("Printer panel"), "tab_monitor_active");

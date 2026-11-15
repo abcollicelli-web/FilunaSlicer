@@ -53,6 +53,14 @@
 #include "Plater.hpp"
 #include "Tab.hpp"
 #include "WebViewDialog.hpp"
+#include "libslic3r/miniz_extension.hpp"
+#include "slic3r/Filuna/FilunaCalculos.hpp"
+#include "slic3r/Utils/Http.hpp"
+#include <regex>
+#include <thread>
+#if wxUSE_WEBVIEW_EDGE
+#include <wx/msw/webview_edge.h>
+#endif
 #include "Widgets/WebView.hpp"
 
 using json = nlohmann::json;
@@ -354,6 +362,75 @@ json pick_images(wxWindow* parent)
     return {{"imagens", list}};
 }
 
+// Paramétricos: cada modelo é um pacote HTML+JS do servidor (/api/slicer/v1/recursos), instalado em
+// <data_dir>/filuna/parametricos/<id>/<versão>/ e aberto nesta mesma janela. O roteiro abaixo entra em toda página
+// do pacote: põe o botão de voltar e troca o "baixar STL" do gerador por "colocar na mesa da Preparação".
+boost::filesystem::path pasta_parametricos() { return boost::filesystem::path(data_dir()) / "filuna" / "parametricos"; }
+
+const char* const ROTEIRO_PARAMETRICO = R"JS((function () {
+  if (location.hostname !== "parametricos.filuna.local" && !/\/filuna\/parametricos\//.test(decodeURIComponent(location.href).replace(/\\/g, "/"))) return;
+  function env(acao, d) { try { window.wx.postMessage(JSON.stringify({ filuna: 1, id: "pm" + Date.now(), acao: acao, dados: d || {} })); } catch (e) {} }
+  function aviso(t) {
+    var a = document.getElementById("flAviso"); if (!a) return;
+    a.textContent = t; a.style.display = "block"; clearTimeout(a._t); a._t = setTimeout(function () { a.style.display = "none"; }, 5000);
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    var b = document.createElement("div");
+    b.style.cssText = "position:fixed;top:10px;right:12px;z-index:2147483647;display:flex;gap:8px;align-items:center;font-family:Inter,Segoe UI,sans-serif";
+    b.innerHTML = '<span id="flAviso" style="display:none;background:#1F8F5F;color:#fff;border-radius:10px;padding:9px 14px;font-size:13.5px;font-weight:600"></span>' +
+      '<button id="flVoltar" style="height:38px;padding:0 14px;border-radius:10px;border:1px solid #E7E3DD;background:#fff;color:#2C2A28;font:600 14px Inter,Segoe UI,sans-serif;cursor:pointer">← Paramétricos</button>';
+    document.body.appendChild(b);
+    document.getElementById("flVoltar").onclick = function () { env("parametrico.voltar"); };
+  });
+  function mandar(href, nome) {
+    fetch(href).then(function (r) { return r.arrayBuffer(); }).then(function (ab) {
+      var u = new Uint8Array(ab), s = "";
+      for (var k = 0; k < u.length; k += 0x8000) s += String.fromCharCode.apply(null, u.subarray(k, k + 0x8000));
+      env("parametrico.mesa", { nome: nome, dados: btoa(s) });
+      aviso("Peça enviada para a mesa da Preparação");
+    }).catch(function () { aviso("Não deu para pegar a peça gerada"); });
+  }
+  function peca(a) { return a && a.download && /\.(stl|3mf|obj)$/i.test(a.download) && /^(blob:|data:)/.test(a.href || ""); }
+  var clicar = HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click = function () { if (peca(this)) { mandar(this.href, this.download); return; } return clicar.apply(this, arguments); };
+  document.addEventListener("click", function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest("a[download]") : null;
+    if (peca(a)) { ev.preventDefault(); ev.stopPropagation(); mandar(a.href, a.download); }
+  }, true);
+})();)JS";
+
+const char* const HOST_PARAMETRICOS = "parametricos.filuna.local";
+
+bool url_de_parametrico(const wxString& url)
+{
+    wxString u = url.Lower();
+    u.Replace("\\", "/");
+    u.Replace("%5c", "/");
+    return u.StartsWith(wxString("https://") + HOST_PARAMETRICOS + "/") || u.Contains("/filuna/parametricos/");
+}
+
+// Pacote com módulos JS (three.js etc.) não roda de file:// (o navegador bloqueia módulos sem origem). No Windows a
+// pasta dos paramétricos vira https://parametricos.filuna.local/ dentro do próprio WebView2, sem servidor nenhum.
+bool mapear_parametricos(wxWebView* b)
+{
+#if wxUSE_WEBVIEW_EDGE
+    ICoreWebView2* wv = b != nullptr ? (ICoreWebView2*) b->GetNativeBackend() : nullptr;
+    if (wv == nullptr)
+        return false;
+    ICoreWebView2_3* wv3 = nullptr;
+    if (wv->QueryInterface(&wv3) != S_OK || wv3 == nullptr)
+        return false;
+    const std::wstring pasta = pasta_parametricos().wstring();
+    const HRESULT      hr    = wv3->SetVirtualHostNameToFolderMapping(wxString(HOST_PARAMETRICOS).wc_str(), pasta.c_str(),
+                                                                       COREWEBVIEW2_HOST_RESOURCE_ACCESS_KIND_ALLOW);
+    wv3->Release();
+    return hr == S_OK;
+#else
+    (void) b;
+    return false;
+#endif
+}
+
 } // namespace
 
 FilunaPanel::FilunaPanel(wxWindow* parent, const std::string& page) : wxPanel(parent, wxID_ANY)
@@ -385,6 +462,8 @@ void FilunaPanel::create_browser()
     if (m_browser == nullptr)
         return;
     m_browser->Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &FilunaPanel::on_script_message, this, m_browser->GetId());
+    if (m_url.EndsWith("parametricos.html"))
+        m_browser->AddUserScript(wxString::FromUTF8(ROTEIRO_PARAMETRICO));
     GetSizer()->Insert(0, m_browser, wxSizerFlags().Expand().Proportion(1));
     WebView::LoadUrl(m_browser, m_url);
     Layout();
@@ -397,6 +476,10 @@ bool FilunaPanel::Show(bool show)
         m_browser->Destroy();
         create_browser();
     }
+    // Farm aberta no site: um pedido de outra parte (ex.: "Novo pedido") volta à página local, que abre o endereço
+    if (show && m_browser != nullptr && m_url.EndsWith("farm.html") && !pending_section().empty() &&
+        !m_browser->GetCurrentURL().Lower().StartsWith("file:"))
+        WebView::LoadUrl(m_browser, m_url);
     const bool changed = wxPanel::Show(show);
     if (show)
         send_event("mostrar");
@@ -463,8 +546,19 @@ void FilunaPanel::on_script_message(wxWebViewEvent& evt)
     }
     if (!msg.is_object() || msg.value("filuna", 0) != 1)
         return;
+    // Só as telas do próprio programa (file://) falam com o Slicer. Página da internet aberta aqui dentro (a Farm do
+    // site) não chega aos comandos de impressora, arquivos e conta.
+    if (m_browser == nullptr)
+        return;
+    const wxString atual = m_browser->GetCurrentURL();
+    const bool     param = url_de_parametrico(atual);
+    if (!atual.Lower().StartsWith("file:") && !param)
+        return;
     const std::string id     = msg.value("id", std::string());
     const std::string action = msg.value("acao", std::string());
+    // Página de um paramétrico (pacote do servidor): só pode pôr a peça na mesa e voltar à lista.
+    if (param && action != "parametrico.mesa" && action != "parametrico.voltar")
+        return;
     const json data          = msg.contains("dados") && msg["dados"].is_object() ? msg["dados"] : json::object();
     try {
         json r;
@@ -511,6 +605,103 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     if (action == "aba.abrir") {
         const std::string tab = d.value("aba", std::string()), section = d.value("secao", std::string());
         CallAfter([tab, section] { open_tab(tab, section); });
+        return json::object();
+    }
+    if (action == "parametrico.abrir") {
+        const std::string pid = d.value("id", std::string()), ver = d.value("versao", std::string()), sha = d.value("sha256", std::string()),
+                          url = d.value("url", std::string()), entrada = d.value("entrada", std::string("index.html"));
+        if (!std::regex_match(pid, std::regex("^[a-z0-9][a-z0-9-]{1,59}$")) || !std::regex_match(ver, std::regex("^\\d+\\.\\d+\\.\\d+$")) ||
+            !std::regex_match(sha, std::regex("^[0-9a-f]{64}$")) || url.rfind("/api/slicer/v1/recursos/", 0) != 0 ||
+            !std::regex_match(entrada, std::regex("^[A-Za-z0-9_./-]{1,80}$")) || entrada.find("..") != std::string::npos)
+            throw std::runtime_error("Modelo paramétrico inválido.");
+        const boost::filesystem::path pasta = pasta_parametricos() / pid / ver, pagina = pasta / entrada;
+        const std::string token = wxGetApp().app_config->get("filuna_token");
+        FilunaPanel* eu = this;
+        const std::string rel = pid + "/" + ver + "/" + entrada;
+        std::thread([eu, pasta, pagina, url, sha, token, rel] {
+            std::string erro;
+            boost::system::error_code ec;
+            if (!boost::filesystem::exists(pasta / ".pronto", ec)) {
+                boost::filesystem::remove_all(pasta, ec);
+                boost::filesystem::create_directories(pasta, ec);
+                std::string corpo;
+                unsigned    status = 0;
+                Http        http   = Http::get("https://filuna3d.com" + url);
+                http.tls_verify(true);
+                http.timeout_connect(15);
+                http.timeout_max(300);
+                http.header("Authorization", "Bearer " + token)
+                    .on_complete([&](std::string b, unsigned st) { corpo = std::move(b), status = st; })
+                    .on_error([&](std::string, std::string e, unsigned st) { status = st, erro = e; })
+                    .perform_sync();
+                const boost::filesystem::path zip = pasta / "pacote.zip";
+                if (status == 200) {
+                    boost::nowide::ofstream o(zip.string(), std::ios::binary | std::ios::trunc);
+                    o.write(corpo.data(), std::streamsize(corpo.size()));
+                }
+                if (status != 200)
+                    erro = "o servidor não entregou o modelo (" + (erro.empty() ? std::to_string(status) : erro) + ")";
+                else if (Slic3r::Filuna::sha256_de_arquivo(zip.string()) != sha)
+                    erro = "o pacote do modelo chegou diferente do esperado";
+                else if (!extract_archive_confined(zip.string(), pasta.string()))
+                    erro = "não abriu o pacote do modelo";
+                else {
+                    boost::filesystem::remove(zip, ec);
+                    boost::nowide::ofstream(( pasta / ".pronto").string()) << "1";
+                }
+            }
+            if (erro.empty() && !boost::filesystem::exists(pagina, ec))
+                erro = "o pacote não tem a página do modelo";
+            wxGetApp().CallAfter([eu, pagina, erro, rel] {
+                if (panels().count(eu) == 0 || eu->m_browser == nullptr)
+                    return;
+                if (!erro.empty()) {
+                    eu->send_event("parametrico.erro", {{"erro", erro}});
+                    return;
+                }
+                if (mapear_parametricos(eu->m_browser))
+                    eu->m_browser->LoadURL(wxString("https://") + HOST_PARAMETRICOS + "/" + wxString::FromUTF8(rel));
+                else
+                    WebView::LoadUrl(eu->m_browser, file_url_from_path(pagina));
+            });
+        }).detach();
+        return json::object();
+    }
+    if (action == "parametrico.voltar") {
+        CallAfter([this] { WebView::LoadUrl(m_browser, m_url); });
+        return json::object();
+    }
+    if (action == "parametrico.mesa") {
+        std::string nome = d.value("nome", std::string("parametrico.stl"));
+        for (char& c : nome)
+            if (!(std::isalnum((unsigned char) c) || c == '-' || c == '_' || c == '.'))
+                c = '_';
+        if (nome.size() > 80 || !std::regex_match(nome, std::regex("^[A-Za-z0-9_.-]+\\.(stl|STL|3mf|3MF|obj|OBJ)$")))
+            nome = "parametrico.stl";
+        const std::string b64 = d.value("dados", std::string());
+        if (b64.empty() || b64.size() > 200u * 1024u * 1024u)
+            throw std::runtime_error("Peça gerada vazia ou grande demais.");
+        const wxMemoryBuffer bin = wxBase64Decode(b64.data(), b64.size());
+        if (bin.GetDataLen() < 84)
+            throw std::runtime_error("Peça gerada inválida.");
+        const boost::filesystem::path gerados = pasta_parametricos() / "gerados";
+        boost::system::error_code ec;
+        boost::filesystem::create_directories(gerados, ec);
+        const boost::filesystem::path arq = gerados / nome;
+        {
+            boost::nowide::ofstream o(arq.string(), std::ios::binary | std::ios::trunc);
+            o.write(static_cast<const char*>(bin.GetData()), std::streamsize(bin.GetDataLen()));
+            if (!o.good())
+                throw std::runtime_error("Não gravou a peça gerada.");
+        }
+        CallAfter([arq] {
+            Plater* plater = wxGetApp().plater();
+            if (plater == nullptr)
+                return;
+            if (MainFrame* frame = wxGetApp().mainframe)
+                frame->select_filuna_tab(TAB_ID_PREPARE);
+            plater->load_files(std::vector<boost::filesystem::path>{arq}, LoadStrategy::LoadModel);
+        });
         return json::object();
     }
     if (action == "secao.pendente") {

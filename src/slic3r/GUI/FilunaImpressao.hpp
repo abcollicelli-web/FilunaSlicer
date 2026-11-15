@@ -31,6 +31,10 @@ void imprimir(int plate_idx);
 // O protocolo da marca imprime o filamento N pela entrada N: a sincronização mantém as entradas vazias no lugar.
 bool agente_entrada_fixa();
 
+// Filuna Farm: o Slicer imprime as mesas da fila do site pela impressora conectada (fila, fatiamento sem tela,
+// envio e andamento). Desliga com filuna_farm_auto=0 no app_config.
+void farm_iniciar();
+
 std::string filamento_id_do_tipo(const std::string& tipo, const std::string& marca = std::string());
 
 }}} // namespace Slic3r::GUI::FilunaImpressao

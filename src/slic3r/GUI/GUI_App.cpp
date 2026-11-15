@@ -15,6 +15,7 @@
 #include "PresetBundleDialog.hpp"
 #include "WebUserLoginDialog.hpp"
 #include "WebViewDialog.hpp"
+#include "FilunaImpressao.hpp"
 #include "FilunaPanel.hpp"
 #include "FilunaAtualizacao.hpp"
 #include "FilunaManutencao.hpp"
@@ -1151,6 +1152,7 @@ void GUI_App::post_init()
 
             this->check_new_version_sf();
             FilunaManutencao::iniciar();
+            FilunaImpressao::farm_iniciar();
             FilunaAtualizacao::instancia().iniciar((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(),
                                                    app_config->get("filuna_token"));
             if (!cw_showed)

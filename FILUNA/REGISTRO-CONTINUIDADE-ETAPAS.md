@@ -1007,3 +1007,23 @@ Admin › Conectores; pacote reduzido para quem pede ?patch=zstd.
   pelo pacote normal). 44,4 MB -> 9,1 MB no teste.
 - Elegoo antiga (SDCP): conexão viva — ping do WebSocket a cada 25 s, pedido de estado a cada 60 s e religa sozinha em
   até 10 s se a conexão cair (só a que já conectou uma vez; desconectar pelo programa não religa).
+
+## 2026-11-15 — 67 publicada (a85b19ac6); 68 em compilação: Farm e Paramétricos dentro do Slicer
+
+Projeto da Farm aprovado: site `site-v2/farm-wizard` (`docs/farm-wizard.md` + protótipo). Web já no ar (outra sessão).
+68 (validado por compilação no Linux; nada provado em impressora):
+- Aba **Farm**: o painel do site (wizard de 6 etapas, fila, impressoras, estoque) aberto dentro do Slicer, já com a
+  conta, por link de uso único (site: `POST /api/slicer/v1/entrada-web` -> `/entrar/slicer/<token>`, 2 min, uma vez).
+  A ponte com o programa só atende páginas locais: página da internet aberta ali não chega aos comandos.
+- **Imprimir pela Farm** (FilunaImpressao::farm_iniciar): a cada 20 s pede `/fila`; a primeira mesa liberada da
+  impressora conectada (ref = cadastro_id) é baixada, fatiada sem tela com os perfis da Preparação
+  (`--load-settings`, `--clone-objects <quantidade>`, `--arrange 1`, como o site faz — conferido no servidor com o
+  orca-headless: 4 cubos, G-code e estatística), enviada pela conexão viva e acompanhada (fatiado, enviado,
+  imprimindo com %, concluído com tempo e gramas, falhou). Pausar/retomar/cancelar do site/app por `/comandos`.
+  Mesa em andamento fica em `filuna_farm_ativo` (sobrevive a fechar o programa). `filuna_farm_auto=0` desliga.
+  Limite: uma impressora conectada por vez (pendente: várias ao vivo); Anycubic só pela Entrada 1 (N na entrada N).
+- Aba **Paramétricos** (modelo aprovado `FILUNA/design/visual-c/ui/modelos-parametricos.html`): lista os paramétricos
+  liberados (`/api/slicer/v1/recursos`), instala o pacote (SHA-256) e abre o gerador ali dentro; no Windows a pasta
+  vira https://parametricos.filuna.local/ (WebView2 SetVirtualHostNameToFolderMapping), porque módulo JS não roda de
+  file://. O "baixar STL" do gerador vira "colocar na mesa da Preparação". Testado em Chromium: o vaso-hexagonal gera
+  e entrega a peça. A parte do WebView2 só compila no Windows (não validada no Linux).
