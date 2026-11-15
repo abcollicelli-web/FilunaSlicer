@@ -227,6 +227,8 @@ public:
     void load_ams_list(MachineObject* obj);
     std::map<int, DynamicPrintConfig> build_filament_ams_list(MachineObject* obj);
     void sync_ams_list(bool is_from_big_sync_btn = false);
+    // Filuna: sincronização direta dos filamentos da impressora conectada pelo agente da marca
+    void filuna_sync_filamentos(MachineObject* obj);
     bool sync_extruder_list();
     bool is_fila_switch_ready();
     void reset_fila_switch();

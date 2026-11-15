@@ -509,6 +509,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/FilunaSync.hpp
     GUI/FilunaAtualizacao.cpp
     GUI/FilunaManutencao.cpp
+    GUI/FilunaImpressao.cpp
+    GUI/FilunaImpressao.hpp
     GUI/FilunaManutencao.hpp
     GUI/FilunaDispositivos.cpp
     GUI/FilunaDispositivos.hpp

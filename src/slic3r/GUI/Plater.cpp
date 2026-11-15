@@ -1,6 +1,7 @@
 #include "Plater.hpp"
 #include "FilunaPanel.hpp"
 #include "FilunaDados.hpp"
+#include "FilunaImpressao.hpp"
 #include "DeviceCore/FilunaOEMOverlay.hpp"
 #include "../../../FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp"
 #include "DeviceCore/FilunaVendorRegistry.hpp"
@@ -3864,6 +3865,10 @@ void Sidebar::update_all_preset_comboboxes(bool update_filament_combos)
                                  : MainFrame::PrintSelectType::eSendGcode;
         }
 
+        // Filuna: marca conectada pelo agente -> o botão é "Imprimir" (envio pelo agente), não "Exportar G-code"
+        if (FilunaImpressao::agente_filuna())
+            print_btn_type = MainFrame::PrintSelectType::eSendGcode;
+
         if (use_printer_agents)
             p_mainframe->load_printer_url();
         else if (!use_native_device_tab)
@@ -6331,6 +6336,80 @@ void Sidebar::load_ams_list(MachineObject* obj)
     p->combo_printer->update();
 }
 
+// Filuna: filamentos da impressora (qualquer marca conectada pelo agente) -> lista de filamentos do projeto.
+// Cada entrada com material vira um filamento: perfil compatível do mesmo tipo (da marca, senão genérico) + cor.
+void Sidebar::filuna_sync_filamentos(MachineObject* obj)
+{
+    PresetBundle* bundle = wxGetApp().preset_bundle;
+    if (obj == nullptr || bundle == nullptr)
+        return;
+    const wxString titulo = wxString::FromUTF8("Filamentos da impressora");
+    auto&          list   = bundle->filament_ams_list;
+    size_t         com_material = 0;
+    for (auto& entry : list) {
+        DynamicPrintConfig& tray = entry.second;
+        const std::string   tipo = tray.opt_string("filament_type", 0u);
+        std::string         id;
+        if (!tipo.empty()) {
+            id = tray.opt_string("filament_id", 0u);
+            if (id.empty() || !bundle->get_filament_by_filament_id(id).has_value())
+                id = FilunaImpressao::filamento_id_do_tipo(tipo);
+            if (id.empty())
+                id = "FILUNA-" + tipo; // sem perfil do tipo: o sincronizador cai no genérico e avisa
+            ++com_material;
+        }
+        tray.set_key_value("filament_id", new ConfigOptionStrings{id});
+        tray.set_key_value("filament_changed", new ConfigOptionBool{true});
+    }
+    if (com_material == 0) {
+        MessageDialog dlg(this,
+                          wxString::FromUTF8(obj->is_online() ?
+                                                 "A impressora não informou nenhum filamento carregado." :
+                                                 "A impressora está desligada ou fora da rede. Abra a aba Dispositivo e conecte."),
+                          titulo, wxOK);
+        dlg.ShowModal();
+        return;
+    }
+
+    std::vector<std::string> color_before_sync;
+    std::vector<bool>        is_support_before;
+    ConfigOptionStrings*     color_opt = bundle->project_config.option<ConfigOptionStrings>("filament_colour");
+    for (int i = 0; i < int(p->combos_filament.size()); ++i) {
+        is_support_before.push_back(is_support_filament(i));
+        color_before_sync.push_back(i < int(color_opt->values.size()) ? color_opt->values[i] : std::string());
+    }
+
+    MergeFilamentInfo                                         merge_info;
+    std::vector<std::pair<DynamicPrintConfig*, std::string>>  unknowns;
+    std::map<int, AMSMapInfo>                                 maps;
+    const unsigned int n = bundle->sync_ams_list(unknowns, false, maps, false, merge_info, false);
+    if (n == 0) {
+        MessageDialog dlg(this, wxString::FromUTF8("Não há perfil de filamento compatível com esta impressora para os materiais carregados."),
+                          titulo, wxOK);
+        dlg.ShowModal();
+        return;
+    }
+    wxGetApp().plater()->on_filament_count_change(n);
+    for (auto& c : p->combos_filament)
+        c->update();
+    update_filaments_area_height();
+    for (int i = 0; i < int(p->combos_filament.size()); ++i) {
+        if (i >= int(color_before_sync.size()))
+            auto_calc_flushing_volumes(i);
+        else if (i < int(color_opt->values.size()) && color_before_sync[i] != color_opt->values[i] &&
+                 wxGetApp().app_config->get("auto_calculate_flush") != "disabled")
+            auto_calc_flushing_volumes(i);
+        else if (is_support_filament(i) != is_support_before[i] && wxGetApp().app_config->get("auto_calculate_flush") == "all")
+            auto_calc_flushing_volumes(i);
+    }
+    Layout();
+    bundle->install_slot_filaments(*wxGetApp().app_config);
+    wxGetApp().get_tab(Preset::TYPE_FILAMENT)->select_preset(bundle->filament_presets[0]);
+    bundle->export_selections(*wxGetApp().app_config);
+    update_dynamic_filament_list();
+    BOOST_LOG_TRIVIAL(info) << "Sidebar::filuna_sync_filamentos: " << n << " filamentos, " << unknowns.size() << " sem perfil exato";
+}
+
 void Sidebar::sync_ams_list(bool is_from_big_sync_btn)
 {
     wxBusyCursor cursor;
@@ -6339,6 +6418,13 @@ void Sidebar::sync_ams_list(bool is_from_big_sync_btn)
     if (!obj)
         return;
     GUI::wxGetApp().sidebar().load_ams_list(obj);
+
+    // Filuna: marcas conectadas pelo agente não mandam o código de filamento da Bambu; o perfil é escolhido
+    // pelo tipo (PLA, PETG…) entre os compatíveis com a impressora, e a sincronização é direta.
+    if (FilunaImpressao::agente_filuna()) {
+        filuna_sync_filamentos(obj);
+        return;
+    }
 
     auto & list = wxGetApp().preset_bundle->filament_ams_list;
     if (list.empty()) {
@@ -21508,6 +21594,11 @@ void Plater::reslice_SLA_until_step(SLAPrintObjectStep step, const ModelObject &
 }
 void Plater::send_gcode_legacy(int plate_idx, Export3mfProgressFn proFn)
 {
+    // Filuna: impressora conectada pelo agente da marca -> janela de envio única do Filuna
+    if (FilunaImpressao::agente_filuna()) {
+        FilunaImpressao::imprimir(plate_idx);
+        return;
+    }
     // if physical_printer is selected, send gcode for this printer
     // DynamicPrintConfig* physical_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     DynamicPrintConfig* physical_printer_config = &Slic3r::GUI::wxGetApp().preset_bundle->printers.get_edited_preset().config;

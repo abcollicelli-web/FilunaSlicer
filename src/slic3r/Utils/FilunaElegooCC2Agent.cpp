@@ -184,11 +184,51 @@ bool FilunaElegooCC2Agent::request(int method, const json& params)
     return m_mqtt->publish("elegoo/" + m_sn + "/" + m_client_id + "/api_request", r.dump());
 }
 
+bool FilunaElegooCC2Agent::request_wait(int method, const json& params, int timeout_ms, json& result)
+{
+    int id = 0;
+    {
+        std::lock_guard<std::recursive_mutex> l(m_mutex);
+        if (!m_mqtt || !m_mqtt->connected())
+            return false;
+        id = m_next_id++;
+        {
+            std::lock_guard<std::mutex> w(m_wait_mutex);
+            m_wait[id] = json();
+        }
+        json r{{"id", id}, {"method", method}, {"params", params}};
+        if (!m_mqtt->publish("elegoo/" + m_sn + "/" + m_client_id + "/api_request", r.dump())) {
+            std::lock_guard<std::mutex> w(m_wait_mutex);
+            m_wait.erase(id);
+            return false;
+        }
+    }
+    std::unique_lock<std::mutex> w(m_wait_mutex);
+    const bool chegou = m_wait_cv.wait_for(w, std::chrono::milliseconds(timeout_ms), [&] { return !m_wait[id].is_null(); });
+    if (chegou)
+        result = m_wait[id];
+    m_wait.erase(id);
+    return chegou;
+}
+
 void FilunaElegooCC2Agent::on_mqtt(const std::string& topic, const std::string& payload)
 {
     json j = json::parse(payload, nullptr, false);
     if (!j.is_object())
         return;
+    // resposta esperada por request_wait (mesmo id do pedido)
+    if (j.contains("id") && j.contains("result") && (j["id"].is_number_integer() || j["id"].is_string())) {
+        int rid = -1;
+        try {
+            rid = j["id"].is_string() ? std::stoi(j["id"].get<std::string>()) : j["id"].get<int>();
+        } catch (...) {}
+        std::lock_guard<std::mutex> w(m_wait_mutex);
+        auto it = m_wait.find(rid);
+        if (it != m_wait.end()) {
+            it->second = j["result"].is_null() ? json::object() : j["result"];
+            m_wait_cv.notify_all();
+        }
+    }
     if (topic.size() >= 18 && topic.compare(topic.size() - 18, 18, "/register_response") == 0)
         return;
     // resposta a pedido (api_response) ou empurrão de estado (api_status, método 6000)
@@ -545,9 +585,22 @@ int FilunaElegooCC2Agent::start_local_print(PrintParams p, OnUpdateStatusFn upda
         cfg["slot_map"] = slot_map;
     if (update_fn)
         update_fn(PrintingStageSending, 0, "");
-    if (!request(1020, json{{"filename", remote}, {"storage_media", "local"}, {"config", cfg}})) {
+    // Mesmo pedido do aplicativo oficial (StartPrint 1020). A impressora responde com error_code:
+    // 0 = aceito; 1026 = falta a malha da mesa -> repete forçando o nivelamento, como o oficial faz.
+    json resp;
+    bool ok = request_wait(1020, json{{"filename", remote}, {"storage_media", "local"}, {"config", cfg}}, 20000, resp);
+    int  ec = ok && resp.is_object() ? resp.value("error_code", 0) : 0;
+    if (ok && ec == 1026) {
+        cfg["bedlevel_force"] = true;
+        ok = request_wait(1020, json{{"filename", remote}, {"storage_media", "local"}, {"config", cfg}}, 20000, resp);
+        ec = ok && resp.is_object() ? resp.value("error_code", 0) : 0;
+    }
+    if (!ok || ec != 0) {
+        const std::string motivo = !ok ? "a impressora não respondeu ao pedido de impressão (arquivo enviado: " + remote + ")" :
+                                         "a impressora recusou iniciar a impressão (código " + std::to_string(ec) + ")";
+        BOOST_LOG_TRIVIAL(error) << "FilunaElegooCC2Agent: StartPrint: " << motivo << " resposta=" << resp.dump();
         if (update_fn)
-            update_fn(PrintingStageERROR, BAMBU_NETWORK_ERR_CONNECT_FAILED, "impressora desconectada");
+            update_fn(PrintingStageERROR, BAMBU_NETWORK_ERR_CONNECT_FAILED, motivo);
         return BAMBU_NETWORK_ERR_CONNECT_FAILED;
     }
     if (update_fn)

@@ -91,7 +91,7 @@
 .spin{width:22px;height:22px;border:3px solid #ddd;border-top-color:var(--magenta-deep);border-radius:50%;animation:gira 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
 @keyframes gira{to{transform:rotate(360deg)}}
 .fils{margin:16px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.filrow{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}.fil{width:72px;text-align:center}.fil .bola{display:block;width:46px;height:46px;border-radius:50%;margin:0 auto 8px;border:1px solid rgba(0,0,0,.16);box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)}.fil .bola.vazia{border:1.5px dashed rgba(0,0,0,.28);box-shadow:none}.fil .fn{font-weight:700;font-size:13.5px}.fil .fe{font-size:11.5px;color:#8a817a;margin-top:1px}.fil .fa{display:flex;gap:6px;justify-content:center;margin-top:8px}.fil .fa button{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.16);background:#fff;color:#5e5752;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}.fil .fa button:hover{background:#FFE8F2;border-color:#B3125C;color:#B3125C}
-.ctlvivo .ctlon{font-size:12.5px;color:#1B7F4B;font-weight:600}.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
+.ctlvivo .ctlon{font-size:12.5px;color:#1B7F4B;font-weight:600}.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin,.fils .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label,.fils .lin label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select,.fils .lin input{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
 .un .cores{display:flex;gap:6px;flex-wrap:wrap;margin:-12px 0 16px}.un .cores .dot{width:16px;height:16px;border:1px solid rgba(0,0,0,.15)}
 .un .ft{height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}.un .ft img{max-height:150px;max-width:100%;object-fit:contain}
 .pillv{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:#E6E2DC;color:var(--ink2);margin-left:8px}.pillv.on{background:#DFF3E7;color:var(--good)}.pillv.imp{background:var(--rose);color:var(--magenta-deep)}
@@ -110,8 +110,9 @@ var TONS = { livre: "ok", imprimindo: "rosa", limpar_mesa: "rosa", pausada: "ale
 var E = Filuna.esc;
 
 function carregar() {
+	carregarFotos();
 	var pedidos = [
-		Filuna.nativo("dispositivos.estado").then(function (e) { estado.vivas = (e.impressoras || []).map(function (v) { v.foto = v.foto || fotoDoModelo(v.modelo_nome || v.modelo); return v; }); }).catch(function () {}),
+		Filuna.nativo("dispositivos.estado").then(function (e) { estado.vivas = (e.impressoras || []).map(fotoViva); }).catch(function () {}),
 		Filuna.nativo("impressora.atual").then(function (r) { estado.local = r; }).catch(function () {}),
 		Filuna.nativo("impressoras.registradas").then(function (r) { estado.locais = r.impressoras || []; }).catch(function () { estado.locais = []; })
 	];
@@ -150,6 +151,8 @@ function juntar() {
 		var nu = { id: "v:" + (v.cadastro_id || v.dev_id), nome: v.nome, modelo: v.modelo_nome || v.modelo || "", viva: v, foto: v.foto };
 		por[chave(v.nome)] = nu; lista.push(nu);
 	});
+	// foto oficial do modelo também para as que estão desligadas ou só cadastradas
+	lista.forEach(function (u) { if (!u.foto) u.foto = fotoDoModelo(u.nome, u.modelo); });
 	estado.unidades = lista;
 }
 
@@ -246,12 +249,14 @@ function unidade(app, u) {
 	var filamentos = "";
 	if (aoVivo && v.cores && v.cores.length) {
 		var seta = function (d) { return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="' + d + '"/></svg>'; };
-		filamentos = '<div class="fils"><div class="lbl">Filamentos</div><div class="filrow">' + v.cores.map(function (c) {
+		filamentos = '<div class="fils"><div class="lbl" style="display:flex;align-items:center;justify-content:space-between;gap:10px">Filamentos' + (ativa && v.sinc_filamentos ? '<button class="btn peq" id="filProj" title="Leva estes filamentos (material e cor) para a lista de filamentos da Preparação">Usar no projeto</button>' : "") + '</div><div class="filrow">' + v.cores.map(function (c) {
 			var n = parseInt(c.slot, 10) + 1 || "";
 			return '<div class="fil"><span class="bola' + (c.vazio ? " vazia" : "") + '" style="background:' + (c.vazio ? "transparent" : corCss(c.cor)) + '"></span>' +
 				'<div class="fn">' + (c.vazio ? "vazia" : E(c.material || "—")) + '</div><div class="fe">Entrada ' + n + "</div>" +
 				(tem("carregar") ? '<div class="fa"><button data-ctl="carregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '" title="Carregar este filamento">' + seta("M12 5v14M6 13l6 6 6-6") + '</button>' +
-					'<button data-ctl="descarregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '" title="Descarregar este filamento">' + seta("M12 19V5M6 11l6-6 6 6") + "</button></div>" : "") + "</div>"; }).join("") + "</div></div>";
+					'<button data-ctl="descarregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '" title="Descarregar este filamento">' + seta("M12 19V5M6 11l6-6 6 6") + "</button></div>" : "") + "</div>"; }).join("") + "</div>" +
+			(tem("secar") ? '<div class="lin" style="margin-top:14px"><label>Secar</label><input type="number" id="cSecT" min="35" max="65" value="' + (mem.secT || 45) + '"><span>°C</span><input type="number" id="cSecH" min="1" max="24" value="' + (mem.secH || 4) + '"><span>h</span>' +
+				'<button class="btn peq' + (mem.secar ? " primario" : "") + '" data-ctl="secar" data-on="1"' + (mem.secar ? ' title="Ativo"' : "") + '>Secar</button><button class="btn peq" data-ctl="secar" data-on="0">Parar</button></div>' : "") + "</div>";
 	}
 	var painel = "";
 	if (ativa && v.controles && v.controles.length) {
@@ -271,6 +276,7 @@ function unidade(app, u) {
 			(v.agente == "filuna_anycubic_lan" ? '<option value="1">Silencioso</option><option value="2" selected>Padrão</option><option value="3">Esportivo</option>'
 				: '<option value="0">Silencioso</option><option value="1" selected>Equilibrado</option><option value="2">Esportivo</option><option value="3">Máximo</option>') + "</select>" + bt("Aplicar", "velocidade", "", mem.velocidade != null) + marca(mem.velocidade != null ? "aplicada" : "") + "</div>";
 		if (tem("emergencia")) painel += '<div class="lin">' + bt("Parada de emergência", "emergencia", ' style="color:#B00020"') + "</div>";
+		if (v.controles_impressao && v.controles_impressao.length) painel += '<div class="lin" style="color:#8a817a;font-size:12.5px">Temperatura, ventiladores e velocidade: este modelo só aceita o ajuste durante uma impressão.</div>';
 		painel += (estado.ctlMsg ? '<div class="okmsg">' + E(estado.ctlMsg) + "</div>" : "") + "</div>";
 	}
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
@@ -320,6 +326,7 @@ function unidade(app, u) {
 		else if (k.indexOf("ventilador") == 0) d.valor = q("#cFan_" + k);
 		else if (k == "velocidade") d.valor = q("#cVel");
 		else if (k == "carregar" || k == "descarregar") { d.unidade = +b.dataset.u || 0; d.slot = +b.dataset.sl || 0; }
+		else if (k == "secar") { d.ligar = b.dataset.on == "1"; d.unidade = v.cores && v.cores[0] ? +v.cores[0].unidade || 0 : 0; d.temperatura = q("#cSecT") || 45; d.minutos = (q("#cSecH") || 4) * 60; }
 		else if (k == "emergencia") {
 			if (estado.confEmerg != v.dev_id) { estado.confEmerg = v.dev_id; estado.ctlMsg = "Clique de novo em Parada de emergência para confirmar."; desenhar(); return; }
 			estado.confEmerg = null;
@@ -328,11 +335,14 @@ function unidade(app, u) {
 		Filuna.nativo("dispositivos.controle", d).then(function (r) {
 			if (r && r.erro) { estado.ctlMsg = r.erro; desenhar(); return; }
 			var m = estado.ctlSel[v.dev_id] = estado.ctlSel[v.dev_id] || {};
-			if (d.tipo == "luz") m.luz = !!d.ligar; else if (d.tipo == "home" || d.tipo == "mover" || d.tipo == "carregar" || d.tipo == "descarregar" || d.tipo == "emergencia") { /* ação única, sem estado */ } else m[d.tipo] = d.valor;
+			if (d.tipo == "luz") m.luz = !!d.ligar; else if (d.tipo == "secar") { m.secar = !!d.ligar; m.secT = d.temperatura; m.secH = Math.round(d.minutos / 60); } else if (d.tipo == "home" || d.tipo == "mover" || d.tipo == "carregar" || d.tipo == "descarregar" || d.tipo == "emergencia") { /* ação única, sem estado */ } else m[d.tipo] = d.valor;
 			guardarCtl(estado.ctlSel);
 			estado.ctlMsg = "Comando enviado para a impressora."; desenhar();
 		}, function (e) { estado.ctlMsg = e.message; desenhar(); });
 	}; });
+	var filProj = app.querySelector("#filProj"); if (filProj) filProj.onclick = function () {
+		Filuna.nativo("dispositivos.filamentos_projeto", { dev_id: v.dev_id }).then(function (r) { estado.ctlMsg = r && r.erro ? r.erro : "Filamentos levados para a Preparação."; desenhar(); }, function (e) { estado.ctlMsg = e.message; desenhar(); });
+	};
 	app.querySelectorAll("[data-cmd]").forEach(function (b) { if (!u.farm && !ativa) b.disabled = true; b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
 	var sim = app.querySelector("#sim"); if (sim) sim.onclick = function () {
 		var c = estado.confirmar; estado.confirmar = null;
@@ -393,7 +403,7 @@ function materiais(i) {
 // ---------- Estado ao vivo (cards) ----------
 function viva(u) { return u.viva || null; }
 Filuna.ouvir("dispositivos.estado", function (e) {
-	estado.vivas = (e.impressoras || []).map(function (v) { v.foto = v.foto || fotoDoModelo(v.modelo_nome || v.modelo); return v; });
+	estado.vivas = (e.impressoras || []).map(fotoViva);
 	juntar();
 	if (estado.vista == "lista" && !estado.confirmar && document.activeElement.id != "busca") desenhar();
 	else if (estado.vista == "unidade" && !estado.confirmar) {
@@ -404,7 +414,30 @@ Filuna.ouvir("dispositivos.estado", function (e) {
 	}
 });
 var fotos = {};
-function fotoDoModelo(nome) { if (!nome) return ""; var k = Object.keys(fotos).filter(function (n) { return nome.indexOf(n) == 0 || n.indexOf(nome) == 0; })[0]; return k ? fotos[k] : ""; }
+// Foto oficial do modelo (catálogo de perfis). Vale para qualquer marca: a impressora diz "Centauri Carbon 2",
+// o catálogo chama "Elegoo Centauri Carbon 2" — casa pelo nome mais longo contido num dos dois.
+function fotoDoModelo() {
+	var melhor = "", tam = 0, nomes = Object.keys(fotos);
+	for (var a = 0; a < arguments.length; a++) {
+		var nome = (arguments[a] || "").toLowerCase(); if (!nome || nome == "desconhecido") continue;
+		nomes.forEach(function (n) { var m = n.toLowerCase(); if ((nome.indexOf(m) >= 0 || m.indexOf(nome) >= 0) && Math.min(m.length, nome.length) > tam) { tam = Math.min(m.length, nome.length); melhor = fotos[n]; } });
+	}
+	return melhor;
+}
+function fotoViva(v) { v.foto = v.foto || fotoDoModelo(v.nome, v.modelo_nome, v.modelo); return v; }
+// carrega as fotos de todas as marcas uma vez (leitura local) e redesenha a lista
+var fotosPedidas = false;
+function carregarFotos() {
+	if (fotosPedidas) return; fotosPedidas = true;
+	Filuna.nativo("dispositivos.fabricantes").then(function (r) {
+		return Promise.all((r.fabricantes || []).map(function (f) {
+			return Filuna.nativo("dispositivos.modelos", { fabricante: f.id }).then(function (m) { (m.modelos || []).forEach(function (x) { if (x.foto) fotos[x.nome] = x.foto; }); }).catch(function () {});
+		}));
+	}).then(function () {
+		(estado.vivas || []).forEach(fotoViva); juntar();
+		if (estado.vista == "lista" && !estado.confirmar) desenhar();
+	}).catch(function () { fotosPedidas = false; });
+}
 
 // ---------- Assistente: conectar nova impressora ----------
 function abrirAssistente() { estado.assist = { passo: "marcas", marcas: [], marca: null, modelos: [], modelo: null, comp: null, prog: null, achadas: [], tentativas: 0, erro: "", ip: "", codigo: "", nome: "" }; estado.vista = "assistente"; desenhar(); }

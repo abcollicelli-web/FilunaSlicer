@@ -676,6 +676,14 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return FD::comando(d.value("dev_id", std::string()), d.value("cmd", std::string()));
     if (action == "dispositivos.selecionar")
         return FD::selecionar(d.value("dev_id", std::string()));
+    if (action == "dispositivos.filamentos_projeto") {
+        // mesma sincronização do botão da Preparação, pedida do cartão da impressora
+        wxGetApp().CallAfter([] {
+            if (wxGetApp().plater() != nullptr)
+                wxGetApp().sidebar().sync_ams_list();
+        });
+        return json{{"ok", true}};
+    }
     if (action == "dispositivos.observar") {
         // a tela pede estado ao vivo enquanto está aberta; para quando sai
         const bool ligar = d.value("ligado", false);

@@ -1,5 +1,6 @@
 #include "MainFrame.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaImpressao.hpp"
 #include <initializer_list>
 
 #include <wx/event.h>
@@ -2155,6 +2156,9 @@ bool MainFrame::can_print_3mf() const
 
 bool MainFrame::can_send_gcode() const
 {
+    // Filuna: a impressora conectada pelo agente da marca não usa "host de impressão" no perfil
+    if (FilunaImpressao::agente_filuna())
+        return true;
     if (m_plater && !m_plater->model().objects.empty())
     {
         auto cfg = wxGetApp().preset_bundle->printers.get_edited_preset().config;

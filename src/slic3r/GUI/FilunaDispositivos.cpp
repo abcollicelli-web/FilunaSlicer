@@ -63,7 +63,15 @@ const std::map<std::string, std::string> AGENTE = {
 const std::map<std::string, std::vector<std::string>> CONTROLES = {
     {"filuna_elegoo_cc2", {"bico", "mesa", "home", "mover", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade",
                            "carregar", "descarregar", "emergencia"}},
-    {"filuna_anycubic_lan", {"bico", "mesa", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade"}},
+    {"filuna_anycubic_lan", {"bico", "mesa", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade", "secar"}},
+};
+
+// Controles que o protocolo da marca só aceita com uma impressão em andamento. Parada, a tela não os oferece
+// (e diz por quê) em vez de mostrar um botão que a impressora ignora.
+// Anycubic Modo LAN: temperatura, ventiladores e velocidade vão por print/update, que só vale para o trabalho
+// atual — o protocolo não tem pré-aquecimento com a impressora parada.
+const std::map<std::string, std::vector<std::string>> SO_IMPRIMINDO = {
+    {"filuna_anycubic_lan", {"bico", "mesa", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade"}},
 };
 
 std::string minusculas(std::string s)
@@ -263,13 +271,24 @@ json card(MachineObject* o)
               {"ligada", o->is_online()},      {"estado", estado_legivel(o)},
               {"conexao", o->dev_connection_type}, {"agente", o->printer_agent_id},
               {"progresso", o->mc_print_percent}, {"restante_s", o->mc_left_time},
-              {"camera", o->has_ipcam},          {"cores", cores_de(o)}};
+              {"camera", o->has_ipcam},          {"cores", cores_de(o)},
+              {"sinc_filamentos", true}}; // a tela pode pedir "dispositivos.filamentos_projeto"
     if (DevBed* bed = o->GetBed())
         c["mesa"] = {{"atual", bed->GetBedTemp()}};
     if (DevExtderSystem* ext = o->GetExtderSystem())
         c["bico"] = {{"atual", ext->GetNozzleTempCurrent(0)}, {"alvo", ext->GetNozzleTempTarget(0)}};
     auto ctl = CONTROLES.find(o->printer_agent_id);
-    c["controles"] = ctl == CONTROLES.end() ? json::array() : json(ctl->second);
+    json controles = json::array(), espera = json::array();
+    if (ctl != CONTROLES.end()) {
+        auto so = SO_IMPRIMINDO.find(o->printer_agent_id);
+        const bool imprimindo = o->is_in_printing();
+        for (const std::string& k : ctl->second) {
+            const bool precisa = so != SO_IMPRIMINDO.end() && std::find(so->second.begin(), so->second.end(), k) != so->second.end();
+            (precisa && !imprimindo ? espera : controles).push_back(k);
+        }
+    }
+    c["controles"]           = controles;
+    c["controles_impressao"] = espera; // existem, mas só durante uma impressão
     const std::string cam = Filuna::camera_url(o->get_dev_id());
     if (!cam.empty())
         c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu
@@ -462,7 +481,10 @@ void garantir_codigo(MachineObject* o)
     const std::string ag = o->printer_agent_id;
     if (ag == "filuna_elegoo_cc2")
         o->set_access_code("123456", false);
-    else if (ag == "filuna_anycubic_lan" || ag == "filuna_elegoo_sdcp")
+    else if (ag.rfind("filuna_", 0) == 0 && ag != "filuna_bambu_lan")
+        // Regra única para as marcas do Filuna: o DeviceManager só deixa selecionar impressora local com
+        // código preenchido. Onde a marca não usa código (credenciais vêm do aperto de mão), vai um valor
+        // neutro; onde usa, o agente da marca devolve o erro de acesso com a própria mensagem.
         o->set_access_code("lan", false);
 }
 
@@ -678,6 +700,17 @@ json controle(const std::string& dev_id, const json& d)
     } else if (tipo == "carregar" || tipo == "descarregar") {
         f["unidade"] = int(limitar("unidade", 0, 15));
         f["slot"]    = int(limitar("slot", 0, 15));
+    } else if (tipo == "secar") {
+        // secagem do filamento na unidade de cores (ACE Pro e equivalentes)
+        f["ligar"]       = d.value("ligar", false);
+        f["unidade"]     = int(limitar("unidade", 0, 15));
+        f["temperatura"] = int(d.contains("temperatura") ? limitar("temperatura", 35, 65) : 45);
+        f["minutos"]     = int(d.contains("minutos") ? limitar("minutos", 30, 1440) : 240);
+    }
+    if (o->is_in_printing() == false) {
+        auto so = SO_IMPRIMINDO.find(o->printer_agent_id);
+        if (so != SO_IMPRIMINDO.end() && std::find(so->second.begin(), so->second.end(), tipo) != so->second.end())
+            return {{"erro", "Esta impressora só aceita este ajuste durante uma impressão."}};
     }
     const int r = o->publish_json(json{{"filuna", f}}, 1);
     if (r != 0)

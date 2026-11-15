@@ -666,6 +666,14 @@ int FilunaAnycubicLanAgent::send_message_to_printer(std::string, std::string jso
         } else if (fc == "luz") {
             const bool on = f.value("ligar", false);
             feito = pedir("light", "control", json{{"type", 2}, {"status", on ? 1 : 0}, {"brightness", on ? 100 : 0}});
+        } else if (fc == "secar") {
+            // secagem na unidade de cores (ACE): multiColorBox/setDry, formato capturado ao vivo na referência
+            const int  id = f.value("unidade", 0);
+            const bool on = f.value("ligar", false);
+            json       st = on ? json{{"status", 1}, {"target_temp", f.value("temperatura", 45)}, {"duration", f.value("minutos", 240)}} :
+                                 json{{"status", 0}};
+            feito = pedir("multiColorBox", "setDry", json{{"multi_color_box", json::array({json{{"id", id}, {"drying_status", st}}})}});
+            pedir("multiColorBox", "getInfo", nullptr);
         } else
             return BAMBU_NETWORK_ERR_INVALID_HANDLE;
         BOOST_LOG_TRIVIAL(info) << "FilunaAnycubicLanAgent: controle " << fc << (feito ? " enviado" : " falhou");
