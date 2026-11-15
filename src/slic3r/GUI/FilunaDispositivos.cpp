@@ -23,6 +23,7 @@
 #include "slic3r/Utils/NetworkAgent.hpp"
 #include "slic3r/Utils/NetworkAgentFactory.hpp"
 #include "slic3r/Utils/FilunaCameraUrls.hpp"
+#include "slic3r/Utils/FilunaCameraRelay.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -313,6 +314,14 @@ json card(MachineObject* o)
     const std::string cam = Filuna::camera_url(o->get_dev_id());
     if (!cam.empty())
         c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu
+    // vídeo em HTTP-FLV (Anycubic e outras): a tela lê pelo repasse local, que acrescenta a permissão que a
+    // impressora não manda
+    if (cam.size() > 4 && cam.find("/flv") != std::string::npos) {
+        std::string h, pt, cm;
+        const int   porta = Filuna::CameraRelay::destino_valido(cam, h, pt, cm) ? Filuna::CameraRelay::porta() : 0;
+        if (porta > 0)
+            c["camera_flv"] = "http://127.0.0.1:" + std::to_string(porta) + "/cam?u=" + Http::url_encode(cam);
+    }
     const json arqs = json::parse(Filuna::arquivos(o->get_dev_id()), nullptr, false);
     if (arqs.is_array() && !arqs.empty())
         c["arquivos"] = arqs; // últimos arquivos guardados na impressora

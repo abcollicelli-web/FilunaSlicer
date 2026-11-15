@@ -101,6 +101,7 @@
 <body>
 <div class="tela"><div class="app" id="app"><div class="carregando">Carregando…</div></div></div>
 <script src="ponte.js"></script>
+<script src="mpegts.js"></script>
 <script>
 // Fluxo do Dispositivo: sem impressora → configuração (DEV-01); com impressoras → galeria de unidades (DEV-02);
 // ao abrir uma unidade → a tela aprovada (02-dispositivo). As impressoras cadastradas neste computador aparecem
@@ -282,12 +283,13 @@ function unidade(app, u) {
 	}
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
 	var camVivo = ativa && v.camera_url && !/\/flv(\?|$)/.test(v.camera_url) ? v.camera_url : ""; // FLV (Anycubic) ainda sem tocador
-	var foto = camVivo ? '<img alt="" data-cam="1" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
+	var flv = ativa && v.camera_flv && window.mpegts && mpegts.isSupported() ? v.camera_flv : "";
+	var foto = flv ? '<video data-cam="1" data-src="' + E(flv) + '" muted autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>' : camVivo ? '<img alt="" data-cam="1" data-src="' + E(camVivo) + '" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
 	var html = '<div style="padding:16px 32px 0"><a class="voltar" id="voltar">‹ Unidades</a></div>' + cabecalho(i.nome, i.estado, i.modelo || "", local) +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
 		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
-		'<div class="colv"><div class="view">' + foto + '<div class="vtag">' + (camVivo ? "Câmera ao vivo" : i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
+		'<div class="colv"><div class="view">' + foto + '<div class="vtag">' + (camVivo || flv ? "Câmera ao vivo" : i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
 		'<div class="vbase"><div><div class="vk">Vista da impressão</div><div class="vv">' + (t ? "Mesa " + E(t.mesa || 1) + " de " + E(t.mesas || 1) : "Sem impressão agora") + "</div></div>" +
 		"</div></div>" + arquivosHtml(v) + "</div>" +
 		'<div class="direita"><div class="lbl">Trabalho atual</div>' +
@@ -309,12 +311,24 @@ function unidade(app, u) {
 		'<div class="trava"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>Ação específica só após confirmação do titular.</div>' +
 		(estado.confirmar ? '<div class="conf">Confirmar <b>' + E(estado.confirmar) + '</b> em ' + E(i.nome) + '? <button class="btn primario peq" id="sim">Confirmar</button> <button class="btn peq" id="nao">Voltar</button></div>' : "") +
 		(estado.msg ? '<div class="okmsg">' + E(estado.msg) + "</div>" : "") +
-		'<div class="diag" data-aba="monitor"><span>Diagnóstico e permissões</span><span>›</span></div>' + "</div></div></div>" +
+		"</div></div></div>" +
 		(aoVivo && v.cores && v.cores.length ? "" : '<div class="mats"><div class="lbl">Materiais</div>' + materiais(i) + "</div>") + "</div></div>" + rodape();
-	var camAntes = app.querySelector("img[data-cam]");
+	var camAntes = app.querySelector("[data-cam]");
 	app.innerHTML = html;
-	var camNova = app.querySelector("img[data-cam]");
-	if (camAntes && camNova && camAntes.getAttribute("src") == camNova.getAttribute("src")) camNova.parentNode.replaceChild(camAntes, camNova);
+	var camNova = app.querySelector("[data-cam]");
+	// a câmera que já está tocando continua a mesma entre redesenhos (não reinicia o vídeo)
+	if (camAntes && camNova && camAntes.tagName == camNova.tagName && camAntes.getAttribute("data-src") == camNova.getAttribute("data-src")) camNova.parentNode.replaceChild(camAntes, camNova);
+	else {
+		if (window.flvTocador) { try { window.flvTocador.destroy(); } catch (e) {} window.flvTocador = null; }
+		if (camNova && camNova.tagName == "VIDEO") {
+			try {
+				var tc = mpegts.createPlayer({ type: "flv", isLive: true, url: camNova.getAttribute("data-src") }, { enableStashBuffer: false, liveBufferLatencyChasing: true, lazyLoad: false });
+				tc.on(mpegts.Events.ERROR, function (t, d) { Filuna.nativo("diagnostico.enviar", { etapa: "camera.flv", mensagem: "tocador de vídeo: " + t + " / " + d }).catch(function () {}); });
+				tc.attachMediaElement(camNova); tc.load(); var pl = tc.play(); if (pl && pl.catch) pl.catch(function () {});
+				window.flvTocador = tc;
+			} catch (e) { Filuna.nativo("diagnostico.enviar", { etapa: "camera.flv", mensagem: "tocador de vídeo: " + e.message }).catch(function () {}); }
+		}
+	}
 	if (i.camera_em) camera(i.id);
 	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
 	var selVel = app.querySelector("#cVel"); if (selVel && mem.velocidade != null) selVel.value = String(mem.velocidade);
@@ -382,8 +396,7 @@ function cabecalho(nome, est, modelo, local) {
 		(perfil && modelo && !confere ? '<div class="perfil-aviso">O perfil na Preparação não é desta impressora.<a data-aba="prepare">Escolher o perfil certo</a></div>' : "") + "</div>" +
 		'<div class="hr"><span class="hri">' + ic('<path d="M3.5 9.5a12 12 0 0 1 17 0M6.5 12.5a7.5 7.5 0 0 1 11 0M9.5 15.5a3 3 0 0 1 5 0"/><circle cx="12" cy="18.5" r=".8"/>') + "LAN local</span>" +
 		'<span class="hri">' + ic('<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>') + (Filuna.temToken() ? "Sessão do titular" : "Sem conta Filuna") + "</span>" +
-		'<button class="btn" data-aba="monitor">' + ic('<path d="M12 3.5 19 6v5.5c0 4.2-3 7.6-7 9-4-1.4-7-4.8-7-9V6z"/><path d="m9 12 2 2 4-4"/>') + "Capacidades e saúde</button>" +
-		'<button class="btn" data-aba="prepare">Revisar envio</button><button class="btn" data-aba="monitor">Configurar unidade</button></div></div>';
+		'<button class="btn" data-aba="prepare">Revisar envio</button></div></div>';
 }
 
 function materiais(i) {

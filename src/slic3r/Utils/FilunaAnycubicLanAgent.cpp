@@ -629,8 +629,8 @@ int FilunaAnycubicLanAgent::connect_printer(const PrinterConnectionParams& p)
     pedir("info", "query", nullptr);
     pedir("tempature", "query", nullptr);
     pedir("multiColorBox", "getInfo", nullptr); // "query" não devolve a caixa; "getInfo" devolve
-    // Câmera: "video/startCapture" abre http://<ip>:18088/flv (HTTP-FLV). A tela ainda não toca FLV (a página
-    // local não pode buscar esse fluxo sem um repasse nativo), então a captura não é ligada aqui.
+    // Câmera: "video/startCapture" abre http://<ip>:18088/flv (HTTP-FLV); a tela toca pelo repasse local.
+    pedir("video", "startCapture", nullptr);
     dispatch_connect(ConnectStatusOk, "");
     if (m_on_connected)
         m_on_connected(base + "/info/report");
@@ -694,6 +694,7 @@ int FilunaAnycubicLanAgent::send_message_to_printer(std::string, std::string jso
     else if (c == "pushall") {
         ok = pedir("info", "query", nullptr);
         pedir("multiColorBox", "getInfo", nullptr);
+        pedir("video", "startCapture", nullptr); // a câmera para sozinha depois de um tempo sem uso
     } else
         // comando que esta marca não tem (o programa manda vários por conta própria): ignora em silêncio.
         // Devolver "não suportado" abria a cada vez a janela "controle não suportado", que travava o programa.
