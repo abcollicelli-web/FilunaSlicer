@@ -1072,3 +1072,19 @@ Farm do Slicer roda no computador; do site vêm só os dados; o projeto é salvo
 - Correções: impressora desligada sem janela de erro (agentes Filuna); acentos do erro de conexão.
 Limites desta versão: a medida e a impressão usam a impressora conectada no Dispositivo (várias ao vivo ainda não);
 Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a mesa em 3D da etapa 2 ainda não.
+
+## 2026-11-15 — 69 publicada (b3e321879); 70: menu da Home, Modelos 3D só para imprimir, Ferramentas
+
+- Foto do catálogo: cover() tenta o model_id e o nome do modelo (Elegoo nomeia "Elegoo Centauri Carbon 2_cover.png",
+  model_id "Elegoo-CC2"); vale para todas as marcas.
+- Menu da tela inicial: Farm abre a aba Farm (local); entram Modelos 3D, Paramétricos e Ferramentas. Paramétricos e
+  Modelos 3D sem botão no topo (como Minha loja), abertos pelo menu.
+- Paramétricos ganha a seção Ferramentas (itens tipo "ferramenta" de /api/slicer/v1/recursos, mesmo executor).
+- Modelos 3D (resources/web/filuna/modelos-3d.html, modelo aprovado): catálogo do site, detalhe e "Imprimir"
+  (site: POST /api/slicer/v1/modelos3d/<slug>/imprimir com a licença do site; o 3MF original vem pela rota do envio),
+  e "Enviados para este Filuna Slicer" (envios feitos no site/app). Abre num projeto novo e liga a trava:
+  FilunaImpressao::saida_barrada() em save_project (devolve 0 para não prender o fechamento), export_gcode,
+  export_gcode_3mf, export_core_3mf, export_stl e export_toolpaths_to_obj. Imprimir pela impressora vale. A trava sai
+  em projeto novo e ao abrir outro projeto. O arquivo baixado é apagado logo depois de abrir.
+- "Enviar à Farm" da Preparação: na etapa 1 da Farm, "Usar o projeto aberto na Preparação" (export_3mf silencioso
+  para um arquivo temporário e segue o fluxo local). Modelo do catálogo não vai para a Farm.

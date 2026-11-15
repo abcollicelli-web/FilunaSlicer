@@ -16549,6 +16549,7 @@ int Plater::new_project(bool skip_confirm, bool silent, const wxString& project_
     m_only_gcode = false;
     m_exported_file = false;
     m_loading_project = false;
+    FilunaImpressao::proteger_modelo(false); // projeto novo: sem a trava do catálogo
     get_notification_manager()->clear_all();
 
     if (!silent)
@@ -16647,6 +16648,7 @@ void Plater::load_project(wxString const& filename2,
 
     m_loading_project = true;
     ScopeGuard loading_project_sc([this]() { m_loading_project = false; }); // Make sure state restored on any early return
+    FilunaImpressao::proteger_modelo(false); // outro projeto: sem a trava do catálogo
 
     auto path     = into_path(filename);
 
@@ -16780,6 +16782,8 @@ void Plater::load_project(wxString const& filename2,
 // BBS: save logic
 int Plater::save_project(bool saveAs)
 {
+    if (FilunaImpressao::saida_barrada()) // modelo do catálogo Filuna: não salva (e não prende o fechamento)
+        return 0;
     //if (up_to_date(false, false)) // should we always save
     //    return;
     auto filename = get_project_filename(".3mf");
@@ -20049,6 +20053,8 @@ void Plater::apply_cut_object_to_model(size_t obj_idx, const ModelObjectPtrs& ne
 
 void Plater::export_gcode(bool prefer_removable)
 {
+    if (FilunaImpressao::saida_barrada()) // modelo do catálogo Filuna: só imprimir
+        return;
     if (p->model.objects.empty())
         return;
 
@@ -20155,6 +20161,8 @@ void Plater::send_to_printer(bool isall)
 //BBS export gcode 3mf to file
 void Plater::export_gcode_3mf(bool export_all)
 {
+    if (FilunaImpressao::saida_barrada()) // modelo do catálogo Filuna: só imprimir
+        return;
     if (p->model.objects.empty())
         return;
 
@@ -20277,6 +20285,8 @@ private:
 
 void Plater::export_core_3mf()
 {
+    if (FilunaImpressao::saida_barrada()) // modelo do catálogo Filuna: só imprimir
+        return;
     wxString path = p->get_export_file(FT_3MF);
     if (path.empty()) { return; }
     const std::string path_u8 = into_u8(path);
@@ -20640,6 +20650,8 @@ TriangleMesh Plater::combine_mesh_fff(const ModelObject& mo, int instance_id, st
 #define EXPORT_WITH_BOOLEAN 0
 void Plater::export_stl(bool extended, bool selection_only, bool multi_stls, FileType file_type)
 {
+    if (FilunaImpressao::saida_barrada()) // modelo do catálogo Filuna: só imprimir
+        return;
     if (p->model.objects.empty()) { return; }
 
     int quality = 0;
@@ -21327,6 +21339,8 @@ bool Plater::has_toolpaths_to_export() const
 
 void Plater::export_toolpaths_to_obj() const
 {
+    if (FilunaImpressao::saida_barrada()) // modelo do catálogo Filuna: só imprimir
+        return;
     if ((printer_technology() != ptFFF) || !is_preview_loaded())
         return;
 

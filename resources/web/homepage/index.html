@@ -126,9 +126,22 @@
 			<div data-i18n="recent">Recent</div>
 			<div class="NavArrow icon16"></div>
 		</div>
-		<div menu="filuna_farm" class="BtnItem FlSoLigado" onClick="GotoMenu('filuna_farm'); FlAtualizar();" hidden>
+		<div menu="filuna_farm" class="BtnItem" onClick="FlAbrirAba('filuna.farm')">
 			<div>Farm</div>
 			<div class="FlContador" id="FlMenuAvisos" hidden></div>
+			<div class="NavArrow icon16"></div>
+		</div>
+		<div class="BtnItem" onClick="FlAbrirAba('filuna.modelos')">
+			<div>Modelos 3D</div>
+			<div class="NavArrow icon16"></div>
+		</div>
+		<div class="BtnItem" onClick="FlAbrirAba('filuna.parametricos')">
+			<div>Paramétricos</div>
+			<div class="NavArrow icon16"></div>
+		</div>
+		<div class="BtnItem" onClick="FlAbrirAba('filuna.parametricos', 'ferramentas')">
+			<div>Ferramentas</div>
+			<div class="NavArrow icon16"></div>
 		</div>
 		<div class="BtnItem" onClick="FlAbrirAba('filuna.espaco', 'estoque')">
 			<div>Estoque</div>

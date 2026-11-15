@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Modelos 3D</title>
+<link rel="stylesheet" href="base.css">
+<style>
+/* modelo aprovado: FILUNA/design/visual-c/ui/modelos-3d.html e modelo-detalhe.html */
+.wrap{padding:30px 34px}
+.wrap h1{font-size:30px;font-weight:800;margin:0}
+.sub{color:var(--ink2);font-size:15px;margin-top:8px}
+.filtros{display:flex;gap:10px;margin:22px 0;flex-wrap:wrap;align-items:center}
+.filtros select,.filtros input{height:44px;border:1px solid var(--line);border-radius:11px;padding:0 14px;font:inherit;font-size:14.5px;background:#fff;color:var(--ink)}
+.filtros input{flex:1;min-width:220px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.m{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;text-align:left;font:inherit;padding:0;color:var(--ink);display:flex;flex-direction:column}
+.m:hover{border-color:#F6C6D8;box-shadow:0 10px 24px rgba(60,50,40,.08)}
+.m .capa{height:180px;background:#FCFAF7;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.m .capa img{width:100%;height:100%;object-fit:cover}
+.m .b{padding:12px 16px;border-top:1px solid var(--line)}
+.m .n{font-size:15.5px;font-weight:700}
+.m .s{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.pontos{display:flex;gap:5px;margin-top:8px}.pontos i{width:14px;height:14px;border-radius:50%;background:var(--c);border:1px solid rgba(0,0,0,.12)}
+.det{display:grid;grid-template-columns:1.25fr 1fr;gap:22px}
+@media(max-width:1000px){.det{grid-template-columns:1fr}}
+.det .foto{background:#17161a;border-radius:16px;overflow:hidden;min-height:360px;display:flex;align-items:center;justify-content:center}
+.det .foto img{width:100%;height:100%;object-fit:contain}
+.cartao{border:1px solid var(--line);border-radius:16px;background:#fff;padding:20px}
+.kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}.kv:last-child{border:none}
+.kv b{font-weight:800}
+.imprimir{height:56px;width:100%;border:none;border-radius:13px;background:#C2185B;color:#fff;font:700 16px inherit;cursor:pointer;margin-top:16px}
+.imprimir[disabled]{opacity:.6;cursor:default}
+.trava{margin-top:12px;font-size:12.5px;color:var(--ink2);line-height:1.5;background:#FFF8F0;border-radius:10px;padding:10px 12px}
+.aviso{margin:12px 0;padding:12px 14px;border-radius:12px;background:#FFF8F0;color:var(--ink2)}
+.aviso.erro{background:#FDEBDD;color:#8A2C06}
+.envios{margin-bottom:22px}
+.envio{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-top:8px}
+.envio .t{flex:1}.envio small{color:var(--ink2)}
+.vazio{padding:40px;text-align:center;color:var(--ink2);border:1px dashed var(--line);border-radius:14px}
+</style>
+</head>
+<body>
+<div class="wrap" id="conteudo"><div class="vazio">Carregando os modelos…</div></div>
+<script src="ponte.js"></script>
+<script>
+var E = Filuna.esc, SITE = "https://filuna3d.com", st = { modelos: [], envios: [], cat: "", busca: "", ordem: "", aberto: null, msg: "", erro: false, ocupado: false };
+function tempo(s) { s = +s || 0; return s >= 3600 ? Math.floor(s / 3600) + "h" + ("0" + Math.floor(s % 3600 / 60)).slice(-2) : Math.max(1, Math.round(s / 60)) + " min"; }
+function reais(v) { return "R$ " + Number(v || 0).toFixed(2).replace(".", ","); }
+function desenhar() {
+	var el = document.getElementById("conteudo"), h = "";
+	if (st.aberto) {
+		var m = st.aberto;
+		h += '<div class="sub" style="margin:0 0 10px"><a href="#" id="voltar">Modelos 3D</a> › ' + E(m.titulo) + "</div><h1>" + E(m.titulo) + '</h1><div class="sub">' + E(m.categoria || "") + (m.material ? " · " + E(m.material) : "") + "</div>";
+		if (st.msg) h += '<div class="aviso' + (st.erro ? " erro" : "") + '">' + E(st.msg) + "</div>";
+		h += '<div class="det" style="margin-top:20px"><div class="foto"><img src="' + E(m.capa) + '" alt=""></div><div><div class="cartao">' +
+			(m.descricao ? '<p style="margin:0 0 12px;color:var(--ink2);line-height:1.55">' + E(m.descricao) + "</p>" : "") +
+			'<div class="kv"><span>Tempo de impressão</span><b>' + (m.tempo_s ? tempo(m.tempo_s) : "—") + '</b></div><div class="kv"><span>Filamento</span><b>' + (m.gramas ? m.gramas + " g" : "—") +
+			'</b></div><div class="kv"><span>Vende por</span><b>' + (m.preco ? reais(m.preco) : "—") + "</b></div>" +
+			((m.cores || []).length ? '<div class="kv"><span>Cores</span><span class="pontos">' + m.cores.map(function (c) { return '<i style="--c:' + E(c.hex) + '" title="' + E(c.nome || "") + '"></i>'; }).join("") + "</span></div>" : "") +
+			'<button class="imprimir" id="imprimir"' + (st.ocupado ? " disabled" : "") + ">" + (st.ocupado ? "Abrindo no fatiador…" : "Imprimir modelo") + "</button>" +
+			'<div class="trava">O modelo abre na Preparação para você imprimir nas suas impressoras. Modelos do catálogo Filuna não podem ser salvos nem exportados (projeto, 3MF, STL, G-code ou arquivo fatiado).</div>' +
+			'<p style="margin-top:12px"><a href="#" id="nosite">Ver no site</a></p></div></div></div>';
+		el.innerHTML = h;
+		document.getElementById("voltar").onclick = function (e) { e.preventDefault(); st.aberto = null; st.msg = ""; desenhar(); };
+		document.getElementById("nosite").onclick = function (e) { e.preventDefault(); Filuna.abrirLink(m.link); };
+		document.getElementById("imprimir").onclick = function () {
+			st.ocupado = true; st.msg = ""; desenhar();
+			Filuna.nativo("modelo3d.imprimir", { slug: m.slug, titulo: m.titulo }).catch(function (e) { st.ocupado = false; st.erro = true; st.msg = (e && (e.erro || e.message)) || "Não foi possível."; desenhar(); });
+		};
+		return;
+	}
+	h += '<h1>Modelos 3D</h1><div class="sub">Modelos do catálogo Filuna, com tempo, filamento e preço de venda medidos. Clique para ver e imprimir.</div>';
+	if (st.msg) h += '<div class="aviso' + (st.erro ? " erro" : "") + '">' + E(st.msg) + "</div>";
+	if (st.envios.length) {
+		h += '<div class="envios"><h3 style="margin:18px 0 0">Enviados para este Filuna Slicer</h3>' + st.envios.map(function (v, k) {
+			return '<div class="envio"><div class="t"><b>' + E(v.titulo) + "</b><br><small>Enviado pelo site ou pelo app" + (v.copias > 1 ? " · " + v.copias + " cópias" : "") + '</small></div><button class="btn primario" data-envio="' + k + '">Abrir para imprimir</button></div>';
+		}).join("") + "</div>";
+	}
+	var cats = [];
+	st.modelos.forEach(function (m) { if (m.categoria && cats.indexOf(m.categoria) < 0) cats.push(m.categoria); });
+	h += '<div class="filtros"><select id="cat"><option value="">Todas as categorias</option>' + cats.map(function (c) { return '<option' + (c == st.cat ? " selected" : "") + ">" + E(c) + "</option>"; }).join("") +
+		'</select><input id="busca" placeholder="Buscar modelo..." value="' + E(st.busca) + '"><select id="ordem"><option value="">Em destaque</option><option value="tempo"' + (st.ordem == "tempo" ? " selected" : "") + '>Mais rápidos</option><option value="preco"' + (st.ordem == "preco" ? " selected" : "") + ">Maior preço de venda</option></select></div>";
+	var l = st.modelos.filter(function (m) { return (!st.cat || m.categoria == st.cat) && (!st.busca || (m.titulo + " " + m.categoria).toLowerCase().indexOf(st.busca.toLowerCase()) >= 0); });
+	if (st.ordem == "tempo") l = l.slice().sort(function (a, b) { return (a.tempo_s || 1e9) - (b.tempo_s || 1e9); });
+	if (st.ordem == "preco") l = l.slice().sort(function (a, b) { return (b.preco || 0) - (a.preco || 0); });
+	h += l.length ? '<div class="grid">' + l.map(function (m) {
+		return '<button class="m" data-slug="' + E(m.slug) + '"><span class="capa"><img src="' + E(m.capa) + '" alt="" loading="lazy"></span><span class="b"><span class="n">' + E(m.titulo) + '</span><br><span class="s">' + E(m.categoria || "Modelo") +
+			(m.tempo_s ? " · Tempo: " + tempo(m.tempo_s) : "") + (m.gramas ? " · " + m.gramas + " g" : "") + '</span><span class="pontos">' + (m.cores || []).map(function (c) { return '<i style="--c:' + E(c.hex) + '"></i>'; }).join("") + "</span></span></button>";
+	}).join("") + "</div>" : '<div class="vazio">Nenhum modelo com esse filtro.</div>';
+	el.innerHTML = h;
+	document.getElementById("cat").onchange = function () { st.cat = this.value; desenhar(); };
+	document.getElementById("ordem").onchange = function () { st.ordem = this.value; desenhar(); };
+	var bs = document.getElementById("busca"); bs.oninput = function () { st.busca = this.value; var p = this.selectionStart; desenhar(); var n = document.getElementById("busca"); n.focus(); n.setSelectionRange(p, p); };
+	document.querySelectorAll("[data-slug]").forEach(function (b) { b.onclick = function () { st.aberto = st.modelos.filter(function (m) { return m.slug == b.dataset.slug; })[0]; st.msg = ""; desenhar(); window.scrollTo(0, 0); }; });
+	document.querySelectorAll("[data-envio]").forEach(function (b) { b.onclick = function () { var v = st.envios[+b.dataset.envio]; b.disabled = true; b.textContent = "Abrindo…"; Filuna.nativo("modelo3d.abrir", { id: v.id, titulo: v.titulo }).catch(function (e) { st.erro = true; st.msg = (e && (e.erro || e.message)) || "Não foi possível."; desenhar(); }); }; });
+}
+function carregar() {
+	fetch(SITE + "/api/slicer/v1/modelos3d").then(function (r) { return r.json(); }).then(function (d) { st.modelos = d.modelos || []; desenhar(); })
+		.catch(function () { document.getElementById("conteudo").innerHTML = '<div class="vazio">Sem conexão: os modelos do catálogo aparecem quando o computador estiver na internet.</div>'; });
+	if (Filuna.temToken()) Filuna.api("GET", "/modelos3d/envios").then(function (d) { st.envios = d.envios || []; if (d.aviso) { st.msg = d.aviso; st.erro = false; } desenhar(); }).catch(function () {});
+}
+Filuna.ouvir("modelo3d.aberto", function () { st.ocupado = false; st.erro = false; st.msg = "Modelo aberto na Preparação. Ele pode ser impresso, mas não salvo nem exportado."; carregar(); });
+Filuna.ouvir("modelo3d.erro", function (d) { st.ocupado = false; st.erro = true; st.msg = "Não foi possível abrir: " + (d.erro || "erro"); desenhar(); });
+Filuna.ouvir("conta", carregar);
+Filuna.ouvir("mostrar", function () { if (Filuna.temToken()) Filuna.api("GET", "/modelos3d/envios").then(function (d) { st.envios = d.envios || []; if (!st.aberto) desenhar(); }).catch(function () {}); });
+Filuna.iniciar().then(carregar);
+</script>
+</body>
+</html>

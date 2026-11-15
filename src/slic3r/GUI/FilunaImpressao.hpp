@@ -38,6 +38,12 @@ bool agente_entrada_fixa();
 // envio e andamento). Desliga com filuna_farm_auto=0 no app_config.
 void farm_iniciar();
 
+// Modelos 3D do catálogo Filuna: abertos no fatiador só para imprimir. Enquanto um estiver no projeto, salvar e
+// exportar (projeto, 3MF, STL/OBJ, G-code, mesa fatiada, caminhos) ficam bloqueados; imprimir pela impressora vale.
+bool modelo_protegido();
+void proteger_modelo(bool ligar);
+bool saida_barrada(); // true = bloqueou (avisa o cliente)
+
 // Farm local (a tela da Farm no Slicer): "farm.escolher" (arquivo), "farm.analisar" (peças, cores, medidas e foto, com o
 // farm_arquivos.py do site no Python do programa), "farm.medir" (tempo e gramas fatiando cada arquivo com os perfis da
 // impressora conectada) e "farm.salvar" (projeto planejado no computador guardado no site para acompanhar). As de

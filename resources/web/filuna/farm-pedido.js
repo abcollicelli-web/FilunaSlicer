@@ -16,6 +16,7 @@ function vNovo(d) {
 	if (d.de) h += '<div class="fm-aviso violeta"><b>Imprimir de novo: pedido #' + E(d.de.numero) + " · " + E(d.de.nome) + "</b><p>Escolha o mesmo arquivo outra vez. A quantidade, os materiais e as opções do pedido #" + E(d.de.numero) + " já vêm preenchidos; é só conferir.</p></div>";
 	h += '<label class="fw-solta" data-escolher><svg width="54" height="54" viewBox="0 0 56 56" aria-hidden="true"><rect x="8" y="6" width="40" height="44" rx="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M28 38V19M20 26l8-8 8 8" fill="none" stroke="var(--mag)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
 		"<b>" + (d.arquivo ? E(d.arquivo.nome) : "Clique para escolher o arquivo") + "</b><small>" + (d.arquivo ? (d.arquivo.tamanho / 1048576).toFixed(1).replace(".", ",") + " MB" : "ZIP, 3MF ou STL, até 100 MB") + "</small></label>" +
+		'<p style="margin:-6px 0 16px"><button type="button" class="btn btn-line btn-sm" data-preparacao>Usar o projeto aberto na Preparação</button></p>' +
 		'<label class="campo"><span>Nome do pedido (opcional)</span><input name="nome" maxlength="80" placeholder="Ex.: Porta-alho" value="' + E(d.nome || (d.de ? d.de.nome : "")) + '"></label>' +
 		'<button class="btn btn-mag"' + (d.arquivo && !d.analisando ? "" : " disabled") + ">" + (d.analisando ? "Abrindo o arquivo e separando as peças…" : 'Analisar <span class="seta">→</span>') + "</button>" +
 		'<p class="fm-nota">Tudo acontece neste computador: o Filuna lê o arquivo, mede tempo e filamento fatiando com os perfis da sua impressora e monta o plano. No fim, o projeto vai para a sua conta só para você acompanhar pelo site e pelo app.</p></form></section></div></div>';
@@ -389,6 +390,13 @@ Filuna.ouvir("farm.salvo", function (d) {
 document.addEventListener("click", function (ev) {
 	var b = ev.target.closest ? ev.target.closest("button") : null;
 	if (b && b.form) botaoAtual = b;
+	var prep = ev.target.closest ? ev.target.closest("[data-preparacao]") : null;
+	if (prep) {
+		ev.preventDefault();
+		Filuna.nativo("farm.projeto_atual").then(function (r) { if (r && r.caminho) { st.local.arquivoEscolhido = r; st.local.erro = null; if (!st.local.nome) st.local.nome = r.nome.replace(/\.3mf$/, ""); desenhar(); } })
+			.catch(function (e) { st.local.erro = (e && (e.erro || e.message)) || "Não foi possível."; desenhar(); });
+		return;
+	}
 	var esc = ev.target.closest ? ev.target.closest("[data-escolher]") : null;
 	if (esc) {
 		ev.preventDefault();

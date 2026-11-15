@@ -1643,6 +1643,12 @@ void MainFrame::init_tabpanel() {
     m_lazy_pages.push_back(m_filuna_param_page);
     m_tabpanel->AddPage(TAB_ID_FILUNA_PARAM, m_filuna_param_page, wxString::FromUTF8("Paramétricos"), "tab_auxiliary_active");
 
+    // Modelos 3D do catálogo Filuna: abertos no fatiador só para imprimir (sem botão no topo; abre pelo menu da Home)
+    m_filuna_modelos_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_MODELOS, 25,
+                                                      [](wxWindow* parent) { return new FilunaPanel(parent, "modelos-3d.html"); });
+    m_lazy_pages.push_back(m_filuna_modelos_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_MODELOS, m_filuna_modelos_page, wxString::FromUTF8("Modelos 3D"), "tab_auxiliary_active");
+
     m_monitor_page = new LazyPage<MonitorPanel>(m_tabpanel, TAB_ID_MONITOR, 20);
     m_lazy_pages.push_back(m_monitor_page);
     m_tabpanel->AddPage(TAB_ID_MONITOR, m_monitor_page, _L("Printer panel"), "tab_monitor_active");
@@ -1859,7 +1865,9 @@ void MainFrame::fit_tab_labels()
     // Filuna: the tab bar is Início · Preparação · Visualização · Dispositivo · Projeto · Calibração · Meu espaço.
     // Orca's device, multi-device and calibration pages and Minha loja stay in the book, opened from the
     // Filuna pages (Dispositivo › Painel da impressora, Meu espaço › Minha loja), but get no button here.
-    for (const char* id : {TAB_ID_MONITOR, TAB_ID_MONITOR_WEB, TAB_ID_MULTI_DEVICE, TAB_ID_CALIBRATION, TAB_ID_FILUNA_STORE})
+    // Paramétricos/Ferramentas e Modelos 3D abrem pelo menu da tela inicial (ordem do dono, 15/11/2026)
+    for (const char* id : {TAB_ID_MONITOR, TAB_ID_MONITOR_WEB, TAB_ID_MULTI_DEVICE, TAB_ID_CALIBRATION, TAB_ID_FILUNA_STORE, TAB_ID_FILUNA_PARAM,
+                           TAB_ID_FILUNA_MODELOS})
         if (const int idx = m_tabpanel->FindPageByName(id); idx != wxNOT_FOUND)
             m_tabpanel->GetBtnsListCtrl()->ShowPageButton(size_t(idx), false);
 

@@ -28,16 +28,23 @@
 </head>
 <body>
 <div class="wrap" id="conteudo">
-  <h1>Modelos paramétricos</h1><div class="sub">Personalize cada modelo com parâmetros: a peça é gerada aqui no seu computador e vai direto para a mesa da Preparação.</div>
+  <div class="chips" id="tipos" style="margin:0 0 14px"></div>
+  <h1 id="titulo">Modelos paramétricos</h1><div class="sub" id="subt">Personalize cada modelo com parâmetros: a peça é gerada aqui no seu computador e vai direto para a mesa da Preparação.</div>
   <div class="chips" id="c"></div>
   <div id="msg"></div>
   <div class="grid" id="g"><div class="vazio">Carregando os modelos…</div></div>
 </div>
 <script src="ponte.js"></script>
 <script>
-var E = Filuna.esc, itens = [], cat = "Todos";
+var E = Filuna.esc, todos = [], itens = [], cat = "Todos", tipo = "parametrico";
+var TIPOS = { parametrico: ["Paramétricos", "Modelos paramétricos", "Personalize cada modelo com parâmetros: a peça é gerada aqui no seu computador e vai direto para a mesa da Preparação."],
+	ferramenta: ["Ferramentas", "Ferramentas", "Ferramentas da Filuna que rodam aqui no computador (como no site): o resultado vai direto para a mesa da Preparação."] };
+function escolherTipo(t) { tipo = TIPOS[t] ? t : "parametrico"; cat = "Todos"; itens = todos.filter(function (i) { return i.tipo == tipo; }); desenhar(); }
 var ICONE = '<svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>';
 function desenhar() {
+	document.getElementById("tipos").innerHTML = Object.keys(TIPOS).map(function (t) { return '<button class="chip' + (t == tipo ? " on" : "") + '" data-tipo="' + t + '">' + TIPOS[t][0] + "</button>"; }).join("");
+	document.querySelectorAll("[data-tipo]").forEach(function (b) { b.onclick = function () { escolherTipo(b.dataset.tipo); }; });
+	document.getElementById("titulo").textContent = TIPOS[tipo][1]; document.getElementById("subt").textContent = TIPOS[tipo][2];
 	var cats = ["Todos"];
 	itens.forEach(function (i) { if (i.categoria && cats.indexOf(i.categoria) < 0) cats.push(i.categoria); });
 	document.getElementById("c").innerHTML = cats.map(function (c) { return '<button class="chip' + (c == cat ? " on" : "") + '" data-c="' + E(c) + '">' + E(c) + "</button>"; }).join("");
@@ -46,7 +53,7 @@ function desenhar() {
 	document.getElementById("g").innerHTML = l.length ? l.map(function (i, k) {
 		return '<button class="m" data-k="' + itens.indexOf(i) + '"><div class="thumb">' + ICONE + '</div><div class="b"><div><div class="n">' + E(i.nome) + '</div><div class="s">' + E(i.categoria || "Paramétrico") +
 			" · " + E(i.versao) + "</div></div>" + (i.liberado ? (i.novo ? '<span class="sp">Novo</span>' : "") : '<span class="sp bloq">Plano</span>') + "</div></button>";
-	}).join("") : '<div class="vazio">Nenhum modelo paramétrico liberado para a sua conta ainda.</div>';
+	}).join("") : '<div class="vazio">' + (tipo == "ferramenta" ? "Nenhuma ferramenta liberada para a sua conta ainda." : "Nenhum modelo paramétrico liberado para a sua conta ainda.") + "</div>";
 	document.querySelectorAll("[data-k]").forEach(function (b) { b.onclick = function () { abrir(itens[+b.dataset.k]); }; });
 }
 function abrir(i) {
@@ -59,11 +66,12 @@ function abrir(i) {
 function carregar() {
 	if (!Filuna.temToken()) { Filuna.telaLogin(document.getElementById("conteudo"), carregar, "Entre na sua conta Filuna para usar os paramétricos."); return; }
 	Filuna.api("GET", "/recursos").then(function (r) {
-		itens = (r.itens || []).filter(function (i) { return i.tipo == "parametrico"; });
-		desenhar();
+		todos = r.itens || [];
+		escolherTipo(tipo);
 	}, function (e) { document.getElementById("g").innerHTML = '<div class="vazio">' + E(e.erro || "Sem conexão.") + "</div>"; });
 }
-Filuna.iniciar().then(carregar);
+Filuna.iniciar().then(function () { return Filuna.nativo("secao.pendente").then(function (r) { if (r.secao == "ferramentas") tipo = "ferramenta"; }).catch(function () {}); }).then(carregar);
+Filuna.ouvir("secao", function (d) { Filuna.nativo("secao.pendente").catch(function () {}); escolherTipo(d.secao == "ferramentas" ? "ferramenta" : "parametrico"); });
 Filuna.ouvir("conta", carregar);
 Filuna.ouvir("parametrico.erro", function (d) { document.getElementById("msg").innerHTML = '<div class="aviso">Não abriu: ' + E(d.erro || "erro") + "</div>"; });
 </script>

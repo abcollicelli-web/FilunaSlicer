@@ -226,10 +226,21 @@ std::vector<ModeloBase> modelos_da_base(const std::string& vendor_id)
 }
 
 // Caminho relativo à página (resources/web/filuna/) para a foto oficial do modelo (cover do Orca).
-std::string cover(const std::string& vendor_id, const std::string& model_id)
+std::string cover(const std::string& vendor_id, const std::string& model_id, const std::string& nome = std::string())
 {
-    const boost::filesystem::path p = boost::filesystem::path(resources_dir()) / "profiles" / vendor_id / (model_id + "_cover.png");
-    return boost::filesystem::exists(p) ? "../../profiles/" + vendor_id + "/" + model_id + "_cover.png" : std::string();
+    // Cada marca nomeia a foto de um jeito: pelo model_id (Anycubic, Bambu…) ou pelo nome do modelo (Elegoo:
+    // "Elegoo Centauri Carbon 2_cover.png", model_id "Elegoo-CC2"). Tenta os dois, para todas as marcas.
+    for (const std::string& base : {model_id, nome}) {
+        if (base.empty())
+            continue;
+        const boost::filesystem::path p = boost::filesystem::path(resources_dir()) / "profiles" / vendor_id / (base + "_cover.png");
+        if (boost::filesystem::exists(p)) {
+            std::string rel = "../../profiles/" + vendor_id + "/" + base + "_cover.png";
+            boost::replace_all(rel, " ", "%20");
+            return rel;
+        }
+    }
+    return std::string();
 }
 
 // Preset de máquina do sistema para o modelo (bico padrão 0.4 quando houver).
@@ -442,7 +453,7 @@ json modelos(const std::string& modulo_id)
         json bicos = json::array();
         for (const auto& v : pm.bicos)
             bicos.push_back(v);
-        lista.push_back({{"id", pm.id}, {"nome", pm.nome}, {"familia", pm.familia}, {"foto", cover(vid, pm.id)},
+        lista.push_back({{"id", pm.id}, {"nome", pm.nome}, {"familia", pm.familia}, {"foto", cover(vid, pm.id, pm.nome)},
                          {"bicos", bicos}, {"disponivel", disponivel},
                          {"mensagem", disponivel ? std::string() : mensagem_indisponivel(*m)}});
     }

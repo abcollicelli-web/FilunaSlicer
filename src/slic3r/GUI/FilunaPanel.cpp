@@ -605,7 +605,7 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         CallAfter([tab, section] { open_tab(tab, section); });
         return json::object();
     }
-    if (action.rfind("farm.", 0) == 0) {   // Farm local: abrir, analisar, medir e salvar o projeto (respostas longas por evento)
+    if (action.rfind("farm.", 0) == 0 || action.rfind("modelo3d.", 0) == 0) {   // Farm local: abrir, analisar, medir e salvar o projeto (respostas longas por evento)
         FilunaPanel* eu = this;
         return FilunaImpressao::farm_acao(action, d, [eu](const std::string& nome, const json& dados) {
             wxGetApp().CallAfter([eu, nome, dados] {

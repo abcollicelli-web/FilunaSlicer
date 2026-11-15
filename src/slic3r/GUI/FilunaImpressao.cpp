@@ -1174,6 +1174,23 @@ json farm_acao(const std::string& acao, const json& d, std::function<void(const 
         boost::system::error_code ec;
         return {{"caminho", c}, {"nome", utf8_de(caminho_de(c).filename())}, {"tamanho", (long long) fsf::file_size(caminho_de(c), ec)}};
     }
+    if (acao == "farm.projeto_atual") {   // "Enviar à Farm": o projeto aberto na Preparação vira o arquivo do projeto
+        Plater* plater = wxGetApp().plater();
+        if (plater == nullptr || plater->model().objects.empty())
+            throw std::runtime_error("Não há nada na Preparação. Abra ou monte o projeto lá e volte aqui.");
+        if (modelo_protegido())
+            throw std::runtime_error("Modelos do catálogo Filuna são impressos pela Preparação e não vão para a Farm.");
+        boost::system::error_code ec;
+        const fsf::path pasta = fsf::path(data_dir()) / "filuna" / "farm";
+        fsf::create_directories(pasta, ec);
+        const fsf::path arq = pasta / ("preparacao-" + std::to_string((long long) std::time(nullptr)) + ".3mf");
+        if (plater->export_3mf(arq, SaveStrategy::Silence) < 0 || !fsf::exists(arq, ec))
+            throw std::runtime_error("Não foi possível preparar o projeto da Preparação.");
+        std::string nome = std::string(plater->get_project_name().ToUTF8().data());
+        if (nome.empty())
+            nome = "Projeto da Preparação";
+        return {{"caminho", utf8_de(arq)}, {"nome", nome + ".3mf"}, {"tamanho", (long long) fsf::file_size(arq, ec)}};
+    }
     if (acao == "farm.analisar") {
         const std::string caminho = texto_de(d, "caminho");
         boost::system::error_code ec;
@@ -1277,7 +1294,72 @@ json farm_acao(const std::string& acao, const json& d, std::function<void(const 
         }).detach();
         return json::object();
     }
+    if (acao == "modelo3d.imprimir" || acao == "modelo3d.abrir") {
+        // Modelo do catálogo Filuna: o 3MF original vem só por rota autenticada, abre num projeto novo e fica travado
+        // para salvar/exportar (só imprimir). "imprimir" pede o envio ao site; "abrir" abre um envio feito no site/app.
+        const std::string slug = texto_de(d, "slug"), envio = texto_de(d, "id"), titulo = texto_de(d, "titulo", "Modelo Filuna");
+        if ((acao == "modelo3d.imprimir" && !id_seguro(slug)) || (acao == "modelo3d.abrir" && !id_seguro(envio)))
+            throw std::runtime_error("Modelo inválido.");
+        const std::string token = wxGetApp().app_config->get("filuna_token");
+        std::thread([acao, slug, envio, titulo, token, evento] {
+            std::string eid = envio;
+            if (acao == "modelo3d.imprimir") {
+                FarmResp r = farm_http("POST", "/modelos3d/" + slug + "/imprimir", json::object(), token);
+                if (r.status != 200 || !r.corpo.is_object() || texto_de(r.corpo, "id").empty()) {
+                    evento("modelo3d.erro", {{"erro", r.erro.empty() ? std::string("o site não liberou este modelo") : r.erro}});
+                    return;
+                }
+                eid = texto_de(r.corpo, "id");
+            }
+            boost::system::error_code ec;
+            const fsf::path pasta = fsf::path(data_dir()) / "filuna" / "catalogo";
+            fsf::create_directories(pasta, ec);
+            const fsf::path arq = pasta / (eid + ".3mf");
+            FarmResp d = farm_http("GET", "/modelos3d/envios/" + eid + "/arquivo", json(), token, arq);
+            if (d.status != 200) {
+                fsf::remove(arq, ec);
+                evento("modelo3d.erro", {{"erro", d.erro.empty() ? std::string("o modelo não foi baixado") : d.erro}});
+                return;
+            }
+            wxGetApp().CallAfter([arq, eid, titulo, token, evento] {
+                boost::system::error_code ec2;
+                Plater* plater = wxGetApp().plater();
+                if (plater == nullptr || plater->new_project() == wxID_CANCEL) {
+                    fsf::remove(arq, ec2);
+                    evento("modelo3d.erro", {{"erro", "abertura cancelada"}});
+                    return;
+                }
+                if (MainFrame* frame = wxGetApp().mainframe)
+                    frame->select_filuna_tab(TAB_ID_PREPARE);
+                plater->load_files(std::vector<fsf::path>{arq}, LoadStrategy::LoadModel | LoadStrategy::LoadConfig);
+                proteger_modelo(true);
+                fsf::remove(arq, ec2); // o arquivo original não fica no computador
+                if (auto* nm = plater->get_notification_manager())
+                    nm->push_notification(titulo + ": modelo do catálogo Filuna aberto para imprimir (não pode ser salvo nem exportado).");
+                std::thread([eid, token] { farm_http("POST", "/modelos3d/envios/" + eid, {{"estado", "aberto"}}, token); }).detach();
+                evento("modelo3d.aberto", {{"id", eid}});
+            });
+        }).detach();
+        return json::object();
+    }
     throw std::runtime_error("Ação da Farm desconhecida.");
+}
+
+// ---------------- Modelos 3D do catálogo: só imprimir ----------------
+namespace { std::atomic<bool> g_protegido{false}; }
+bool modelo_protegido() { return g_protegido.load(); }
+void proteger_modelo(bool ligar) { g_protegido = ligar; }
+bool saida_barrada()
+{
+    if (!g_protegido)
+        return false;
+    MessageDialog dlg(wxGetApp().mainframe,
+                      wxString::FromUTF8("Este projeto tem um modelo 3D do catálogo Filuna. Ele pode ser impresso nas suas impressoras, "
+                                         "mas não pode ser salvo nem exportado (projeto, 3MF, STL, G-code ou arquivo fatiado).\n\n"
+                                         "Para trabalhar com outros arquivos, comece um projeto novo."),
+                      wxString::FromUTF8("Modelo do catálogo Filuna"), wxOK | wxICON_INFORMATION);
+    dlg.ShowModal();
+    return true;
 }
 
 void farm_iniciar()
