@@ -322,3 +322,25 @@ $(function () {
 	setTimeout(FlSupCarregar, 1500);
 	setInterval(function () { if (!document.hidden) FlSupCarregar(); }, 120000);
 });
+
+
+// ---------- Modelos 3D do site na tela inicial ----------
+function FlM3dCarregar() {
+	fetch("https://filuna3d.com/api/slicer/v1/modelos3d").then(function (r) { return r.json(); }).then(function (d) {
+		var ms = (d && d.modelos) || [];
+		if (!ms.length) return;
+		var tempo = function (s) { s = +s || 0; return s >= 3600 ? Math.floor(s / 3600) + "h" + ("0" + Math.floor(s % 3600 / 60)).slice(-2) : Math.max(1, Math.round(s / 60)) + " min"; };
+		var h = "";
+		ms.forEach(function (m, k) {
+			h += '<a class="m3d-cartao" data-k="' + k + '"><span class="foto"><img src="' + FlEsc(m.capa) + '" alt="" loading="lazy"></span><span class="txt">' +
+				'<span class="cat">' + FlEsc(m.categoria || "") + "</span><b>" + FlEsc(m.titulo) + '</b><span class="pontos">' +
+				(m.cores || []).map(function (c) { return '<i style="--c:' + FlEsc(c.hex) + '" title="' + FlEsc(c.nome || "") + '"></i>'; }).join("") + "</span>" +
+				(m.tempo_s ? '<span class="dados"><span>' + tempo(m.tempo_s) + "</span><span>" + m.gramas + ' g</span><span class="preco">vende por R$ ' + Number(m.preco).toFixed(2).replace(".", ",") + "</span></span>" : "") +
+				"</span></a>";
+		});
+		$("#FlM3dGrade").html(h);
+		$("#FlM3d").show();
+		$("#FlM3dGrade .m3d-cartao").on("click", function () { var m = ms[+$(this).attr("data-k")]; if (m && m.link) OpenWikiUrl(m.link); });
+	}).catch(function () { /* sem internet: a seção simplesmente não aparece */ });
+}
+$(function () { FlM3dCarregar(); });

@@ -1,6 +1,7 @@
 #include "MainFrame.hpp"
 #include "FilunaPanel.hpp"
 #include "FilunaImpressao.hpp"
+#include "FilunaAutoajuda.hpp"
 #include <initializer_list>
 
 #include <wx/event.h>
@@ -2409,11 +2410,41 @@ wxBoxSizer* MainFrame::create_side_tools()
     const StateColor nav_icon_bg(std::pair{wxColour(246, 239, 231), (int) StateColor::Hovered},
                                  std::pair{wxColour(255, 253, 251), (int) StateColor::Normal});
     auto* help_btn = new Button(this, "", "filuna_nav_help", wxNO_BORDER, 20);
-    help_btn->SetToolTip(_L("Keyboard Shortcuts"));
+    help_btn->SetToolTip(wxString::FromUTF8("Autoajuda"));
     help_btn->SetBackgroundColor(nav_icon_bg);
     help_btn->SetCornerRadius(FromDIP(18));
     help_btn->SetMinSize(FromDIP(wxSize(36, 36)));
-    help_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxGetApp().keyboard_shortcuts(ShortcutContext::Global); });
+    // Filuna — Autoajuda: o "?" liga/desliga as explicações em português dos parâmetros e dá acesso aos atalhos
+    help_btn->Bind(wxEVT_BUTTON, [this, help_btn](wxCommandEvent&) {
+        wxMenu menu;
+        const int id_auto = wxWindow::NewControlId(), id_atalhos = wxWindow::NewControlId(), id_como = wxWindow::NewControlId();
+        menu.AppendCheckItem(id_auto, wxString::FromUTF8("Autoajuda: explicar cada parâmetro ao passar o mouse"))->Check(FilunaAutoajuda::ligada());
+        menu.Append(id_como, wxString::FromUTF8("Como usar a Autoajuda"));
+        menu.AppendSeparator();
+        menu.Append(id_atalhos, wxString::FromUTF8("Atalhos do teclado"));
+        const int escolha = help_btn->GetPopupMenuSelectionFromUser(menu, wxPoint(0, help_btn->GetSize().GetHeight()));
+        if (escolha == id_auto) {
+            const bool agora = !FilunaAutoajuda::ligada();
+            FilunaAutoajuda::ligar(agora);
+            MessageDialog dlg(this,
+                              wxString::FromUTF8(agora ? "Autoajuda ligada.\n\nNa Preparação, pare o mouse sobre um parâmetro (altura da camada, voltas da parede, "
+                                                         "preenchimento, suporte…) para ver o que ele faz e o efeito na peça.\n\nVale para os campos abertos a partir de agora; "
+                                                         "os que já estão na tela passam a mostrar ao trocar de aba de parâmetros." :
+                                                         "Autoajuda desligada. As dicas voltam ao texto curto original."),
+                              wxString::FromUTF8("Autoajuda"), wxOK);
+            dlg.ShowModal();
+        } else if (escolha == id_como) {
+            MessageDialog dlg(this,
+                              wxString::FromUTF8("A Autoajuda explica cada parâmetro de impressão em português simples.\n\n"
+                                                 "1. Deixe a Autoajuda ligada (este mesmo botão).\n"
+                                                 "2. Na Preparação, pare o mouse sobre o campo que quer entender.\n"
+                                                 "3. Aparece um cartão com o nome, o que o parâmetro faz e o efeito na peça.\n\n"
+                                                 "Ela não muda nenhum valor: só explica."),
+                              wxString::FromUTF8("Autoajuda"), wxOK);
+            dlg.ShowModal();
+        } else if (escolha == id_atalhos)
+            wxGetApp().keyboard_shortcuts(ShortcutContext::Global);
+    });
 
     auto* gear_btn = new Button(this, "", "filuna_nav_gear", wxNO_BORDER, 20);
     gear_btn->SetToolTip(_L("Preferences"));

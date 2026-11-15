@@ -2,6 +2,7 @@
 #include "GUI_App.hpp"
 #include "I18N.hpp"
 #include "Field.hpp"
+#include "FilunaAutoajuda.hpp"
 #include "ColorPickerDialog.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 #include "wxExtensions.hpp"
@@ -408,6 +409,10 @@ void Field::toggle(bool en) { en && !m_opt.readonly ? enable() : disable(); }
 
 wxString Field::get_tooltip_text(const wxString &default_string)
 {
+    // Filuna — Autoajuda ligada: cartão em português simples (título, o que faz, efeito) no lugar da dica original
+    const wxString filuna = FilunaAutoajuda::cartao(m_opt_id);
+    if (!filuna.empty())
+        return filuna;
     wxString tooltip_text = get_formatted_tooltip_text(m_opt, m_opt_id);
 
     return tooltip_text.length() > 0 ? tooltip_text : default_string;
