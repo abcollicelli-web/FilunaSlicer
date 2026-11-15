@@ -1,6 +1,7 @@
 #include "FilunaElegooCC2Agent.hpp"
 
 #include <algorithm>
+#include <boost/algorithm/string.hpp>
 #include <atomic>
 #include <chrono>
 #include <fstream>
@@ -122,7 +123,8 @@ json FilunaElegooCC2Agent::to_push_status(const json& s)
                 tr["tray_type"]  = t.value("filament_type", std::string());
                 tr["tray_info_idx"] = ""; // sem este campo o DeviceManager descarta o tipo (PLA, PETG, ABS…)
                 tr["tray_color"] = hex_rgba(t.value("filament_color", std::string()));
-                tr["tray_sub_brands"] = t.value("brand", std::string());
+                // marca e linha do filamento ("ELEGOO" + "PLA+"): o perfil de impressão é escolhido por marca e tipo
+                tr["tray_sub_brands"] = boost::trim_copy(t.value("brand", std::string()) + " " + t.value("filament_name", std::string()));
                 trays.push_back(tr);
             }
             units.push_back({{"id", std::to_string(c.value("canvas_id", 0))}, {"tray", trays}});
@@ -243,6 +245,21 @@ void FilunaElegooCC2Agent::on_mqtt(const std::string& topic, const std::string& 
             Filuna::set_camera_url(m_sn, result["url"].get<std::string>());
             BOOST_LOG_TRIVIAL(info) << "FilunaElegooCC2Agent: câmera ao vivo em " << result["url"].get<std::string>();
         }
+        // resposta do método 1044 (GetFileList): arquivos guardados na impressora
+        if (result.contains("file_list") && result["file_list"].is_array()) {
+            std::vector<json> fl;
+            for (const auto& f : result["file_list"])
+                if (f.is_object() && f.contains("filename") && f["filename"].is_string())
+                    fl.push_back({{"nome", f["filename"]},
+                                  {"impresso_em", f.value("last_print_time", 0LL) > 0 ? f.value("last_print_time", 0LL) : f.value("create_time", 0LL)},
+                                  {"vezes", f.value("total_print_times", 0)},
+                                  {"tempo_s", f.value("print_time", 0LL)}});
+            std::sort(fl.begin(), fl.end(), [](const json& a, const json& b) { return a.value("impresso_em", 0LL) > b.value("impresso_em", 0LL); });
+            if (fl.size() > 8)
+                fl.resize(8);
+            Filuna::set_arquivos(m_sn, json(fl).dump());
+            return; // lista não é estado da impressora
+        }
         m_status.merge_patch(result);
         snapshot = m_status;
     }
@@ -340,6 +357,7 @@ int FilunaElegooCC2Agent::connect_printer(const PrinterConnectionParams& p)
     request(1002, json::object()); // estado
     request(2005, json::object()); // canvas (cores)
     request(1042, json::object()); // endereço da câmera ao vivo
+    request(1044, json{{"storage_media", "local"}, {"offset", 0}, {"limit", 20}}); // arquivos guardados na impressora
     dispatch_connect(ConnectStatusOk, "");
     if (m_on_connected)
         m_on_connected(base + "api_status");

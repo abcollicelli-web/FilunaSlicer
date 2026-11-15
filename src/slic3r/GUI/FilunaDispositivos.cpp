@@ -12,6 +12,9 @@
 #include "DeviceCore/DevBed.h"
 #include "DeviceCore/DevExtruderSystem.h"
 #include "DeviceCore/DevFilaSystem.h"
+#include "DeviceCore/DevFan.h"
+#include "DeviceCore/DevLamp.h"
+#include "DeviceCore/DevDefs.h"
 #include "libslic3r/AppConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/Utils.hpp"
@@ -21,6 +24,7 @@
 #include "slic3r/Utils/NetworkAgentFactory.hpp"
 #include "slic3r/Utils/FilunaCameraUrls.hpp"
 
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -65,6 +69,18 @@ const std::map<std::string, std::vector<std::string>> CONTROLES = {
                            "carregar", "descarregar", "emergencia"}},
     {"filuna_anycubic_lan", {"bico", "mesa", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade", "secar"}},
 };
+
+// Marcas sem tabela própria acima falam os comandos padrão do programa (os mesmos do painel nativo): Bambu
+// (LAN ou conta), Snapmaker, QIDI, Creality, Klipper/Moonraker. Para elas os controles saem pelos comandos do
+// MachineObject, numa regra só — marca nova que fale o padrão já nasce com controles.
+const std::vector<std::string> CONTROLES_PADRAO = {"bico", "mesa", "home", "mover", "luz", "ventilador", "ventilador_aux",
+                                                   "ventilador_caixa", "velocidade"};
+
+const std::vector<std::string>& controles_do_agente(const std::string& agente)
+{
+    auto it = CONTROLES.find(agente);
+    return it != CONTROLES.end() ? it->second : CONTROLES_PADRAO;
+}
 
 // Controles que o protocolo da marca só aceita com uma impressão em andamento. Parada, a tela não os oferece
 // (e diz por quê) em vez de mostrar um botão que a impressora ignora.
@@ -279,10 +295,15 @@ json card(MachineObject* o)
         c["bico"] = {{"atual", ext->GetNozzleTempCurrent(0)}, {"alvo", ext->GetNozzleTempTarget(0)}};
     auto ctl = CONTROLES.find(o->printer_agent_id);
     json controles = json::array(), espera = json::array();
-    if (ctl != CONTROLES.end()) {
+    {
         auto so = SO_IMPRIMINDO.find(o->printer_agent_id);
         const bool imprimindo = o->is_in_printing();
-        for (const std::string& k : ctl->second) {
+        std::vector<std::string> lista = controles_do_agente(o->printer_agent_id);
+        if (ctl == CONTROLES.end() && !cores_de(o).empty()) { // padrão + sistema de cores: carregar/descarregar
+            lista.push_back("carregar");
+            lista.push_back("descarregar");
+        }
+        for (const std::string& k : lista) {
             const bool precisa = so != SO_IMPRIMINDO.end() && std::find(so->second.begin(), so->second.end(), k) != so->second.end();
             (precisa && !imprimindo ? espera : controles).push_back(k);
         }
@@ -292,6 +313,9 @@ json card(MachineObject* o)
     const std::string cam = Filuna::camera_url(o->get_dev_id());
     if (!cam.empty())
         c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu
+    const json arqs = json::parse(Filuna::arquivos(o->get_dev_id()), nullptr, false);
+    if (arqs.is_array() && !arqs.empty())
+        c["arquivos"] = arqs; // últimos arquivos guardados na impressora
     return c;
 }
 
@@ -669,7 +693,8 @@ json controle(const std::string& dev_id, const json& d)
         return {{"erro", "Abra o cartão da impressora antes de comandar."}};
     const std::string tipo = d.value("tipo", std::string());
     auto ctl = CONTROLES.find(o->printer_agent_id);
-    if (ctl == CONTROLES.end() || std::find(ctl->second.begin(), ctl->second.end(), tipo) == ctl->second.end())
+    const bool padrao = ctl == CONTROLES.end();
+    if (!padrao && std::find(ctl->second.begin(), ctl->second.end(), tipo) == ctl->second.end())
         return {{"erro", "Este controle ainda não existe para esta impressora."}};
     auto limitar = [&](const char* k, double lo, double hi) {
         double v = d.contains(k) && d[k].is_number() ? d[k].get<double>() : 0.0;
@@ -712,7 +737,36 @@ json controle(const std::string& dev_id, const json& d)
         if (so != SO_IMPRIMINDO.end() && std::find(so->second.begin(), so->second.end(), tipo) != so->second.end())
             return {{"erro", "Esta impressora só aceita este ajuste durante uma impressão."}};
     }
-    const int r = o->publish_json(json{{"filuna", f}}, 1);
+    int r = 0;
+    if (padrao) {
+        // comandos padrão do programa (mesmos do painel nativo)
+        if (tipo == "bico")
+            r = o->command_set_nozzle(f.value("valor", 0));
+        else if (tipo == "mesa")
+            r = o->command_set_bed(f.value("valor", 0));
+        else if (tipo == "home")
+            r = o->command_go_home();
+        else if (tipo == "mover")
+            r = o->command_axis_control(boost::to_upper_copy(f.value("eixo", std::string("x"))), 1.0, f.value("distancia", 0.0),
+                                        f.value("eixo", std::string()) == "z" ? 900 : 3000);
+        else if (tipo == "luz")
+{
+            if (o->GetLamp() == nullptr)
+                r = -1;
+            else
+                o->GetLamp()->CtrlSetChamberLight(f.value("ligar", false) ? DevLamp::LIGHT_EFFECT_ON : DevLamp::LIGHT_EFFECT_OFF);
+        }
+        else if (tipo == "ventilador" || tipo == "ventilador_aux" || tipo == "ventilador_caixa")
+            r = o->GetFan() != nullptr ? o->GetFan()->command_control_fan(tipo == "ventilador" ? 1 : tipo == "ventilador_aux" ? 2 : 3,
+                                                                          f.value("valor", 0) * 255 / 100) : -1;
+        else if (tipo == "velocidade")
+            r = o->command_set_printing_speed(DevPrintingSpeedLevel(std::max(1, std::min(4, f.value("valor", 2) + 1))));
+        else if (tipo == "carregar" || tipo == "descarregar")
+            r = o->command_ams_change_filament(tipo == "carregar", std::to_string(f.value("unidade", 0)), std::to_string(f.value("slot", 0)));
+        else
+            return {{"erro", "Este controle ainda não existe para esta impressora."}};
+    } else
+        r = o->publish_json(json{{"filuna", f}}, 1);
     if (r != 0)
         return {{"erro", "A impressora não aceitou o comando (" + std::to_string(r) + ")."}};
     return {{"ok", true}};

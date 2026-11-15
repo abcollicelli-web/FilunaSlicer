@@ -6146,6 +6146,7 @@ std::map<int, DynamicPrintConfig> Sidebar::build_filament_ams_list(MachineObject
         tray_config.set_key_value("ams_id", new ConfigOptionStrings{ams_id});
         tray_config.set_key_value("slot_id", new ConfigOptionStrings{slot_id});
         tray_config.set_key_value("filament_type", new ConfigOptionStrings{tray.m_fila_type});
+        tray_config.set_key_value("filament_brand", new ConfigOptionStrings{tray.sub_brands}); // Filuna: marca/linha lida da impressora
         tray_config.set_key_value("tray_name", new ConfigOptionStrings{ name });
         tray_config.set_key_value("filament_colour", new ConfigOptionStrings{into_u8(wxColour("#" + tray.color).GetAsString(wxC2S_HTML_SYNTAX))});
         tray_config.set_key_value("filament_multi_colour", new ConfigOptionStrings{});
@@ -6353,7 +6354,7 @@ void Sidebar::filuna_sync_filamentos(MachineObject* obj)
         if (!tipo.empty()) {
             id = tray.opt_string("filament_id", 0u);
             if (id.empty() || !bundle->get_filament_by_filament_id(id).has_value())
-                id = FilunaImpressao::filamento_id_do_tipo(tipo);
+                id = FilunaImpressao::filamento_id_do_tipo(tipo, tray.has("filament_brand") ? tray.opt_string("filament_brand", 0u) : std::string());
             if (id.empty())
                 id = "FILUNA-" + tipo; // sem perfil do tipo: o sincronizador cai no genérico e avisa
             ++com_material;

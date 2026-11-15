@@ -302,27 +302,43 @@ bool agente_filuna()
     return boost::starts_with(agente_ativo(), "filuna_");
 }
 
-std::string filamento_id_do_tipo(const std::string& tipo)
+std::string filamento_id_do_tipo(const std::string& tipo, const std::string& marca)
 {
     PresetBundle* bundle = wxGetApp().preset_bundle;
     if (bundle == nullptr || tipo.empty())
         return {};
     const Preset&     impressora = bundle->printers.get_edited_preset();
-    const std::string marca      = impressora.vendor != nullptr ? impressora.vendor->id : std::string();
-    std::string       da_marca, generico, qualquer;
+    const std::string da_impressora = impressora.vendor != nullptr ? boost::to_lower_copy(impressora.vendor->id) : std::string();
+    // palavras da marca lida do carretel: a primeira é o fabricante ("elegoo"), as demais a linha ("pla+", "silk"…)
+    std::vector<std::string> palavras;
+    {
+        std::string m = boost::to_lower_copy(marca);
+        boost::split(palavras, m, boost::is_any_of(" \t_-/"), boost::token_compress_on);
+        palavras.erase(std::remove_if(palavras.begin(), palavras.end(), [](const std::string& w) { return w.size() < 2; }), palavras.end());
+    }
+    std::string melhor;
+    int         nota_melhor = -1;
     for (const Preset& f : bundle->filaments) {
         if (!f.is_compatible || f.filament_id.empty() || bundle->filaments.get_preset_base(f) != &f)
             continue;
         if (!boost::iequals(f.config.opt_string("filament_type", 0u), tipo))
             continue;
-        if (da_marca.empty() && !marca.empty() && boost::istarts_with(f.name, marca))
-            da_marca = f.filament_id;
-        if (generico.empty() && boost::istarts_with(f.name, "Generic"))
-            generico = f.filament_id;
-        if (qualquer.empty())
-            qualquer = f.filament_id;
+        const std::string nome = boost::to_lower_copy(f.name);
+        int               nota = 0;
+        if (!palavras.empty() && nome.find(palavras.front()) != std::string::npos) {
+            nota += 100; // perfil da marca do filamento
+            for (std::size_t k = 1; k < palavras.size(); ++k)
+                if (nome.find(palavras[k]) != std::string::npos)
+                    nota += 10; // e da mesma linha
+        }
+        if (!da_impressora.empty() && boost::starts_with(nome, da_impressora))
+            nota += 5;
+        if (boost::starts_with(nome, "generic"))
+            nota += 2;
+        if (nota > nota_melhor)
+            nota_melhor = nota, melhor = f.filament_id;
     }
-    return !da_marca.empty() ? da_marca : !generico.empty() ? generico : qualquer;
+    return melhor;
 }
 
 void imprimir(int plate_idx)

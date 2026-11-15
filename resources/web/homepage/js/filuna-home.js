@@ -204,9 +204,9 @@ function FlMB(b) { return (Math.max(0, b || 0) / 1048576).toFixed(1).replace("."
 
 function FlUpdDesenhar() {
 	var e = m_FlUpd, s = e.situacao;
-	var mostra = s == "disponivel" || s == "baixando" || s == "aplicando" || s == "erro";
+	var mostra = s == "pronto" || s == "disponivel" || s == "baixando" || s == "aplicando" || s == "erro";
 	$("#FlUpdAviso").toggle(mostra);
-	$("#FlUpdAviso .t").text(s == "baixando" ? "Baixando atualização… " + (e.feito || 0) + "%" : s == "aplicando" ? "Aplicando atualização…" : s == "erro" ? "Atualização não concluída" : "Atualização disponível");
+	$("#FlUpdAviso .t").text(s == "baixando" ? "Baixando atualização… " + (e.feito || 0) + "%" : s == "aplicando" ? "Aplicando atualização…" : s == "erro" ? "Atualização não concluída" : s == "pronto" ? "Atualização pronta · clique para aplicar" : "Atualização disponível");
 	$("#FlVersaoAtual").text(e.versao ? "Versão " + e.versao + " · " + (e.build || "") : "");
 	if (!$("#FlUpdJanela").is(":visible")) return;
 	$("#FlUpdTitulo").text("Filuna Slicer " + (e.nova_versao || ""));
@@ -216,10 +216,10 @@ function FlUpdDesenhar() {
 	h = "";
 	(e.internos || []).forEach(function (n) { h += "<span>" + FlEsc(n) + "</span>"; });
 	$("#FlUpdInternos").html(h).toggle(!!h);
-	$("#FlUpdTam").text(e.tamanho ? "Download: " + FlMB(e.tamanho) + (e.tipo == "delta" ? " (só o que mudou)" : "") : "");
+	$("#FlUpdTam").text(s == "pronto" ? "Download concluído" : e.tamanho ? "Download: " + FlMB(e.tamanho) + (e.tipo == "delta" ? " (só o que mudou)" : "") : "");
 	var ocupado = s == "baixando" || s == "aplicando";
 	$("#FlUpdBarra").toggle(ocupado); $("#FlUpdBarra i").css("width", (s == "aplicando" ? 100 : (e.feito || 0)) + "%");
-	$("#FlUpdMsg").text(s == "baixando" ? "Baixando… " + (e.feito || 0) + "%" : s == "aplicando" ? "Pronto. O Filuna vai fechar e abrir de novo sozinho." : s == "erro" ? (e.erro || "Não deu certo.") + " O erro já foi enviado para a Filuna." : "O Filuna fecha, atualiza e abre de novo sozinho.").toggleClass("erro", s == "erro");
+	$("#FlUpdMsg").text(s == "baixando" ? "Baixando… " + (e.feito || 0) + "%" : s == "aplicando" ? "Pronto. O Filuna vai fechar e abrir de novo sozinho." : s == "erro" ? (e.erro || "Não deu certo.") + " O erro já foi enviado para a Filuna." : s == "pronto" ? "Já está baixada. O Filuna fecha uma vez, aplica e abre de novo sozinho." : "O Filuna fecha, atualiza e abre de novo sozinho.").toggleClass("erro", s == "erro");
 	$("#FlUpdAgora").prop("disabled", ocupado).text(s == "erro" ? "Tentar de novo" : "Atualizar agora");
 	$("#FlUpdDepois").prop("disabled", ocupado);
 }

@@ -457,7 +457,7 @@ public:
         // is shown. The previous 1500 ms auto-timeout closed the splash long
         // before init finished, leaving the user staring at a frozen blank
         // screen during the slow load_presets / new MainFrame phases.
-        : wxSplashScreen(wxBitmap(FromDIP(wxSize(480,480),nullptr)), wxSPLASH_CENTRE_ON_SCREEN, 0, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+        : wxSplashScreen(wxBitmap(FromDIP(wxSize(440,560),nullptr)), /* Filuna: abertura em pé, com a personagem */ wxSPLASH_CENTRE_ON_SCREEN, 0, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize,
 #ifdef __APPLE__
             wxBORDER_NONE | wxFRAME_NO_TASKBAR | wxSTAY_ON_TOP
 #else
@@ -482,7 +482,6 @@ public:
         this->SetPosition(pos);
         this->CenterOnScreen();
 
-        scale_font(m_font_version, 1.65f); // only scale this one since it hasnt a preloaded font like Label::Body_24;
 
         m_bg_color = StateColor::darkModeColorFor(wxColour("#FFFFFF"));
         m_fg_color = StateColor::darkModeColorFor(wxColour("#6B6A6A"));
@@ -493,6 +492,10 @@ public:
         BitmapCache bmp_cache;
         if (wxBitmap *logo = bmp_cache.load_png("Filuna_splash", sz.GetWidth(), sz.GetHeight()))
             m_logo_bmp = *logo;
+        // Filuna: flor da personagem, que preenche a barra de carregamento
+        m_flor_px = FromDIP(18);
+        if (wxBitmap *flor = bmp_cache.load_png("Filuna_flor", m_flor_px, m_flor_px))
+            m_flor_bmp = *flor;
 
         m_window->Bind(wxEVT_PAINT, &SplashScreen::OnPaint, this);
         m_window->Refresh();
@@ -509,30 +512,35 @@ public:
         if (m_logo_bmp.IsOk())
             dc.DrawBitmap(m_logo_bmp, 0, 0, true);
 
-        wxRect rc = wxRect(0, 0, c_sz.GetWidth(), 0);
-        dc.SetTextForeground(m_fg_color);
-
-        dc.SetFont(m_font_version);
-        rc.y      = c_sz.GetHeight() * 0.72;
-        rc.height = dc.GetTextExtent(m_text_version).GetHeight();
-        dc.DrawLabel(m_text_version, rc, wxALIGN_CENTER);
-
+        // Filuna: personagem e logo oficial vêm na arte; aqui entram a barra (flores preenchendo), o que está
+        // carregando e a versão.
+        const int w = c_sz.GetWidth(), h = c_sz.GetHeight();
+        const int bar_h = FromDIP(14), bar_w = w * 62 / 100, bar_x = (w - bar_w) / 2, bar_y = h * 885 / 1000;
+        dc.SetPen(*wxTRANSPARENT_PEN);
+        dc.SetBrush(wxBrush(wxColour(241, 217, 189)));
+        dc.DrawRoundedRectangle(bar_x, bar_y, bar_w, bar_h, bar_h / 2);
+        const int fill = bar_w * m_progress / 100;
+        if (fill > bar_h) {
+            dc.SetBrush(wxBrush(wxColour(233, 190, 150)));
+            dc.DrawRoundedRectangle(bar_x, bar_y, fill, bar_h, bar_h / 2);
+        }
+        if (m_flor_bmp.IsOk()) {
+            const int passo = m_flor_px + FromDIP(4);
+            for (int x = bar_x; x + m_flor_px <= bar_x + std::max(fill, m_flor_px); x += passo)
+                dc.DrawBitmap(m_flor_bmp, x, bar_y + (bar_h - m_flor_px) / 2, true);
+        }
+        wxRect rc = wxRect(0, 0, w, 0);
+        dc.SetTextForeground(wxColour(94, 78, 74));
         dc.SetFont(m_font_action);
-        rc.y      = c_sz.GetHeight() * 0.85;
+        rc.y      = bar_y + bar_h + FromDIP(8);
         rc.height = dc.GetTextExtent(m_text_action).GetHeight();
         dc.DrawLabel(m_text_action, rc, wxALIGN_CENTER);
-
-        const wxRect progress_rc(0, c_sz.GetHeight() - m_progress_h, c_sz.GetWidth(), m_progress_h);
-                
-        dc.SetPen(*wxTRANSPARENT_PEN);
-        dc.SetBrush(wxBrush(m_progress_bg_color));
-        dc.DrawRectangle(progress_rc);
-
-        const int fill_width = progress_rc.GetWidth() * m_progress * 0.01;
-        if (fill_width > 0) {
-            dc.SetBrush(wxBrush(m_progress_fg_color));
-            dc.DrawRectangle(0, progress_rc.GetTop(), fill_width, m_progress_h);
-        }
+        dc.SetFont(m_font_version);
+        dc.SetTextForeground(wxColour(150, 132, 122));
+        const wxString versao = "Filuna Slicer " + m_text_version;
+        rc.y      = h - dc.GetTextExtent(versao).GetHeight() - FromDIP(4);
+        rc.height = dc.GetTextExtent(versao).GetHeight();
+        dc.DrawLabel(versao, rc, wxALIGN_CENTER);
     }
 
     void SetText(const wxString& text, int progress)
@@ -580,6 +588,8 @@ public:
 
 private:
     wxBitmap m_logo_bmp;
+    wxBitmap m_flor_bmp;
+    int      m_flor_px = 18;
     wxColour m_fg_color;
     wxColour m_bg_color;
     wxColour m_progress_bg_color;
@@ -590,8 +600,8 @@ private:
     int      m_progress     = 0;
     int      m_progress_h   = 6;
 
-    wxFont m_font_version = Label::Body_16;
-    wxFont m_font_action  = Label::Body_16;
+    wxFont m_font_version = Label::Body_12;
+    wxFont m_font_action  = Label::Body_14;
 };
 
 #ifdef __linux__

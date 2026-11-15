@@ -24,8 +24,10 @@ bool agente_filuna();
 // Janela de envio (impressora, arquivo, entrada de cada filamento) e envio do G-code da mesa.
 void imprimir(int plate_idx);
 
-// filament_id de um perfil de filamento compatível com a impressora ativa para o tipo ("PLA", "PETG"…).
-// Prefere o perfil da própria marca, depois o genérico. Vazio quando não há nenhum.
-std::string filamento_id_do_tipo(const std::string& tipo);
+// filament_id de um perfil de filamento compatível com a impressora ativa, por MARCA e tipo: cada marca de
+// filamento tem o seu perfil de impressão. `marca` é o que a impressora leu do carretel ("ELEGOO PLA+",
+// "Anycubic", sku…); pode vir vazia. Ordem: perfil da marca do filamento e da mesma linha, perfil da marca do
+// filamento, perfil da marca da impressora, genérico, qualquer um do tipo. Vazio quando não há nenhum.
+std::string filamento_id_do_tipo(const std::string& tipo, const std::string& marca = std::string());
 
 }}} // namespace Slic3r::GUI::FilunaImpressao

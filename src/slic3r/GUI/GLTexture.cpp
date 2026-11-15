@@ -304,7 +304,10 @@ bool GLTexture::load_from_svg_files_as_sprites_array(const std::vector<std::stri
     if (filenames.empty() || states.empty() || sprite_size_px == 0)
         return false;
 
-    bool dark_mode = wxGetApp().app_config->get("dark_color_mode") == "1";
+    // Filuna (Direção Visual C): a área 3D e as barras dentro dela são sempre escuras, mesmo com o programa no
+    // tema claro. Com as cores do tema claro, o ícone habilitado saía grafite sobre a barra escura (sumia ao
+    // selecionar o objeto) e só o desabilitado aparecia.
+    bool dark_mode = true;
 
     // every tile needs to have a 1px border around it to avoid artifacts when linear sampling on its edges
     unsigned int sprite_size_px_ex = sprite_size_px + 1;

@@ -46,6 +46,8 @@ const char* const CHAVE = "54e050b44876dfb8738a9913aa323f89b4df4cc20813ba8d7aa8e
 const size_t      PACOTE_MAX = 600u * 1024u * 1024u;
 
 std::mutex  g_trava;
+std::string g_pronto_para;   // versão já baixada e extraída, à espera de aplicar
+fs::path    g_pronto_em;
 json        g_estado = {{"situacao", "ocioso"}}; // ocioso | verificando | atual | disponivel | baixando | aplicando | erro
 json        g_doc;                               // documento assinado da atualização disponível
 std::string g_token;
@@ -159,6 +161,8 @@ std::string token_atual()
     return g_token;
 }
 
+void preparar_em_segundo_plano();
+
 void verificar_agora()
 {
     const std::string token = token_atual();
@@ -201,12 +205,19 @@ void verificar_agora()
             situacao("ocioso");
             return;
         }
+        bool ja_pronto = false;
         {
             std::lock_guard<std::mutex> g(g_trava);
             g_doc = doc;
+            ja_pronto = !g_pronto_para.empty() && g_pronto_para == doc.value("para", std::string());
         }
         g_ocupado = false;
+        if (ja_pronto) {
+            situacao("pronto"); // já baixada nesta sessão: só falta aplicar
+            return;
+        }
         situacao("disponivel");
+        preparar_em_segundo_plano();
     }).detach();
 }
 
@@ -270,6 +281,105 @@ bool lancar_aplicacao(const fs::path& arquivos, const json& remover, std::string
 }
 #endif
 
+// Baixa, confere e extrai o pacote da atualização numa pasta de espera. Não fecha nem troca nada.
+bool baixar_e_extrair(const json& doc, const std::string& token, fs::path& arquivos, std::string& motivo, bool mostrar)
+{
+    const std::string para = doc.value("para", std::string()), arquivo = doc["pacote"].value("arquivo", std::string()),
+                      sha = doc["pacote"].value("sha256", std::string());
+    if (!F::Recursos::versao_valida(para) || arquivo.find('/') != std::string::npos || arquivo.find("..") != std::string::npos) {
+        motivo = "documento de atualização inválido";
+        return false;
+    }
+    const fs::path base = pasta_espera() / para, zip = base / "pacote.zip";
+    arquivos = base / "arquivos";
+    boost::system::error_code ec;
+    fs::remove_all(pasta_espera(), ec);
+    fs::create_directories(arquivos);
+    if (mostrar)
+        situacao("baixando", {{"feito", 0}});
+    std::string corpo, erro;
+    unsigned    status = 0;
+    int         ultimo = -1;
+    Http http = Http::get(std::string(SITE) + "/api/slicer/v1/app/pacote/" + arquivo);
+    http.tls_verify(true);
+    http.timeout_connect(15);
+    http.timeout_max(3600);
+    http.header("Authorization", "Bearer " + token)
+        .on_progress([&](Http::Progress p, bool&) {
+            const int pct = p.dltotal > 0 ? int(p.dlnow * 100 / p.dltotal) : 0;
+            if (pct != ultimo) {
+                ultimo = pct;
+                if (mostrar)
+                    situacao("baixando", {{"feito", pct}});
+            }
+        })
+        .on_complete([&](std::string b, unsigned st) { corpo = std::move(b), status = st; })
+        .on_error([&](std::string b, std::string e, unsigned st) { status = st, erro = e.empty() ? "HTTP " + std::to_string(st) : e; })
+        .perform_sync();
+    if (status != 200) {
+        motivo = "download da atualização recusado (" + (erro.empty() ? std::to_string(status) : erro) + ")";
+        return false;
+    }
+    if (corpo.size() > PACOTE_MAX) {
+        motivo = "pacote de atualização grande demais";
+        return false;
+    }
+    {
+        fs::ofstream o(zip, std::ios::binary | std::ios::trunc);
+        o.write(corpo.data(), std::streamsize(corpo.size()));
+        if (!o.good()) {
+            motivo = "não gravou o pacote da atualização no disco";
+            return false;
+        }
+    }
+    if (F::sha256_de_arquivo(zip.string()) != sha) {
+        motivo = "SHA-256 do pacote da atualização não confere";
+        return false;
+    }
+    if (!extract_archive_confined(zip.string(), arquivos.string())) {
+        motivo = "não extraiu o pacote da atualização";
+        return false;
+    }
+    fs::remove(zip, ec);
+    return true;
+}
+
+// Achou atualização: baixa e deixa pronta com o programa aberto. Fechar fica só para a hora de aplicar.
+void preparar_em_segundo_plano()
+{
+    json doc;
+    {
+        std::lock_guard<std::mutex> g(g_trava);
+        doc = g_doc;
+    }
+    const std::string token = token_atual();
+    if (doc.is_null() || token.empty() || g_ocupado.exchange(true))
+        return;
+    std::thread([doc, token] {
+#ifdef _WIN32
+        try {
+            fs::path    arquivos;
+            std::string motivo;
+            if (baixar_e_extrair(doc, token, arquivos, motivo, false)) {
+                {
+                    std::lock_guard<std::mutex> g(g_trava);
+                    g_pronto_para = doc.value("para", std::string());
+                    g_pronto_em   = arquivos;
+                }
+                g_ocupado = false;
+                situacao("pronto");
+                return;
+            }
+            BOOST_LOG_TRIVIAL(warning) << "Filuna atualização: preparo em segundo plano falhou: " << motivo;
+        } catch (const std::exception& e) {
+            BOOST_LOG_TRIVIAL(warning) << "Filuna atualização: preparo em segundo plano: " << e.what();
+        }
+#endif
+        g_ocupado = false;
+        situacao("disponivel"); // não preparou: o aviso continua, e aplicar baixa na hora
+    }).detach();
+}
+
 void aplicar_agora()
 {
     json doc;
@@ -291,49 +401,21 @@ void aplicar_agora()
         return;
 #else
         try {
-            const std::string para = doc.value("para", std::string()), arquivo = doc["pacote"].value("arquivo", std::string()),
-                              sha = doc["pacote"].value("sha256", std::string());
-            if (!F::Recursos::versao_valida(para) || arquivo.find('/') != std::string::npos || arquivo.find("..") != std::string::npos)
-                return falha("documento de atualização inválido");
-            const fs::path base = pasta_espera() / para, zip = base / "pacote.zip", arquivos = base / "arquivos";
-            boost::system::error_code ec;
-            fs::remove_all(pasta_espera(), ec);
-            fs::create_directories(arquivos);
-            situacao("baixando", {{"feito", 0}});
-            std::string corpo, erro;
-            unsigned    status = 0;
-            int         ultimo = -1;
-            Http http = Http::get(std::string(SITE) + "/api/slicer/v1/app/pacote/" + arquivo);
-            http.tls_verify(true);
-            http.timeout_connect(15);
-            http.timeout_max(3600);
-            http.header("Authorization", "Bearer " + token)
-                .on_progress([&](Http::Progress p, bool&) {
-                    const int pct = p.dltotal > 0 ? int(p.dlnow * 100 / p.dltotal) : 0;
-                    if (pct != ultimo) {
-                        ultimo = pct;
-                        situacao("baixando", {{"feito", pct}});
-                    }
-                })
-                .on_complete([&](std::string b, unsigned s) { corpo = std::move(b), status = s; })
-                .on_error([&](std::string b, std::string e, unsigned s) { status = s, erro = e.empty() ? "HTTP " + std::to_string(s) : e; })
-                .perform_sync();
-            if (status != 200)
-                return falha("download da atualização recusado (" + (erro.empty() ? std::to_string(status) : erro) + ")");
-            if (corpo.size() > PACOTE_MAX)
-                return falha("pacote de atualização grande demais");
+            fs::path arquivos;
+            bool     pronto = false;
             {
-                fs::ofstream o(zip, std::ios::binary | std::ios::trunc);
-                o.write(corpo.data(), std::streamsize(corpo.size()));
-                if (!o.good())
-                    return falha("não gravou o pacote da atualização no disco");
+                std::lock_guard<std::mutex> g(g_trava);
+                pronto = !g_pronto_para.empty() && g_pronto_para == doc.value("para", std::string());
+                if (pronto)
+                    arquivos = g_pronto_em;
             }
-            if (F::sha256_de_arquivo(zip.string()) != sha)
-                return falha("SHA-256 do pacote da atualização não confere");
+            boost::system::error_code ec;
+            if (!pronto || !fs::exists(arquivos, ec)) {
+                std::string motivo;
+                if (!baixar_e_extrair(doc, token, arquivos, motivo, true))
+                    return falha(motivo);
+            }
             situacao("aplicando", {{"feito", 100}});
-            if (!extract_archive_confined(zip.string(), arquivos.string()))
-                return falha("não extraiu o pacote da atualização");
-            fs::remove(zip, ec);
             std::string motivo;
             if (!lancar_aplicacao(arquivos, doc.value("remover", json::array()), motivo))
                 return falha(motivo);
@@ -456,7 +538,7 @@ void iniciar()
         std::this_thread::sleep_for(std::chrono::seconds(25));
         for (;;) {
             verificar_agora();
-            std::this_thread::sleep_for(std::chrono::hours(3));
+            std::this_thread::sleep_for(std::chrono::minutes(20)); // com o programa aberto, a atualização chega sem reabrir
         }
     }).detach();
 }

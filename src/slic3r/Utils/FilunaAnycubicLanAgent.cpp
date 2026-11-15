@@ -332,7 +332,11 @@ json FilunaAnycubicLanAgent::to_push_status(const json& e)
                     t["tray_type"]  = tipo;
                     t["tray_info_idx"] = ""; // sem este campo o DeviceManager descarta o tipo (PLA, PETG, ABS…)
                     t["tray_color"] = cor_rgba(s.value("color", json::array()));
-                    t["tray_sub_brands"] = s.value("sku", std::string());
+                    {
+                        // carretel com etiqueta da Anycubic traz o sku; sem etiqueta, a marca fica em branco
+                        const std::string sku = s.value("sku", std::string());
+                        t["tray_sub_brands"] = sku.empty() ? std::string() : "Anycubic " + sku;
+                    }
                     if (s.contains("consumables_percent") && s["consumables_percent"].is_number())
                         t["remain"] = s["consumables_percent"].get<int>();
                 }
