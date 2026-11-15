@@ -6361,6 +6361,10 @@ void Sidebar::filuna_sync_filamentos(MachineObject* obj)
         }
         tray.set_key_value("filament_id", new ConfigOptionStrings{id});
         tray.set_key_value("filament_changed", new ConfigOptionBool{true});
+        // Marcas que imprimem o filamento N pela entrada N: a entrada vazia fica no projeto como marcador de
+        // posição, para o número do filamento continuar igual ao da entrada.
+        if (tipo.empty() && FilunaImpressao::agente_entrada_fixa())
+            tray.set_key_value("filament_slot_placeholder", new ConfigOptionBools{true});
     }
     if (com_material == 0) {
         MessageDialog dlg(this,

@@ -311,6 +311,8 @@ json FilunaAnycubicLanAgent::to_push_status(const json& e)
         gs = (pestado == "preheating" || pestado == "auto_leveling" || pestado == "vibrating" || pestado == "flow_calibrating") ? "PREPARE" : "RUNNING";
     else if (pestado == "finished")
         gs = "FINISH";
+    else if (pestado == "failed")
+        gs = "FAILED";
     p["gcode_state"]       = gs;
     const bool ativo       = gs == "RUNNING" || gs == "PAUSE" || gs == "PREPARE";
     p["mc_percent"]        = ativo || gs == "FINISH" ? int(num(proj, "progress")) : 0;
@@ -484,6 +486,27 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
         else if (st == "pushStopped")
             Filuna::set_camera_url(serie, std::string());
         return;
+    }
+    // Erro informado pela impressora (filamento rompido, falha de aquecimento…): guarda o texto para a tela e os alertas
+    if (j.is_object() && tipo == "print" && j.contains("code") && j["code"].is_number()) {
+        const int         cod = j["code"].get<int>();
+        const std::string est = j.value("state", std::string());
+        std::string       serie_;
+        {
+            std::lock_guard<std::recursive_mutex> l(m_mutex);
+            serie_ = m_s.serie;
+        }
+        static const std::map<int, const char*> ERROS = {
+            {10107, "Filamento rompido ou acabou"}, {10402, "Filamento rompido ou acabou: coloque um novo"}, {11518, "Filamento preso"},
+            {10105, "A impressora não conseguiu baixar o arquivo"}, {10113, "O arquivo chegou corrompido"}, {10115, "A impressora não entendeu o arquivo"},
+            {10116, "Arquivo de fatiamento com defeito"}, {10118, "Falha ao zerar o eixo X"}, {10119, "Falha ao zerar o eixo Y"},
+            {10120, "Falha ao zerar o eixo Z"}, {10121, "Aquecimento da mesa com defeito"}, {10122, "Aquecimento do bico com defeito"},
+            {10133, "O arquivo não tem os comandos necessários"}};
+        const auto it = ERROS.find(cod);
+        if (it != ERROS.end() || est == "failed")
+            Filuna::set_erro(serie_, (it != ERROS.end() ? std::string(it->second) : "A impressora informou uma falha") + " (código " + std::to_string(cod) + ")");
+        else if (est == "printing" || est == "preheating")
+            Filuna::set_erro(serie_, std::string());
     }
     if (j.is_object() && tipo == "print" && j.contains("state") && j["state"].is_string() &&
         (!j.contains("data") || !j["data"].is_object())) {

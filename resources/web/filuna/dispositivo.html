@@ -291,6 +291,7 @@ function unidade(app, u) {
 	var foto = flv ? '<video data-cam="1" crossorigin="anonymous" data-src="' + E(flv) + '" muted autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>' : camVivo ? '<img alt="" data-cam="1"' + (v.camera_repasse ? ' crossorigin="anonymous"' : "") + ' data-src="' + E(camVivo) + '" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
 	var html = '<div style="padding:16px 32px 0"><a class="voltar" id="voltar">‹ Unidades</a></div>' + cabecalho(i.nome, i.estado, i.modelo || "", local) +
+		(v && v.erro ? '<div class="aviso" style="background:#FDE8DF;color:#D9480F"><span><b>A impressora informou um problema:</b> ' + E(v.erro) + ".</span></div>" : "") +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
 		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
 		'<div class="colv"><div class="view">' + foto + '<div class="vtag">' + (camVivo || flv ? "Câmera ao vivo" : i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
@@ -336,11 +337,13 @@ function unidade(app, u) {
 	if (i.camera_em) camera(i.id);
 	if (ativa) estoqueIdentificar(v);
 	var bmc = app.querySelector("#mesaConf"); if (bmc) bmc.onclick = function () { mesaConferir(v); };
-	// confere sozinha uma vez ao abrir o cartão (impressora parada), 8 s depois de a câmera começar
-	if (ativa && v.estado == "livre" && (camVivo || flv) && !mesaIA[v.dev_id] && Filuna.temToken()) {
-		mesaIA[v.dev_id] = { estado: "", em: Date.now() };
-		setTimeout(function () { if (estado.vista == "unidade" && document.querySelector("[data-cam]")) mesaConferir(v); }, 8000);
+	var bml = app.querySelector("#mesaLimpa2"); if (bml) bml.onclick = function () { mesaGuardar(v); };
+	// com foto de referência, confere sozinho a cada 20 s enquanto a impressora está parada (alimenta o aviso da janela de impressão)
+	if (ativa && v.estado == "livre" && (camVivo || flv) && mesaRef(v.dev_id) && (!mesaIA[v.dev_id] || Date.now() - (mesaIA[v.dev_id].em || 0) > 20000)) {
+		mesaIA[v.dev_id] = mesaIA[v.dev_id] || {}; mesaIA[v.dev_id].em = Date.now();
+		setTimeout(function () { if (estado.vista == "unidade" && document.querySelector("[data-cam]")) mesaConferir(v); }, 4000);
 	}
+
 	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
 	var selVel = app.querySelector("#cVel"); if (selVel && mem.velocidade != null) selVel.value = String(mem.velocidade);
 	app.querySelectorAll("[data-ctl]").forEach(function (b) { b.onclick = function () {
@@ -538,36 +541,57 @@ function estoqueIdentificar(v) {
 	}, function () { estq.aberto = false; });
 }
 
-// ---------- IA confere a mesa pela câmera ----------
-// Tira uma foto do vídeo ao vivo e pergunta à IA Filuna se a mesa está livre. O resultado aparece aqui e a
-// janela de impressão usa a última conferência para avisar antes de enviar. Vale para qualquer marca com câmera.
-var mesaIA = {}; // dev_id -> { estado: "vendo"|"ok"|"ocupada"|"erro", motivo, em }
+// ---------- Conferência da mesa pela câmera ----------
+// O cliente confirma uma vez "esta é a mesa limpa" (a foto fica guardada neste computador). Antes de imprimir,
+// o Filuna compara a câmera de agora com essa foto: se a imagem mudou bastante, avisa que a mesa parece
+// ocupada. Não depende de internet nem de IA externa e vale para qualquer marca com câmera.
+var mesaIA = {}; // dev_id -> { estado: "ok"|"ocupada"|"erro"|"semref", motivo, em }
+function mesaRef(dev) { try { return JSON.parse(localStorage.getItem("fl.mesa." + dev) || "null"); } catch (e) { return null; } }
+// foto reduzida (64x48, cinza, com brilho e contraste igualados) do que a câmera mostra agora
+function mesaFoto() {
+	var el = document.querySelector("[data-cam]"); if (!el) return null;
+	var w = el.videoWidth || el.naturalWidth, h = el.videoHeight || el.naturalHeight; if (!w || !h) return null;
+	try {
+		var c = document.createElement("canvas"); c.width = 64; c.height = 48;
+		var x = c.getContext("2d"); x.drawImage(el, 0, 0, 64, 48);
+		var d = x.getImageData(0, 0, 64, 48).data, g = [], soma = 0;
+		for (var k = 0; k < d.length; k += 4) { var v = 0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2]; g.push(v); soma += v; }
+		var media = soma / g.length, dp = Math.sqrt(g.reduce(function (a, v) { return a + (v - media) * (v - media); }, 0) / g.length) || 1;
+		return g.map(function (v) { return Math.round((v - media) / dp * 100) / 100; });
+	} catch (e) { return null; }
+}
 function mesaHtml(v, temCamera) {
 	if (!v || !v.selecionada || !temCamera) return "";
-	var m = mesaIA[v.dev_id] || {};
-	var txt = m.estado == "vendo" ? "A IA está olhando a mesa…" : m.estado == "ok" ? "Mesa livre, pode imprimir." : m.estado == "ocupada" ? "Mesa ocupada: " + (m.motivo || "há algo na mesa") + ". Retire e limpe antes de imprimir." : m.estado == "erro" ? (m.motivo || "Não foi possível conferir a mesa.") : "A IA confere pela câmera se a mesa está livre antes de imprimir.";
-	return '<div class="mesaia ' + E(m.estado || "") + '"><span>' + E(txt) + '</span><button class="btn peq" id="mesaConf"' + (m.estado == "vendo" ? " disabled" : "") + ">Conferir mesa</button></div>";
+	var m = mesaIA[v.dev_id] || {}, ref = mesaRef(v.dev_id);
+	var txt = !ref ? "Com a mesa vazia e limpa, clique em \"Esta é a mesa limpa\". O Filuna passa a conferir antes de imprimir." :
+		m.estado == "ok" ? "Mesa livre, igual à foto da mesa limpa." : m.estado == "ocupada" ? "A mesa parece ocupada (" + (m.motivo || "a imagem mudou") + "). Retire as peças e limpe antes de imprimir." :
+		m.estado == "erro" ? (m.motivo || "Não foi possível conferir a mesa.") : "O Filuna compara a câmera com a foto da mesa limpa antes de imprimir.";
+	return '<div class="mesaia ' + E(ref ? (m.estado || "") : "") + '"><span>' + E(txt) + '</span><span style="display:flex;gap:8px;flex:none">' +
+		(ref ? '<button class="btn peq" id="mesaConf">Conferir mesa</button>' : "") + '<button class="btn peq' + (ref ? "" : " primario") + '" id="mesaLimpa2">Esta é a mesa limpa</button></span></div>';
+}
+function mesaGuardar(v) {
+	var f = mesaFoto();
+	if (!f) { mesaIA[v.dev_id] = { estado: "erro", motivo: "A câmera ainda não mostrou imagem." }; desenhar(); return; }
+	try { localStorage.setItem("fl.mesa." + v.dev_id, JSON.stringify({ g: f, em: Date.now() })); } catch (e) {}
+	mesaIA[v.dev_id] = { estado: "ok", em: Date.now() };
+	Filuna.nativo("dispositivos.mesa_veredito", { dev_id: v.dev_id, livre: true, motivo: "" }).catch(function () {});
+	desenhar();
 }
 function mesaConferir(v) {
-	var el = document.querySelector("[data-cam]"); if (!el || !v) return;
-	var w = el.videoWidth || el.naturalWidth, h = el.videoHeight || el.naturalHeight;
-	var fim = function (estado, motivo) {
-		mesaIA[v.dev_id] = { estado: estado, motivo: motivo || "", em: Date.now() };
-		if (estado == "ok" || estado == "ocupada") Filuna.nativo("dispositivos.mesa_veredito", { dev_id: v.dev_id, livre: estado == "ok", motivo: motivo || "" }).catch(function () {});
-		if (estado == "vendo") { var s = document.querySelector(".mesaia span"), b = document.querySelector("#mesaConf"); if (s) s.textContent = "A IA está olhando a mesa…"; if (b) b.disabled = true; }
-		else desenhar();
-	};
-	if (!w || !h) { fim("erro", "A câmera ainda não mostrou imagem."); return; }
-	var foto;
-	try {
-		var c = document.createElement("canvas"); c.width = 768; c.height = Math.round(768 * h / w);
-		c.getContext("2d").drawImage(el, 0, 0, c.width, c.height);
-		foto = c.toDataURL("image/jpeg", 0.72).split(",")[1];
-	} catch (e) { fim("erro", "Não foi possível tirar a foto da câmera."); return; }
-	fim("vendo");
-	Filuna.api("POST", "/ia/mesa", { imagem: foto, impressora: v.nome, modelo: v.modelo_nome || v.modelo || "" }).then(function (r) {
-		fim(r.livre ? "ok" : "ocupada", r.motivo || "");
-	}, function (e) { fim("erro", (e && (e.erro || e.message)) || "A IA não respondeu agora."); });
+	var ref = mesaRef(v.dev_id); if (!ref || !ref.g) return;
+	var f = mesaFoto();
+	if (!f) { mesaIA[v.dev_id] = { estado: "erro", motivo: "A câmera ainda não mostrou imagem." }; desenhar(); return; }
+	// 48 blocos de 8x8: um bloco "mudou" quando a diferença média passa de 0,55 desvio
+	var mudou = 0;
+	for (var by = 0; by < 6; by++) for (var bx = 0; bx < 8; bx++) {
+		var dif = 0;
+		for (var y = 0; y < 8; y++) for (var x = 0; x < 8; x++) { var k = (by * 8 + y) * 64 + bx * 8 + x; dif += Math.abs(f[k] - ref.g[k]); }
+		if (dif / 64 > 0.55) mudou++;
+	}
+	var pct = Math.round(mudou * 100 / 48), livre = mudou <= 5; // até ~10% da imagem diferente é tolerado (luz, reflexo)
+	mesaIA[v.dev_id] = { estado: livre ? "ok" : "ocupada", motivo: livre ? "" : pct + "% da imagem diferente da mesa limpa", em: Date.now() };
+	Filuna.nativo("dispositivos.mesa_veredito", { dev_id: v.dev_id, livre: livre, motivo: livre ? "" : "a câmera mostra " + pct + "% da imagem diferente da foto da mesa limpa" }).catch(function () {});
+	desenhar();
 }
 
 // últimos arquivos guardados na impressora (quando a marca informa)

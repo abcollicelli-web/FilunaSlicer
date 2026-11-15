@@ -256,6 +256,8 @@ std::string estado_legivel(MachineObject* o)
         return "desligada";
     if (!o->is_online())
         return "desligada";
+    if (o->print_status == "FAILED")
+        return "falhou";
     if (o->is_in_printing_pause())
         return "pausada";
     if (o->is_in_printing())
@@ -338,6 +340,9 @@ json card(MachineObject* o)
         if (porta > 0)
             c["camera_flv"] = "http://127.0.0.1:" + std::to_string(porta) + "/cam?u=" + Http::url_encode(cam);
     }
+    const std::string err = Filuna::erro(o->get_dev_id());
+    if (!err.empty())
+        c["erro"] = err; // último erro informado pela impressora
     const json arqs = json::parse(Filuna::arquivos(o->get_dev_id()), nullptr, false);
     if (arqs.is_array() && !arqs.empty())
         c["arquivos"] = arqs; // últimos arquivos guardados na impressora
@@ -832,6 +837,17 @@ void monitor_iniciar()
                 wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer"), texto, wxGetApp().mainframe);
                 aviso.Show();
             }
+            const std::string err = i.value("erro", std::string());
+            static std::map<std::string, std::string> erro_antes;
+            if (!err.empty() && erro_antes[dev] != err) { // erro novo da impressora (filamento rompido, falha…)
+                const wxString texto = wxString::FromUTF8(i.value("nome", std::string("Impressora")) + ": " + err + ".");
+                if (Plater* pl = wxGetApp().plater())
+                    if (auto* nm = pl->get_notification_manager())
+                        nm->push_notification(std::string(texto.ToUTF8().data()));
+                wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer — impressão com problema"), texto, wxGetApp().mainframe, wxICON_WARNING);
+                aviso.Show();
+            }
+            erro_antes[dev] = err;
             antes[dev] = est;
         }
         if (++volta % 3 == 0)
@@ -859,6 +875,7 @@ void sincronizar_estado(const json& estado, const std::string& token)
         corpo.push_back({{"cadastro_id", c.value("cadastro_id", std::string())}, {"dev_id", c.value("dev_id", std::string())},
                          {"nome", c.value("nome", std::string())}, {"modelo", c.value("modelo_nome", std::string())},
                          {"estado", c.value("estado", std::string())}, {"ligada", c.value("ligada", false)},
+                         {"erro", c.value("erro", std::string())},
                          {"progresso", c.value("progresso", 0)}, {"restante_s", c.value("restante_s", 0)},
                          {"cores", c.value("cores", json::array())}, {"camera", c.value("camera", false)},
                          {"bico", c.value("bico", json::object())}, {"mesa", c.value("mesa", json::object())}});

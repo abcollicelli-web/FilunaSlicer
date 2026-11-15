@@ -183,6 +183,11 @@ void avisar(const wxString& texto, long estilo = wxOK | wxICON_INFORMATION)
     dlg.ShowModal();
 }
 
+// Agentes cujo protocolo imprime o filamento N do projeto pela entrada N (sem remapeamento).
+// Anycubic Modo LAN: a referência só registra mapeamento idêntico, e na Kobra 3 V2 a impressora usou a entrada
+// do número do filamento mesmo com outra escolhida.
+bool entrada_fixa(const std::string& agente) { return agente == "filuna_anycubic_lan"; }
+
 struct Escolha
 {
     bool             imprimir{true}; // false = só enviar
@@ -194,7 +199,7 @@ class Janela : public wxDialog
 {
 public:
     Janela(wxWindow* pai, const std::string& impressora, const std::string& arquivo, const std::vector<Filamento>& fs,
-           const std::vector<Entrada>& es)
+           const std::vector<Entrada>& es, bool fixa = false)
         : wxDialog(pai, wxID_ANY, wxString::FromUTF8("Imprimir"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE), m_es(es)
     {
         SetBackgroundColour(*wxWHITE);
@@ -223,7 +228,13 @@ public:
                                         wxString::FromUTF8("Filamento " + std::to_string(f.indice + 1) + (f.tipo.empty() ? "" : " · " + f.tipo))),
                        0, wxALIGN_CENTER_VERTICAL);
                 auto* escolha = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, nomes);
-                const int k   = melhor_entrada(f, es);
+                int k = melhor_entrada(f, es);
+                if (fixa) { // o protocolo imprime o filamento N pela entrada N: não há o que escolher
+                    for (std::size_t q = 0; q < es.size(); ++q)
+                        if (es[q].global == f.indice)
+                            k = int(q);
+                    escolha->Disable();
+                }
                 escolha->SetSelection(k < 0 ? 0 : k);
                 auto* destino = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(18, 18)), wxBORDER_SIMPLE);
                 destino->SetBackgroundColour(cor_wx(es[k < 0 ? 0 : k].cor));
@@ -239,6 +250,11 @@ public:
                 m_escolhas.push_back(escolha);
             }
             v->Add(g, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+            if (fixa)
+                v->Add(new wxStaticText(this, wxID_ANY,
+                                        wxString::FromUTF8("Nesta impressora o filamento 1 do projeto sai da Entrada 1, o 2 da Entrada 2, e assim por diante.\n"
+                                                           "Para mudar, use \"Usar no projeto\" no cartão da impressora.")),
+                       0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
         } else if (es.empty()) {
             v->Add(new wxStaticText(this, wxID_ANY,
                                     wxString::FromUTF8("A impressora não informou um sistema de cores.\nSerá usado o filamento que já está carregado nela.")),
@@ -303,6 +319,8 @@ bool agente_filuna()
         return false;
     return boost::starts_with(agente_ativo(), "filuna_");
 }
+
+bool agente_entrada_fixa() { return entrada_fixa(agente_ativo()); }
 
 std::string filamento_id_do_tipo(const std::string& tipo, const std::string& marca)
 {
@@ -402,7 +420,36 @@ void imprimir(int plate_idx)
     const std::vector<Filamento> fila = filamentos_da_mesa(mesa);
     const std::string            nome = nome_arquivo();
 
-    Janela    janela(wxGetApp().mainframe, o->get_dev_name(), nome, fila, es);
+    // Protocolos que não remapeiam: o filamento N do projeto sai da entrada N do sistema de cores. A impressora
+    // ignora outro mapeamento e imprimiria pela entrada errada (até vazia). Confere antes de enviar.
+    const bool fixa = entrada_fixa(agente) && !es.empty();
+    if (fixa) {
+        for (const Filamento& f : fila) {
+            const Entrada* e = nullptr;
+            for (const Entrada& x : es)
+                if (x.global == f.indice)
+                    e = &x;
+            const std::string n = std::to_string(f.indice + 1);
+            if (e == nullptr) {
+                FilunaManutencao::diagnostico("impressao", "entrada " + n + " vazia para o filamento " + n + " do projeto", json{{"agente", agente}});
+                avisar(wxString::FromUTF8("O filamento " + n + " do projeto sai da Entrada " + n + " da impressora, e ela está vazia.\n\n"
+                                          "Coloque o filamento na Entrada " + n + ", ou abra o cartão da impressora no Dispositivo e clique em "
+                                          "\"Usar no projeto\" para alinhar os filamentos do projeto com as entradas."),
+                       wxOK | wxICON_WARNING);
+                return;
+            }
+            if (!f.tipo.empty() && !e->tipo.empty() && !boost::iequals(f.tipo, e->tipo)) {
+                MessageDialog dlg(wxGetApp().mainframe,
+                                  wxString::FromUTF8("O filamento " + n + " do projeto é " + f.tipo + ", mas a Entrada " + n + " da impressora tem " + e->tipo +
+                                                     ".\n\nImprimir assim mesmo?"),
+                                  wxString::FromUTF8("Material diferente"), wxYES_NO | wxICON_WARNING);
+                if (dlg.ShowModal() != wxID_YES)
+                    return;
+            }
+        }
+    }
+
+    Janela    janela(wxGetApp().mainframe, o->get_dev_name(), nome, fila, es, fixa);
     const int resposta = janela.ShowModal();
     if (resposta != wxID_OK && resposta != wxID_APPLY)
         return;

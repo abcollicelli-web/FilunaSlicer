@@ -28,6 +28,9 @@ void imprimir(int plate_idx);
 // filamento tem o seu perfil de impressão. `marca` é o que a impressora leu do carretel ("ELEGOO PLA+",
 // "Anycubic", sku…); pode vir vazia. Ordem: perfil da marca do filamento e da mesma linha, perfil da marca do
 // filamento, perfil da marca da impressora, genérico, qualquer um do tipo. Vazio quando não há nenhum.
+// O protocolo da marca imprime o filamento N pela entrada N: a sincronização mantém as entradas vazias no lugar.
+bool agente_entrada_fixa();
+
 std::string filamento_id_do_tipo(const std::string& tipo, const std::string& marca = std::string());
 
 }}} // namespace Slic3r::GUI::FilunaImpressao

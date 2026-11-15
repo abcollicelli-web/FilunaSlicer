@@ -50,6 +50,24 @@ inline std::string arquivos(const std::string& dev_id)
     return it == arquivos_map().end() ? std::string() : it->second;
 }
 
+// Último erro que a impressora informou (texto pronto para mostrar), por agente de qualquer marca.
+inline std::map<std::string, std::string>& erro_map()
+{
+    static std::map<std::string, std::string> m;
+    return m;
+}
+inline void set_erro(const std::string& dev_id, const std::string& texto)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    erro_map()[dev_id] = texto;
+}
+inline std::string erro(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    auto it = erro_map().find(dev_id);
+    return it == erro_map().end() ? std::string() : it->second;
+}
+
 // Última conferência da mesa pela câmera (IA): JSON {"livre":bool,"motivo":"...","em":<segundos unix>}.
 inline std::map<std::string, std::string>& mesa_map()
 {
