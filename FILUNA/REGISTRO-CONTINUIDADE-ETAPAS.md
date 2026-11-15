@@ -1088,3 +1088,11 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
   em projeto novo e ao abrir outro projeto. O arquivo baixado é apagado logo depois de abrir.
 - "Enviar à Farm" da Preparação: na etapa 1 da Farm, "Usar o projeto aberto na Preparação" (export_3mf silencioso
   para um arquivo temporário e segue o fluxo local). Modelo do catálogo não vai para a Farm.
+
+## 2026-11-15 — 70 publicada (38e0ec230); 71: sem janela do plug-in da Bambu ao abrir
+
+- Instalação nova vem com installed_networking=true (AppConfig.cpp); sem o plug-in fechado da Bambu, on_init_network
+  abria a janela de baixar a cada abertura (e a de atualizar a cada versão nova). As Bambu ligam pelo agente aberto
+  filuna_bambu_lan, que não usa o plug-in. GUI_App.cpp: as duas janelas da abertura viraram só registro no log; o
+  plug-in continua instalável pelas Preferências (câmera nativa da Bambu no Dispositivo antigo do Orca usa o plug-in).
+- Caso: Fernando (4 Bambu A1/P2S/A2 na rede). Ele ainda precisa entrar na conta Filuna no Slicer para o site/app.

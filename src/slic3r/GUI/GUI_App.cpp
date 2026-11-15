@@ -1123,9 +1123,10 @@ void GUI_App::post_init()
     hms_query = new HMSQuery();
 
     m_show_gcode_window = app_config->get_bool("show_gcode_window");
-    if (m_networking_need_update) {
-        show_network_plugin_download_dialog(false);
-    }
+    // Filuna: Bambu printers connect through the open LAN agent (filuna_bambu_lan), so the closed
+    // Bambu plug-in is optional. Never open its download window on start; it stays in Preferences.
+    if (m_networking_need_update)
+        BOOST_LOG_TRIVIAL(info) << "Bambu network plug-in not installed; start-up download prompt skipped (Filuna)";
 
     // Start preset sync after project opened, otherwise we could have preset change during project opening which could cause crash 
     if (app_config->get("sync_user_preset") == "true") {
@@ -4318,11 +4319,9 @@ bool GUI_App::on_init_network(bool try_backup)
                 && !app_config->is_network_version_skipped(latest)
                 && !app_config->should_remind_network_update_later();
 
-            if (should_prompt) {
-                CallAfter([this]() {
-                    show_network_plugin_download_dialog(true);
-                });
-            }
+            // Filuna: no update window on start either (see the start-up prompt above).
+            if (should_prompt)
+                BOOST_LOG_TRIVIAL(info) << "Bambu network plug-in " << latest << " available; prompt skipped (Filuna)";
         }
     }
 
