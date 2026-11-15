@@ -11,6 +11,7 @@
 // comandos dele (pausar, retomar, parar, pedir tudo) viram os métodos da CC2 (1021/1023/1022/1002).
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <map>
 #include <memory>
@@ -96,6 +97,8 @@ private:
     std::unique_ptr<Filuna::MqttClient> m_mqtt;
     std::string                         m_sn, m_ip, m_code, m_client_id, m_selected;
     int                                 m_next_id = 1;
+    std::atomic<bool>                   m_pediu_arquivos{false};
+    std::chrono::steady_clock::time_point m_pediu_camera{};
     std::mutex                          m_wait_mutex; // respostas esperadas por request_wait
     std::condition_variable             m_wait_cv;
     std::map<int, nlohmann::json>       m_wait;       // id -> resposta (null enquanto não chega)

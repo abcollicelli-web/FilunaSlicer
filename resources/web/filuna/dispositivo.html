@@ -90,7 +90,8 @@
 .passosLan{margin-top:14px}.passosLan li{margin:8px 0 8px 18px;font-size:14.5px}
 .spin{width:22px;height:22px;border:3px solid #ddd;border-top-color:var(--magenta-deep);border-radius:50%;animation:gira 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
 @keyframes gira{to{transform:rotate(360deg)}}
-.estq{position:fixed;inset:0;background:rgba(30,26,24,.45);display:flex;align-items:center;justify-content:center;z-index:50}.estq .cx{background:#fff;border-radius:18px;padding:26px 28px;width:min(520px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.25)}.estq h3{margin:0 0 6px;font-size:19px}.estq .sub{color:#6B6660;font-size:13.5px;margin-bottom:16px}.estq .slot{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#FFF8F0;border-radius:12px;margin-bottom:14px}.estq .slot .bola{width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.16);flex:none}.estq .op{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.estq .op button{text-align:left}.estq .cp{display:flex;gap:10px;margin-bottom:12px}.estq .cp label{flex:1;font-size:12.5px;color:#6B6660;display:flex;flex-direction:column;gap:4px}.estq .cp input{padding:9px 10px;border:1px solid #E7E3DD;border-radius:10px;font:inherit}.estq .pe{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.estq .pe a{color:#8a817a;font-size:13px;cursor:pointer}.estq .er{color:#D9480F;font-size:13px;margin-bottom:8px}
+.estq{position:fixed;inset:0;background:rgba(30,26,24,.45);display:flex;align-items:center;justify-content:center;z-index:50}.estq .cx{background:#fff;border-radius:18px;padding:26px 28px;width:min(520px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.25)}.estq h3{margin:0 0 6px;font-size:19px}.estq .sub{color:#6B6660;font-size:13.5px;margin-bottom:16px}.estq .slot{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#FFF8F0;border-radius:12px;margin-bottom:14px}.estq .slot .bola{width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.16);flex:none}.estq .op{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.estq .op button{text-align:left}.estq .cp{display:flex;gap:10px;margin-bottom:12px}.estq .cp label{flex:1;font-size:12.5px;color:#6B6660;display:flex;flex-direction:column;gap:4px}.estq .cp input{padding:9px 10px;border:1px solid #E7E3DD;border-radius:10px;font:inherit}.estq .tp{display:flex;gap:12px;margin-bottom:12px}.estq .tb{display:flex;flex-direction:column;gap:6px;flex:none}.estq .tv{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;flex:1;max-height:230px;overflow:auto}.estq .chip{padding:7px 12px;border-radius:999px;border:1px solid #E7E3DD;background:#fff;font:inherit;font-size:13px;cursor:pointer}.estq .chip.on{background:#FDE3EC;border-color:#C2185B;color:#C2185B;font-weight:700}.estq .cx{max-height:92vh;overflow:auto}
+.estq .pe{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.estq .pe a{color:#8a817a;font-size:13px;cursor:pointer}.estq .er{color:#D9480F;font-size:13px;margin-bottom:8px}
 .arqs{margin-top:14px}.arq{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:13px}.arq .an{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arq .ai{color:#8a817a;white-space:nowrap}
 .fils{margin:16px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.filrow{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}.fil{width:72px;text-align:center}.fil .bola{display:block;width:46px;height:46px;border-radius:50%;margin:0 auto 8px;border:1px solid rgba(0,0,0,.16);box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)}.fil .bola.vazia{border:1.5px dashed rgba(0,0,0,.28);box-shadow:none}.fil .fn{font-weight:700;font-size:13.5px}.fil .fe{font-size:11.5px;color:#8a817a;margin-top:1px}.fil .fa{display:flex;gap:6px;justify-content:center;margin-top:8px}.fil .fa button{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.16);background:#fff;color:#5e5752;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}.fil .fa button:hover{background:#FFE8F2;border-color:#B3125C;color:#B3125C}
 .ctlvivo .ctlon{font-size:12.5px;color:#1B7F4B;font-weight:600}.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin,.fils .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label,.fils .lin label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select,.fils .lin input{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
@@ -421,6 +422,18 @@ function materiais(i) {
 // têm, a tela pergunta: é uma bobina que já existe (mesmo material e cor parecida) ou é nova? Nova pede marca
 // e peso e confirma de novo antes de gravar. Vale para qualquer marca que informe as entradas.
 var estq = { aberto: false, adiado: {} };
+// tipos de filamento e as derivações de cada um (aparecem ao lado ao escolher o tipo)
+var FILAMENTOS = {
+	"PLA": ["PLA", "PLA+", "PLA Fast (alta velocidade)", "PLA 2.0", "PLA Silk", "PLA Matte", "PLA Tough", "PLA-CF", "PLA Wood (madeira)", "PLA Marble (mármore)", "PLA Glow (brilha no escuro)", "PLA Galaxy", "PLA Translúcido"],
+	"PETG": ["PETG", "PETG HF (alto fluxo)", "PETG Rapid", "PETG Translúcido", "PETG-CF", "PETG-GF"],
+	"ABS": ["ABS", "ABS+", "ABS-GF", "ABS-CF"],
+	"ASA": ["ASA", "ASA Aero", "ASA-CF", "ASA-GF"],
+	"TPU": ["TPU 95A", "TPU 90A", "TPU 85A", "TPU HS (alta velocidade)", "TPU para sistema de cores"],
+	"PA": ["PA (Nylon)", "PA6", "PA12", "PA-CF", "PA-GF"],
+	"PC": ["PC", "PC-ABS", "PC-CF"],
+	"Outros": ["PVA", "HIPS", "PP", "PET", "PET-CF", "PCTG", "Outro"]
+};
+function baseDoTipo(m) { var x = String(m || "").toUpperCase().match(/^[A-Z]+/); x = x ? x[0] : ""; return x == "PLA" || x == "PETG" || x == "ABS" || x == "ASA" || x == "TPU" || x == "PA" || x == "PC" ? x : (x == "NYLON" ? "PA" : x); }
 function corPerto(a, b) {
 	var h = function (c) { c = String(c || "").replace("#", "").slice(0, 6); return c.length == 6 ? [parseInt(c.slice(0, 2), 16), parseInt(c.slice(2, 4), 16), parseInt(c.slice(4, 6), 16)] : null; };
 	var x = h(a), y = h(b); if (!x || !y) return false;
@@ -435,7 +448,8 @@ function estoqueIdentificar(v) {
 	estq.aberto = true;
 	Filuna.nativo("estoque.listar").then(function (r) {
 		var bobinas = (r.bobinas || []).filter(function (b) { return b.estado == "lacrada" || b.estado == "em_uso"; });
-		var igual = function (b, c) { var t = b.tipo || {}; return String(t.material || "").toUpperCase() == String(c.material || "").toUpperCase() && corPerto(t.cor_hex, c.cor); };
+		// a impressora diz só o tipo ("PLA"); no estoque fica a derivação ("PLA Silk") — compara pelo tipo base
+		var igual = function (b, c) { var t = b.tipo || {}; return baseDoTipo(t.material) == baseDoTipo(c.material) && corPerto(t.cor_hex, c.cor); };
 		var pend = v.cores.filter(function (c) {
 			if (c.vazio || !c.material) return false;
 			return !bobinas.some(function (b) { return b.local == localDe(c) && igual(b, c); });
@@ -465,9 +479,16 @@ function estoqueIdentificar(v) {
 					return '<button class="btn" data-ex="' + k + '">É o da etiqueta <b>' + E(b.codigo) + "</b> · " + E([t.marca, t.material, t.cor_nome].filter(Boolean).join(" ")) + " · " + Math.round(b.restante_g) + " g</button>"; }).join("") +
 					'<button class="btn' + (cand.length ? "" : " primario") + '" id="eNovo">' + (cand.length ? "É um filamento novo no estoque" : "Cadastrar este filamento no estoque") + "</button></div>";
 			} else {
-				h += '<div class="cp"><label>Marca do filamento<input id="eMarca" value="' + E(novo.marca || "") + '" placeholder="Ex.: Elegoo, eSun, Voolt"></label>' +
-					'<label>Peso que ainda tem (g)<input id="ePeso" type="number" min="1" max="10000" value="' + (novo.peso || 1000) + '"></label></div>' +
-					(novo.confirmar ? '<div class="sub" style="margin-bottom:10px">Confirma: <b>' + E(novo.marca || "sem marca") + " " + E(c.material) + "</b> com <b>" + novo.peso + " g</b> entra no estoque como bobina nova?</div>" : "") +
+				// sempre pergunta: tipo (com as derivações ao lado), marca, cor e peso aproximado
+				var bases = Object.keys(FILAMENTOS);
+				h += '<div class="tp"><div class="tb">' + bases.map(function (b) { return '<button class="chip' + (novo.base == b ? " on" : "") + '" data-base="' + b + '">' + b + "</button>"; }).join("") + "</div>" +
+					'<div class="tv">' + FILAMENTOS[novo.base].map(function (x) { return '<button class="chip' + (novo.tipo == x ? " on" : "") + '" data-tipo="' + E(x) + '">' + E(x) + "</button>"; }).join("") + "</div></div>" +
+					'<div class="cp"><label>Marca<input id="eMarca" value="' + E(novo.marca || "") + '" placeholder="Ex.: Elegoo, eSun, Voolt"></label>' +
+					'<label>Peso aproximado (g)<input id="ePeso" type="number" min="1" max="10000" value="' + (novo.peso || 1000) + '"></label></div>' +
+					'<div class="cp"><label>Cor<span style="display:flex;gap:8px;align-items:center"><input id="eCor" type="color" value="' + E(novo.cor) + '" style="width:54px;height:40px;padding:2px">' +
+					'<input id="eHex" value="' + E(novo.cor.toUpperCase()) + '" maxlength="7" style="flex:1" placeholder="#RRGGBB"></span></label>' +
+					'<label>Nome da cor<input id="eCorNome" value="' + E(novo.cor_nome || "") + '" placeholder="Ex.: Preto, Laranja"></label></div>' +
+					(novo.confirmar ? '<div class="sub" style="margin-bottom:10px">Confirma: <b>' + E([novo.marca || "sem marca", novo.tipo, novo.cor_nome].filter(Boolean).join(" ")) + '</b> <span class="bola" style="display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;border:1px solid rgba(0,0,0,.2);background:' + E(novo.cor) + '"></span> ' + E(novo.cor.toUpperCase()) + " com <b>" + novo.peso + " g</b> entra no estoque?</div>" : "") +
 					'<div class="op"><button class="btn primario" id="eGravar">' + (novo.confirmar ? "Confirmar e salvar no estoque" : "Continuar") + '</button><button class="btn" id="eVolta">Voltar</button></div>';
 			}
 			h += '<div class="pe"><span style="font-size:12.5px;color:#8a817a">' + (n + 1) + " de " + total + '</span><a id="eDepois">Agora não</a></div></div>';
@@ -476,14 +497,31 @@ function estoqueIdentificar(v) {
 			el.querySelectorAll("[data-ex]").forEach(function (b) { b.onclick = function () {
 				ligar(cand[+b.dataset.ex].id, c).then(function () { erro = ""; n++; passo(); }, function (e) { erro = e.message || "Não foi possível ligar a bobina."; passo(); });
 			}; });
-			var bn = el.querySelector("#eNovo"); if (bn) bn.onclick = function () { novo = { marca: c.marca ? String(c.marca).split(" ")[0] : "", peso: 1000, confirmar: false }; erro = ""; passo(); };
+			var bn = el.querySelector("#eNovo"); if (bn) bn.onclick = function () {
+				var base = baseDoTipo(c.material); if (!FILAMENTOS[base]) base = "Outros";
+				var hx = "#" + String(c.cor || "").replace("#", "").slice(0, 6); if (!/^#[0-9a-fA-F]{6}$/.test(hx)) hx = "#CCCCCC";
+				novo = { marca: c.marca ? String(c.marca).split(" ")[0] : "", peso: 1000, confirmar: false, base: base, tipo: FILAMENTOS[base].indexOf(c.material) >= 0 ? c.material : FILAMENTOS[base][0], cor: hx, cor_nome: "" };
+				erro = ""; passo();
+			};
+			var ler = function () {
+				var m = el.querySelector("#eMarca"); if (!m) return;
+				novo.marca = m.value.trim(); novo.peso = Math.round(+el.querySelector("#ePeso").value || 0); novo.cor_nome = el.querySelector("#eCorNome").value.trim();
+				var hx = el.querySelector("#eHex").value.trim(); if (hx && hx[0] != "#") hx = "#" + hx;
+				var rgb = hx.replace("#", "").match(/^(\d{1,3})[ ,;]+(\d{1,3})[ ,;]+(\d{1,3})$/); // aceita "255, 128, 0"
+				if (rgb) hx = "#" + [1, 2, 3].map(function (k) { return ("0" + Math.min(255, +rgb[k]).toString(16)).slice(-2); }).join("");
+				if (/^#[0-9a-fA-F]{6}$/.test(hx)) novo.cor = hx; else novo.corRuim = true;
+			};
+			el.querySelectorAll("[data-base]").forEach(function (b) { b.onclick = function () { ler(); novo.base = b.dataset.base; novo.tipo = FILAMENTOS[novo.base][0]; novo.confirmar = false; passo(); }; });
+			el.querySelectorAll("[data-tipo]").forEach(function (b) { b.onclick = function () { ler(); novo.tipo = b.dataset.tipo; novo.confirmar = false; passo(); }; });
+			var ec = el.querySelector("#eCor"); if (ec) ec.oninput = function () { el.querySelector("#eHex").value = ec.value.toUpperCase(); };
 			var bv = el.querySelector("#eVolta"); if (bv) bv.onclick = function () { novo = null; erro = ""; passo(); };
 			var bg = el.querySelector("#eGravar"); if (bg) bg.onclick = function () {
-				novo.marca = el.querySelector("#eMarca").value.trim(); novo.peso = Math.round(+el.querySelector("#ePeso").value || 0);
-				if (novo.peso < 1 || novo.peso > 10000) { erro = "Informe o peso em gramas (1 a 10000)."; passo(); return; }
+				novo.corRuim = false; ler();
+				if (novo.corRuim) { erro = "Confira a cor: use #RRGGBB (ex.: #FF8800) ou R, G, B (ex.: 255, 136, 0)."; passo(); return; }
+				if (!novo.marca) { erro = "Informe a marca do filamento."; passo(); return; }
+				if (novo.peso < 1 || novo.peso > 10000) { erro = "Informe o peso aproximado em gramas (1 a 10000)."; passo(); return; }
 				if (!novo.confirmar) { novo.confirmar = true; erro = ""; passo(); return; }
-				var hex = "#" + String(c.cor || "").replace("#", "").slice(0, 6);
-				Filuna.nativo("estoque.criar", { marca: novo.marca, material: c.material, cor_hex: hex, cor_nome: "", capacidade_g: Math.max(1000, novo.peso), usada: true, restante_g: novo.peso, estimado: true })
+				Filuna.nativo("estoque.criar", { marca: novo.marca, material: novo.tipo, cor_hex: novo.cor.toUpperCase(), cor_nome: novo.cor_nome, capacidade_g: Math.max(1000, novo.peso), usada: true, restante_g: novo.peso, estimado: true })
 					.then(function (x) { return ligar((x.ids || [])[0], c); })
 					.then(function () { novo = null; erro = ""; n++; passo(); }, function (e) { erro = e.message || "Não foi possível salvar no estoque."; passo(); });
 			};

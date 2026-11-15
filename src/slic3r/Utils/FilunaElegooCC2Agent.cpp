@@ -244,6 +244,17 @@ void FilunaElegooCC2Agent::on_mqtt(const std::string& topic, const std::string& 
         if (result.contains("url") && result["url"].is_string() && result["url"].get<std::string>().rfind("http", 0) == 0) {
             Filuna::set_camera_url(m_sn, result["url"].get<std::string>());
             BOOST_LOG_TRIVIAL(info) << "FilunaElegooCC2Agent: câmera ao vivo em " << result["url"].get<std::string>();
+            m_pediu_camera = std::chrono::steady_clock::now(); // a lista de arquivos sai uns segundos depois
+        } else if (Filuna::camera_url(m_sn).empty()) {
+            // Regra para todo agente: ao conectar só vai pedido já provado na impressora. A lista de arquivos
+            // (1044) saiu daqui: na versão em que foi pedida junto, a CC2 deixou de responder à câmera e ao
+            // pedido de impressão. Volta quando for provada isoladamente.
+            // a câmera ainda não respondeu: pede de novo, no máximo a cada 10 s
+            const auto agora = std::chrono::steady_clock::now();
+            if (agora - m_pediu_camera > std::chrono::seconds(10)) {
+                m_pediu_camera = agora;
+                request(1042, json::object());
+            }
         }
         // resposta do método 1044 (GetFileList): arquivos guardados na impressora
         if (result.contains("file_list") && result["file_list"].is_array()) {
@@ -356,8 +367,10 @@ int FilunaElegooCC2Agent::connect_printer(const PrinterConnectionParams& p)
     request(1001, json::object()); // atributos (negociação de versão)
     request(1002, json::object()); // estado
     request(2005, json::object()); // canvas (cores)
-    request(1042, json::object()); // endereço da câmera ao vivo
-    request(1044, json{{"storage_media", "local"}, {"offset", 0}, {"limit", 20}}); // arquivos guardados na impressora
+    m_pediu_arquivos = false;
+    m_pediu_camera   = std::chrono::steady_clock::now();
+    request(1042, json::object()); // endereço da câmera ao vivo; a lista de arquivos (1044) só é pedida depois
+                                   // que a câmera responde — dois pedidos seguidos faziam a câmera não responder
     dispatch_connect(ConnectStatusOk, "");
     if (m_on_connected)
         m_on_connected(base + "api_status");

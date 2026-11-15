@@ -578,7 +578,7 @@ void BBLTopbar::OnMouseLeftDClock(wxMouseEvent& mouse)
     wxPoint mouse_pos = this->ClientToScreen(mouse.GetPosition());
     wxAuiToolBarItem* item = this->FindToolByPosition(mouse.GetX(), mouse.GetY());
     // check whether mouse is not on any tool item
-    if (item != NULL && item->GetWindow() != m_title_ctrl) {
+    if (item != NULL && !(m_title_ctrl != nullptr && item->GetWindow() == m_title_ctrl)) {
         mouse.Skip();
         return;
     }
@@ -654,7 +654,10 @@ void BBLTopbar::OnMouseLeftDown(wxMouseEvent& event)
     wxAuiToolBarItem* item = this->FindToolByPosition(event.GetX(), event.GetY());
     m_delta = mouse_pos - frame_pos;
 
-    if (item == NULL || item->GetWindow() == m_title_ctrl)
+    // Filuna: a barra não tem mais o título no meio (m_title_ctrl é nulo). Um botão comum também tem GetWindow()
+    // nulo, então a comparação antiga tratava minimizar, maximizar, fechar e o logo como área de arrastar a janela
+    // e o clique nunca chegava ao botão.
+    if (item == NULL || (m_title_ctrl != nullptr && item->GetWindow() == m_title_ctrl))
     {
 #ifdef __WXMSW__
         CaptureMouse();
@@ -773,7 +776,7 @@ WXLRESULT BBLTopbar::MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam
         m_last_mouse_position = ScreenToClient({GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
 
         wxAuiToolBarItem* item = this->FindToolByCurrentPosition();
-        if (item != NULL && item->GetWindow() != m_title_ctrl) {
+        if (item != NULL && !(m_title_ctrl != nullptr && item->GetWindow() == m_title_ctrl)) {
             break;
         }
 
