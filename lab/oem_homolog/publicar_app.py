@@ -115,6 +115,7 @@ def main() -> int:
     ap.add_argument("--destino", type=Path, default=Path("/var/lib/filuna-v2/app"))
     ap.add_argument("--chave", type=Path, default=Path("/root/.filuna-modulos/ed25519.pem"))
     ap.add_argument("--deltas", type=int, default=8, help="quantos builds anteriores recebem pacote só do que mudou")
+    ap.add_argument("--patches", type=int, default=3, help="quantos builds anteriores recebem também a versão com diferença binária (zstd)")
     ap.add_argument("--forcar-retrocesso", action="store_true", help="ignora as checagens de versão e de commit (só com ordem do dono)")
     ns = ap.parse_args()
     if not seguro(ns.build):
@@ -186,12 +187,14 @@ def main() -> int:
         agora = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         (D / "builds" / ns.build / "publicado_em").write_text(agora)
 
-        def documento(nome: str, de: str, escolhidos: dict[str, Path], remover: list[str], tipo: str):
+        def documento(nome: str, de: str, escolhidos: dict[str, Path], remover: list[str], tipo: str, patches: dict | None = None):
             pacote = D / "pacotes" / f"{nome}.zip"
             zipar(pacote, escolhidos)
             doc = {"schema": 1, "de": de, "para": ns.build, "versao": ns.versao, "tipo": tipo, "publicado_em": agora,
                    "notas": ns.nota, "internos": ns.interno, "arquivos": len(escolhidos), "remover": remover,
                    "pacote": {"arquivo": pacote.name, "sha256": sha(pacote), "bytes": pacote.stat().st_size}}
+            if patches:
+                doc["patches"] = patches
             texto = json.dumps(doc, ensure_ascii=False, sort_keys=True)
             (D / "docs" / f"{nome}.json").write_text(texto, encoding="utf-8")
             assin = subprocess.run(["openssl", "pkeyutl", "-sign", "-inkey", str(ns.chave), "-rawin", "-in",
@@ -203,11 +206,44 @@ def main() -> int:
         documento(f"completo__{ns.build}", "*", blobs, [], "completo")
         anteriores = sorted((p for p in (D / "builds").iterdir() if p.is_dir() and p.name != ns.build and (p / "manifesto.json").is_file()),
                             key=lambda p: (p / "publicado_em").read_text() if (p / "publicado_em").is_file() else "", reverse=True)
-        for p in anteriores[: ns.deltas]:
+        zp_tarefas = []
+        for k, p in enumerate(anteriores[: ns.deltas]):
             velho = json.loads((p / "manifesto.json").read_text())["arquivos"]
             mudou = {rel: blobs[rel] for rel, i in man["arquivos"].items() if velho.get(rel, {}).get("sha256") != i["sha256"]}
             remover = sorted(rel for rel in velho if rel not in man["arquivos"])
             documento(f"{p.name}__{ns.build}", p.name, mudou, remover, "delta")
+            if k < ns.patches:
+                zp_tarefas.append((p.name, velho, mudou, remover))
+        # Versão menor do mesmo pacote para os programas que sabem aplicar diferença binária (a partir da 2.5.0-beta.67,
+        # pedem ?patch=zstd): arquivo grande que mudou vai como diferença zstd contra a versão que o cliente já tem.
+        # Quem não pede continua recebendo o pacote normal acima.
+        if zp_tarefas and shutil.which("zstd"):
+            import concurrent.futures
+            pz = tmp / "zp"; pz.mkdir(exist_ok=True)
+            def fazer_patch(de: str, rel: str, base_sha: str):
+                saida = pz / f"{de}__{rel.replace('/', '_')}.zpatch"
+                r = subprocess.run(["zstd", "-q", "-f", "-19", "--long=27", "-T0", f"--patch-from={D / 'blobs' / base_sha}",
+                                    str(blobs[rel]), "-o", str(saida)], capture_output=True)
+                return saida if r.returncode == 0 and saida.is_file() else None
+            pedidos = {}
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+                for de, velho, mudou, _ in zp_tarefas:
+                    for rel in mudou:
+                        base = velho.get(rel, {}).get("sha256", "")
+                        if base and (D / "blobs" / base).is_file() and man["arquivos"][rel]["bytes"] >= 2 * 1048576:
+                            pedidos[(de, rel)] = ex.submit(fazer_patch, de, rel, base)
+            for de, velho, mudou, remover in zp_tarefas:
+                escolhidos, patches = dict(mudou), {}
+                for rel in list(mudou):
+                    f = pedidos.get((de, rel))
+                    saida = f.result() if f else None
+                    if saida and saida.stat().st_size < man["arquivos"][rel]["bytes"] * 0.5:
+                        del escolhidos[rel]
+                        escolhidos[rel + ".zpatch"] = saida
+                        patches[rel] = {"base_sha256": velho[rel]["sha256"], "sha256": man["arquivos"][rel]["sha256"],
+                                        "bytes": man["arquivos"][rel]["bytes"]}
+                if patches:
+                    documento(f"{de}__{ns.build}.zp", de, escolhidos, remover, "delta-zstd", patches)
         if ns.canal != "nenhum":
             cf = D / "canal.json"
             canal = json.loads(cf.read_text()) if cf.is_file() else {}

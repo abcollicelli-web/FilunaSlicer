@@ -25,3 +25,10 @@ Em 15/11 uma sessão (câmera) enviou commit e compilação no meio da 65 de out
 - **Pasta de compilação Linux** (`/srv/filuna-homolog/build/teste-fisico`): antes de copiar arquivos, `pgrep -af ninja`
   e `find … -mmin -15`; guarde cópia do que trocar.
 - **Site** (`publicar.sh`): uma sessão por vez; confira `git status` do worktree e releases recentes antes.
+
+## Update menor (diferença binária, desde 15/11/2026)
+O `publicar_app.py` gera, para os 3 builds anteriores mais recentes (`--patches`), também o pacote `<de>__<para>.zp`:
+arquivo grande que mudou (o `OrcaSlicer.dll`, 117 MB) vai como diferença `zstd --patch-from` (~9 MB em vez de ~44 MB).
+O site só entrega esse pacote a quem pede `?patch=zstd` (Filuna Slicer 2.5.0-beta.67 em diante); os demais recebem o
+pacote normal. Se a diferença falhar no cliente (arquivo instalado diferente, SHA-256), ele volta sozinho ao normal.
+Canal `todos`: só pelo admin do site (`/admin/atualizacoes`); `--canal todos` é recusado.
