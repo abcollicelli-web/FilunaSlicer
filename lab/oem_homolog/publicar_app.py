@@ -16,9 +16,17 @@ Três jeitos de publicar:
 
   python3 publicar_app.py --run 123 --build 440d178 --versao 2.5.0-beta.3 --nota "Conexão da Elegoo corrigida" \
       --interno "update de recursos internos" --canal beta
+
+Várias sessões publicam no mesmo servidor. Para uma publicação nunca derrubar a outra (regra de 15/11/2026):
+  - TRAVA: só uma publicação por vez (<destino>/.publicar.lock). A segunda para na hora e diz quem está publicando.
+  - SEM RETROCESSO: o build novo tem de conter o commit que já está no canal (comparação no GitHub). Se o canal
+    está em um commit que o build novo não tem, a publicação é recusada: junte os commits e compile de novo.
+  - VERSÃO SÓ SOBE: a versão nova tem de ser maior que a do canal e não pode já existir com outro build.
+  - REGISTRO: toda publicação fica em <destino>/publicacoes.log (uma linha JSON por publicação).
+  --forcar-retrocesso passa por cima das duas checagens; só usar com ordem expressa do dono.
 """
 from __future__ import annotations
-import argparse, base64, datetime, hashlib, json, os, shutil, subprocess, sys, tempfile, zipfile
+import argparse, base64, datetime, fcntl, hashlib, json, os, re, shutil, subprocess, sys, tempfile, zipfile
 from pathlib import Path
 
 def sha(p: Path) -> str:
@@ -52,6 +60,50 @@ def zipar(destino: Path, arquivos: dict[str, Path]):
         for rel in sorted(arquivos):
             z.write(arquivos[rel], rel)
 
+def commit_do_build(build: str) -> str:
+    """O id do build é o commit abreviado, às vezes com -rN (republicação por --base)."""
+    return re.sub(r"-r\d+$", "", build)
+
+def chave_versao(v: str) -> tuple:
+    """2.5.0-beta.64 -> (2, 5, 0, 0, 64); versão sem -beta fica acima de qualquer beta dela."""
+    m = re.match(r"^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$", v)
+    if not m:
+        return ()
+    a, b, c, beta = m.groups()
+    return (int(a), int(b), int(c), 0 if beta is not None else 1, int(beta or 0))
+
+def conferir_canal(D: Path, ns) -> str | None:
+    """Devolve o motivo da recusa, ou None se pode publicar. Roda já com a trava tomada."""
+    if ns.canal == "nenhum":
+        return None
+    cf = D / "canal.json"
+    atual = (json.loads(cf.read_text()) if cf.is_file() else {}).get(ns.canal, "")
+    if not atual or atual == ns.build:
+        return None
+    # versão
+    mv = D / "builds" / atual / "manifesto.json"
+    versao_atual = json.loads(mv.read_text()).get("versao", "") if mv.is_file() else ""
+    if not chave_versao(ns.versao):
+        return f"versão {ns.versao} fora do formato 2.5.0 ou 2.5.0-beta.N"
+    if versao_atual and chave_versao(versao_atual) and chave_versao(ns.versao) <= chave_versao(versao_atual):
+        return f"o canal {ns.canal} já está na {versao_atual} (build {atual}); a versão nova tem de ser maior que ela"
+    for p in (D / "builds").iterdir():
+        m = p / "manifesto.json"
+        if p.name != ns.build and m.is_file() and json.loads(m.read_text()).get("versao") == ns.versao:
+            return f"a versão {ns.versao} já foi publicada com o build {p.name}"
+    # sem retrocesso: o commit novo precisa conter o commit do canal
+    de, para = commit_do_build(atual), commit_do_build(ns.build)
+    if de == para:
+        return None
+    r = subprocess.run(["gh", "api", f"repos/{ns.repo_gh}/compare/{de}...{para}", "--jq", ".status"],
+                       capture_output=True, text=True)
+    st = r.stdout.strip()
+    if r.returncode != 0 or st not in ("ahead", "identical"):
+        return (f"o canal {ns.canal} está no build {atual} (versão {versao_atual or '?'}) e o build {ns.build} "
+                f"{'não contém esse commit' if st in ('behind', 'diverged') else 'não pôde ser comparado (' + (r.stderr.strip() or st) + ')'}. "
+                "Publicar assim apagaria do canal o que outra sessão publicou: junte os commits no ramo, compile de novo e publique esse build.")
+    return None
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--origem", type=Path); ap.add_argument("--run")
@@ -63,12 +115,31 @@ def main() -> int:
     ap.add_argument("--destino", type=Path, default=Path("/var/lib/filuna-v2/app"))
     ap.add_argument("--chave", type=Path, default=Path("/root/.filuna-modulos/ed25519.pem"))
     ap.add_argument("--deltas", type=int, default=8, help="quantos builds anteriores recebem pacote só do que mudou")
+    ap.add_argument("--forcar-retrocesso", action="store_true", help="ignora as checagens de versão e de commit (só com ordem do dono)")
     ns = ap.parse_args()
     if not seguro(ns.build):
         print("build inválido"); return 2
     D = ns.destino
     for s in ("builds", "blobs", "docs", "pacotes"):
         (D / s).mkdir(parents=True, exist_ok=True)
+    # trava: uma publicação por vez, em qualquer sessão
+    trava = open(D / ".publicar.lock", "a+")
+    try:
+        fcntl.flock(trava, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        trava.seek(0)
+        print("RECUSADO: outra publicação está em andamento: " + (trava.read().strip() or "?") + ". Espere ela terminar e confira o canal de novo.")
+        return 3
+    trava.seek(0); trava.truncate()
+    trava.write(f"pid {os.getpid()}, build {ns.build}, versão {ns.versao}, canal {ns.canal}, desde "
+                f"{datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}"); trava.flush()
+    motivo = conferir_canal(D, ns)
+    if motivo and not ns.forcar_retrocesso:
+        print("RECUSADO: " + motivo); return 4
+    if motivo:
+        print("AVISO (--forcar-retrocesso): " + motivo)
+    cf_antes = D / "canal.json"
+    anterior = (json.loads(cf_antes.read_text()) if cf_antes.is_file() else {}).get(ns.canal, "")
     tmp = Path(tempfile.mkdtemp(prefix="filuna-app-", dir=str(D)))
     try:
         arquivos: dict[str, Path] = {}   # caminho relativo -> arquivo de origem
@@ -138,8 +209,13 @@ def main() -> int:
             cf = D / "canal.json"
             canal = json.loads(cf.read_text()) if cf.is_file() else {}
             canal[ns.canal] = ns.build
-            cf.write_text(json.dumps(canal, ensure_ascii=False), encoding="utf-8")
+            (D / "canal.json.tmp").write_text(json.dumps(canal, ensure_ascii=False), encoding="utf-8")
+            os.replace(D / "canal.json.tmp", cf)
             print(f"canal {ns.canal} -> {ns.build}")
+        with open(D / "publicacoes.log", "a", encoding="utf-8") as lg:
+            lg.write(json.dumps({"em": agora, "build": ns.build, "versao": ns.versao, "canal": ns.canal, "anterior": anterior,
+                                 "run": ns.run or "", "base": ns.base or "", "forcado": bool(motivo), "notas": ns.nota},
+                                ensure_ascii=False) + "\n")
         subprocess.run(["chmod", "-R", "a+rX", str(D)], check=False)
         return 0
     finally:
