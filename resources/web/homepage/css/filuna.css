@@ -350,3 +350,11 @@ body, button, input
 .m3d-cartao .pontos i{width:13px;height:13px;border-radius:50%;background:var(--c);border:1px solid rgba(0,0,0,.14)}
 .m3d-cartao .dados{display:flex;gap:12px;flex-wrap:wrap;font-size:13.5px;color:#6B6660;font-variant-numeric:tabular-nums}
 .m3d-cartao .dados .preco{color:#C2185B;font-weight:700}
+
+/* Faixa Ferramentas da tela inicial (prancha HOME-01) */
+#FlFerr{padding:0 28px 40px}
+.FlFerrGrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px 22px}
+.FlFerrItem{display:grid;gap:4px;padding:16px 18px;border-radius:16px;background:#fff;border:1px solid #ECE8E2;cursor:pointer;color:#2C2A28;text-decoration:none}
+.FlFerrItem:hover{border-color:#C2185B}
+.FlFerrItem b{font-size:15.5px}
+.FlFerrItem span{font-size:13px;color:#6B6660}

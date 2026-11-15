@@ -67,7 +67,7 @@ const std::map<std::string, std::string> AGENTE = {
 // velocidade, 2001/2002 carregar/descarregar pelo Canvas, 1007 parada). Anycubic Modo LAN: print/update e light/control.
 const std::map<std::string, std::vector<std::string>> CONTROLES = {
     {"filuna_elegoo_cc2", {"bico", "mesa", "home", "mover", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade",
-                           "carregar", "descarregar", "emergencia"}},
+                           "carregar", "descarregar", "emergencia", "arquivos"}},
     {"filuna_anycubic_lan", {"bico", "mesa", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade", "secar"}},
 };
 

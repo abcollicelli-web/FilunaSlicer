@@ -353,7 +353,7 @@ function unidade(app, u) {
 		Filuna.nativo("dispositivos.controle", d).then(function (r) {
 			if (r && r.erro) { estado.ctlMsg = r.erro; desenhar(); return; }
 			var m = estado.ctlSel[v.dev_id] = estado.ctlSel[v.dev_id] || {};
-			if (d.tipo == "luz") m.luz = !!d.ligar; else if (d.tipo == "secar") { m.secar = !!d.ligar; m.secT = d.temperatura; m.secH = Math.round(d.minutos / 60); } else if (d.tipo == "home" || d.tipo == "mover" || d.tipo == "carregar" || d.tipo == "descarregar" || d.tipo == "emergencia") { /* ação única, sem estado */ } else m[d.tipo] = d.valor;
+			if (d.tipo == "luz") m.luz = !!d.ligar; else if (d.tipo == "secar") { m.secar = !!d.ligar; m.secT = d.temperatura; m.secH = Math.round(d.minutos / 60); } else if (d.tipo == "home" || d.tipo == "mover" || d.tipo == "carregar" || d.tipo == "descarregar" || d.tipo == "emergencia" || d.tipo == "arquivos") { /* ação única, sem estado */ } else m[d.tipo] = d.valor;
 			guardarCtl(estado.ctlSel);
 			estado.ctlMsg = "Comando enviado para a impressora."; desenhar();
 		}, function (e) { estado.ctlMsg = e.message; desenhar(); });
@@ -532,6 +532,9 @@ function estoqueIdentificar(v) {
 
 // últimos arquivos guardados na impressora (quando a marca informa)
 function arquivosHtml(v) {
+	// a lista só é pedida à impressora quando o cliente clica (pedido sob demanda)
+	if (v && v.selecionada && (v.controles || []).indexOf("arquivos") >= 0 && (!v.arquivos || !v.arquivos.length))
+		return '<div class="arqs"><button class="btn peq" data-ctl="arquivos">Ver arquivos guardados na impressora</button></div>';
 	if (!v || !v.arquivos || !v.arquivos.length) return "";
 	var quando = function (t) { if (!t) return ""; var d = new Date(t > 1e12 ? t : t * 1000); return isNaN(d) ? "" : d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
 	var dur = function (s) { s = +s || 0; return s <= 0 ? "" : s >= 3600 ? Math.floor(s / 3600) + "h" + ("0" + Math.floor(s % 3600 / 60)).slice(-2) : Math.max(1, Math.round(s / 60)) + " min"; };

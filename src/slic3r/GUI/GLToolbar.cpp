@@ -1,3 +1,4 @@
+#include "slic3r/GUI/FilunaAutoajuda.hpp"
 #include "libslic3r/Point.hpp"
 
 #include "GLToolbar.hpp"
@@ -494,6 +495,12 @@ std::string GLToolbar::get_tooltip() const
         if (item->is_hovered())
         {
             tooltip = item->get_tooltip();
+            {
+                // Filuna — Autoajuda: explicação da ferramenta em português simples
+                const std::string filuna = FilunaAutoajuda::cartao_ferramenta("ferramenta:" + item->get_name());
+                if (!filuna.empty())
+                    tooltip = filuna;
+            }
             if (!item->is_pressed())
             {
                 const std::string& additional_tooltip = item->get_additional_tooltip();

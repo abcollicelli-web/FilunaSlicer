@@ -1,3 +1,4 @@
+#include "slic3r/GUI/FilunaAutoajuda.hpp"
 #include "GLGizmosManager.hpp"
 #include "slic3r/GUI/GLCanvas3D.hpp"
 #include "slic3r/GUI/3DScene.hpp"
@@ -1455,6 +1456,12 @@ void GLGizmosManager::update_hover_state(const EType &type)
     const GLGizmoBase &hovered_gizmo = *m_gizmos[type];
     m_hover = hovered_gizmo.is_activable() ? type : Undefined;    
     m_tooltip = hovered_gizmo.get_name();
+    {
+        // Filuna — Autoajuda: explicação da ferramenta em português simples
+        const std::string filuna = FilunaAutoajuda::cartao_ferramenta("gizmo:" + hovered_gizmo.get_icon_filename());
+        if (!filuna.empty())
+            m_tooltip = filuna;
+    }
 }
 
 bool GLGizmosManager::activate_gizmo(EType type)

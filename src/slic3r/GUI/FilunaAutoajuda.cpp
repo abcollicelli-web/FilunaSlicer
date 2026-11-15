@@ -68,4 +68,19 @@ wxString cartao(const std::string& opt_key)
     return it == m.end() ? wxString() : it->second;
 }
 
+std::string cartao_ferramenta(const std::string& chave)
+{
+    if (!ligada())
+        return {};
+    std::string k = chave;
+    for (const char* fim : {".svg", "_dark"}) {
+        const std::string f(fim);
+        if (k.size() > f.size() && k.compare(k.size() - f.size(), f.size(), f) == 0)
+            k.resize(k.size() - f.size());
+    }
+    const auto& m  = cartoes();
+    const auto  it = m.find(k);
+    return it == m.end() ? std::string() : std::string(it->second.ToUTF8().data());
+}
+
 }}} // namespace Slic3r::GUI::FilunaAutoajuda

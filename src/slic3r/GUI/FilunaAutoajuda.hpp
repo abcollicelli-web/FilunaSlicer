@@ -14,5 +14,8 @@ bool     ligada();
 void     ligar(bool sim);
 // Cartão do parâmetro; vazio quando não há texto para ele (ou a Autoajuda está desligada).
 wxString cartao(const std::string& opt_key);
+// Cartão de uma ferramenta da área 3D: "ferramenta:<nome>" (barra de cima) ou "gizmo:<ícone sem _dark/.svg>".
+// Em UTF-8; vazio quando não há texto ou a Autoajuda está desligada.
+std::string cartao_ferramenta(const std::string& chave);
 
 }}} // namespace Slic3r::GUI::FilunaAutoajuda

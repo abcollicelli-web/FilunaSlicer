@@ -425,6 +425,8 @@ int FilunaElegooCC2Agent::send_message_to_printer(std::string, std::string json_
             metodo = 1027, params = {{"axes", f.value("eixo", std::string("x"))}, {"distance", f.value("distancia", 0.0)}};
         else if (c == "luz")
             metodo = 1029, params = {{"power", f.value("ligar", false) ? 1 : 0}};
+        else if (c == "arquivos") // só quando o cliente pede na tela (não mais ao conectar)
+            metodo = 1044, params = {{"storage_media", "local"}, {"offset", 0}, {"limit", 20}};
         else if (c == "ventilador")
             metodo = 1030, params = {{"fan", f.value("valor", 0)}};
         else if (c == "ventilador_aux")
