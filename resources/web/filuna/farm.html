@@ -4,37 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Farm</title>
-<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="farm-site.css">
 <style>
-.abrindo{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:14px;text-align:center;color:var(--ink2)}
-.abrindo .gira{width:42px;height:42px;border-radius:50%;border:4px solid #F6C6D8;border-top-color:#C2185B;animation:g 1s linear infinite}
-@keyframes g{to{transform:rotate(360deg)}}
-.abrindo h2{color:var(--ink);font-size:22px;margin:0}
+/* casca da tela no Slicer: o resto é o visual do site (farm-site.css) */
+body{font-size:16px;padding:28px 32px 60px}
+.fl-topo{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.fl-topo a{font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink2);padding:8px 14px;border-radius:999px;cursor:pointer}
+.fl-topo a.on{background:var(--mag-soft);color:var(--mag-deep)}
+.fl-local{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--good);background:var(--good-soft);border-radius:999px;padding:4px 10px;margin-left:auto}
+.fl-ocupado{opacity:.55;pointer-events:none}
+.fl-carregando{padding:60px;text-align:center;color:var(--ink2)}
+.fm-foto img{width:100%;height:100%;object-fit:contain}
 </style>
 </head>
 <body>
-<div class="pagina" id="conteudo"><div class="abrindo"><div class="gira"></div><h2>Abrindo a sua Farm…</h2><div>O mesmo painel do site, aqui dentro do Filuna Slicer.</div></div></div>
+<nav class="fl-topo" id="topo"></nav>
+<div id="tela"><div class="fl-carregando">Carregando a Farm…</div></div>
 <script src="ponte.js"></script>
-<script>
-// A Farm é a mesma do site (wizard de 6 etapas, painel, impressoras, estoque): esta página pede um link de uso
-// único com a conta do Slicer e abre o site aqui dentro. Quem imprime as mesas da fila é o próprio Slicer.
-var VOLTAS = ["/farm", "/farm/novo", "/farm/impressoras", "/farm/estoque", "/farm/slicer"];
-function abrir(volta) {
-	if (VOLTAS.indexOf(volta) < 0 && !/^\/farm\/pedidos\/[A-Za-z0-9_-]{1,40}$/.test(volta || "")) volta = "/farm";
-	if (!Filuna.temToken()) { Filuna.telaLogin(document.getElementById("conteudo"), function () { abrir(volta); }, "Entre na sua conta Filuna para usar a Farm."); return; }
-	Filuna.api("POST", "/entrada-web", { volta: volta }).then(function (r) {
-		if (r && r.url && /^https:\/\/filuna3d\.com\//.test(r.url)) location.replace(r.url);
-		else throw { erro: "resposta sem link" };
-	}).catch(function (e) {
-		document.getElementById("conteudo").innerHTML = '<div class="abrindo"><h2>Não deu para abrir a Farm agora</h2><div>' + Filuna.esc((e && e.erro) || "Sem conexão.") +
-			'</div><button class="btn primario" id="denovo">Tentar de novo</button></div>';
-		document.getElementById("denovo").onclick = function () { location.reload(); };
-	});
-}
-Filuna.iniciar().then(function () {
-	return Filuna.nativo("secao.pendente").then(function (r) { return r.secao; }).catch(function () { return ""; });
-}).then(function (secao) { abrir(secao || "/farm"); });
-Filuna.ouvir("conta", function () { location.reload(); });
-</script>
+<script src="farm-plano.js"></script>
+<script src="farm-wizard.js"></script>
+<script src="farm-app.js"></script>
+<script src="farm-pedido.js"></script>
 </body>
 </html>

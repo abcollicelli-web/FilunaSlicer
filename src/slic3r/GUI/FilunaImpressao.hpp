@@ -14,7 +14,10 @@
 //                                      -1 = filamento não usado nesta mesa)
 //   start_send_gcode_to_sdcard(params) só envia o arquivo
 
+#include <functional>
 #include <string>
+
+#include <nlohmann/json.hpp>
 
 namespace Slic3r { namespace GUI { namespace FilunaImpressao {
 
@@ -34,6 +37,12 @@ bool agente_entrada_fixa();
 // Filuna Farm: o Slicer imprime as mesas da fila do site pela impressora conectada (fila, fatiamento sem tela,
 // envio e andamento). Desliga com filuna_farm_auto=0 no app_config.
 void farm_iniciar();
+
+// Farm local (a tela da Farm no Slicer): "farm.escolher" (arquivo), "farm.analisar" (peças, cores, medidas e foto, com o
+// farm_arquivos.py do site no Python do programa), "farm.medir" (tempo e gramas fatiando cada arquivo com os perfis da
+// impressora conectada) e "farm.salvar" (projeto planejado no computador guardado no site para acompanhar). As de
+// trabalho longo respondem depois pelo evento.
+nlohmann::json farm_acao(const std::string& acao, const nlohmann::json& d, std::function<void(const std::string&, const nlohmann::json&)> evento);
 
 std::string filamento_id_do_tipo(const std::string& tipo, const std::string& marca = std::string());
 

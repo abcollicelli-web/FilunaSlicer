@@ -24,6 +24,7 @@
 #include <cmath>
 #include <map>
 #include <wx/stdpaths.h>
+#include <wx/filedlg.h>
 #include <chrono>
 #include <future>
 #include <sstream>
@@ -604,6 +605,24 @@ namespace {
 namespace fsf = boost::filesystem;
 const char* const FARM_API = "https://filuna3d.com/api/slicer/v1";
 
+// Caminhos em UTF-8 nos argumentos (pasta do usuário com acento no Windows não pode quebrar o fatiamento)
+std::string utf8_de(const fsf::path& p)
+{
+#ifdef _WIN32
+    return boost::nowide::narrow(p.wstring());
+#else
+    return p.string();
+#endif
+}
+fsf::path caminho_de(const std::string& utf8)
+{
+#ifdef _WIN32
+    return fsf::path(boost::nowide::widen(utf8));
+#else
+    return fsf::path(utf8);
+#endif
+}
+
 struct FarmResp
 {
     unsigned    status{0};
@@ -713,6 +732,7 @@ struct FarmPerfis
 {
     bool        ok{false};
     std::string erro, maquina, processo, filamento, agente;
+    double      altura{0.2};
     PrintParams base;
 };
 
@@ -753,12 +773,13 @@ FarmPerfis farm_perfis(const std::string& material, const fsf::path& pasta)
         r.erro = "não há perfil de " + material + " para esta impressora";
         return r;
     }
-    r.maquina   = (pasta / "maquina.json").string();
-    r.processo  = (pasta / "processo.json").string();
-    r.filamento = (pasta / "filamento.json").string();
-    if (!gravar_perfil(b->printers.get_edited_preset().config, "machine", "Filuna Farm maquina", r.maquina) ||
-        !gravar_perfil(b->prints.get_edited_preset().config, "process", "Filuna Farm processo", r.processo) ||
-        !gravar_perfil(fil->config, "filament", "Filuna Farm " + material, r.filamento)) {
+    r.maquina   = utf8_de(pasta / "maquina.json");
+    r.processo  = utf8_de(pasta / "processo.json");
+    r.filamento = utf8_de(pasta / "filamento.json");
+    r.altura    = b->prints.get_edited_preset().config.opt_float("layer_height");
+    if (!gravar_perfil(b->printers.get_edited_preset().config, "machine", "Filuna Farm maquina", pasta / "maquina.json") ||
+        !gravar_perfil(b->prints.get_edited_preset().config, "process", "Filuna Farm processo", pasta / "processo.json") ||
+        !gravar_perfil(fil->config, "filament", "Filuna Farm " + material, pasta / "filamento.json")) {
         r.erro = "não gravou os perfis para o fatiamento";
         return r;
     }
@@ -771,11 +792,12 @@ FarmPerfis farm_perfis(const std::string& material, const fsf::path& pasta)
     return r;
 }
 
-// O próprio programa sem tela: --load-settings, --clone-objects (quantidade), --arrange, --slice.
-int rodar_fatiamento(const std::vector<std::string>& args, int limite_s)
+// Roda um programa e espera (sem janela). O fatiamento sem tela é o próprio Filuna Slicer; a análise do arquivo é o
+// Python que vem com ele (python/python.exe), com o mesmo farm_arquivos.py do site.
+int rodar_programa(const std::string& exe, const std::vector<std::string>& args, int limite_s)
 {
 #ifdef _WIN32
-    std::wstring linha = L"\"" + wxStandardPaths::Get().GetExecutablePath().ToStdWstring() + L"\"";
+    std::wstring linha = L"\"" + boost::nowide::widen(exe) + L"\"";
     for (const std::string& a : args)
         linha += L" \"" + boost::nowide::widen(a) + L"\"";
     STARTUPINFOW        si{};
@@ -795,12 +817,33 @@ int rodar_fatiamento(const std::vector<std::string>& args, int limite_s)
     ::CloseHandle(pi.hProcess);
     return int(codigo);
 #else
-    std::string linha = "\"" + std::string(wxStandardPaths::Get().GetExecutablePath().ToUTF8().data()) + "\"";
+    std::string linha = "\"" + exe + "\"";
     for (const std::string& a : args)
         linha += " \"" + a + "\"";
     (void) limite_s;
     return std::system(linha.c_str());
 #endif
+}
+
+std::string exe_do_programa() { return std::string(wxStandardPaths::Get().GetExecutablePath().ToUTF8().data()); }
+
+int rodar_fatiamento(const std::vector<std::string>& args, int limite_s) { return rodar_programa(exe_do_programa(), args, limite_s); }
+
+std::string python_do_programa()
+{
+    const fsf::path pasta = fsf::path(exe_do_programa()).parent_path();
+    boost::system::error_code ec;
+    for (const fsf::path& p : {pasta / "python" / "python.exe", pasta / "python" / "bin" / "python3"})
+        if (fsf::exists(p, ec))
+            return p.string();
+    return "python3";
+}
+
+fsf::path pasta_farm_py()
+{
+    // páginas atualizadas pelo servidor (recurso "telas") valem sobre as do instalador, como nas telas Filuna
+    const fsf::path base = fsf::path(resources_dir()) / "web" / "filuna" / "farm-py";
+    return base;
 }
 
 struct FarmAtivo // a mesa da Farm que esta impressora está fazendo (sobrevive a fechar e abrir o programa)
@@ -813,6 +856,24 @@ struct FarmAtivo // a mesa da Farm que esta impressora está fazendo (sobrevive 
 };
 
 std::atomic<bool> g_farm_iniciada{false};
+std::atomic<bool> g_farm_agora{false};   // projeto salvo agora: a volta não espera os 20 s
+std::mutex        g_farm_indice_trava;
+
+fsf::path farm_indice() { return fsf::path(data_dir()) / "filuna" / "farm" / "locais.json"; }
+
+json farm_indice_ler()
+{
+    fsf::ifstream i(farm_indice(), std::ios::binary);
+    const json    j = json::parse(std::string(std::istreambuf_iterator<char>(i), std::istreambuf_iterator<char>()), nullptr, false);
+    return j.is_object() ? j : json::object();
+}
+
+std::string farm_arquivo_local(const std::string& tid)
+{
+    std::lock_guard<std::mutex> g(g_farm_indice_trava);
+    const json j = farm_indice_ler();
+    return j.contains(tid) && j[tid].is_string() ? j[tid].get<std::string>() : std::string();
+}
 std::map<std::string, long long> g_farm_recusadas; // mesa -> quando foi recusada (tenta de novo depois de 10 min)
 std::string       g_farm_ultimo_aviso;
 
@@ -912,17 +973,28 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     const std::string arquivo = texto_de(t, "arquivo", "modelo.stl");
     const std::string ext     = boost::iends_with(arquivo, ".3mf") ? ".3mf" : boost::iends_with(arquivo, ".obj") ? ".obj" : ".stl";
     const fsf::path   modelo  = pasta / ("modelo" + ext);
-    FarmResp          d       = farm_http("GET", "/trabalhos/" + tid + "/arquivo", json(), token, modelo);
-    if (d.status != 200)
-        return "não baixou o modelo da mesa (" + d.erro + ")";
+    // projeto feito no Slicer: o modelo já está no computador (não vai ao servidor para voltar)
+    bool local = false;
+    {
+        const std::string guardado = farm_arquivo_local(tid);
+        if (!guardado.empty() && fsf::exists(caminho_de(guardado), ec)) {
+            fsf::copy_file(caminho_de(guardado), modelo, fsf::copy_options::overwrite_existing, ec);
+            local = !ec;
+        }
+    }
+    if (!local) {
+        FarmResp d = farm_http("GET", "/trabalhos/" + tid + "/arquivo", json(), token, modelo);
+        if (d.status != 200)
+            return "não baixou o modelo da mesa (" + d.erro + ")";
+    }
     FarmPerfis perf;
     if (!na_janela<FarmPerfis>([material, pasta] { return farm_perfis(material, pasta); }, perf) || !perf.ok)
         return perf.erro.empty() ? "não leu os perfis da impressora" : perf.erro;
     const fsf::path saida = pasta / "saida";
-    const int rc = rodar_fatiamento({"--datadir", (pasta / "dados").string(), "--load-settings", perf.maquina + ";" + perf.processo,
+    const int rc = rodar_fatiamento({"--datadir", utf8_de(pasta / "dados"), "--load-settings", perf.maquina + ";" + perf.processo,
                                      "--load-filaments", perf.filamento, "--clone-objects", std::to_string(qtd), "--arrange", "1",
                                      "--ensure-on-bed", "--allow-newer-file", "--slice", "0", "--export-statistics", "--outputdir",
-                                     saida.string(), modelo.string()},
+                                     utf8_de(saida), utf8_de(modelo)},
                                     30 * 60);
     const fsf::path gcode = saida / "plate_1.gcode";
     if (rc != 0 || !fsf::exists(gcode, ec)) {
@@ -957,7 +1029,7 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     if (!m.cores.empty() && posicao <= int(m.cores.size()))
         mapa.push_back(m.cores[posicao - 1].value("global", 0));
     PrintParams p                 = perf.base;
-    p.filename                    = envio.string();
+    p.filename                    = utf8_de(envio);
     p.project_name                = envio.stem().string();
     p.task_name                   = p.project_name;
     p.plate_index                 = 1;
@@ -1072,6 +1144,142 @@ void farm_volta(FarmAtivo& ativo)
 }
 } // namespace
 
+// ---------------- Farm local: ações da tela (abrir, analisar, medir, salvar) ----------------
+namespace {
+bool id_seguro(const std::string& s)
+{
+    return !s.empty() && s.size() <= 64 && s.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789-_") == std::string::npos;
+}
+bool nome_seguro(const std::string& s)
+{
+    return !s.empty() && s.size() <= 200 && s.find("..") == std::string::npos && s.find(':') == std::string::npos && s[0] != '/' && s[0] != '\\';
+}
+fsf::path pasta_projeto(const std::string& id) { return fsf::path(data_dir()) / "filuna" / "farm" / "projetos" / id; }
+
+json ler_json(const fsf::path& p)
+{
+    fsf::ifstream i(p, std::ios::binary);
+    return json::parse(std::string(std::istreambuf_iterator<char>(i), std::istreambuf_iterator<char>()), nullptr, false);
+}
+} // namespace
+
+json farm_acao(const std::string& acao, const json& d, std::function<void(const std::string&, const json&)> evento)
+{
+    if (acao == "farm.escolher") {
+        wxFileDialog dlg(wxGetApp().mainframe, wxString::FromUTF8("Escolha o projeto para a Farm"), wxEmptyString, wxEmptyString,
+                         wxString::FromUTF8("Modelos 3D (*.stl;*.3mf;*.zip)|*.stl;*.3mf;*.zip;*.STL;*.3MF;*.ZIP"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+        if (dlg.ShowModal() != wxID_OK)
+            return json::object();
+        const std::string c = dlg.GetPath().ToUTF8().data();
+        boost::system::error_code ec;
+        return {{"caminho", c}, {"nome", utf8_de(caminho_de(c).filename())}, {"tamanho", (long long) fsf::file_size(caminho_de(c), ec)}};
+    }
+    if (acao == "farm.analisar") {
+        const std::string caminho = texto_de(d, "caminho");
+        boost::system::error_code ec;
+        if (caminho.empty() || !fsf::exists(caminho_de(caminho), ec))
+            throw std::runtime_error("Arquivo não encontrado.");
+        const std::string id    = std::to_string((long long) std::time(nullptr)) + "-" + std::to_string(std::rand() % 100000);
+        const fsf::path   pasta = pasta_projeto(id);
+        fsf::create_directories(pasta, ec);
+        std::thread([id, pasta, caminho, evento] {
+            const int rc = rodar_programa(python_do_programa(), {"-I", "-B", utf8_de(pasta_farm_py() / "analisar.py"), caminho, utf8_de(pasta)}, 300);
+            json      r  = ler_json(pasta / "analise.json");
+            if (!r.is_object())
+                r = {{"ok", false}, {"erro", "Não foi possível ler esse arquivo (análise " + std::to_string(rc) + ")."}};
+            r["projeto"] = id;
+            evento("farm.analise", r);
+        }).detach();
+        return {{"projeto", id}};
+    }
+    if (acao == "farm.medir") {
+        const std::string id = texto_de(d, "projeto"), material = texto_de(d, "material", "PLA");
+        if (!id_seguro(id) || material.empty() || material.size() > 12 ||
+            material.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-") != std::string::npos)
+            throw std::runtime_error("Projeto inválido.");
+        std::vector<std::string> arquivos;
+        for (const auto& a : d.value("arquivos", json::array()))
+            if (a.is_string() && nome_seguro(a.get<std::string>()))
+                arquivos.push_back(a.get<std::string>());
+        std::thread([id, material, arquivos, evento] {
+            const fsf::path pasta = pasta_projeto(id), base = pasta / ("medida-" + material);
+            boost::system::error_code ec;
+            fsf::create_directories(base, ec);
+            FarmPerfis perf;
+            json       saida = {{"projeto", id}, {"material", material}, {"arquivos", json::object()}, {"erros", json::object()}};
+            if (!na_janela<FarmPerfis>([material, base] { return farm_perfis(material, base); }, perf) || !perf.ok) {
+                saida["erro"] = perf.erro.empty() ? std::string("não leu os perfis da impressora") : perf.erro;
+                evento("farm.medida", saida);
+                return;
+            }
+            int n = 0;
+            for (const std::string& a : arquivos) {
+                const fsf::path out = base / ("saida-" + std::to_string(++n));
+                fsf::remove_all(out, ec);
+                fsf::create_directories(out, ec);
+                const int rc = rodar_fatiamento({"--datadir", utf8_de(pasta / "dados"), "--load-settings", perf.maquina + ";" + perf.processo,
+                                                 "--load-filaments", perf.filamento, "--arrange", "1", "--ensure-on-bed", "--allow-newer-file",
+                                                 "--slice", "0", "--export-statistics", "--outputdir", utf8_de(out),
+                                                 utf8_de(pasta / "modelos" / caminho_de(a))},
+                                                30 * 60);
+                double tempo = 0, gramas = 0;
+                for (fsf::directory_iterator it(out, ec), fim; !ec && it != fim; it.increment(ec)) {
+                    const std::string nome = it->path().filename().string();
+                    if (!boost::ends_with(nome, ".statistics.json"))
+                        continue;
+                    const json st = ler_json(it->path());
+                    if (st.is_object() && st.contains("summary")) {
+                        tempo += st["summary"].value("time", 0.0);
+                        for (const auto& f : st["summary"].value("filaments", json::array()))
+                            gramas += f.value("weight", 0.0);
+                    }
+                }
+                if (rc != 0 || tempo <= 0) {
+                    const json rr = ler_json(out / "result.json");
+                    saida["erros"][a] = rr.is_object() && !texto_de(rr, "error_string").empty() ? texto_de(rr, "error_string")
+                                                                                             : "não foi possível fatiar (" + std::to_string(rc) + ")";
+                } else
+                    saida["arquivos"][a] = {{"tempo_s", tempo}, {"gramas", gramas}, {"altura_camada", perf.altura}};
+            }
+            evento("farm.medida", saida);
+        }).detach();
+        return json::object();
+    }
+    if (acao == "farm.salvar") {
+        const std::string id = texto_de(d, "projeto");
+        if (!id_seguro(id) || !d.contains("dados") || !d["dados"].is_object())
+            throw std::runtime_error("Projeto inválido.");
+        const json        dados = d["dados"];
+        const std::string token = wxGetApp().app_config->get("filuna_token");
+        std::thread([id, dados, token, evento] {
+            FarmResp r = farm_http("POST", "/farm-projetos", dados, token);
+            if (r.status != 200 || !r.corpo.is_object()) {
+                evento("farm.salvo", {{"erro", r.erro.empty() ? std::string("o servidor não guardou o projeto") : r.erro}});
+                return;
+            }
+            // as mesas deste projeto imprimem com o arquivo que já está no computador
+            const json ts = r.corpo.value("trabalhos", json::array()), ms = dados.value("mesas", json::array());
+            {
+                std::lock_guard<std::mutex> g(g_farm_indice_trava);
+                json ind = farm_indice_ler();
+                for (std::size_t i = 0; i < ts.size() && i < ms.size(); ++i) {
+                    const std::string tid = texto_de(ts[i], "id"), arq = texto_de(ms[i], "arquivo");
+                    if (!tid.empty() && nome_seguro(arq))
+                        ind[tid] = utf8_de(pasta_projeto(id) / "modelos" / caminho_de(arq));
+                }
+                boost::system::error_code ec;
+                fsf::create_directories(farm_indice().parent_path(), ec);
+                fsf::ofstream o(farm_indice(), std::ios::binary | std::ios::trunc);
+                o << ind.dump();
+            }
+            g_farm_agora = true;
+            evento("farm.salvo", {{"pid", texto_de(r.corpo, "pid")}, {"numero", inteiro(r.corpo, "numero", 0)}});
+        }).detach();
+        return json::object();
+    }
+    throw std::runtime_error("Ação da Farm desconhecida.");
+}
+
 void farm_iniciar()
 {
     if (g_farm_iniciada.exchange(true))
@@ -1087,7 +1295,8 @@ void farm_iniciar()
                 BOOST_LOG_TRIVIAL(warning) << "Filuna Farm: " << e.what();
             } catch (...) {
             }
-            std::this_thread::sleep_for(std::chrono::seconds(20));
+            for (int k = 0; k < 20 && !g_farm_agora.exchange(false); ++k)
+                std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }).detach();
 }

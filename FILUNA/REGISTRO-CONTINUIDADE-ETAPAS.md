@@ -1046,3 +1046,29 @@ para o plano Beta. A camada JSON da Farm do site para o Slicer ficou guardada em
 Próximo: planejador local (porte do farm_plano.py para o Slicer, conferido contra o Python com os mesmos dados),
 análise do arquivo no Slicer (Model: peças, cores, medidas), wizard local de 6 etapas com o visual do site, envio
 local às impressoras e projeto salvo no servidor (rota nova para projeto já planejado).
+
+## 2026-11-15 — 69: Farm LOCAL no Slicer (ordem do dono) + correções
+
+Farm do Slicer roda no computador; do site vêm só os dados; o projeto é salvo no site para acompanhar.
+- Tela: resources/web/filuna/farm.html + farm-app.js (painel, impressoras, impressora, estoque) + farm-pedido.js (etapas
+  1–6, navegação, projeto local). HTML e classes portados de farm/*.html do site; visual = farm-site.css (filuna.css +
+  farm.css do site). Pedido feito no site: dados e ações pelo site (GET/POST /api/slicer/v1/farm/<rota>, JSON da mesma
+  página). Projeto novo: etapas 1–5 locais; só no fim POST /api/slicer/v1/farm-projetos (site guarda peças, respostas e
+  mesas; não analisa nem fatia). Dados do plano: GET /api/slicer/v1/farm-dados.
+- Planejador local: farm-plano.js (porte do farm_plano.py) e farm-wizard.js (porte das funções do wizard do farm.py),
+  conferidos contra o Python do site com 2.800 casos aleatórios: 100% iguais (round do Python pelo valor binário,
+  soma compensada do Python 3.12+, ordem de desempate). Teste: /srv/filuna-homolog/overlay/teste-farm-plano
+  (gerar.py + comparar.js; gerar_wizard.py + comparar_wizard.js). Rodar de novo quando o site mudar o planejador.
+- Análise do arquivo: o próprio farm_arquivos.py do site (resources/web/filuna/farm-py/farmapp, cópia sem mudança) no
+  Python 3.12 que vem com o Slicer (python/python.exe -I -B analisar.py). Medida: fatia cada arquivo com os perfis da
+  impressora conectada (--slice 0 --export-statistics). Ações C++: FilunaImpressao::farm_acao (farm.escolher,
+  farm.analisar, farm.medir, farm.salvar); eventos farm.analise, farm.medida, farm.salvo.
+- Impressão: o executor usa o arquivo local do projeto (índice data_dir/filuna/farm/locais.json, trabalho -> modelo),
+  sem baixar do servidor; começa na hora ao salvar. Mesa do site: confere material/cor da entrada antes de imprimir.
+- Teste de ponta a ponta da tela num Chromium sem janela contra servidor de teste (painel -> novo -> etapas 2–5 ->
+  enviar -> etapa 6 -> painel): sem erro de JavaScript; projeto salvo nº 1001 com 1 mesa de 5 peças na impressora.
+- Site: etapa 5 não quebra mais ao aguardar a troca de uma cor (falta_cor sem cor_nome); paramétrico beta também para o
+  plano Beta.
+- Correções: impressora desligada sem janela de erro (agentes Filuna); acentos do erro de conexão.
+Limites desta versão: a medida e a impressão usam a impressora conectada no Dispositivo (várias ao vivo ainda não);
+Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a mesa em 3D da etapa 2 ainda não.

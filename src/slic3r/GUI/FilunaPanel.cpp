@@ -7,6 +7,7 @@
 #include "FilunaDados.hpp"
 #include "FilunaDispositivos.hpp"
 #include "FilunaManutencao.hpp"
+#include "FilunaImpressao.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -477,10 +478,6 @@ bool FilunaPanel::Show(bool show)
         m_browser->Destroy();
         create_browser();
     }
-    // Farm aberta no site: um pedido de outra parte (ex.: "Novo pedido") volta à página local, que abre o endereço
-    if (show && m_browser != nullptr && m_url.EndsWith("farm.html") && !pending_section().empty() &&
-        !m_browser->GetCurrentURL().Lower().StartsWith("file:"))
-        WebView::LoadUrl(m_browser, m_url);
     const bool changed = wxPanel::Show(show);
     if (show)
         send_event("mostrar");
@@ -607,6 +604,15 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         const std::string tab = d.value("aba", std::string()), section = d.value("secao", std::string());
         CallAfter([tab, section] { open_tab(tab, section); });
         return json::object();
+    }
+    if (action.rfind("farm.", 0) == 0) {   // Farm local: abrir, analisar, medir e salvar o projeto (respostas longas por evento)
+        FilunaPanel* eu = this;
+        return FilunaImpressao::farm_acao(action, d, [eu](const std::string& nome, const json& dados) {
+            wxGetApp().CallAfter([eu, nome, dados] {
+                if (panels().count(eu))
+                    eu->send_event(nome, dados);
+            });
+        });
     }
     if (action == "parametrico.abrir") {
         const std::string pid = d.value("id", std::string()), ver = d.value("versao", std::string()), sha = d.value("sha256", std::string()),

@@ -1631,7 +1631,7 @@ void MainFrame::init_tabpanel() {
     m_lazy_pages.push_back(m_filuna_device_page);
     m_tabpanel->AddPage(TAB_ID_FILUNA_DEVICE, m_filuna_device_page, _L_CONTEXT("Device", "Filuna tab"), "tab_monitor_active");
 
-    // Filuna Farm: o mesmo painel do site (wizard do pedido, fila, impressoras), aberto aqui com a conta do Slicer
+    // Filuna Farm local: roda no Slicer (abre o arquivo, mede, fatia, planeja e imprime); do site vêm só os dados
     m_filuna_farm_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_FARM, 23,
                                                    [](wxWindow* parent) { return new FilunaPanel(parent, "farm.html"); });
     m_lazy_pages.push_back(m_filuna_farm_page);
