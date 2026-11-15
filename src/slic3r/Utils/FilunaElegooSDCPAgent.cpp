@@ -297,7 +297,9 @@ int FilunaElegooSDCPAgent::send_message_to_printer(std::string, std::string json
     const std::string c = cmd.contains("print") ? cmd["print"].value("command", std::string()) : std::string();
     int               n = c == "pause" ? 129 : c == "stop" ? 130 : c == "resume" ? 131 : -1;
     if (n < 0)
-        return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+        // comando que esta marca não tem (o programa manda vários por conta própria): ignora em silêncio.
+        // Devolver "não suportado" abria a cada vez a janela "controle não suportado", que travava o programa.
+        return BAMBU_NETWORK_SUCCESS;
     return send_cmd(n, json::object()) ? BAMBU_NETWORK_SUCCESS : BAMBU_NETWORK_ERR_CONNECT_FAILED;
 }
 

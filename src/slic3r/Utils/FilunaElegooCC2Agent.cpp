@@ -359,7 +359,7 @@ int FilunaElegooCC2Agent::send_message_to_printer(std::string, std::string json_
         else if (c == "emergencia")
             metodo = 1007;
         if (!metodo)
-            return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+            return BAMBU_NETWORK_ERR_INVALID_HANDLE;
         BOOST_LOG_TRIVIAL(info) << "FilunaElegooCC2Agent: controle " << c << " -> método " << metodo << " " << params.dump();
         if (!request(metodo, params))
             return BAMBU_NETWORK_ERR_CONNECT_FAILED;
@@ -368,7 +368,9 @@ int FilunaElegooCC2Agent::send_message_to_printer(std::string, std::string json_
     }
     json r = to_cc2_request(cmd, id);
     if (r.empty())
-        return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+        // comando que esta marca não tem (o programa manda vários por conta própria): ignora em silêncio.
+        // Devolver "não suportado" abria a cada vez a janela "controle não suportado", que travava o programa.
+        return BAMBU_NETWORK_SUCCESS;
     if (!request(r["method"].get<int>(), r["params"]))
         return BAMBU_NETWORK_ERR_CONNECT_FAILED;
     if (r["method"].get<int>() == 1002)

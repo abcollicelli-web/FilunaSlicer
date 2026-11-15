@@ -272,7 +272,9 @@ int FilunaPrusaLinkAgent::send_message_to_printer(std::string, std::string json_
     else if (c == "stop")
         code = call("DELETE", job, "", r);
     else
-        return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+        // comando que esta marca não tem (o programa manda vários por conta própria): ignora em silêncio.
+    // Devolver "não suportado" abria a cada vez a janela "controle não suportado", que travava o programa.
+    return BAMBU_NETWORK_SUCCESS;
     return code >= 200 && code < 300 ? BAMBU_NETWORK_SUCCESS : BAMBU_NETWORK_ERR_CONNECT_FAILED;
 }
 

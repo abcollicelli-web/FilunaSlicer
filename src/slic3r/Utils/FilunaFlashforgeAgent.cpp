@@ -277,7 +277,9 @@ int FilunaFlashforgeAgent::send_message_to_printer(std::string, std::string json
         return BAMBU_NETWORK_SUCCESS; // o estado já chega pela consulta periódica
     const std::string action = action_for(cmd);
     if (action.empty())
-        return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+        // comando que esta marca não tem (o programa manda vários por conta própria): ignora em silêncio.
+        // Devolver "não suportado" abria a cada vez a janela "controle não suportado", que travava o programa.
+        return BAMBU_NETWORK_SUCCESS;
     std::string sn, code;
     {
         std::lock_guard<std::recursive_mutex> l(m_mutex);

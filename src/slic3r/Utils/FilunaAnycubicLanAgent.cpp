@@ -667,7 +667,7 @@ int FilunaAnycubicLanAgent::send_message_to_printer(std::string, std::string jso
             const bool on = f.value("ligar", false);
             feito = pedir("light", "control", json{{"type", 2}, {"status", on ? 1 : 0}, {"brightness", on ? 100 : 0}});
         } else
-            return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+            return BAMBU_NETWORK_ERR_INVALID_HANDLE;
         BOOST_LOG_TRIVIAL(info) << "FilunaAnycubicLanAgent: controle " << fc << (feito ? " enviado" : " falhou");
         return feito ? BAMBU_NETWORK_SUCCESS : BAMBU_NETWORK_ERR_CONNECT_FAILED;
     }
@@ -683,7 +683,9 @@ int FilunaAnycubicLanAgent::send_message_to_printer(std::string, std::string jso
         ok = pedir("info", "query", nullptr);
         pedir("multiColorBox", "getInfo", nullptr);
     } else
-        return ORCA_NETWORK_ERR_CMD_NOT_SUPPORTED;
+        // comando que esta marca não tem (o programa manda vários por conta própria): ignora em silêncio.
+        // Devolver "não suportado" abria a cada vez a janela "controle não suportado", que travava o programa.
+        return BAMBU_NETWORK_SUCCESS;
     return ok ? BAMBU_NETWORK_SUCCESS : BAMBU_NETWORK_ERR_CONNECT_FAILED;
 }
 
