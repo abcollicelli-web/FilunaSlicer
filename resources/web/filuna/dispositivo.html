@@ -16,7 +16,7 @@
 .estado{width:10px;height:10px;border-radius:50%;flex:none;background:#CFC8BE}
 .e-imprimindo{background:var(--magenta-deep)}.e-livre{background:var(--good)}.e-limpar_mesa{background:var(--violeta)}.e-pausada{background:var(--orange)}.e-erro,.e-falhou{background:var(--warn)}
 .body{flex:1;display:flex;gap:28px;padding:24px 32px;min-height:0;flex-wrap:wrap}
-.view{flex:1.5;min-width:340px;min-height:380px;background:var(--scene);border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.view{flex:1.5;min-width:340px;min-height:380px;align-self:flex-start;height:clamp(380px,48vh,540px);background:var(--scene);border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column}
 .view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cena{position:absolute;inset:0;background:radial-gradient(120% 80% at 55% 30%,#39352f,#1b1a19)}
 .cena .gantry{position:absolute;top:70px;left:8%;right:8%;height:24px;background:linear-gradient(#4a453e,#2e2a25);border-radius:4px}
@@ -90,7 +90,7 @@
 .passosLan{margin-top:14px}.passosLan li{margin:8px 0 8px 18px;font-size:14.5px}
 .spin{width:22px;height:22px;border:3px solid #ddd;border-top-color:var(--magenta-deep);border-radius:50%;animation:gira 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
 @keyframes gira{to{transform:rotate(360deg)}}
-.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
+.ctlvivo .ctlon{font-size:12.5px;color:#1B7F4B;font-weight:600}.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
 .un .cores{display:flex;gap:6px;flex-wrap:wrap;margin:-12px 0 16px}.un .cores .dot{width:16px;height:16px;border:1px solid rgba(0,0,0,.15)}
 .un .ft{height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}.un .ft img{max-height:150px;max-width:100%;object-fit:contain}
 .pillv{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:#E6E2DC;color:var(--ink2);margin-left:8px}.pillv.on{background:#DFF3E7;color:var(--good)}.pillv.imp{background:var(--rose);color:var(--magenta-deep)}
@@ -237,22 +237,28 @@ function unidade(app, u) {
 	var grau = function (x) { return x == null || isNaN(x) ? "—" : Math.round(x) + " °C"; };
 	// Controles diretos (só os que o motor de rede desta marca executa de verdade)
 	var tem = function (k) { return ativa && (v.controles || []).indexOf(k) >= 0; };
+	// O que está ligado: o alvo do bico vem da impressora; o resto é o último comando enviado por este Filuna
+	// (a impressora ainda não devolve luz, ventiladores e velocidade para a tela).
+	estado.ctlSel = estado.ctlSel || lerCtl();
+	var mem = (aoVivo && estado.ctlSel[v.dev_id]) || {};
+	var bicoOn = ativa && v.bico && v.bico.alvo > 0, mesaOn = mem.mesa > 0;
 	var painel = "";
 	if (ativa && v.controles && v.controles.length) {
-		var bt = function (rot, k, extra) { return '<button class="btn peq" data-ctl="' + k + '"' + (extra || "") + ">" + rot + "</button>"; };
+		var bt = function (rot, k, extra, on) { return '<button class="btn peq' + (on ? " primario" : "") + '" data-ctl="' + k + '"' + (extra || "") + (on ? ' title="Ativo"' : "") + ">" + rot + "</button>"; };
+		var marca = function (t) { return t ? '<span class="ctlon">' + t + "</span>" : ""; };
 		painel = '<div class="ctlvivo"><h4>Controles da impressora</h4>';
-		if (tem("bico")) painel += '<div class="lin"><label>Bico</label><input type="number" id="cBico" min="0" max="320" value="' + (v.bico && v.bico.alvo ? Math.round(v.bico.alvo) : 200) + '"><span>°C</span>' + bt("Aquecer", "bico") + bt("Desligar", "bico0") + "</div>";
-		if (tem("mesa")) painel += '<div class="lin"><label>Mesa</label><input type="number" id="cMesa" min="0" max="120" value="' + (v.mesa && v.mesa.alvo ? Math.round(v.mesa.alvo) : 60) + '"><span>°C</span>' + bt("Aquecer", "mesa") + bt("Desligar", "mesa0") + "</div>";
+		if (tem("bico")) painel += '<div class="lin"><label>Bico</label><input type="number" id="cBico" min="0" max="320" value="' + (v.bico && v.bico.alvo ? Math.round(v.bico.alvo) : 200) + '"><span>°C</span>' + bt("Aquecer", "bico", "", bicoOn) + bt("Desligar", "bico0", "", !bicoOn && mem.bico === 0) + marca(bicoOn ? "aquecendo · alvo " + Math.round(v.bico.alvo) + " °C" : "") + "</div>";
+		if (tem("mesa")) painel += '<div class="lin"><label>Mesa</label><input type="number" id="cMesa" min="0" max="120" value="' + (mem.mesa > 0 ? mem.mesa : 60) + '"><span>°C</span>' + bt("Aquecer", "mesa", "", mesaOn) + bt("Desligar", "mesa0", "", mem.mesa === 0) + marca(mesaOn ? "aquecendo · alvo " + mem.mesa + " °C" : "") + "</div>";
 		if (tem("home")) painel += '<div class="lin"><label>Eixos</label>' + bt("Zerar tudo (home)", "home") +
 			(tem("mover") ? '<select id="cPasso"><option value="1">1 mm</option><option value="10" selected>10 mm</option><option value="50">50 mm</option></select>' +
 				["x", "y", "z"].map(function (e) { return bt(e.toUpperCase() + " −", "mover", ' data-e="' + e + '" data-s="-1"') + bt(e.toUpperCase() + " +", "mover", ' data-e="' + e + '" data-s="1"'); }).join("") : "") + "</div>";
-		if (tem("luz")) painel += '<div class="lin"><label>Luz</label>' + bt("Ligar", "luz", ' data-on="1"') + bt("Desligar", "luz", ' data-on="0"') + "</div>";
+		if (tem("luz")) painel += '<div class="lin"><label>Luz</label>' + bt("Ligar", "luz", ' data-on="1"', mem.luz === true) + bt("Desligar", "luz", ' data-on="0"', mem.luz === false) + marca(mem.luz === true ? "ligada" : mem.luz === false ? "desligada" : "") + "</div>";
 		[["ventilador", "Ventilador da peça"], ["ventilador_aux", "Ventilador auxiliar"], ["ventilador_caixa", "Ventilador da câmara"]].forEach(function (f) {
-			if (tem(f[0])) painel += '<div class="lin"><label>' + f[1] + '</label><input type="number" id="cFan_' + f[0] + '" min="0" max="100" value="0"><span>%</span>' + bt("Aplicar", f[0]) + "</div>";
+			if (tem(f[0])) painel += '<div class="lin"><label>' + f[1] + '</label><input type="number" id="cFan_' + f[0] + '" min="0" max="100" value="' + (mem[f[0]] || 0) + '"><span>%</span>' + bt("Aplicar", f[0], "", mem[f[0]] > 0) + marca(mem[f[0]] > 0 ? "em " + mem[f[0]] + "%" : mem[f[0]] === 0 ? "parado" : "") + "</div>";
 		});
 		if (tem("velocidade")) painel += '<div class="lin"><label>Velocidade</label><select id="cVel" style="width:150px">' +
 			(v.agente == "filuna_anycubic_lan" ? '<option value="1">Silencioso</option><option value="2" selected>Padrão</option><option value="3">Esportivo</option>'
-				: '<option value="0">Silencioso</option><option value="1" selected>Equilibrado</option><option value="2">Esportivo</option><option value="3">Máximo</option>') + "</select>" + bt("Aplicar", "velocidade") + "</div>";
+				: '<option value="0">Silencioso</option><option value="1" selected>Equilibrado</option><option value="2">Esportivo</option><option value="3">Máximo</option>') + "</select>" + bt("Aplicar", "velocidade", "", mem.velocidade != null) + marca(mem.velocidade != null ? "aplicada" : "") + "</div>";
 		if (tem("emergencia")) painel += '<div class="lin">' + bt("Parada de emergência", "emergencia", ' style="color:#B00020"') + "</div>";
 		painel += (estado.ctlMsg ? '<div class="okmsg">' + E(estado.ctlMsg) + "</div>" : "") + "</div>";
 	}
@@ -295,6 +301,7 @@ function unidade(app, u) {
 	app.innerHTML = html;
 	if (i.camera_em) camera(i.id);
 	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
+	var selVel = app.querySelector("#cVel"); if (selVel && mem.velocidade != null) selVel.value = String(mem.velocidade);
 	app.querySelectorAll("[data-ctl]").forEach(function (b) { b.onclick = function () {
 		var k = b.dataset.ctl, d = { dev_id: v.dev_id, tipo: k }, q = function (id) { var el = app.querySelector(id); return el ? +el.value : 0; };
 		if (k == "bico0") { d.tipo = "bico"; d.valor = 0; } else if (k == "mesa0") { d.tipo = "mesa"; d.valor = 0; }
@@ -309,7 +316,13 @@ function unidade(app, u) {
 			estado.confEmerg = null;
 		}
 		estado.ctlMsg = "Enviando…"; desenhar();
-		Filuna.nativo("dispositivos.controle", d).then(function (r) { estado.ctlMsg = r && r.erro ? r.erro : "Comando enviado para a impressora."; desenhar(); }, function (e) { estado.ctlMsg = e.message; desenhar(); });
+		Filuna.nativo("dispositivos.controle", d).then(function (r) {
+			if (r && r.erro) { estado.ctlMsg = r.erro; desenhar(); return; }
+			var m = estado.ctlSel[v.dev_id] = estado.ctlSel[v.dev_id] || {};
+			if (d.tipo == "luz") m.luz = !!d.ligar; else if (d.tipo == "home" || d.tipo == "mover" || d.tipo == "carregar" || d.tipo == "descarregar" || d.tipo == "emergencia") { /* ação única, sem estado */ } else m[d.tipo] = d.valor;
+			guardarCtl(estado.ctlSel);
+			estado.ctlMsg = "Comando enviado para a impressora."; desenhar();
+		}, function (e) { estado.ctlMsg = e.message; desenhar(); });
 	}; });
 	app.querySelectorAll("[data-cmd]").forEach(function (b) { if (!u.farm && !ativa) b.disabled = true; b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
 	var sim = app.querySelector("#sim"); if (sim) sim.onclick = function () {
@@ -329,6 +342,9 @@ function unidade(app, u) {
 }
 
 // O perfil da Preparação é desta impressora? Compara o modelo da impressora com o modelo do perfil (sem acentos e espaços).
+// Último comando enviado a cada impressora (marca o que está ligado). Fica só neste computador.
+function lerCtl() { try { return JSON.parse(localStorage.getItem("fl.ctl") || "{}") || {}; } catch (e) { return {}; } }
+function guardarCtl(o) { try { localStorage.setItem("fl.ctl", JSON.stringify(o)); } catch (e) {} }
 // O programa entrega a cor como "RRGGBBAA" (sem #): vira cor de tela.
 function corCss(c) { c = String(c || "").replace(/^#/, ""); return /^[0-9a-fA-F]{6,8}$/.test(c) ? "#" + c.slice(0, 6) : "#eeeeee"; }
 function mesmoModelo(a, b) {
