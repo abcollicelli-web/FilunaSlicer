@@ -649,14 +649,14 @@ function abrirAssistente() { estado.assist = { passo: "marcas", marcas: [], marc
 function assistente(app) {
 	var a = estado.assist, html = '<div class="pg"><div class="topo"><a class="voltar" id="voltarA">‹ ' + (a.passo == "marcas" ? "Impressoras" : "Voltar") + '</a>';
 	if (a.passo == "marcas") {
-		html += '<div class="h1">Conectar nova impressora</div><div class="sub">Escolha o fabricante. Só aparecem marcas com módulo homologado pelo Filuna.</div></div>';
+		html += '<div class="h1">Conectar nova impressora</div><div class="sub">Escolha o fabricante. Elegoo e Anycubic já foram testadas em impressora real; as demais foram validadas em simulador e estão em teste com os primeiros clientes.</div></div>';
 		if (!a.marcas.length) { html += '<div class="carregando"><span class="spin"></span>Lendo o catálogo…</div>'; Filuna.nativo("dispositivos.fabricantes").then(function (r) { a.marcas = r.fabricantes || []; a.conta = r.conta; desenhar(); }).catch(function (e) { a.erro = e.message; desenhar(); }); }
 		else if (!a.marcas.length) html += '<div class="vazio">Nenhum fabricante no catálogo desta conta.</div>';
 		else html += '<div class="marcas">' + a.marcas.map(function (m) {
 			return '<div class="marca' + (m.modelos_disponiveis ? "" : " off") + '" data-m="' + E(m.id) + '"><img src="' + E(m.logo) + '" alt="" onerror="this.style.display=\'none\'"><div class="nm">' + E(m.nome) + '</div><div class="ct">' + m.modelos_disponiveis + ' modelo(s) homologado(s)' + (m.modo_motor == "ORCA_NATIVO" ? " · motor Orca" : "") + '</div></div>';
 		}).join("") + "</div>" + (a.erro ? '<div class="erro">' + E(a.erro) + "</div>" : "");
 	} else if (a.passo == "modelos") {
-		html += '<div class="h1">' + E(a.marca.nome) + '</div><div class="sub">Modelos homologados internamente pelo Filuna. Os demais aparecem como não disponíveis.</div></div>';
+		html += '<div class="h1">' + E(a.marca.nome) + '</div><div class="sub">Modelos disponíveis para esta marca. Validados em simulador; o teste em impressora real de cada modelo é feito com os primeiros clientes.</div></div>';
 		if (!a.modelos.length) { html += '<div class="carregando"><span class="spin"></span>Carregando modelos…</div>'; Filuna.nativo("dispositivos.modelos", { fabricante: a.marca.id }).then(function (r) { a.modelos = r.modelos || []; a.modelos.forEach(function (m) { if (m.foto) fotos[m.nome] = m.foto; }); desenhar(); }).catch(function (e) { a.erro = e.message; desenhar(); }); }
 		else html += '<div class="modelos">' + a.modelos.map(function (m) {
 			return '<div class="modelo' + (m.disponivel ? "" : " off") + '" data-md="' + E(m.nome) + '"><div class="ft">' + (m.foto ? '<img src="' + E(m.foto) + '" alt="">' : ilustracao(160)) + '</div><div class="nm">' + E(m.nome) + '</div>' + (m.disponivel ? '<div class="ct" style="font-size:12.5px;color:var(--ink2)">Bicos: ' + E((m.bicos || []).join(", ")) + '</div>' : '<div class="ms">' + E(m.mensagem) + '</div>') + '</div>';
