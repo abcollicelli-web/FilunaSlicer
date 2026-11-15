@@ -26,6 +26,9 @@
 #include "slic3r/Utils/FilunaCameraRelay.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include <wx/notifmsg.h>
+#include <wx/timer.h>
+#include "NotificationManager.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -309,6 +312,12 @@ json card(MachineObject* o)
             (precisa && !imprimindo ? espera : controles).push_back(k);
         }
     }
+    // estado real da luz, para as marcas cujo protocolo informa (a tela usa no lugar do "último comando enviado")
+    {
+        const std::string& ag = o->printer_agent_id;
+        if ((ag == "filuna_anycubic_lan" || ag == "filuna_bambu_lan" || ag == "bbl") && o->GetLamp() != nullptr)
+            c["luz"] = o->GetLamp()->IsChamberLightOn();
+    }
     c["controles"]           = controles;
     c["controles_impressao"] = espera; // existem, mas só durante uma impressão
     const std::string cam = Filuna::camera_url(o->get_dev_id());
@@ -316,6 +325,13 @@ json card(MachineObject* o)
         c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu
     // vídeo em HTTP-FLV (Anycubic e outras): a tela lê pelo repasse local, que acrescenta a permissão que a
     // impressora não manda
+    // câmera pelo repasse local também para as demais (permite à tela tirar uma foto para a IA conferir a mesa)
+    if (cam.size() > 4) {
+        std::string h, pt, cm;
+        const int   porta = Filuna::CameraRelay::destino_valido(cam, h, pt, cm) ? Filuna::CameraRelay::porta() : 0;
+        if (porta > 0)
+            c["camera_repasse"] = "http://127.0.0.1:" + std::to_string(porta) + "/cam?u=" + Http::url_encode(cam);
+    }
     if (cam.size() > 4 && cam.find("/flv") != std::string::npos) {
         std::string h, pt, cm;
         const int   porta = Filuna::CameraRelay::destino_valido(cam, h, pt, cm) ? Filuna::CameraRelay::porta() : 0;
@@ -779,6 +795,50 @@ json controle(const std::string& dev_id, const json& d)
     if (r != 0)
         return {{"erro", "A impressora não aceitou o comando (" + std::to_string(r) + ")."}};
     return {{"ok", true}};
+}
+
+void sincronizar_estado(const json& estado, const std::string& token);
+
+// Vigia das impressoras, ligado uma vez e independente da aba aberta: a cada 10 s lê o estado, avisa quando
+// uma impressão termina (aviso dentro do programa e do Windows) e manda o estado para a conta a cada 30 s —
+// é daí que o site, o app e os alertas (WhatsApp/Telegram) ficam sabendo. Antes isso só rodava com a tela
+// Dispositivo aberta, então fora dela ninguém era avisado. Vale para qualquer marca.
+void monitor_iniciar()
+{
+    static wxTimer* vigia = nullptr;
+    if (vigia != nullptr)
+        return;
+    vigia = new wxTimer();
+    vigia->Bind(wxEVT_TIMER, [](wxTimerEvent&) {
+        static std::map<std::string, std::string> antes;
+        static int                                volta = 0;
+        json e;
+        try {
+            e = estado();
+        } catch (const std::exception&) {
+            return;
+        }
+        for (const auto& i : e.value("impressoras", json::array())) {
+            const std::string dev = i.value("dev_id", std::string()), est = i.value("estado", std::string());
+            if (dev.empty() || !i.value("selecionada", false))
+                continue; // só a impressora ativa tem leitura ao vivo
+            const std::string a = antes[dev];
+            if ((a == "imprimindo" || a == "pausada") && (est == "concluida" || est == "livre")) {
+                const wxString texto = wxString::FromUTF8("Impressão concluída na " + i.value("nome", std::string("impressora")) +
+                                                          ". Retire a peça e limpe a mesa.");
+                if (Plater* pl = wxGetApp().plater())
+                    if (auto* nm = pl->get_notification_manager())
+                        nm->push_notification(std::string(texto.ToUTF8().data()));
+                wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer"), texto, wxGetApp().mainframe);
+                aviso.Show();
+            }
+            antes[dev] = est;
+        }
+        if (++volta % 3 == 0)
+            if (AppConfig* cfg = wxGetApp().app_config)
+                sincronizar_estado(e, cfg->get("filuna_token"));
+    });
+    vigia->Start(10000);
 }
 
 void sincronizar_estado(const json& estado, const std::string& token)

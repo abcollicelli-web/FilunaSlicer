@@ -1,4 +1,6 @@
 #include "FilunaPanel.hpp"
+#include "slic3r/Utils/FilunaCameraUrls.hpp"
+#include <ctime>
 #include "FilunaAtualizacao.hpp"
 #include "slic3r/Filuna/FilunaRecursos.hpp"
 #include "FilunaSync.hpp"
@@ -357,6 +359,7 @@ json pick_images(wxWindow* parent)
 FilunaPanel::FilunaPanel(wxWindow* parent, const std::string& page) : wxPanel(parent, wxID_ANY)
 {
     SetBackgroundColour(wxColour(0xED, 0xEB, 0xE7));
+    FilunaDispositivos::monitor_iniciar(); // vigia das impressoras: avisos e estado para a conta, com qualquer aba aberta
     // Fase 7: páginas atualizadas pelo servidor (recurso "telas") valem sobre as embutidas no instalador.
     boost::filesystem::path base = boost::filesystem::path(resources_dir()) / "web" / "filuna";
     const std::string atualizadas =
@@ -676,6 +679,12 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return FD::comando(d.value("dev_id", std::string()), d.value("cmd", std::string()));
     if (action == "dispositivos.selecionar")
         return FD::selecionar(d.value("dev_id", std::string()));
+    if (action == "dispositivos.mesa_veredito") {
+        // resultado da conferência da mesa pela câmera; a janela de impressão consulta antes de enviar
+        Filuna::set_mesa(d.value("dev_id", std::string()),
+                         json{{"livre", d.value("livre", true)}, {"motivo", d.value("motivo", std::string())}, {"em", (long long) std::time(nullptr)}}.dump());
+        return json{{"ok", true}};
+    }
     if (action == "dispositivos.filamentos_projeto") {
         // mesma sincronização do botão da Preparação, pedida do cartão da impressora
         wxGetApp().CallAfter([] {

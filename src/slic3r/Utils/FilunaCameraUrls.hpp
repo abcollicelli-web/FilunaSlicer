@@ -50,4 +50,22 @@ inline std::string arquivos(const std::string& dev_id)
     return it == arquivos_map().end() ? std::string() : it->second;
 }
 
+// Última conferência da mesa pela câmera (IA): JSON {"livre":bool,"motivo":"...","em":<segundos unix>}.
+inline std::map<std::string, std::string>& mesa_map()
+{
+    static std::map<std::string, std::string> m;
+    return m;
+}
+inline void set_mesa(const std::string& dev_id, const std::string& veredito_json)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    mesa_map()[dev_id] = veredito_json;
+}
+inline std::string mesa(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    auto it = mesa_map().find(dev_id);
+    return it == mesa_map().end() ? std::string() : it->second;
+}
+
 }} // namespace Slic3r::Filuna

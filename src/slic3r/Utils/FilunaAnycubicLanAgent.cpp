@@ -289,8 +289,20 @@ json FilunaAnycubicLanAgent::to_push_status(const json& e)
     json proj = info.contains("project") && info["project"].is_object() ? info["project"] : json::object();
     if (e.contains("print") && e["print"].is_object() && e["print"].contains("progress"))
         proj.merge_patch(e["print"]); // o progresso vem no relatório "print", mais novo que o "info"
-    const std::string estado  = info.value("state", std::string("free"));
-    const std::string pestado = proj.value("state", std::string());
+    std::string       estado  = info.value("state", std::string("free"));
+    std::string       pestado = proj.value("state", std::string());
+    // estado do relatório "print" (mais novo que o do "info")
+    const std::string relato = e.value("print_estado", std::string());
+    if (!relato.empty()) {
+        static const char* const ATIVOS[] = {"preheating", "auto_leveling", "vibrating", "flow_calibrating", "printing", "resuming",
+                                             "resumed", "updated", "pausing", "paused", "stopping", "downloading", "checking"};
+        bool ativo_relato = false;
+        for (const char* a : ATIVOS)
+            if (relato == a)
+                ativo_relato = true;
+        pestado = relato;
+        estado  = ativo_relato ? "busy" : (relato == "finished" ? estado : std::string("free"));
+    }
     const int         pausa   = proj.contains("pause") && proj["pause"].is_number() ? proj["pause"].get<int>() : 0;
     std::string       gs      = "IDLE";
     if (pausa == 1 || pausa == 2 || pestado == "paused" || pestado == "pausing")
@@ -312,6 +324,18 @@ json FilunaAnycubicLanAgent::to_push_status(const json& e)
     p["bed_temper"]           = num(temp, "curr_hotbed_temp");
     p["bed_target_temper"]    = num(temp, "target_hotbed_temp");
     p["chamber_temper"]       = num(temp, "curr_chamber_temp");
+    // luz: o relatório vem como {lights:[{status}]} (consulta) ou {status} (resposta ao comando)
+    if (e.contains("light") && e["light"].is_object()) {
+        const json& lz = e["light"];
+        int         st = -1;
+        if (lz.contains("status") && lz["status"].is_number())
+            st = lz["status"].get<int>();
+        else if (lz.contains("lights") && lz["lights"].is_array() && !lz["lights"].empty() && lz["lights"][0].is_object() &&
+                 lz["lights"][0].contains("status") && lz["lights"][0]["status"].is_number())
+            st = lz["lights"][0]["status"].get<int>();
+        if (st >= 0)
+            p["lights_report"] = json::array({json{{"node", "chamber_light"}, {"mode", st ? "on" : "off"}}});
+    }
     // ACE / ACE Pro -> unidades "ams"
     const json caixas = e.value("multiColorBox", json::object()).value("multi_color_box", json::array());
     if (caixas.is_array() && !caixas.empty()) {
@@ -461,6 +485,18 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
             Filuna::set_camera_url(serie, std::string());
         return;
     }
+    if (j.is_object() && tipo == "print" && j.contains("state") && j["state"].is_string() &&
+        (!j.contains("data") || !j["data"].is_object())) {
+        // confirmação sem dados (ex.: {"action":"start","state":"printing","code":200}): já muda o estado na tela
+        json retrato_estado;
+        {
+            std::lock_guard<std::recursive_mutex> l(m_mutex);
+            m_estado["print_estado"] = j["state"];
+            retrato_estado           = m_estado;
+        }
+        dispatch(to_push_status(retrato_estado).dump());
+        return;
+    }
     if (!j.is_object() || !j.contains("data") || !j["data"].is_object())
         return;
     const json& d = j["data"];
@@ -514,6 +550,11 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
                 m_estado[tipo] = json::object();
             m_estado[tipo].merge_patch(d);
         } else if (tipo == "print") {
+            // O estado do trabalho vem no próprio relatório "print" ("state": preheating, printing, paused,
+            // finished, stoped, failed…). O relatório "info" quase não é reenviado durante a impressão, então
+            // sem isto a impressora continuava "livre" na tela enquanto imprimia.
+            if (j.contains("state") && j["state"].is_string())
+                m_estado["print_estado"] = j["state"];
             if (d.contains("progress")) // três formatos no mesmo tópico: só o de progresso interessa
                 m_estado["print"] = d;
         } else {
@@ -629,6 +670,7 @@ int FilunaAnycubicLanAgent::connect_printer(const PrinterConnectionParams& p)
     pedir("info", "query", nullptr);
     pedir("tempature", "query", nullptr);
     pedir("multiColorBox", "getInfo", nullptr); // "query" não devolve a caixa; "getInfo" devolve
+    pedir("light", "query", nullptr);           // estado real da luz
     // Câmera: "video/startCapture" abre http://<ip>:18088/flv (HTTP-FLV); a tela toca pelo repasse local.
     pedir("video", "startCapture", nullptr);
     dispatch_connect(ConnectStatusOk, "");

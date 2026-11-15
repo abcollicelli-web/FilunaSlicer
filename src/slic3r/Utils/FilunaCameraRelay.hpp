@@ -130,7 +130,7 @@ private:
             asio::streambuf resposta;
             asio::read_until(imp, resposta, "\r\n\r\n");
             bool        pedacos = false;
-            std::string sobra;
+            std::string sobra, tipo = "video/x-flv";
             {
                 std::istream rs(&resposta);
                 std::string  linha;
@@ -140,10 +140,17 @@ private:
                         c = char(std::tolower(static_cast<unsigned char>(c)));
                     if (l.find("transfer-encoding:") == 0 && l.find("chunked") != std::string::npos)
                         pedacos = true;
+                    if (l.find("content-type:") == 0) { // MJPEG (multipart) ou FLV: repassa como veio
+                        tipo = linha.substr(13);
+                        while (!tipo.empty() && (tipo.back() == '\r' || tipo.back() == ' '))
+                            tipo.pop_back();
+                        while (!tipo.empty() && tipo.front() == ' ')
+                            tipo.erase(0, 1);
+                    }
                 }
                 sobra.assign(std::istreambuf_iterator<char>(rs), std::istreambuf_iterator<char>());
             }
-            const std::string cab = "HTTP/1.1 200 OK\r\nContent-Type: video/x-flv\r\nAccess-Control-Allow-Origin: *\r\n"
+            const std::string cab = "HTTP/1.1 200 OK\r\nContent-Type: " + tipo + "\r\nAccess-Control-Allow-Origin: *\r\n"
                                     "Cache-Control: no-store\r\nConnection: close\r\n\r\n";
             asio::write(cli, asio::buffer(cab));
             char buf[16384];

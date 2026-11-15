@@ -12,6 +12,8 @@
 #include "libslic3r/AppConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "slic3r/Utils/NetworkAgent.hpp"
+#include "slic3r/Utils/FilunaCameraUrls.hpp"
+#include <ctime>
 #include "slic3r/Utils/bambu_networking.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -364,6 +366,20 @@ void imprimir(int plate_idx)
     if (o->is_in_printing()) {
         avisar(wxString::FromUTF8("A impressora " + o->get_dev_name() + " já está imprimindo."), wxOK | wxICON_WARNING);
         return;
+    }
+
+    // Conferência da mesa pela câmera (IA): se a última, de até 15 minutos atrás, viu a mesa ocupada, pergunta
+    // antes de enviar. Vale para qualquer marca com câmera.
+    {
+        const json v = json::parse(Filuna::mesa(o->get_dev_id()), nullptr, false);
+        if (v.is_object() && !v.value("livre", true) && (long long) std::time(nullptr) - v.value("em", 0LL) < 15 * 60) {
+            MessageDialog dlg(wxGetApp().mainframe,
+                              wxString::FromUTF8("A câmera mostrou a mesa ocupada: " + v.value("motivo", std::string("há algo na mesa")) +
+                                                 ".\n\nRetire as peças e limpe a mesa. Imprimir assim mesmo?"),
+                              wxString::FromUTF8("Mesa ocupada"), wxYES_NO | wxICON_WARNING);
+            if (dlg.ShowModal() != wxID_YES)
+                return;
+        }
     }
 
     PartPlateList& mesas = plater->get_partplate_list();

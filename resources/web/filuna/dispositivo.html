@@ -92,6 +92,7 @@
 @keyframes gira{to{transform:rotate(360deg)}}
 .estq{position:fixed;inset:0;background:rgba(30,26,24,.45);display:flex;align-items:center;justify-content:center;z-index:50}.estq .cx{background:#fff;border-radius:18px;padding:26px 28px;width:min(520px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.25)}.estq h3{margin:0 0 6px;font-size:19px}.estq .sub{color:#6B6660;font-size:13.5px;margin-bottom:16px}.estq .slot{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#FFF8F0;border-radius:12px;margin-bottom:14px}.estq .slot .bola{width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.16);flex:none}.estq .op{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.estq .op button{text-align:left}.estq .cp{display:flex;gap:10px;margin-bottom:12px}.estq .cp label{flex:1;font-size:12.5px;color:#6B6660;display:flex;flex-direction:column;gap:4px}.estq .cp input{padding:9px 10px;border:1px solid #E7E3DD;border-radius:10px;font:inherit}.estq .tp{display:flex;gap:12px;margin-bottom:12px}.estq .tb{display:flex;flex-direction:column;gap:6px;flex:none}.estq .tv{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;flex:1;max-height:230px;overflow:auto}.estq .chip{padding:7px 12px;border-radius:999px;border:1px solid #E7E3DD;background:#fff;font:inherit;font-size:13px;cursor:pointer}.estq .chip.on{background:#FDE3EC;border-color:#C2185B;color:#C2185B;font-weight:700}.estq .cx{max-height:92vh;overflow:auto}
 .estq .pe{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.estq .pe a{color:#8a817a;font-size:13px;cursor:pointer}.estq .er{color:#D9480F;font-size:13px;margin-bottom:8px}
+.mesaia{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 14px;border-radius:12px;background:#FFF8F0;font-size:13.5px;color:#5e5752}.mesaia.ok{background:#E3F5EC;color:#1F8F5F}.mesaia.ocupada{background:#FDE8DF;color:#D9480F;font-weight:600}.mesaia.erro{color:#8a817a}
 .arqs{margin-top:14px}.arq{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:13px}.arq .an{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arq .ai{color:#8a817a;white-space:nowrap}
 .fils{margin:16px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.filrow{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}.fil{width:72px;text-align:center}.fil .bola{display:block;width:46px;height:46px;border-radius:50%;margin:0 auto 8px;border:1px solid rgba(0,0,0,.16);box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)}.fil .bola.vazia{border:1.5px dashed rgba(0,0,0,.28);box-shadow:none}.fil .fn{font-weight:700;font-size:13.5px}.fil .fe{font-size:11.5px;color:#8a817a;margin-top:1px}.fil .fa{display:flex;gap:6px;justify-content:center;margin-top:8px}.fil .fa button{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.16);background:#fff;color:#5e5752;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}.fil .fa button:hover{background:#FFE8F2;border-color:#B3125C;color:#B3125C}
 .ctlvivo .ctlon{font-size:12.5px;color:#1B7F4B;font-weight:600}.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin,.fils .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label,.fils .lin label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select,.fils .lin input{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
@@ -249,6 +250,7 @@ function unidade(app, u) {
 	// (a impressora ainda não devolve luz, ventiladores e velocidade para a tela).
 	estado.ctlSel = estado.ctlSel || lerCtl();
 	var mem = (aoVivo && estado.ctlSel[v.dev_id]) || {};
+	if (v && typeof v.luz == "boolean") { mem = Object.assign({}, mem); mem.luz = v.luz; } // luz lida da impressora, quando a marca informa
 	var bicoOn = ativa && v.bico && v.bico.alvo > 0, mesaOn = mem.mesa > 0;
 	var filamentos = "";
 	if (aoVivo && v.cores && v.cores.length) {
@@ -284,16 +286,16 @@ function unidade(app, u) {
 		painel += (estado.ctlMsg ? '<div class="okmsg">' + E(estado.ctlMsg) + "</div>" : "") + "</div>";
 	}
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
-	var camVivo = ativa && v.camera_url && !/\/flv(\?|$)/.test(v.camera_url) ? v.camera_url : ""; // FLV (Anycubic) ainda sem tocador
+	var camVivo = ativa && v.camera_url && !/\/flv(\?|$)/.test(v.camera_url) ? (v.camera_repasse || v.camera_url) : ""; // FLV (Anycubic) ainda sem tocador
 	var flv = ativa && v.camera_flv && window.mpegts && mpegts.isSupported() ? v.camera_flv : "";
-	var foto = flv ? '<video data-cam="1" data-src="' + E(flv) + '" muted autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>' : camVivo ? '<img alt="" data-cam="1" data-src="' + E(camVivo) + '" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
+	var foto = flv ? '<video data-cam="1" crossorigin="anonymous" data-src="' + E(flv) + '" muted autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>' : camVivo ? '<img alt="" data-cam="1"' + (v.camera_repasse ? ' crossorigin="anonymous"' : "") + ' data-src="' + E(camVivo) + '" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
 	var html = '<div style="padding:16px 32px 0"><a class="voltar" id="voltar">‹ Unidades</a></div>' + cabecalho(i.nome, i.estado, i.modelo || "", local) +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
 		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
 		'<div class="colv"><div class="view">' + foto + '<div class="vtag">' + (camVivo || flv ? "Câmera ao vivo" : i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
 		'<div class="vbase"><div><div class="vk">Vista da impressão</div><div class="vv">' + (t ? "Mesa " + E(t.mesa || 1) + " de " + E(t.mesas || 1) : "Sem impressão agora") + "</div></div>" +
-		"</div></div>" + arquivosHtml(v) + "</div>" +
+		"</div></div>" + mesaHtml(v, camVivo || flv) + arquivosHtml(v) + "</div>" +
 		'<div class="direita"><div class="lbl">Trabalho atual</div>' +
 		(t ? '<div class="titulo">' + E(t.descricao || "Pedido " + (t.pedido || "")) + '</div><div class="arq">' + E(t.arquivo || "") + (t.quantidade ? " · " + t.quantidade + " peça(s)" : "") + "</div>" +
 			'<div class="pctrow"><div class="pct">' + prog + '<small>%</small></div><div class="eta">' + Filuna.tempo(t.resta_s) + '<div class="s">restante</div></div></div>' +
@@ -333,6 +335,12 @@ function unidade(app, u) {
 	}
 	if (i.camera_em) camera(i.id);
 	if (ativa) estoqueIdentificar(v);
+	var bmc = app.querySelector("#mesaConf"); if (bmc) bmc.onclick = function () { mesaConferir(v); };
+	// confere sozinha uma vez ao abrir o cartão (impressora parada), 8 s depois de a câmera começar
+	if (ativa && v.estado == "livre" && (camVivo || flv) && !mesaIA[v.dev_id] && Filuna.temToken()) {
+		mesaIA[v.dev_id] = { estado: "", em: Date.now() };
+		setTimeout(function () { if (estado.vista == "unidade" && document.querySelector("[data-cam]")) mesaConferir(v); }, 8000);
+	}
 	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
 	var selVel = app.querySelector("#cVel"); if (selVel && mem.velocidade != null) selVel.value = String(mem.velocidade);
 	app.querySelectorAll("[data-ctl]").forEach(function (b) { b.onclick = function () {
@@ -528,6 +536,38 @@ function estoqueIdentificar(v) {
 		};
 		passo();
 	}, function () { estq.aberto = false; });
+}
+
+// ---------- IA confere a mesa pela câmera ----------
+// Tira uma foto do vídeo ao vivo e pergunta à IA Filuna se a mesa está livre. O resultado aparece aqui e a
+// janela de impressão usa a última conferência para avisar antes de enviar. Vale para qualquer marca com câmera.
+var mesaIA = {}; // dev_id -> { estado: "vendo"|"ok"|"ocupada"|"erro", motivo, em }
+function mesaHtml(v, temCamera) {
+	if (!v || !v.selecionada || !temCamera) return "";
+	var m = mesaIA[v.dev_id] || {};
+	var txt = m.estado == "vendo" ? "A IA está olhando a mesa…" : m.estado == "ok" ? "Mesa livre, pode imprimir." : m.estado == "ocupada" ? "Mesa ocupada: " + (m.motivo || "há algo na mesa") + ". Retire e limpe antes de imprimir." : m.estado == "erro" ? (m.motivo || "Não foi possível conferir a mesa.") : "A IA confere pela câmera se a mesa está livre antes de imprimir.";
+	return '<div class="mesaia ' + E(m.estado || "") + '"><span>' + E(txt) + '</span><button class="btn peq" id="mesaConf"' + (m.estado == "vendo" ? " disabled" : "") + ">Conferir mesa</button></div>";
+}
+function mesaConferir(v) {
+	var el = document.querySelector("[data-cam]"); if (!el || !v) return;
+	var w = el.videoWidth || el.naturalWidth, h = el.videoHeight || el.naturalHeight;
+	var fim = function (estado, motivo) {
+		mesaIA[v.dev_id] = { estado: estado, motivo: motivo || "", em: Date.now() };
+		if (estado == "ok" || estado == "ocupada") Filuna.nativo("dispositivos.mesa_veredito", { dev_id: v.dev_id, livre: estado == "ok", motivo: motivo || "" }).catch(function () {});
+		if (estado == "vendo") { var s = document.querySelector(".mesaia span"), b = document.querySelector("#mesaConf"); if (s) s.textContent = "A IA está olhando a mesa…"; if (b) b.disabled = true; }
+		else desenhar();
+	};
+	if (!w || !h) { fim("erro", "A câmera ainda não mostrou imagem."); return; }
+	var foto;
+	try {
+		var c = document.createElement("canvas"); c.width = 768; c.height = Math.round(768 * h / w);
+		c.getContext("2d").drawImage(el, 0, 0, c.width, c.height);
+		foto = c.toDataURL("image/jpeg", 0.72).split(",")[1];
+	} catch (e) { fim("erro", "Não foi possível tirar a foto da câmera."); return; }
+	fim("vendo");
+	Filuna.api("POST", "/ia/mesa", { imagem: foto, impressora: v.nome, modelo: v.modelo_nome || v.modelo || "" }).then(function (r) {
+		fim(r.livre ? "ok" : "ocupada", r.motivo || "");
+	}, function (e) { fim("erro", (e && (e.erro || e.message)) || "A IA não respondeu agora."); });
 }
 
 // últimos arquivos guardados na impressora (quando a marca informa)
