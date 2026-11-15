@@ -1104,3 +1104,13 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
 - dispositivo.html: com precisa_codigo, o cartão mostra o campo "Código de acesso" e Conectar (dispositivos.conectar).
 - Pendente: câmera Bambu sem o plug-in (A1 porta 6000 JPEG/TLS; P2S/A2 RTSPS 322); Snapmaker U1 não é procurada na
   rede (MoonrakerPrinterAgent::start_discovery só anuncia o IP do perfil) — hoje só por IP no assistente.
+
+## 2026-11-16 — 72 publicada (dd210ec73); 73: Snapmaker U1 (e demais Klipper/Moonraker) achada na rede
+
+- Causa: MoonrakerPrinterAgent::start_discovery só anuncia o IP gravado no perfil; a U1 nunca aparecia sozinha.
+- FilunaDispositivos::preparar: para agentes Moonraker (snapmaker, qidi, crealityprint, moonraker) roda
+  procurar_moonraker() numa linha separada: redes privadas do computador (/24, até 3), portas 7125 e depois 80
+  (conexão TCP em paralelo, 0,9 s por porta; testado no servidor: 254 endereços em ~0,9 s), confirma com
+  GET /printer/info e põe na lista da rede (dev_id "ip-<ip>", agente da marca, código neutro "lan").
+- garantir_codigo passa a dar o código neutro também aos agentes Moonraker (sem código o DeviceManager não seleciona).
+- Uso: Dispositivo › Adicionar impressora › Snapmaker › U1 → a U1 aparece na lista de achadas.

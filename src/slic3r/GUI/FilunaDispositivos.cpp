@@ -1,3 +1,4 @@
+#include <boost/asio.hpp> // no Windows o boost precisa vir antes dos cabeçalhos do wxWidgets
 #include "FilunaDispositivos.hpp"
 
 #include "FilunaAtualizacao.hpp"
@@ -34,12 +35,14 @@
 #include <boost/log/trivial.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <chrono>
 #include <map>
 #include <mutex>
 #include <set>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 namespace Slic3r { namespace GUI { namespace FilunaDispositivos {
@@ -389,6 +392,150 @@ json card(MachineObject* o)
 // dev_id -> id da impressora cadastrada no banco local (vínculo guardado no app_config)
 std::string chave_vinculo(const std::string& dev_id) { return "filuna_dispositivo_" + dev_id; }
 
+// Agentes que falam com o Moonraker (Klipper). Eles não procuram a impressora na rede: só anunciam o IP gravado no
+// perfil (MoonrakerPrinterAgent::start_discovery). Para estas marcas o Filuna faz a busca na rede local.
+bool agente_moonraker(const std::string& ag)
+{
+    return ag == "snapmaker" || ag == "qidi" || ag == "crealityprint" || ag == "moonraker";
+}
+
+// Prefixos "a.b.c." das redes privadas deste computador (no máximo 3 redes /24).
+std::vector<std::string> redes_locais()
+{
+    namespace net = boost::asio;
+    std::set<std::string> prefixos;
+    auto incluir = [&prefixos](const net::ip::address& a) {
+        if (!a.is_v4())
+            return;
+        const auto b = a.to_v4().to_bytes();
+        const bool privada = b[0] == 10 || (b[0] == 172 && b[1] >= 16 && b[1] <= 31) || (b[0] == 192 && b[1] == 168);
+        if (privada)
+            prefixos.insert(std::to_string(b[0]) + "." + std::to_string(b[1]) + "." + std::to_string(b[2]) + ".");
+    };
+    boost::system::error_code ec;
+    net::io_context io;
+    {
+        // "connect" em UDP não envia nada: só escolhe a interface de saída padrão
+        net::ip::udp::socket s(io);
+        s.open(net::ip::udp::v4(), ec);
+        if (!ec)
+            s.connect({net::ip::make_address_v4("192.0.2.1"), 9}, ec);
+        if (!ec)
+            incluir(s.local_endpoint(ec).address());
+    }
+    net::ip::tcp::resolver r(io);
+    const auto lista = r.resolve(net::ip::host_name(ec), "", ec);
+    if (!ec)
+        for (const auto& e : lista)
+            incluir(e.endpoint().address());
+    else
+        BOOST_LOG_TRIVIAL(info) << "Filuna: endereços do computador: " << ec.message();
+    std::vector<std::string> v(prefixos.begin(), prefixos.end());
+    if (v.size() > 3)
+        v.resize(3);
+    return v;
+}
+
+// IPs que aceitam conexão TCP na porta dentro do tempo dado (todos ao mesmo tempo, sem travar a tela).
+std::vector<std::string> portas_abertas(const std::vector<std::string>& ips, unsigned short porta, std::chrono::milliseconds espera)
+{
+    namespace net = boost::asio;
+    net::io_context io;
+    std::vector<std::string> abertos;
+    std::vector<std::unique_ptr<net::ip::tcp::socket>> socks;
+    socks.reserve(ips.size());
+    for (const auto& ip : ips) {
+        boost::system::error_code ec;
+        const auto addr = net::ip::make_address(ip, ec);
+        if (ec)
+            continue;
+        socks.push_back(std::make_unique<net::ip::tcp::socket>(io));
+        net::ip::tcp::socket* s = socks.back().get();
+        s->async_connect({addr, porta}, [ip, &abertos](const boost::system::error_code& e) {
+            if (!e)
+                abertos.push_back(ip);
+        });
+    }
+    net::steady_timer t(io, espera);
+    t.async_wait([&socks](const boost::system::error_code&) {
+        for (auto& s : socks) {
+            boost::system::error_code ig;
+            s->close(ig);
+        }
+    });
+    io.run();
+    return abertos;
+}
+
+// O endereço responde como Moonraker? Devolve o nome da máquina (hostname) quando houver.
+bool moonraker_responde(const std::string& host, std::string& nome)
+{
+    bool ok = false;
+    Http::get("http://" + host + "/printer/info")
+        .timeout_connect(2)
+        .timeout_max(4)
+        .on_complete([&ok, &nome](std::string body, unsigned status) {
+            if (status != 200)
+                return;
+            const json j = json::parse(body, nullptr, false);
+            if (j.is_object() && j.contains("result") && j["result"].is_object()) {
+                ok   = true;
+                nome = j["result"].value("hostname", std::string());
+            }
+        })
+        .on_error([&host](std::string, std::string erro, unsigned) {
+            BOOST_LOG_TRIVIAL(info) << "Filuna: " << host << " não é Moonraker: " << erro;
+        })
+        .perform_sync();
+    return ok;
+}
+
+// Procura na rede local impressoras Moonraker (portas 7125 e 80) e as põe na lista da rede do programa com o
+// agente da marca escolhida no assistente. Roda numa linha separada; o resultado entra pela linha da tela.
+void procurar_moonraker(const std::string& agente, const std::string& modelo, const std::string& printer_type)
+{
+    static std::atomic<bool> rodando{false};
+    if (rodando.exchange(true))
+        return;
+    std::thread([agente, modelo, printer_type] {
+        std::vector<std::string> ips;
+        for (const auto& prefixo : redes_locais())
+            for (int i = 1; i < 255; ++i)
+                ips.push_back(prefixo + std::to_string(i));
+        std::vector<std::pair<std::string, std::string>> achadas; // endereço (ip ou ip:porta), nome
+        std::set<std::string> vistos;
+        for (const unsigned short porta : {static_cast<unsigned short>(7125), static_cast<unsigned short>(80)}) // Moonraker direto, depois atrás do nginx
+            for (const auto& ip : portas_abertas(ips, porta, std::chrono::milliseconds(900))) {
+                if (vistos.count(ip))
+                    continue;
+                const std::string host = porta == 80 ? ip : ip + ":" + std::to_string(porta);
+                std::string nome;
+                if (moonraker_responde(host, nome)) {
+                    vistos.insert(ip);
+                    achadas.emplace_back(host, nome);
+                }
+            }
+        BOOST_LOG_TRIVIAL(info) << "Filuna: busca Moonraker (" << agente << ") achou " << achadas.size() << " em " << ips.size() << " endereços";
+        wxGetApp().CallAfter([achadas, agente, modelo, printer_type] {
+            DeviceManager* dev = wxGetApp().getDeviceManager();
+            if (dev == nullptr)
+                return;
+            for (const auto& [host, nome] : achadas) {
+                const std::string ip = host.substr(0, host.find(':'));
+                BBLocalMachine m;
+                m.dev_name         = (nome.empty() ? modelo : nome) + " (" + ip + ")";
+                m.dev_ip           = host;
+                m.dev_id           = "ip-" + ip;
+                m.printer_type     = printer_type.empty() ? modelo : printer_type;
+                m.printer_agent_id = agente;
+                m.access_code      = "lan";
+                dev->insert_local_device(m, "lan", "free", "", "lan");
+            }
+        });
+        rodando = false;
+    }).detach();
+}
+
 } // namespace
 
 std::string vendor_orca(const std::string& modulo_id)
@@ -544,6 +691,8 @@ json preparar(const std::string& modulo_id, const std::string& modelo)
             ativo = ag->get_agent_info().id;
         net->start_discovery(true, true);
     }
+    if (agente_moonraker(agente))
+        procurar_moonraker(agente, modelo, model_id);
     return {{"perfil", p->name}, {"agente", agente}, {"agente_ativo", ativo}, {"modelo_id", model_id}};
 }
 
@@ -572,7 +721,7 @@ void garantir_codigo(MachineObject* o)
     const std::string ag = o->printer_agent_id;
     if (ag == "filuna_elegoo_cc2")
         o->set_access_code("123456", false);
-    else if (ag.rfind("filuna_", 0) == 0 && ag != "filuna_bambu_lan")
+    else if ((ag.rfind("filuna_", 0) == 0 && ag != "filuna_bambu_lan") || agente_moonraker(ag))
         // Regra única para as marcas do Filuna: o DeviceManager só deixa selecionar impressora local com
         // código preenchido. Onde a marca não usa código (credenciais vêm do aperto de mão), vai um valor
         // neutro; onde usa, o agente da marca devolve o erro de acesso com a própria mensagem.
