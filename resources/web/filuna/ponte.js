@@ -88,6 +88,18 @@ var Filuna = (function () {
 		}, function () { throw { status: 0, erro: "Sem conexão." }; });
 	}
 
+	// Arquivo no corpo (envio do projeto para a Farm) e imagens que precisam da conta (foto da peça).
+	function enviarArquivo(rota, dados) {
+		if (!token) return Promise.reject({ status: 401, erro: "Entre na sua conta Filuna." });
+		return fetch(API + rota, { method: "POST", headers: { "Authorization": "Bearer " + token, "Content-Type": "application/octet-stream" }, body: dados })
+			.then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw { status: r.status, erro: d.erro || ("Erro " + r.status) }; return d; }); },
+				function () { throw { status: 0, erro: "Sem conexão." }; });
+	}
+	function imagem(rota) {
+		if (!token) return Promise.reject({ status: 401 });
+		return fetch(API + rota, { headers: { "Authorization": "Bearer " + token } }).then(function (r) { if (!r.ok) throw { status: r.status }; return r.blob(); });
+	}
+
 	function marcarConexao(online) {
 		if (conexao.online === online) return;
 		conexao.online = online;
@@ -383,7 +395,7 @@ var Filuna = (function () {
 	if (/rodape\.html$/.test(location.pathname)) setTimeout(supCiclo, 20000);
 	ouvir("suporte.agora", function () { supCiclo(); });
 
-	return { nativo: nativo, api: api, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
+	return { nativo: nativo, api: api, enviarArquivo: enviarArquivo, imagem: imagem, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
 		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
 		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, telaLogin: telaLogin };
 })();

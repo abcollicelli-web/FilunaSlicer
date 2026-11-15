@@ -21,6 +21,8 @@
 #include "libslic3r_version.h"
 #include <boost/filesystem/fstream.hpp>
 #include <boost/nowide/convert.hpp>
+#include <cmath>
+#include <map>
 #include <wx/stdpaths.h>
 #include <chrono>
 #include <future>
@@ -702,7 +704,7 @@ FarmMaquina farm_maquina()
     m.progresso  = o->mc_print_percent;
     m.resta_s    = o->mc_left_time;
     for (const Entrada& e : entradas_de(o))
-        m.cores.push_back({{"global", e.global}, {"tipo", e.tipo}});
+        m.cores.push_back({{"global", e.global}, {"tipo", e.tipo}, {"cor", e.cor}});
     return m;
 }
 
@@ -811,6 +813,7 @@ struct FarmAtivo // a mesa da Farm que esta impressora está fazendo (sobrevive 
 };
 
 std::atomic<bool> g_farm_iniciada{false};
+std::map<std::string, long long> g_farm_recusadas; // mesa -> quando foi recusada (tenta de novo depois de 10 min)
 std::string       g_farm_ultimo_aviso;
 
 void farm_avisar(const std::string& texto)
@@ -844,6 +847,48 @@ FarmAtivo farm_ler_ativo(const std::string& texto)
     return a;
 }
 
+// Mesma regra do site (farm_plano.cor_perto): cores "iguais" a até 60 de distância RGB.
+bool cor_perto(std::string a, std::string b)
+{
+    auto rgb = [](std::string h, int& r, int& g, int& bl) {
+        if (!h.empty() && h[0] == '#')
+            h = h.substr(1);
+        if (h.size() < 6)
+            return false;
+        try {
+            r = std::stoi(h.substr(0, 2), nullptr, 16), g = std::stoi(h.substr(2, 2), nullptr, 16), bl = std::stoi(h.substr(4, 2), nullptr, 16);
+        } catch (...) {
+            return false;
+        }
+        return true;
+    };
+    int r1, g1, b1, r2, g2, b2;
+    if (!rgb(a, r1, g1, b1) || !rgb(b, r2, g2, b2))
+        return false;
+    return std::sqrt(double((r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2))) <= 60.0;
+}
+
+// Conferência antes de imprimir uma mesa que veio do site/app: a impressora conectada tem, na entrada indicada, o
+// material e a cor da mesa? Vazio = pode imprimir; senão, o motivo (a mesa não é enviada).
+std::string farm_conferir(const json& t, const FarmMaquina& m)
+{
+    const std::string material = texto_de(t, "material"), cor = texto_de(t, "cor"), cor_nome = texto_de(t, "cor_nome");
+    const int         posicao  = std::max(1, inteiro(t, "posicao", 1));
+    if (m.cores.empty())
+        return {}; // impressora sem sistema de cores: usa o filamento que está nela (o site já conferiu pela telemetria)
+    if (posicao > int(m.cores.size()))
+        return "a mesa pede a entrada " + std::to_string(posicao) + ", e a impressora tem " + std::to_string(m.cores.size());
+    const json&       e    = m.cores[posicao - 1];
+    const std::string tipo = texto_de(e, "tipo"), tem = texto_de(e, "cor");
+    if (tipo.empty())
+        return "a entrada " + std::to_string(posicao) + " está vazia; a mesa pede " + material + " " + cor_nome;
+    if (!material.empty() && !boost::iequals(tipo, material))
+        return "a entrada " + std::to_string(posicao) + " tem " + tipo + " e a mesa pede " + material + " " + cor_nome;
+    if (!cor.empty() && !tem.empty() && !cor_perto(cor, tem))
+        return "a cor da entrada " + std::to_string(posicao) + " não é " + cor_nome + " (troque a bobina ou registre a troca)";
+    return {};
+}
+
 // Uma mesa: baixa, fatia, envia. Devolve vazio se deu certo ou o motivo.
 std::string farm_imprimir_mesa(const json& t, const std::string& token, const FarmMaquina& m, FarmAtivo& ativo)
 {
@@ -855,6 +900,11 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     if (entrada_fixa(m.agente) && posicao != 1)
         return "nesta impressora a Farm só imprime pela Entrada 1 por enquanto: coloque o " + material + " " +
                texto_de(t, "cor_nome") + " na Entrada 1";
+    {
+        const std::string confere = farm_conferir(t, m);
+        if (!confere.empty())
+            return "mesa " + std::to_string(inteiro(t, "mesa", 1)) + " de " + texto_de(t, "descricao", "Farm") + " não foi enviada: " + confere;
+    }
     const fsf::path pasta = fsf::path(data_dir()) / "filuna" / "farm" / tid;
     boost::system::error_code ec;
     fsf::remove_all(pasta, ec);
@@ -1007,8 +1057,12 @@ void farm_volta(FarmAtivo& ativo)
         if (ref != m.ref || !(t.contains("pode_iniciar") && t["pode_iniciar"].is_boolean() && t["pode_iniciar"].get<bool>()) ||
             texto_de(t, "estado") != "aguardando")
             continue;
+        const auto rec = g_farm_recusadas.find(texto_de(t, "id"));
+        if (rec != g_farm_recusadas.end() && (long long) std::time(nullptr) - rec->second < 10 * 60)
+            continue; // recusada há pouco: não fatia de novo a cada volta
         const std::string motivo = farm_imprimir_mesa(t, token, m, ativo);
         if (!motivo.empty()) {
+            g_farm_recusadas[texto_de(t, "id")] = (long long) std::time(nullptr);
             farm_avisar(motivo);
             FilunaManutencao::diagnostico("farm", motivo, json{{"trabalho", texto_de(t, "id")}, {"agente", m.agente}});
         } else

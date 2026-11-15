@@ -34,6 +34,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <set>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/assert/source_location.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -2463,13 +2465,22 @@ void GUI_App::init_networking_callbacks()
                                     text = wxString::Format(_L("Incorrect password"));
                                     wxGetApp().show_dialog(text);
                                 } else if (msg == "-1") {
-                                    text = wxString::Format(_L("Connect %s failed! [SN:%s, code=%s]"), from_u8(obj->get_dev_name()), obj->get_dev_id(), msg);
+                                    text = wxString::Format(_L("Connect %s failed! [SN:%s, code=%s]"), from_u8(obj->get_dev_name()), obj->get_dev_id(), from_u8(msg));
                                     text += L"\n\u2022 " + _L("Check that the printer is on the same network as this computer and that its IP address is correct.");
                                     text += L"\n\u2022 " + _L("If the connection still fails, try a different network plug-in version in Preferences.");
                                     text += L"\n\u2022 " + _L("A missing or damaged TLS/CA certificate in 'printer.cer' can also cause this error.");
                                     wxGetApp().show_dialog(text);
+                                } else if (boost::starts_with(obj->printer_agent_id, "filuna_")) {
+                                    // Filuna: impressora desligada ou fora da rede não é erro para janela. O cartão do
+                                    // Dispositivo mostra "desligada"; aqui só um aviso discreto, uma vez por impressora.
+                                    static std::set<std::string> avisadas;
+                                    BOOST_LOG_TRIVIAL(warning) << "Filuna: impressora " << obj->get_dev_id() << " não respondeu: " << msg;
+                                    if (avisadas.insert(obj->get_dev_id()).second)
+                                        if (Plater* pl = wxGetApp().plater())
+                                            if (auto* nm = pl->get_notification_manager())
+                                                nm->push_notification(obj->get_dev_name() + " está desligada ou fora da rede. Ela volta sozinha quando ligar.");
                                 } else {
-                                    text = wxString::Format(_L("Connect %s failed! [SN:%s, code=%s]"), from_u8(obj->get_dev_name()), obj->get_dev_id(), msg);
+                                    text = wxString::Format(_L("Connect %s failed! [SN:%s, code=%s]"), from_u8(obj->get_dev_name()), obj->get_dev_id(), from_u8(msg));
                                     wxGetApp().show_dialog(text);
                                 }
                                 event.SetInt(-1);

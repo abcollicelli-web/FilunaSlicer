@@ -1027,3 +1027,22 @@ Projeto da Farm aprovado: site `site-v2/farm-wizard` (`docs/farm-wizard.md` + pr
   vira https://parametricos.filuna.local/ (WebView2 SetVirtualHostNameToFolderMapping), porque módulo JS não roda de
   file://. O "baixar STL" do gerador vira "colocar na mesa da Preparação". Testado em Chromium: o vaso-hexagonal gera
   e entrega a peça. A parte do WebView2 só compila no Windows (não validada no Linux).
+
+## 2026-11-15 — 68 publicada (32d3bc5ec). Correção de rumo da Farm (ordem do dono)
+
+O dono recusou a aba Farm que abre o site: "o Filuna Slicer roda tudo local; só os dados vêm da web e do Android".
+Regra da Farm a partir de agora:
+- Pedido feito no SITE/APP: o site continua analisando, fatiando e planejando (como hoje). O Slicer recebe a mesa
+  (/fila), CONFERE a compatibilidade (impressora, mesa, material e cor na entrada) e só então imprime.
+- Pedido feito no SLICER: tudo local (abrir o arquivo, peças, cores, quantidade, fatiamento pelo fatiador local, plano,
+  impressão), sem ida e volta ao servidor. A Farm SALVA o projeto no servidor só para o cliente acompanhar, editar e
+  reimprimir peças que faltam pelo site e pelo app.
+- Aparência: a mesma da Farm do site (filuna.css + farm.css, copiados em resources/web/filuna/farm-site.css).
+Feito nesta etapa (sem compilar no Windows ainda): impressora desligada nos agentes Filuna não abre mais janela de erro
+(aviso discreto, uma vez; acentos do erro corrigidos com from_u8); conferência das mesas do site antes de imprimir
+(material e cor da entrada, cabe na mesa pelo fatiador; recusada espera 10 min). Site: paramétrico do canal beta também
+para o plano Beta. A camada JSON da Farm do site para o Slicer ficou guardada em
+/srv/filuna-homolog/overlay/farm-api-json-NAO-PUBLICADO.patch (serve para o painel ler os dados; não publicada).
+Próximo: planejador local (porte do farm_plano.py para o Slicer, conferido contra o Python com os mesmos dados),
+análise do arquivo no Slicer (Model: peças, cores, medidas), wizard local de 6 etapas com o visual do site, envio
+local às impressoras e projeto salvo no servidor (rota nova para projeto já planejado).
