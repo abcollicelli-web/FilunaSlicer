@@ -119,6 +119,9 @@ def main() -> int:
     ns = ap.parse_args()
     if not seguro(ns.build):
         print("build inválido"); return 2
+    if ns.canal == "todos":
+        print("RECUSADO: o canal de todos os clientes é liberado pelo admin do site (/admin/atualizacoes), com uma versão "
+              "que já passou pelo beta. Publique com --canal beta (ou nenhum)."); return 2
     D = ns.destino
     for s in ("builds", "blobs", "docs", "pacotes"):
         (D / s).mkdir(parents=True, exist_ok=True)
