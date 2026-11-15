@@ -106,8 +106,49 @@ AgentInfo FilunaElegooSDCPAgent::get_agent_info_static()
 FilunaElegooSDCPAgent::FilunaElegooSDCPAgent(std::string) {}
 FilunaElegooSDCPAgent::~FilunaElegooSDCPAgent()
 {
+    m_fim  = true;
+    m_quer = false;
+    if (m_vigia.joinable())
+        m_vigia.join();
     start_discovery(false, false);
-    disconnect_printer();
+    fechar();
+}
+
+void FilunaElegooSDCPAgent::vigia()
+{
+    auto ultimo_ping = std::chrono::steady_clock::now(), ultimo_estado = ultimo_ping, ultima_tentativa = ultimo_ping;
+    while (!m_fim) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        const auto agora = std::chrono::steady_clock::now();
+        if (m_running && !m_caiu) {
+            if (agora - ultimo_ping >= std::chrono::seconds(25)) {
+                ultimo_ping = agora;
+                std::lock_guard<std::recursive_mutex> l(m_mutex);
+                if (m_ws)
+                    net::post(m_ws->ioc, [w = m_ws.get()] {
+                        w->ws.async_ping({}, [](beast::error_code) {});
+                    });
+            }
+            if (agora - ultimo_estado >= std::chrono::seconds(60)) {
+                ultimo_estado = agora;
+                send_cmd(0, json::object()); // estado: mantém a impressora mandando o relatório
+            }
+        }
+        if (m_quer && m_caiu && agora - ultima_tentativa >= std::chrono::seconds(10)) {
+            ultima_tentativa = agora;
+            std::unique_lock<std::mutex> g(m_conectando, std::try_to_lock);
+            if (!g.owns_lock() || !m_quer)
+                continue;
+            PrinterConnectionParams p;
+            {
+                std::lock_guard<std::recursive_mutex> l(m_mutex);
+                p = m_params;
+            }
+            BOOST_LOG_TRIVIAL(info) << "FilunaElegooSDCPAgent: conexão caiu, religando em " << p.host;
+            if (conectar(p, true) == BAMBU_NETWORK_SUCCESS)
+                ultimo_ping = ultimo_estado = std::chrono::steady_clock::now();
+        }
+    }
 }
 
 json FilunaElegooSDCPAgent::to_push_status(const json& msg)
@@ -204,7 +245,21 @@ int FilunaElegooSDCPAgent::send_message(std::string d, std::string j, int q, int
 
 int FilunaElegooSDCPAgent::connect_printer(const PrinterConnectionParams& p)
 {
-    disconnect_printer();
+    std::lock_guard<std::mutex> g(m_conectando);
+    {
+        std::lock_guard<std::recursive_mutex> l(m_mutex);
+        m_params = p;
+    }
+    const int r = conectar(p, false);
+    m_quer      = r == BAMBU_NETWORK_SUCCESS; // só religa sozinho uma conexão que já deu certo uma vez
+    if (m_quer && !m_vigia.joinable())
+        m_vigia = std::thread([this] { vigia(); });
+    return r;
+}
+
+int FilunaElegooSDCPAgent::conectar(const PrinterConnectionParams& p, bool silencioso)
+{
+    fechar();
     {
         std::lock_guard<std::recursive_mutex> l(m_mutex);
         m_ip = p.host, m_mainboard = p.dev_id, m_status = json::object();
@@ -216,7 +271,8 @@ int FilunaElegooSDCPAgent::connect_printer(const PrinterConnectionParams& p)
             m_ports.ws = m_ports.http = static_cast<unsigned short>(std::stoi(p.port));
     }
     if (m_mainboard.empty()) {
-        dispatch_connect(ConnectStatusFailed, "MainboardID não descoberto: faça a busca na rede primeiro.");
+        if (!silencioso)
+            dispatch_connect(ConnectStatusFailed, "MainboardID não descoberto: faça a busca na rede primeiro.");
         return BAMBU_NETWORK_ERR_CONNECT_FAILED;
     }
     auto w = std::make_unique<Ws>();
@@ -228,7 +284,8 @@ int FilunaElegooSDCPAgent::connect_printer(const PrinterConnectionParams& p)
         w->ws.set_option(websocket::stream_base::timeout::suggested(beast::role_type::client));
         w->ws.handshake(m_ip + ":" + std::to_string(m_ports.ws), "/websocket");
     } catch (const std::exception& e) {
-        dispatch_connect(ConnectStatusFailed, std::string("WebSocket SDCP: ") + e.what());
+        if (!silencioso)
+            dispatch_connect(ConnectStatusFailed, std::string("WebSocket SDCP: ") + e.what());
         return BAMBU_NETWORK_ERR_CONNECT_FAILED;
     }
     w->on_text = [this](const std::string& t) {
@@ -253,7 +310,10 @@ int FilunaElegooSDCPAgent::connect_printer(const PrinterConnectionParams& p)
             dispatch(ps.dump());
         }
     };
-    w->on_closed = [this](const std::string& why) { dispatch_connect(ConnectStatusLost, why); };
+    w->on_closed = [this](const std::string& why) {
+        m_caiu = true; // o vigia religa em até 10 s
+        dispatch_connect(ConnectStatusLost, why);
+    };
     {
         std::lock_guard<std::recursive_mutex> l(m_mutex);
         m_ws = std::move(w);
@@ -261,6 +321,7 @@ int FilunaElegooSDCPAgent::connect_printer(const PrinterConnectionParams& p)
             m_selected = m_mainboard;
     }
     m_running = true;
+    m_caiu    = false;
     m_ws->read();
     m_reader = std::thread([w = m_ws.get()] {
         try {
@@ -278,6 +339,13 @@ int FilunaElegooSDCPAgent::connect_printer(const PrinterConnectionParams& p)
 }
 
 int FilunaElegooSDCPAgent::disconnect_printer()
+{
+    m_quer = false; // desligado pelo usuário/programa: não religa
+    std::lock_guard<std::mutex> g(m_conectando);
+    return fechar();
+}
+
+int FilunaElegooSDCPAgent::fechar()
 {
     std::unique_ptr<Ws> w;
     {

@@ -78,6 +78,15 @@ private:
     void read_loop();
     void dispatch(const std::string& payload);
     void dispatch_connect(int state, const std::string& msg);
+    // Conexão viva: a impressora derruba o WebSocket parado ou some da rede por um tempo. O vigia manda batimento
+    // (ping do WebSocket a cada 25 s e pedido de estado a cada 60 s) e religa sozinho se a conexão cair.
+    int  conectar(const PrinterConnectionParams& p, bool silencioso);
+    int  fechar();
+    void vigia();
+    PrinterConnectionParams m_params;
+    std::atomic<bool>       m_quer{false}, m_caiu{false}, m_fim{false};
+    std::thread             m_vigia;
+    std::mutex              m_conectando;
 
     std::recursive_mutex m_mutex;
     std::unique_ptr<Ws>  m_ws;

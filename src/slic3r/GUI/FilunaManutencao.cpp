@@ -28,10 +28,25 @@
 
 #include <atomic>
 #include <chrono>
+#include <iterator>
 #include <map>
 #include <mutex>
 #include <sstream>
 #include <thread>
+
+// Descompressão zstd que já vem no programa (biblioteca Blosc do OpenVDB, zstd 1.4.x embutido): aplica a diferença
+// binária do update (zstd --patch-from) contra o arquivo instalado. Só a parte estável da API.
+extern "C" {
+struct ZSTD_DCtx_s;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+ZSTD_DCtx*  ZSTD_createDCtx(void);
+size_t      ZSTD_freeDCtx(ZSTD_DCtx* dctx);
+size_t      ZSTD_DCtx_setParameter(ZSTD_DCtx* dctx, int param, int value);
+size_t      ZSTD_DCtx_refPrefix(ZSTD_DCtx* dctx, const void* prefix, size_t prefixSize);
+size_t      ZSTD_decompressDCtx(ZSTD_DCtx* dctx, void* dst, size_t dstCapacity, const void* src, size_t srcSize);
+unsigned    ZSTD_isError(size_t code);
+const char* ZSTD_getErrorName(size_t code);
+}
 
 namespace Slic3r { namespace GUI { namespace FilunaManutencao {
 
@@ -52,6 +67,7 @@ json        g_estado = {{"situacao", "ocioso"}}; // ocioso | verificando | atual
 json        g_doc;                               // documento assinado da atualização disponível
 std::string g_token;
 std::atomic<bool> g_iniciado{false}, g_ocupado{false};
+std::atomic<bool> g_sem_patch{false}; // a diferença binária falhou nesta sessão: pede o pacote normal
 
 std::string texto_cfg(const std::string& chave)
 {
@@ -172,7 +188,8 @@ void verificar_agora()
         situacao("verificando");
         std::string corpo, erro;
         unsigned    status = 0;
-        Http http = Http::get(std::string(SITE) + "/api/slicer/v1/app/atualizacao?build=" + Http::url_encode(identidade().value("build", std::string())));
+        Http http = Http::get(std::string(SITE) + "/api/slicer/v1/app/atualizacao?build=" + Http::url_encode(identidade().value("build", std::string())) +
+                              (g_sem_patch ? "" : "&patch=zstd"));
         http.tls_verify(true);
         http.timeout_connect(10);
         http.timeout_max(60);
@@ -281,6 +298,73 @@ bool lancar_aplicacao(const fs::path& arquivos, const json& remover, std::string
 }
 #endif
 
+std::string ler_tudo(const fs::path& p)
+{
+    fs::ifstream i(p, std::ios::binary);
+    return std::string(std::istreambuf_iterator<char>(i), std::istreambuf_iterator<char>());
+}
+
+// Pacote reduzido (doc "patches"): o arquivo grande veio como <nome>.zpatch, a diferença zstd contra o arquivo que
+// está instalado. Refaz o arquivo novo na pasta de espera e confere o SHA-256; qualquer diferença = falha.
+bool aplicar_patches(const json& doc, const fs::path& arquivos, std::string& motivo)
+{
+    if (!doc.contains("patches") || !doc["patches"].is_object())
+        return true;
+    for (const auto& [rel, info] : doc["patches"].items()) {
+        if (rel.empty() || rel.find("..") != std::string::npos || rel[0] == '/' || rel[0] == '\\' || !info.is_object()) {
+            motivo = "diferença binária com caminho inválido";
+            return false;
+        }
+        const fs::path base = pasta_do_programa() / fs::path(rel), patch = arquivos / fs::path(rel + ".zpatch"), destino = arquivos / fs::path(rel);
+        const size_t   n    = info.value("bytes", size_t(0));
+        if (n == 0 || n > PACOTE_MAX * 2) {
+            motivo = "diferença binária com tamanho inválido";
+            return false;
+        }
+        if (F::sha256_de_arquivo(base.string()) != info.value("base_sha256", std::string())) {
+            motivo = "o arquivo instalado " + rel + " não é o da versão esperada";
+            return false;
+        }
+        const std::string velho = ler_tudo(base), dif = ler_tudo(patch);
+        if (velho.empty() || dif.empty()) {
+            motivo = "não leu " + rel + " ou a diferença dele";
+            return false;
+        }
+        std::string novo(n, '\0');
+        ZSTD_DCtx*  d = ZSTD_createDCtx();
+        if (d == nullptr) {
+            motivo = "sem memória para a diferença binária";
+            return false;
+        }
+        ZSTD_DCtx_setParameter(d, 100 /* ZSTD_d_windowLogMax */, 31);
+        size_t r = ZSTD_DCtx_refPrefix(d, velho.data(), velho.size());
+        if (!ZSTD_isError(r))
+            r = ZSTD_decompressDCtx(d, &novo[0], novo.size(), dif.data(), dif.size());
+        ZSTD_freeDCtx(d);
+        if (ZSTD_isError(r) || r != n) {
+            motivo = "a diferença binária de " + rel + " não aplicou (" + (ZSTD_isError(r) ? std::string(ZSTD_getErrorName(r)) : "tamanho") + ")";
+            return false;
+        }
+        {
+            boost::system::error_code ec;
+            fs::create_directories(destino.parent_path(), ec);
+            fs::ofstream o(destino, std::ios::binary | std::ios::trunc);
+            o.write(novo.data(), std::streamsize(novo.size()));
+            if (!o.good()) {
+                motivo = "não gravou " + rel + " refeito";
+                return false;
+            }
+        }
+        if (F::sha256_de_arquivo(destino.string()) != info.value("sha256", std::string())) {
+            motivo = "SHA-256 de " + rel + " refeito não confere";
+            return false;
+        }
+        boost::system::error_code ec;
+        fs::remove(patch, ec);
+    }
+    return true;
+}
+
 // Baixa, confere e extrai o pacote da atualização numa pasta de espera. Não fecha nem troca nada.
 bool baixar_e_extrair(const json& doc, const std::string& token, fs::path& arquivos, std::string& motivo, bool mostrar)
 {
@@ -341,6 +425,12 @@ bool baixar_e_extrair(const json& doc, const std::string& token, fs::path& arqui
         return false;
     }
     fs::remove(zip, ec);
+    if (!aplicar_patches(doc, arquivos, motivo)) {
+        g_sem_patch = true; // daqui em diante pede o pacote normal (só o que mudou, sem diferença binária)
+        diagnostico("atualizacao.patch", motivo, {{"para", para}});
+        motivo = "a atualização reduzida não deu certo (" + motivo + "); clique de novo para baixar a normal";
+        return false;
+    }
     return true;
 }
 
@@ -371,6 +461,11 @@ void preparar_em_segundo_plano()
                 return;
             }
             BOOST_LOG_TRIVIAL(warning) << "Filuna atualização: preparo em segundo plano falhou: " << motivo;
+            if (g_sem_patch && doc.contains("patches")) { // a reduzida falhou: busca de novo o pacote normal
+                g_ocupado = false;
+                verificar_agora();
+                return;
+            }
         } catch (const std::exception& e) {
             BOOST_LOG_TRIVIAL(warning) << "Filuna atualização: preparo em segundo plano: " << e.what();
         }
@@ -395,6 +490,10 @@ void aplicar_agora()
             g_ocupado = false;
             diagnostico("atualizacao.aplicar", motivo, {{"para", doc.value("para", std::string())}});
             situacao("erro", {{"erro", motivo}});
+            if (g_sem_patch && doc.contains("patches")) { // a reduzida falhou: o "Tentar de novo" já usa a normal
+                std::lock_guard<std::mutex> g(g_trava);
+                g_doc = json();
+            }
         };
 #ifndef _WIN32
         falha("A atualização automática do programa vale para Windows nesta versão.");

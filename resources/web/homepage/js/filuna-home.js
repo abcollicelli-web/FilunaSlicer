@@ -195,6 +195,7 @@ $(function () {
  * de novo sozinho. Aqui fica o aviso no canto inferior esquerdo, a janela com as novidades e as três perguntas
  * da primeira instalação. Coisas internas aparecem só pelo rótulo ("update de segurança" etc.). */
 var m_FlUpd = { situacao: "ocioso" }, m_FlPrefs = null;
+var m_FlBusca = false, m_FlBuscaT = 0, m_FlBuscaEm = 0, m_FlViuVerif = false;
 
 function FlManut(acao, dados) {
 	try { window.wx.postMessage(JSON.stringify({ command: "filuna_manutencao", corpo: JSON.stringify({ acao: acao, dados: dados || {} }) })); } catch (e) { }
@@ -207,7 +208,17 @@ function FlUpdDesenhar() {
 	var mostra = s == "pronto" || s == "disponivel" || s == "baixando" || s == "aplicando" || s == "erro";
 	$("#FlUpdAviso").toggle(mostra);
 	$("#FlUpdAviso .t").text(s == "baixando" ? "Baixando atualização… " + (e.feito || 0) + "%" : s == "aplicando" ? "Aplicando atualização…" : s == "erro" ? "Atualização não concluída" : s == "pronto" ? "Atualização pronta · clique para aplicar" : "Atualização disponível");
-	$("#FlVersaoAtual").text(e.versao ? "Versão " + e.versao + " · " + (e.build || "") : "");
+	$("#FlVersaoAtual .v").text(e.versao ? "Versão " + e.versao + " · " + (e.build || "") : "");
+	// busca manual (botão "Procurar atualização"): mostra o resultado em vez de esperar a busca automática
+	var $b = $("#FlUpdBuscar"), $r = $("#FlVersaoAtual .r");
+	$b.text(s == "verificando" ? "Procurando…" : "Procurar atualização").toggleClass("off", s == "verificando" || s == "baixando" || s == "aplicando");
+	if (m_FlBusca && s == "verificando") m_FlViuVerif = true;
+	// a resposta imediata ao clique ainda traz o estado de antes: só conclui depois de ver "procurando" ou após 3 s
+	if (m_FlBusca && s != "verificando" && (m_FlViuVerif || Date.now() - m_FlBuscaEm > 3000)) {
+		var res = s == "atual" ? "Você já está na versão mais nova." : s == "ocioso" ? "Não deu para procurar agora: confira a internet e a conta Filuna." : "";
+		if (s == "disponivel" || s == "pronto" || s == "baixando") { m_FlBusca = false; $("#FlUpdJanela").show(); }
+		else if (res) { m_FlBusca = false; $r.text(" · " + res); clearTimeout(m_FlBuscaT); m_FlBuscaT = setTimeout(function () { $r.text(""); }, 10000); }
+	}
 	if (!$("#FlUpdJanela").is(":visible")) return;
 	$("#FlUpdTitulo").text("Filuna Slicer " + (e.nova_versao || ""));
 	var h = "";
@@ -216,7 +227,7 @@ function FlUpdDesenhar() {
 	h = "";
 	(e.internos || []).forEach(function (n) { h += "<span>" + FlEsc(n) + "</span>"; });
 	$("#FlUpdInternos").html(h).toggle(!!h);
-	$("#FlUpdTam").text(s == "pronto" ? "Download concluído" : e.tamanho ? "Download: " + FlMB(e.tamanho) + (e.tipo == "delta" ? " (só o que mudou)" : "") : "");
+	$("#FlUpdTam").text(s == "pronto" ? "Download concluído" : e.tamanho ? "Download: " + FlMB(e.tamanho) + (e.tipo == "delta" || e.tipo == "delta-zstd" ? " (só o que mudou)" : "") : "");
 	var ocupado = s == "baixando" || s == "aplicando";
 	$("#FlUpdBarra").toggle(ocupado); $("#FlUpdBarra i").css("width", (s == "aplicando" ? 100 : (e.feito || 0)) + "%");
 	$("#FlUpdMsg").text(s == "baixando" ? "Baixando… " + (e.feito || 0) + "%" : s == "aplicando" ? "Pronto. O Filuna vai fechar e abrir de novo sozinho." : s == "erro" ? (e.erro || "Não deu certo.") + " O erro já foi enviado para a Filuna." : s == "pronto" ? "Já está baixada. O Filuna fecha uma vez, aplica e abre de novo sozinho." : "O Filuna fecha, atualiza e abre de novo sozinho.").toggleClass("erro", s == "erro");
@@ -248,7 +259,7 @@ function FlManutencao(m) {
 $(function () {
 	$("body").append(
 		'<div id="FlUpdAviso" style="display:none"><b></b><span class="t">Atualização disponível</span></div>' +
-		'<div id="FlVersaoAtual"></div>' +
+		'<div id="FlVersaoAtual"><span class="v"></span><a href="#" id="FlUpdBuscar">Procurar atualização</a><span class="r"></span></div>' +
 		'<div id="FlUpdJanela" class="FlJan" style="display:none"><div class="cx">' +
 		'<small>Atualização do Filuna Slicer</small><h2 id="FlUpdTitulo"></h2>' +
 		'<h4>Novidades</h4><ul id="FlUpdNotas"></ul><div id="FlUpdInternos"></div>' +
@@ -263,6 +274,16 @@ $(function () {
 		'<div class="bt"><button id="FlPrefSalvar">Salvar</button></div></div></div>');
 	$("#FlUpdAviso").on("click", function () { $("#FlUpdJanela").show(); FlUpdDesenhar(); });
 	$("#FlUpdDepois").on("click", function () { $("#FlUpdJanela").hide(); });
+	$(document).on("click", "#FlUpdBuscar", function (ev) {
+		ev.preventDefault();
+		if ($(this).hasClass("off")) return;
+		m_FlBusca = true; m_FlViuVerif = false; m_FlBuscaEm = Date.now(); $("#FlVersaoAtual .r").text("");
+		$(this).text("Procurando…").addClass("off");
+		FlManut("atualizacao.verificar");
+		// a resposta chega pelo estado; se não chegar (sem conta), confere de novo
+		setTimeout(function () { FlManut("atualizacao.estado"); }, 4000);
+		setTimeout(function () { FlManut("atualizacao.estado"); }, 15000);
+	});
 	$("#FlUpdAgora").on("click", function () { FlManut(m_FlUpd.situacao == "erro" ? "atualizacao.verificar" : "atualizacao.aplicar"); });
 	$("#FlPrefSalvar").on("click", function () {
 		FlManut("preferencias.gravar", { inicio_windows: $("#FlPrefWin").prop("checked"), manter_login: $("#FlPrefLogin").prop("checked"), auto_dispositivos: $("#FlPrefDisp").prop("checked") });

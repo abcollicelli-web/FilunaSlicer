@@ -990,3 +990,20 @@ camera-conta.js, 13cff1c29/a88bb41d3); o 65 foi feito por cima, sem conflito.
 - Regra "filamento N na entrada N": entre os agentes Filuna só a Anycubic não remapeia (Bambu ams_mapping, CC2
   slot_map e Flashforge materialMappings enviam a escolha). Snapmaker, Creality e Moonraker usam o fluxo do Orca
   e ficam para quando houver prova nessas impressoras.
+
+## 2026-11-15 — 65 (câmera, a88bb41d3) e 66 (cf53ac54c) publicadas no canal beta; 67 em compilação
+
+Publicação sem conflito entre sessões: `publicar_app.py` com trava, sem retrocesso e versão só sobe (ver
+`lab/oem_homolog/PUBLICAR-SEM-CONFLITO.md` no ramo filuna/homologacao-oem-8 e `/srv/filuna-homolog/LEIA-ANTES-DE-PUBLICAR.md`).
+Site (8615276): admin marca erro da impressora como resolvido; /admin/atualizacoes libera uma versão para todos os
+clientes (tabela slc_app_liberacao; o canal beta continua só pelo publicar_app.py); Claude Filuna recusa a chave antiga
+`ig1:` guardada no cofre (a Anthropic responde "invalid x-api-key"): o dono precisa cadastrar uma chave sk-ant- em
+Admin › Conectores; pacote reduzido para quem pede ?patch=zstd.
+67 (validado só por compilação no Linux):
+- Botão "Procurar atualização" ao lado da versão, na tela inicial (resposta na hora: mais nova, achou, ou sem internet/conta).
+- Update menor: o programa pede ?patch=zstd e aplica a diferença binária do OrcaSlicer.dll (zstd 1.4.1 que já vem na
+  Blosc do OpenVDB; conferido no Linux que ele refaz o arquivo gerado pelo zstd 1.5.7 do servidor, SHA-256 igual).
+  Falhou (arquivo instalado diferente, SHA-256): volta sozinho ao pacote normal. Vale a partir da 68 (a 67 chega
+  pelo pacote normal). 44,4 MB -> 9,1 MB no teste.
+- Elegoo antiga (SDCP): conexão viva — ping do WebSocket a cada 25 s, pedido de estado a cada 60 s e religa sozinha em
+  até 10 s se a conexão cair (só a que já conectou uma vez; desconectar pelo programa não religa).
