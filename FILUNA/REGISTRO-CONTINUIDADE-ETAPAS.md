@@ -948,3 +948,27 @@ listam ativas; mesa da Kobra 3 V2 corrigida.
 
 Falta da lista: Autoajuda (§6 do guia, não construída), rodapé da Preparação do desenho aprovado, Home homologada com
 modelos 3D do site, últimos arquivos na Kobra, revisão do agente snapmaker, prova em impressora de tudo acima.
+
+## 2026-11-15 16:30 UTC — versões 60 a 63 publicadas no canal beta; 64 em compilação
+
+Publicadas (canal beta): 59 (a5442a131), 60 (27ddfb973), 61 (37abf9743), 62 (47654df06), 63 (202cbb7c0, run 43729105417).
+Provado em impressora pelo dono (Elegoo Centauri Carbon 2 e Anycubic Kobra 3 V2 com ACE Pro):
+- 60: fechar/minimizar/maximizar (BBLTopbar: m_title_ctrl nulo tratava todo botão como área de arrasto), Autoajuda,
+  modelos 3D na Home, tela de estoque dos filamentos identificados.
+- 61: imprimir na Elegoo (faltava o batimento {"type":"PING"} a cada 30 s) e na Kobra (endereço de envio também pelo MQTT).
+- 62: estado "imprimindo" na Kobra (relatório print), aviso de impressão concluída no programa e no site
+  (Android só com o app aberto: o app ainda não tem notificação em segundo plano).
+- 63 (aguardando relato): passo a passo ao conectar (luz → foto da mesa limpa → filamentos), conferência da mesa pela
+  foto de referência (sem IA externa), Anycubic com filamento N na entrada N, limpeza do bico (saia mínima), erro da
+  impressora na tela e em alerta, destaque da Home.
+
+64 (este commit, validado só por compilação no Linux; nada provado em impressora):
+- Anycubic parada: aquecer bico/mesa (tempature/set), ventiladores (fan/setSpeed), zerar eixos (axis/move tipo 2: X/Y e
+  depois Z), mover eixos, carregar/descarregar pela unidade de cores (multiColorBox/feedFilament), arquivos guardados
+  (file/listLocal com page_num/page_size). Fonte: integração LAN da Kobra X (joshuaaaaa/ha-anycubic-kobra-x-lan, em
+  /srv/filuna-homolog/pesquisa/kobra_x_lan) e kobra-connect; a Kobra 3 V2 pode recusar algum — o teste decide.
+- Estado real de ventiladores e velocidade (Anycubic: info/fan; CC2: fans.*.speed 0–255 e gcode_move.speed_mode) e luz real na CC2.
+- CC2: machine_status.exception_status vira erro na tela, no alerta e no site, com o código.
+- Fechamento: vigia de saída de 30 s para 8 s (processo que ficava aberto depois de fechar).
+Site: /admin/impressoras (só leitura: impressoras de cada cliente, online/imprimindo, erro atual e histórico em
+slc_dispositivo_erro).

@@ -520,6 +520,61 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
         dispatch(to_push_status(retrato_estado).dump());
         return;
     }
+    if (j.is_object() && tipo == "axis") {
+        // fim do zerar X/Y: agora zera o Z (a impressora não zera os três de uma vez)
+        const std::string st = j.value("state", std::string());
+        bool              z  = false;
+        if (j.value("action", std::string()) == "move" && (st == "done" || st == "failed")) {
+            std::lock_guard<std::recursive_mutex> l(m_mutex);
+            z = st == "done" && m_estado.value("zerar_z_depois", false);
+            m_estado["zerar_z_depois"] = false;
+        }
+        if (z)
+            pedir("axis", "move", json{{"axis", 3}, {"move_type", 2}, {"distance", 0}});
+        return;
+    }
+    if (j.is_object() && tipo == "file") {
+        // lista de arquivos guardados na impressora (file/listLocal): mais novos primeiro
+        const json& fd = j.contains("data") ? j["data"] : json();
+        json        reg = json::array();
+        if (fd.is_array())
+            reg = fd;
+        else if (fd.is_object())
+            for (const char* k : {"records", "files", "list", "file_list"})
+                if (fd.contains(k) && fd[k].is_array()) {
+                    reg = fd[k];
+                    break;
+                }
+        std::vector<std::pair<double, json>> itens;
+        for (const auto& r : reg) {
+            if (!r.is_object() || (r.contains("is_dir") && r["is_dir"].is_boolean() && r["is_dir"].get<bool>()))
+                continue;
+            std::string nome = r.value("filename", std::string());
+            if (nome.empty())
+                nome = r.value("name", std::string());
+            if (nome.empty())
+                continue;
+            double quando = 0;
+            for (const char* k : {"timestamp", "time", "create_time", "mtime"})
+                if (quando == 0 && r.contains(k) && r[k].is_number())
+                    quando = r[k].get<double>();
+            itens.emplace_back(quando, json{{"nome", nome}, {"impresso_em", quando}, {"vezes", 0}, {"tempo_s", 0}});
+        }
+        std::stable_sort(itens.begin(), itens.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+        json lista = json::array();
+        for (auto& it : itens)
+            lista.push_back(it.second);
+        std::string serie_;
+        {
+            std::lock_guard<std::recursive_mutex> l(m_mutex);
+            serie_ = m_s.serie;
+        }
+        if (!lista.empty())
+            Filuna::set_arquivos(serie_, lista.dump());
+        BOOST_LOG_TRIVIAL(info) << "FilunaAnycubicLanAgent: lista de arquivos com " << lista.size() << " item(ns), código "
+                                << (j.contains("code") && j["code"].is_number() ? j["code"].get<int>() : 0);
+        return;
+    }
     if (!j.is_object() || !j.contains("data") || !j["data"].is_object())
         return;
     const json& d = j["data"];
@@ -584,6 +639,21 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
             return;
         }
         retrato = m_estado;
+    }
+    {
+        // ventiladores e velocidade como a impressora informa ("info" traz tudo; "fan" traz só os ventiladores)
+        json aj = json::object();
+        const json inf = retrato.value("info", json::object()), fan = retrato.value("fan", json::object());
+        const std::pair<const char*, const char*> CH[] = {{"fan_speed_pct", "ventilador"}, {"aux_fan_speed_pct", "ventilador_aux"},
+                                                          {"box_fan_level", "ventilador_caixa"}, {"print_speed_mode", "velocidade"}};
+        for (const auto& c : CH) {
+            if (fan.contains(c.first) && fan[c.first].is_number())
+                aj[c.second] = fan[c.first].get<int>();
+            else if (inf.contains(c.first) && inf[c.first].is_number())
+                aj[c.second] = inf[c.first].get<int>();
+        }
+        if (!aj.empty())
+            Filuna::set_ajustes(m_s.serie, aj.dump());
     }
     dispatch(to_push_status(retrato).dump());
 }
@@ -694,6 +764,7 @@ int FilunaAnycubicLanAgent::connect_printer(const PrinterConnectionParams& p)
     pedir("tempature", "query", nullptr);
     pedir("multiColorBox", "getInfo", nullptr); // "query" não devolve a caixa; "getInfo" devolve
     pedir("light", "query", nullptr);           // estado real da luz
+    pedir("fan", "query", nullptr);             // estado real dos ventiladores
     // Câmera: "video/startCapture" abre http://<ip>:18088/flv (HTTP-FLV); a tela toca pelo repasse local.
     pedir("video", "startCapture", nullptr);
     dispatch_connect(ConnectStatusOk, "");
@@ -727,11 +798,62 @@ int FilunaAnycubicLanAgent::send_message_to_printer(std::string, std::string jso
                                   fc == "ventilador" ? "fan_speed_pct" : fc == "ventilador_aux" ? "aux_fan_speed_pct" :
                                   fc == "ventilador_caixa" ? "box_fan_level" : fc == "velocidade" ? "print_speed_mode" : nullptr;
         bool feito = false;
+        // Com a impressora parada, print/update é ignorado: o aquecimento vai por tempature/set e os ventiladores
+        // por fan/setSpeed (os mesmos pedidos que o programa da marca faz no pré-aquecimento).
+        bool imprimindo = false;
+        {
+            std::lock_guard<std::recursive_mutex> l(m_mutex);
+            const std::string pe = m_estado.value("print_estado", std::string());
+            static const char* const ATIVOS[] = {"preheating", "auto_leveling", "vibrating", "flow_calibrating", "printing", "resuming",
+                                                 "resumed", "updated", "pausing", "paused", "downloading", "checking"};
+            for (const char* a : ATIVOS)
+                if (pe == a)
+                    imprimindo = true;
+        }
         if (chave != nullptr) {
             int v = f.value("valor", 0);
             if (fc == "velocidade")
                 v = std::max(1, std::min(3, v)); // 1 silencioso, 2 padrão, 3 esportivo
-            feito = pedir("print", "update", json{{"taskid", "-1"}, {"settings", {{chave, v}}}});
+            if (imprimindo || fc == "velocidade")
+                feito = pedir("print", "update", json{{"taskid", "-1"}, {"settings", {{chave, v}}}});
+            else if (fc == "bico" || fc == "mesa")
+                feito = pedir("tempature", "set", json{{"type", fc == "bico" ? 0 : 1}, {"target_nozzle_temp", fc == "bico" ? v : 0},
+                                                       {"target_hotbed_temp", fc == "mesa" ? v : 0}});
+            else
+                feito = pedir("fan", "setSpeed", json{{chave, v}});
+            pedir("tempature", "query", nullptr);
+            pedir("fan", "query", nullptr);
+        } else if (fc == "home" || fc == "mover") {
+            if (imprimindo)
+                return BAMBU_NETWORK_ERR_INVALID_HANDLE; // eixos não se mexem durante a impressão
+            if (fc == "home") {
+                // eixo 4 zera X e Y; o Z é zerado depois, quando a impressora avisa que terminou o X/Y
+                const std::string e = f.value("eixos", std::string("xyz"));
+                const bool xy = e.find('x') != std::string::npos || e.find('y') != std::string::npos;
+                const bool z  = e.find('z') != std::string::npos;
+                {
+                    std::lock_guard<std::recursive_mutex> l(m_mutex);
+                    m_estado["zerar_z_depois"] = xy && z;
+                }
+                feito = pedir("axis", "move", json{{"axis", xy ? 4 : 3}, {"move_type", 2}, {"distance", 0}});
+            } else {
+                const std::string e = f.value("eixo", std::string("x"));
+                const double      d = f.value("distancia", 0.0);
+                feito = pedir("axis", "move", json{{"axis", e == "x" ? 1 : e == "y" ? 2 : 3}, {"move_type", d < 0 ? 0 : 1},
+                                                   {"distance", std::max(1, int(std::abs(d) + 0.5))}});
+            }
+        } else if (fc == "carregar" || fc == "descarregar") {
+            if (imprimindo)
+                return BAMBU_NETWORK_ERR_INVALID_HANDLE;
+            // unidade de cores: multiColorBox/feedFilament (tipo 1 carrega a entrada pedida, tipo 2 recolhe o que está no bico)
+            const bool car = fc == "carregar";
+            feito = pedir("multiColorBox", "feedFilament",
+                          json{{"multi_color_box", json::array({json{{"id", f.value("unidade", 0)},
+                                                                     {"feed_status", {{"slot_index", car ? f.value("slot", 0) : -1}, {"type", car ? 1 : 2}}}}})}});
+            pedir("multiColorBox", "getInfo", nullptr);
+        } else if (fc == "arquivos") {
+            // sem page_num/page_size a impressora recusa (código 10112)
+            feito = pedir("file", "listLocal", json{{"path", "/"}, {"page_num", 1}, {"page_size", 20}});
         } else if (fc == "luz") {
             const bool on = f.value("ligar", false);
             feito = pedir("light", "control", json{{"type", 2}, {"status", on ? 1 : 0}, {"brightness", on ? 100 : 0}});

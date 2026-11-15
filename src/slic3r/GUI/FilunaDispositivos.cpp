@@ -71,7 +71,8 @@ const std::map<std::string, std::string> AGENTE = {
 const std::map<std::string, std::vector<std::string>> CONTROLES = {
     {"filuna_elegoo_cc2", {"bico", "mesa", "home", "mover", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade",
                            "carregar", "descarregar", "emergencia", "arquivos"}},
-    {"filuna_anycubic_lan", {"bico", "mesa", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade", "secar"}},
+    {"filuna_anycubic_lan", {"bico", "mesa", "home", "mover", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade",
+                             "carregar", "descarregar", "secar", "arquivos"}},
 };
 
 // Marcas sem tabela própria acima falam os comandos padrão do programa (os mesmos do painel nativo): Bambu
@@ -88,10 +89,11 @@ const std::vector<std::string>& controles_do_agente(const std::string& agente)
 
 // Controles que o protocolo da marca só aceita com uma impressão em andamento. Parada, a tela não os oferece
 // (e diz por quê) em vez de mostrar um botão que a impressora ignora.
-// Anycubic Modo LAN: temperatura, ventiladores e velocidade vão por print/update, que só vale para o trabalho
-// atual — o protocolo não tem pré-aquecimento com a impressora parada.
+// Anycubic Modo LAN: a velocidade vai por print/update, que só vale durante o trabalho. Parada, a impressora aceita
+// aquecimento (tempature/set), ventiladores (fan/setSpeed), eixos (axis/move) e carregar/descarregar (feedFilament).
+
 const std::map<std::string, std::vector<std::string>> SO_IMPRIMINDO = {
-    {"filuna_anycubic_lan", {"bico", "mesa", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade"}},
+    {"filuna_anycubic_lan", {"velocidade"}},
 };
 
 std::string minusculas(std::string s)
@@ -317,7 +319,7 @@ json card(MachineObject* o)
     // estado real da luz, para as marcas cujo protocolo informa (a tela usa no lugar do "último comando enviado")
     {
         const std::string& ag = o->printer_agent_id;
-        if ((ag == "filuna_anycubic_lan" || ag == "filuna_bambu_lan" || ag == "bbl") && o->GetLamp() != nullptr)
+        if ((ag == "filuna_anycubic_lan" || ag == "filuna_elegoo_cc2" || ag == "filuna_bambu_lan" || ag == "bbl") && o->GetLamp() != nullptr)
             c["luz"] = o->GetLamp()->IsChamberLightOn();
     }
     c["controles"]           = controles;
@@ -343,6 +345,9 @@ json card(MachineObject* o)
     const std::string err = Filuna::erro(o->get_dev_id());
     if (!err.empty())
         c["erro"] = err; // último erro informado pela impressora
+    const json ajs = json::parse(Filuna::ajustes(o->get_dev_id()), nullptr, false);
+    if (ajs.is_object() && !ajs.empty())
+        c["ajustes"] = ajs; // ventiladores e velocidade como a impressora informa
     const json arqs = json::parse(Filuna::arquivos(o->get_dev_id()), nullptr, false);
     if (arqs.is_array() && !arqs.empty())
         c["arquivos"] = arqs; // últimos arquivos guardados na impressora

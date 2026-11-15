@@ -68,6 +68,25 @@ inline std::string erro(const std::string& dev_id)
     return it == erro_map().end() ? std::string() : it->second;
 }
 
+// Ajustes que a impressora informa de verdade (não o "último comando enviado"), em JSON:
+// {"ventilador":0-100,"ventilador_aux":0-100,"ventilador_caixa":0-100,"velocidade":n}. Só as chaves que a marca informa.
+inline std::map<std::string, std::string>& ajustes_map()
+{
+    static std::map<std::string, std::string> m;
+    return m;
+}
+inline void set_ajustes(const std::string& dev_id, const std::string& ajustes_json)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    ajustes_map()[dev_id] = ajustes_json;
+}
+inline std::string ajustes(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    auto it = ajustes_map().find(dev_id);
+    return it == ajustes_map().end() ? std::string() : it->second;
+}
+
 // Última conferência da mesa pela câmera (IA): JSON {"livre":bool,"motivo":"...","em":<segundos unix>}.
 inline std::map<std::string, std::string>& mesa_map()
 {

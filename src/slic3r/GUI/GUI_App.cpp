@@ -1329,7 +1329,7 @@ void GUI_App::start_exit_watchdog()
     // network calls). The app config is saved on idle and again in MainFrame::shutdown, so ending
     // the process loses little; static destructors and atexit handlers are skipped too, as they may
     // be what is stuck.
-    constexpr auto grace = std::chrono::seconds(30);
+    constexpr auto grace = std::chrono::seconds(8);
     try {
         // Made now: by the time the watchdog fires, static destruction may be under way. The logger
         // holds its own reference, which keeps boost::log's core and sinks alive.

@@ -253,6 +253,7 @@ function unidade(app, u) {
 	estado.ctlSel = estado.ctlSel || lerCtl();
 	var mem = (aoVivo && estado.ctlSel[v.dev_id]) || {};
 	if (v && typeof v.luz == "boolean") { mem = Object.assign({}, mem); mem.luz = v.luz; } // luz lida da impressora, quando a marca informa
+	if (v && v.ajustes) { mem = Object.assign({}, mem, v.ajustes); } // ventiladores e velocidade lidos da impressora, quando a marca informa
 	var bicoOn = ativa && v.bico && v.bico.alvo > 0, mesaOn = mem.mesa > 0;
 	var filamentos = "";
 	if (aoVivo && v.cores && v.cores.length) {
@@ -284,7 +285,7 @@ function unidade(app, u) {
 			(v.agente == "filuna_anycubic_lan" ? '<option value="1">Silencioso</option><option value="2" selected>Padrão</option><option value="3">Esportivo</option>'
 				: '<option value="0">Silencioso</option><option value="1" selected>Equilibrado</option><option value="2">Esportivo</option><option value="3">Máximo</option>') + "</select>" + bt("Aplicar", "velocidade", "", mem.velocidade != null) + marca(mem.velocidade != null ? "aplicada" : "") + "</div>";
 		if (tem("emergencia")) painel += '<div class="lin">' + bt("Parada de emergência", "emergencia", ' style="color:#B00020"') + "</div>";
-		if (v.controles_impressao && v.controles_impressao.length) painel += '<div class="lin" style="color:#8a817a;font-size:12.5px">Temperatura, ventiladores e velocidade: este modelo só aceita o ajuste durante uma impressão.</div>';
+		if (v.controles_impressao && v.controles_impressao.length) painel += '<div class="lin" style="color:#8a817a;font-size:12.5px">Velocidade: este modelo só aceita o ajuste durante uma impressão.</div>';
 		painel += (estado.ctlMsg ? '<div class="okmsg">' + E(estado.ctlMsg) + "</div>" : "") + "</div>";
 	}
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;

@@ -112,6 +112,9 @@ json FilunaElegooCC2Agent::to_push_status(const json& s)
     p["nozzle_target_temper"] = ex.value("target", 0.0);
     p["bed_temper"]           = hb.value("temperature", 0.0);
     p["bed_target_temper"]    = hb.value("target", 0.0);
+    // luz real da câmara (led.status)
+    if (s.contains("led") && s["led"].is_object() && s["led"].contains("status") && s["led"]["status"].is_number())
+        p["lights_report"] = json::array({json{{"node", "chamber_light"}, {"mode", s["led"]["status"].get<int>() ? "on" : "off"}}});
     // Canvas (sistema de cores da CC2) -> unidades "ams" no formato do DeviceManager
     if (s.contains("canvas_info") && s["canvas_info"].is_object()) {
         json units = json::array();
@@ -283,6 +286,30 @@ void FilunaElegooCC2Agent::on_mqtt(const std::string& topic, const std::string& 
         }
         m_status.merge_patch(result);
         snapshot = m_status;
+    }
+    {
+        // Estado real (não o "último comando enviado"): ventiladores vêm de 0 a 255, velocidade em gcode_move.speed_mode
+        json       aj   = json::object();
+        const json fans = snapshot.value("fans", json::object());
+        const std::pair<const char*, const char*> CH[] = {{"fan", "ventilador"}, {"aux_fan", "ventilador_aux"}, {"box_fan", "ventilador_caixa"}};
+        for (const auto& c : CH)
+            if (fans.contains(c.first) && fans[c.first].is_object() && fans[c.first].contains("speed") && fans[c.first]["speed"].is_number())
+                aj[c.second] = int(fans[c.first]["speed"].get<double>() * 100.0 / 255.0 + 0.5);
+        const json gm = snapshot.value("gcode_move", json::object());
+        if (gm.contains("speed_mode") && gm["speed_mode"].is_number())
+            aj["velocidade"] = gm["speed_mode"].get<int>();
+        if (!aj.empty())
+            Filuna::set_ajustes(m_sn, aj.dump());
+        // Erros que a impressora informa (machine_status.exception_status = lista de códigos): vão para a tela,
+        // para o aviso e para o site, com o código — a mesma regra de todas as marcas.
+        const json ms = snapshot.value("machine_status", json::object());
+        if (ms.contains("exception_status") && ms["exception_status"].is_array()) {
+            std::string cods;
+            for (const auto& c : ms["exception_status"])
+                if (c.is_number())
+                    cods += (cods.empty() ? "" : ", ") + std::to_string(c.get<long long>());
+            Filuna::set_erro(m_sn, cods.empty() ? std::string() : "A impressora informou um erro (código " + cods + ")");
+        }
     }
     dispatch(to_push_status(snapshot).dump());
 }
