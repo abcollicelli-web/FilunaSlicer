@@ -38,12 +38,14 @@ jobs:
         run: |
           $dumpDir = Join-Path $env:GITHUB_WORKSPACE 'qa-snapmaker-u1-guard-probe/crash-dumps'
           New-Item -ItemType Directory -Force -Path $dumpDir | Out-Null
-          $werKey = 'HKCU:\\Software\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\snapmaker-orca.exe'
+          $werKey = 'HKCU:\Software\Microsoft\Windows\Windows Error Reporting\LocalDumps\snapmaker-orca.exe'
           New-Item -Path $werKey -Force | Out-Null
           New-ItemProperty -Path $werKey -Name DumpFolder -Value $dumpDir -PropertyType ExpandString -Force | Out-Null
           New-ItemProperty -Path $werKey -Name DumpType -Value 1 -PropertyType DWord -Force | Out-Null
           New-ItemProperty -Path $werKey -Name DumpCount -Value 4 -PropertyType DWord -Force | Out-Null
-          Write-Host 'WER minidump capture enabled for snapmaker-orca.exe only'
+          $configuredKey = Get-ItemProperty -LiteralPath $werKey -ErrorAction Stop
+          if ($configuredKey.DumpType -ne 1 -or $configuredKey.DumpCount -ne 4 -or $configuredKey.DumpFolder -ne $dumpDir) { throw 'WER_LOCALDUMPS_READBACK_MISMATCH' }
+          Write-Host 'WER_LOCALDUMPS_READBACK_PASS: DumpType=1 DumpCount=4 (minidump only)'
       - name: Capture source-preserving U1 process guard diagnosis
         shell: pwsh
         run: |
