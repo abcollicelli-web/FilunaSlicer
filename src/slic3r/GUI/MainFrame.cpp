@@ -2420,6 +2420,9 @@ wxBoxSizer* MainFrame::create_side_tools()
         const int id_auto = wxWindow::NewControlId(), id_atalhos = wxWindow::NewControlId(), id_como = wxWindow::NewControlId();
         menu.AppendCheckItem(id_auto, wxString::FromUTF8("Autoajuda: explicar cada parâmetro ao passar o mouse"))->Check(FilunaAutoajuda::ligada());
         menu.Append(id_como, wxString::FromUTF8("Como usar a Autoajuda"));
+        const int id_limpeza = wxWindow::NewControlId();
+        menu.AppendCheckItem(id_limpeza, wxString::FromUTF8("Limpeza extra do bico antes da peça (3 voltas de saia)"))
+            ->Check(wxGetApp().app_config->get("filuna_pref_limpeza_bico") != "false");
         menu.AppendSeparator();
         menu.Append(id_atalhos, wxString::FromUTF8("Atalhos do teclado"));
         const int escolha = help_btn->GetPopupMenuSelectionFromUser(menu, wxPoint(0, help_btn->GetSize().GetHeight()));
@@ -2441,6 +2444,15 @@ wxBoxSizer* MainFrame::create_side_tools()
                                                  "3. Aparece um cartão com o nome, o que o parâmetro faz e o efeito na peça.\n\n"
                                                  "Ela não muda nenhum valor: só explica."),
                               wxString::FromUTF8("Autoajuda"), wxOK);
+            dlg.ShowModal();
+        } else if (escolha == id_limpeza) {
+            const bool agora = wxGetApp().app_config->get("filuna_pref_limpeza_bico") == "false";
+            wxGetApp().app_config->set("filuna_pref_limpeza_bico", agora ? "true" : "false");
+            MessageDialog dlg(this,
+                              wxString::FromUTF8(agora ? "Limpeza extra ligada: toda impressão começa com 3 voltas de saia em torno da peça, "
+                                                         "para a sobra do bico não grudar nela. Fatie de novo para valer." :
+                                                         "Limpeza extra desligada. Vale a saia configurada no perfil. Fatie de novo para valer."),
+                              wxString::FromUTF8("Limpeza do bico"), wxOK);
             dlg.ShowModal();
         } else if (escolha == id_atalhos)
             wxGetApp().keyboard_shortcuts(ShortcutContext::Global);

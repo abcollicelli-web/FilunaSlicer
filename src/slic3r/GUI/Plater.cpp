@@ -11840,6 +11840,16 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
                 }
             }
         }
+        // Filuna — limpeza do bico antes da peça, para TODOS os modelos: o que escorre do bico durante o
+        // aquecimento grudava no começo da peça. A saia (voltas em torno da peça, na primeira camada) passa a ter
+        // no mínimo 3 voltas e 80 mm de filamento, então a sobra fica nela e o bico chega limpo à peça. Não
+        // depende do G-code de início de cada impressora. Desliga em "?" › Limpeza extra do bico.
+        if (wxGetApp().app_config->get("filuna_pref_limpeza_bico") != "false") {
+            if (auto* voltas = cfg.option<ConfigOptionInt>("skirt_loops"); voltas != nullptr && voltas->value < 3)
+                voltas->value = 3;
+            if (auto* comprimento = cfg.option<ConfigOptionFloat>("min_skirt_length"); comprimento != nullptr && comprimento->value < 80.)
+                comprimento->value = 80.;
+        }
         return cfg;
     };
     if (preset_bundle->get_printer_extruder_count() > 1) {

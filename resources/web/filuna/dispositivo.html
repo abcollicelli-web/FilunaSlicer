@@ -91,6 +91,8 @@
 .spin{width:22px;height:22px;border:3px solid #ddd;border-top-color:var(--magenta-deep);border-radius:50%;animation:gira 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
 @keyframes gira{to{transform:rotate(360deg)}}
 .estq{position:fixed;inset:0;background:rgba(30,26,24,.45);display:flex;align-items:center;justify-content:center;z-index:50}.estq .cx{background:#fff;border-radius:18px;padding:26px 28px;width:min(520px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.25)}.estq h3{margin:0 0 6px;font-size:19px}.estq .sub{color:#6B6660;font-size:13.5px;margin-bottom:16px}.estq .slot{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#FFF8F0;border-radius:12px;margin-bottom:14px}.estq .slot .bola{width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.16);flex:none}.estq .op{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.estq .op button{text-align:left}.estq .cp{display:flex;gap:10px;margin-bottom:12px}.estq .cp label{flex:1;font-size:12.5px;color:#6B6660;display:flex;flex-direction:column;gap:4px}.estq .cp input{padding:9px 10px;border:1px solid #E7E3DD;border-radius:10px;font:inherit}.estq .tp{display:flex;gap:12px;margin-bottom:12px}.estq .tb{display:flex;flex-direction:column;gap:6px;flex:none}.estq .tv{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;flex:1;max-height:230px;overflow:auto}.estq .chip{padding:7px 12px;border-radius:999px;border:1px solid #E7E3DD;background:#fff;font:inherit;font-size:13px;cursor:pointer}.estq .chip.on{background:#FDE3EC;border-color:#C2185B;color:#C2185B;font-weight:700}.estq .cx{max-height:92vh;overflow:auto}
+.prep .cx{width:min(540px,92vw)}.prep .pts{display:flex;gap:6px;margin-bottom:14px}.prep .pts i{height:5px;flex:1;border-radius:3px;background:#ECE8E2}.prep .pts i.on{background:#C2185B}.prep .pts i.ok{background:#1F8F5F}.prep .pk{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#9A948C;font-weight:700;margin-bottom:8px}.prep h3{font-size:22px;letter-spacing:-.02em}.prep .op2{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
+.estq.prep{background:rgba(30,26,24,.28);justify-content:flex-end;align-items:flex-end;padding:28px}
 .estq .pe{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.estq .pe a{color:#8a817a;font-size:13px;cursor:pointer}.estq .er{color:#D9480F;font-size:13px;margin-bottom:8px}
 .mesaia{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 14px;border-radius:12px;background:#FFF8F0;font-size:13.5px;color:#5e5752}.mesaia.ok{background:#E3F5EC;color:#1F8F5F}.mesaia.ocupada{background:#FDE8DF;color:#D9480F;font-weight:600}.mesaia.erro{color:#8a817a}
 .arqs{margin-top:14px}.arq{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:13px}.arq .an{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arq .ai{color:#8a817a;white-space:nowrap}
@@ -335,7 +337,9 @@ function unidade(app, u) {
 		}
 	}
 	if (i.camera_em) camera(i.id);
-	if (ativa) estoqueIdentificar(v);
+	// ao conectar: luz, foto da mesa limpa e filamentos (uma vez por impressora); depois, só o estoque
+	if (ativa && !prep.adiado && !prepFeito(v.dev_id)) prepararImpressora(v, !!(camVivo || flv));
+	else if (ativa) estoqueIdentificar(v);
 	var bmc = app.querySelector("#mesaConf"); if (bmc) bmc.onclick = function () { mesaConferir(v); };
 	var bml = app.querySelector("#mesaLimpa2"); if (bml) bml.onclick = function () { mesaGuardar(v); };
 	// com foto de referência, confere sozinho a cada 20 s enquanto a impressora está parada (alimenta o aviso da janela de impressão)
@@ -539,6 +543,65 @@ function estoqueIdentificar(v) {
 		};
 		passo();
 	}, function () { estq.aberto = false; });
+}
+
+// ---------- Preparar a impressora (ao conectar) ----------
+// Três passos, uma vez por impressora: 1) o Filuna acende a luz e o cliente confirma; 2) com a mesa vazia e
+// limpa, o Filuna guarda a foto de referência; 3) confere os filamentos e liga ao estoque. Depois disso o Filuna
+// tem o que precisa antes de cada impressão. Vale para qualquer marca; passo sem recurso na marca é pulado.
+var prep = { aberto: false };
+function prepFeito(dev) { try { return localStorage.getItem("fl.prep." + dev) == "1"; } catch (e) { return false; } }
+function prepararImpressora(v, temCamera) {
+	if (prep.aberto || estq.aberto || !v || !v.selecionada || prepFeito(v.dev_id)) return false;
+	var temLuz = (v.controles || []).indexOf("luz") >= 0;
+	var passos = [];
+	if (temLuz) passos.push("luz");
+	if (temCamera) passos.push("mesa");
+	if (v.cores && v.cores.length) passos.push("fil");
+	if (!passos.length) return false;
+	prep.aberto = true;
+	var n = 0, msg = "", el = document.createElement("div"); el.className = "estq prep"; document.body.appendChild(el);
+	var fim = function (concluiu) {
+		try { localStorage.setItem("fl.prep." + v.dev_id, "1"); } catch (e) {}
+		el.remove(); prep.aberto = false;
+		if (concluiu && v.cores && v.cores.length) estoqueIdentificar(v); else desenhar();
+	};
+	var luz = function (ligar) { return Filuna.nativo("dispositivos.controle", { dev_id: v.dev_id, tipo: "luz", ligar: ligar }).catch(function () {}); };
+	var desenha = function () {
+		if (n >= passos.length) { fim(true); return; }
+		var p = passos[n];
+		var pontos = '<div class="pts">' + passos.map(function (x, k) { return '<i class="' + (k < n ? "ok" : k == n ? "on" : "") + '"></i>'; }).join("") + "</div>";
+		var h = '<div class="cx">' + pontos + '<div class="pk">Preparar ' + E(v.nome) + " · passo " + (n + 1) + " de " + passos.length + "</div>";
+		if (p == "luz") h += "<h3>A luz da impressora acendeu?</h3>" +
+			'<div class="sub">O Filuna acabou de mandar acender a luz. Olhe a impressora (ou a câmera aqui ao lado) e confirme.</div>' +
+			'<div class="op2"><button class="btn primario" id="pSim">Sim, acendeu</button><button class="btn" id="pDeNovo">Tentar de novo</button><button class="btn" id="pPula">Não tem luz</button></div>';
+		else if (p == "mesa") h += "<h3>Deixe a mesa vazia e limpa</h3>" +
+			'<div class="sub">Retire qualquer peça, sobra de plástico ou ferramenta. O Filuna guarda uma foto da mesa limpa e, antes de cada impressão, compara com a câmera para avisar se ficou algo na mesa.</div>' +
+			(msg ? '<div class="er">' + E(msg) + "</div>" : "") +
+			'<div class="op2"><button class="btn primario" id="pFoto">A mesa está limpa, registrar a foto</button><button class="btn" id="pPula">Fazer depois</button></div>';
+		else h += "<h3>Conferir os filamentos</h3>" +
+			'<div class="sub">A impressora informou ' + v.cores.filter(function (c) { return !c.vazio; }).length + " filamento(s) carregado(s). Vamos ligar cada um ao seu estoque: tipo, marca, cor e peso.</div>" +
+			'<div class="op2"><button class="btn primario" id="pFil">Conferir filamentos</button><button class="btn" id="pPula">Fazer depois</button></div>';
+		h += '<div class="pe"><span></span><a id="pFechar">Fechar e preparar depois</a></div></div>';
+		el.innerHTML = h;
+		var q = function (id) { return el.querySelector(id); };
+		q("#pFechar").onclick = function () { el.remove(); prep.aberto = false; prep.adiado = true; };
+		if (q("#pPula")) q("#pPula").onclick = function () { msg = ""; n++; desenha(); };
+		if (q("#pSim")) q("#pSim").onclick = function () { n++; desenha(); };
+		if (q("#pDeNovo")) q("#pDeNovo").onclick = function () { luz(false).then(function () { setTimeout(function () { luz(true); }, 900); }); };
+		if (q("#pFoto")) q("#pFoto").onclick = function () {
+			var f = mesaFoto();
+			if (!f) { msg = "A câmera ainda não mostrou imagem. Espere o vídeo aparecer no cartão e tente de novo."; desenha(); return; }
+			try { localStorage.setItem("fl.mesa." + v.dev_id, JSON.stringify({ g: f, em: Date.now() })); } catch (e) {}
+			mesaIA[v.dev_id] = { estado: "ok", em: Date.now() };
+			Filuna.nativo("dispositivos.mesa_veredito", { dev_id: v.dev_id, livre: true, motivo: "" }).catch(function () {});
+			msg = ""; n++; desenha();
+		};
+		if (q("#pFil")) q("#pFil").onclick = function () { fim(true); };
+	};
+	if (temLuz) luz(true);
+	desenha();
+	return true;
 }
 
 // ---------- Conferência da mesa pela câmera ----------
