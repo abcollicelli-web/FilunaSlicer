@@ -594,7 +594,7 @@ json conectar(const std::string& dev_id, const std::string& codigo)
     else
         garantir_codigo(o);
     if (!dev->set_selected_machine(dev_id))
-        return {{"erro", "Não foi possível conectar. Confira o modo LAN e o código de acesso."}};
+        return {{"erro", "Não foi possível conectar. Confira o código de acesso. " "Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o Modo desenvolvedor e copie o Código de acesso."}, {"precisa_codigo", true}};
     dev->set_local_selected_machine(dev_id);
     if (NetworkAgent* net = wxGetApp().getAgent())
         net->set_user_selected_machine(dev_id);
@@ -717,8 +717,11 @@ json selecionar(const std::string& dev_id)
             break;
         }
     garantir_codigo(o);
+    // A Bambu só conecta com o código de acesso da tela dela: sem ele, pedir o código em vez de falhar calado.
+    if (o->printer_agent_id == "filuna_bambu_lan" && o->get_access_code().empty() && !o->has_access_right())
+        return {{"erro", "Esta impressora pede o código de acesso. " "Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o Modo desenvolvedor e copie o Código de acesso."}, {"precisa_codigo", true}};
     if (!dev->set_selected_machine(dev_id))
-        return {{"erro", "Não foi possível conectar."}};
+        return {{"erro", "Não foi possível conectar. Confira o código de acesso. " "Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o Modo desenvolvedor e copie o Código de acesso."}, {"precisa_codigo", true}};
     dev->set_local_selected_machine(dev_id);
     if (NetworkAgent* net = wxGetApp().getAgent())
         net->set_user_selected_machine(dev_id);

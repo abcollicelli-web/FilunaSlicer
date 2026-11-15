@@ -1096,3 +1096,11 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
   filuna_bambu_lan, que não usa o plug-in. GUI_App.cpp: as duas janelas da abertura viraram só registro no log; o
   plug-in continua instalável pelas Preferências (câmera nativa da Bambu no Dispositivo antigo do Orca usa o plug-in).
 - Caso: Fernando (4 Bambu A1/P2S/A2 na rede). Ele ainda precisa entrar na conta Filuna no Slicer para o site/app.
+
+## 2026-11-15 — 71 publicada (28ee94a21); 72: Bambu pede o código de acesso no cartão
+
+- FilunaDispositivos::selecionar: Bambu (filuna_bambu_lan) sem código e sem acesso devolve erro com precisa_codigo
+  em vez de "Não foi possível conectar." calado; conectar/selecionar explicam Modo LAN + Modo desenvolvedor + código.
+- dispositivo.html: com precisa_codigo, o cartão mostra o campo "Código de acesso" e Conectar (dispositivos.conectar).
+- Pendente: câmera Bambu sem o plug-in (A1 porta 6000 JPEG/TLS; P2S/A2 RTSPS 322); Snapmaker U1 não é procurada na
+  rede (MoonrakerPrinterAgent::start_discovery só anuncia o IP do perfil) — hoje só por IP no assistente.

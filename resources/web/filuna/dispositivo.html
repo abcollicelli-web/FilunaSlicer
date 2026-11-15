@@ -217,7 +217,7 @@ function galeria(app) {
 	app.querySelector("#adicionar").onclick = abrirAssistente;
 	var b = app.querySelector("#busca"); b.oninput = function () { estado.busca = b.value; var pos = b.selectionStart; galeria(app); var nb = app.querySelector("#busca"); nb.focus(); nb.setSelectionRange(pos, pos); };
 	app.querySelectorAll("[data-f]").forEach(function (x) { x.onclick = function () { estado.filtro = x.dataset.f; galeria(app); }; });
-	app.querySelectorAll("[data-u]").forEach(function (x) { x.onclick = function () { estado.sel = x.dataset.u; estado.vista = "unidade"; estado.confirmar = null; estado.msg = ""; estado.selecionando = null; desenhar(); }; });
+	app.querySelectorAll("[data-u]").forEach(function (x) { x.onclick = function () { estado.sel = x.dataset.u; estado.vista = "unidade"; estado.confirmar = null; estado.msg = ""; estado.pedeCodigo = false; estado.selecionando = null; desenhar(); }; });
 }
 
 function desenhar() {
@@ -239,7 +239,7 @@ function unidade(app, u) {
 	if (aoVivo) {
 		if (!ativa && estado.selecionando != v.dev_id) {
 			estado.selecionando = v.dev_id;
-			Filuna.nativo("dispositivos.selecionar", { dev_id: v.dev_id }).then(function (r) { if (r && r.erro) { estado.msg = r.erro; desenhar(); } }, function (e) { estado.msg = e.message; desenhar(); });
+			Filuna.nativo("dispositivos.selecionar", { dev_id: v.dev_id }).then(function (r) { if (r && r.erro) { estado.msg = r.erro; estado.pedeCodigo = !!r.precisa_codigo; desenhar(); } }, function (e) { estado.msg = e.message; desenhar(); });
 		}
 		var nomeModelo = v.modelo_nome && v.modelo_nome != "Desconhecido" ? v.modelo_nome : (v.nome || v.modelo || "");
 		i = Object.assign({}, i, { estado: ativa ? (v.estado || "livre") : "offline", modelo: nomeModelo });
@@ -320,6 +320,7 @@ function unidade(app, u) {
 		'<div class="trava"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>Ação específica só após confirmação do titular.</div>' +
 		(estado.confirmar ? '<div class="conf">Confirmar <b>' + E(estado.confirmar) + '</b> em ' + E(i.nome) + '? <button class="btn primario peq" id="sim">Confirmar</button> <button class="btn peq" id="nao">Voltar</button></div>' : "") +
 		(estado.msg ? '<div class="okmsg">' + E(estado.msg) + "</div>" : "") +
+		(estado.pedeCodigo && aoVivo ? '<div class="campo" style="margin-top:12px"><label>Código de acesso (está na tela da impressora)</label><input type="text" id="codigoCartao" autocomplete="off"></div><div class="btns"><button class="btn primario" id="conectarCartao">Conectar</button></div>' : "") +
 		"</div></div></div>" +
 		(aoVivo && v.cores && v.cores.length ? "" : '<div class="mats"><div class="lbl">Materiais</div>' + materiais(i) + "</div>") + "</div></div>" + rodape();
 	var camAntes = app.querySelector("[data-cam]");
@@ -377,6 +378,12 @@ function unidade(app, u) {
 	}; });
 	var filProj = app.querySelector("#filProj"); if (filProj) filProj.onclick = function () {
 		Filuna.nativo("dispositivos.filamentos_projeto", { dev_id: v.dev_id }).then(function (r) { estado.ctlMsg = r && r.erro ? r.erro : "Filamentos levados para a Preparação."; desenhar(); }, function (e) { estado.ctlMsg = e.message; desenhar(); });
+	};
+	var cc = app.querySelector("#conectarCartao");
+	if (cc) cc.onclick = function () {
+		var cod = app.querySelector("#codigoCartao").value.trim(); if (!cod) return;
+		cc.disabled = true; estado.msg = "Conectando…"; estado.pedeCodigo = false; desenhar();
+		Filuna.nativo("dispositivos.conectar", { dev_id: v.dev_id, codigo: cod }).then(function (r) { estado.msg = r && r.erro ? r.erro : "Conectada."; estado.pedeCodigo = !!(r && r.precisa_codigo); carregar(); }, function (e) { estado.msg = e.message; estado.pedeCodigo = true; desenhar(); });
 	};
 	app.querySelectorAll("[data-cmd]").forEach(function (b) { if (!u.farm && !ativa) b.disabled = true; b.onclick = function () { estado.confirmar = b.dataset.cmd; estado.msg = ""; desenhar(); }; });
 	var sim = app.querySelector("#sim"); if (sim) sim.onclick = function () {
