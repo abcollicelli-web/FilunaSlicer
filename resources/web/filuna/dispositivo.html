@@ -90,6 +90,7 @@
 .passosLan{margin-top:14px}.passosLan li{margin:8px 0 8px 18px;font-size:14.5px}
 .spin{width:22px;height:22px;border:3px solid #ddd;border-top-color:var(--magenta-deep);border-radius:50%;animation:gira 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
 @keyframes gira{to{transform:rotate(360deg)}}
+.fils{margin:16px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.filrow{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}.fil{width:72px;text-align:center}.fil .bola{display:block;width:46px;height:46px;border-radius:50%;margin:0 auto 8px;border:1px solid rgba(0,0,0,.16);box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)}.fil .bola.vazia{border:1.5px dashed rgba(0,0,0,.28);box-shadow:none}.fil .fn{font-weight:700;font-size:13.5px}.fil .fe{font-size:11.5px;color:#8a817a;margin-top:1px}.fil .fa{display:flex;gap:6px;justify-content:center;margin-top:8px}.fil .fa button{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.16);background:#fff;color:#5e5752;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}.fil .fa button:hover{background:#FFE8F2;border-color:#B3125C;color:#B3125C}
 .ctlvivo .ctlon{font-size:12.5px;color:#1B7F4B;font-weight:600}.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
 .un .cores{display:flex;gap:6px;flex-wrap:wrap;margin:-12px 0 16px}.un .cores .dot{width:16px;height:16px;border:1px solid rgba(0,0,0,.15)}
 .un .ft{height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}.un .ft img{max-height:150px;max-width:100%;object-fit:contain}
@@ -242,6 +243,16 @@ function unidade(app, u) {
 	estado.ctlSel = estado.ctlSel || lerCtl();
 	var mem = (aoVivo && estado.ctlSel[v.dev_id]) || {};
 	var bicoOn = ativa && v.bico && v.bico.alvo > 0, mesaOn = mem.mesa > 0;
+	var filamentos = "";
+	if (aoVivo && v.cores && v.cores.length) {
+		var seta = function (d) { return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="' + d + '"/></svg>'; };
+		filamentos = '<div class="fils"><div class="lbl">Filamentos</div><div class="filrow">' + v.cores.map(function (c) {
+			var n = parseInt(c.slot, 10) + 1 || "";
+			return '<div class="fil"><span class="bola' + (c.vazio ? " vazia" : "") + '" style="background:' + (c.vazio ? "transparent" : corCss(c.cor)) + '"></span>' +
+				'<div class="fn">' + (c.vazio ? "vazia" : E(c.material || "—")) + '</div><div class="fe">Entrada ' + n + "</div>" +
+				(tem("carregar") ? '<div class="fa"><button data-ctl="carregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '" title="Carregar este filamento">' + seta("M12 5v14M6 13l6 6 6-6") + '</button>' +
+					'<button data-ctl="descarregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '" title="Descarregar este filamento">' + seta("M12 19V5M6 11l6-6 6 6") + "</button></div>" : "") + "</div>"; }).join("") + "</div></div>";
+	}
 	var painel = "";
 	if (ativa && v.controles && v.controles.length) {
 		var bt = function (rot, k, extra, on) { return '<button class="btn peq' + (on ? " primario" : "") + '" data-ctl="' + k + '"' + (extra || "") + (on ? ' title="Ativo"' : "") + ">" + rot + "</button>"; };
@@ -264,7 +275,7 @@ function unidade(app, u) {
 	}
 	var t = i.trabalho, prog = t ? Math.round((t.progresso || 0) * (t.progresso <= 1 ? 100 : 1)) : 0;
 	var camVivo = ativa && v.camera_url && !/\/flv(\?|$)/.test(v.camera_url) ? v.camera_url : ""; // FLV (Anycubic) ainda sem tocador
-	var foto = camVivo ? '<img alt="" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
+	var foto = camVivo ? '<img alt="" data-cam="1" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
 	var html = '<div style="padding:16px 32px 0"><a class="voltar" id="voltar">‹ Unidades</a></div>' + cabecalho(i.nome, i.estado, i.modelo || "", local) +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
@@ -284,7 +295,7 @@ function unidade(app, u) {
 			'<div><div class="lbl">Mesa</div><div class="v">' + grau(v.mesa && v.mesa.atual) + '</div><div class="a">' + (v.mesa && v.mesa.alvo ? "alvo " + grau(v.mesa.alvo) : "leitura ao vivo") + '</div></div></div>'
 		: '<div class="temps"><div><div class="lbl">Bico</div><div class="v">—</div><div class="a">' + (aoVivo ? "conectando…" : "sem dado da impressora") + '</div></div>' +
 			'<div><div class="lbl">Mesa</div><div class="v">—</div><div class="a">' + (aoVivo ? "conectando…" : "sem dado da impressora") + '</div></div></div>') +
-		painel +
+		filamentos + painel +
 		'<div class="ctl"><h4>Controle local</h4><p>' + (aoVivo ? "Comando direto para a impressora pela rede local." : "O pedido vai pela sua conta até a impressora.") + ' Nada é feito sem você confirmar.</p><div class="btns">' +
 		(i.estado == "pausada" ? '<button class="btn" data-cmd="retomar">Revisar retomada</button>' : '<button class="btn" data-cmd="pausar"' + (i.estado != "imprimindo" ? " disabled" : "") + ">Revisar pausa</button>") +
 		'<button class="btn" data-cmd="cancelar"' + (["imprimindo", "pausada"].indexOf(i.estado) < 0 ? " disabled" : "") + ">Revisar cancelamento</button></div>" +
@@ -292,13 +303,11 @@ function unidade(app, u) {
 		(estado.confirmar ? '<div class="conf">Confirmar <b>' + E(estado.confirmar) + '</b> em ' + E(i.nome) + '? <button class="btn primario peq" id="sim">Confirmar</button> <button class="btn peq" id="nao">Voltar</button></div>' : "") +
 		(estado.msg ? '<div class="okmsg">' + E(estado.msg) + "</div>" : "") +
 		'<div class="diag" data-aba="monitor"><span>Diagnóstico e permissões</span><span>›</span></div>' + "</div></div></div>" +
-		'<div class="mats"><div class="lbl">' + (aoVivo && v.cores && v.cores.length ? "Sistema de cores" : "Materiais") + '</div>' +
-		(aoVivo && v.cores && v.cores.length ? '<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">' + v.cores.map(function (c) {
-			return '<span style="display:inline-flex;align-items:center;gap:8px"><span class="dot" style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.18);background:' + corCss(c.cor) + '"></span>' +
-				'<span>Entrada ' + (parseInt(c.slot, 10) + 1 || "") + (c.material ? " · " + E(c.material) : "") + (c.vazio ? " · vazia" : "") + "</span>" +
-				(tem("carregar") ? '<button class="btn peq" data-ctl="carregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '">Carregar</button><button class="btn peq" data-ctl="descarregar" data-u="' + E(c.unidade) + '" data-sl="' + E(c.slot) + '">Descarregar</button>' : "") + "</span>"; }).join("") + "</div>"
-			: materiais(i)) + "</div></div></div>" + rodape();
+		(aoVivo && v.cores && v.cores.length ? "" : '<div class="mats"><div class="lbl">Materiais</div>' + materiais(i) + "</div>") + "</div></div>" + rodape();
+	var camAntes = app.querySelector("img[data-cam]");
 	app.innerHTML = html;
+	var camNova = app.querySelector("img[data-cam]");
+	if (camAntes && camNova && camAntes.getAttribute("src") == camNova.getAttribute("src")) camNova.parentNode.replaceChild(camAntes, camNova);
 	if (i.camera_em) camera(i.id);
 	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
 	var selVel = app.querySelector("#cVel"); if (selVel && mem.velocidade != null) selVel.value = String(mem.velocidade);
