@@ -2789,7 +2789,7 @@ void MainFrame::update_side_button_style()
 
     /*m_slice_btn->SetLayoutStyle(1);
     m_slice_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Center, FromDIP(15));
-    m_slice_btn->SetMinSize(wxSize(-1, FromDIP(24)));
+    m_slice_btn->SetMinSize(wxSize(-1, FromDIP(36)));
     m_slice_btn->SetCornerRadius(FromDIP(12));
     m_slice_btn->SetExtraSize(wxSize(FromDIP(38), FromDIP(10)));
     m_slice_btn->SetBottomColour(wxColour(0x3B4446));*/
@@ -2809,24 +2809,24 @@ void MainFrame::update_side_button_style()
     m_slice_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Left, FromDIP(15));
     m_slice_btn->SetCornerRadius(FromDIP(12));
     m_slice_btn->SetExtraSize(wxSize(FromDIP(38), FromDIP(10)));
-    m_slice_btn->SetMinSize(wxSize(-1, FromDIP(24)));
+    m_slice_btn->SetMinSize(wxSize(-1, FromDIP(36))); // Filuna: altura do desenho aprovado
 
     m_slice_option_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Center);
     m_slice_option_btn->SetCornerRadius(FromDIP(12));
     m_slice_option_btn->SetExtraSize(wxSize(FromDIP(10), FromDIP(10)));
     m_slice_option_btn->SetIconOffset(FromDIP(2));
-    m_slice_option_btn->SetMinSize(wxSize(FromDIP(24), FromDIP(24)));
+    m_slice_option_btn->SetMinSize(wxSize(FromDIP(30), FromDIP(36)));
 
     m_print_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Left, FromDIP(15));
     m_print_btn->SetCornerRadius(FromDIP(12));
     m_print_btn->SetExtraSize(wxSize(FromDIP(38), FromDIP(10)));
-    m_print_btn->SetMinSize(wxSize(-1, FromDIP(24)));
+    m_print_btn->SetMinSize(wxSize(-1, FromDIP(36)));
 
     m_print_option_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Center);
     m_print_option_btn->SetCornerRadius(FromDIP(12));
     m_print_option_btn->SetExtraSize(wxSize(FromDIP(10), FromDIP(10)));
     m_print_option_btn->SetIconOffset(FromDIP(2));
-    m_print_option_btn->SetMinSize(wxSize(FromDIP(24), FromDIP(24)));
+    m_print_option_btn->SetMinSize(wxSize(FromDIP(30), FromDIP(36)));
 
     // Filuna (Direção Visual C): Exportar is an outlined button, Fatiar mesa the filled magenta one; both sit on the
     // light navigation bar, so the corners and the panels use the bar colour.
@@ -2835,7 +2835,8 @@ void MainFrame::update_side_button_style()
         b->SetBottomColour(bar_bg);
         b->SetCornerRadius(FromDIP(10));
     }
-    const StateColor fill(std::pair{wxColour(206, 202, 196), (int) StateColor::Disabled},
+    // Fatiar já fatiado fica rosa claro (não cinza): botão e seta continuam lendo como uma peça só
+    const StateColor fill(std::pair{wxColour(233, 184, 204), (int) StateColor::Disabled},
                           std::pair{wxColour(142, 18, 67), (int) StateColor::Pressed},
                           std::pair{wxColour(142, 18, 67), (int) StateColor::Hovered},
                           std::pair{wxColour(194, 24, 91), (int) StateColor::Normal});

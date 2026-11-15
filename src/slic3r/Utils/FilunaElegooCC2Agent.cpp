@@ -240,6 +240,16 @@ void FilunaElegooCC2Agent::on_mqtt(const std::string& topic, const std::string& 
     json snapshot;
     {
         std::lock_guard<std::recursive_mutex> l(m_mutex);
+        // Batimento: o aplicativo oficial manda {"type":"PING"} a cada 30 s no tópico de pedidos. Sem ele a
+        // impressora deixa de atender este cliente depois de um tempo — a câmera respondia logo ao conectar,
+        // mas o pedido de impressão, feito minutos depois, ficava sem resposta.
+        {
+            const auto agora = std::chrono::steady_clock::now();
+            if (m_mqtt && agora - m_ultimo_ping > std::chrono::seconds(25)) {
+                m_ultimo_ping = agora;
+                m_mqtt->publish("elegoo/" + m_sn + "/" + m_client_id + "/api_request", json{{"type", "PING"}}.dump());
+            }
+        }
         // resposta do método 1042 (GetLivingVideoUrl): {"error_code":0,"url":"http://..."} — câmera ao vivo
         if (result.contains("url") && result["url"].is_string() && result["url"].get<std::string>().rfind("http", 0) == 0) {
             Filuna::set_camera_url(m_sn, result["url"].get<std::string>());
@@ -623,6 +633,19 @@ int FilunaElegooCC2Agent::start_local_print(PrintParams p, OnUpdateStatusFn upda
     int  ec = ok && resp.is_object() ? resp.value("error_code", 0) : 0;
     if (ok && ec == 1026) {
         cfg["bedlevel_force"] = true;
+        ok = request_wait(1020, json{{"filename", remote}, {"storage_media", "local"}, {"config", cfg}}, 20000, resp);
+        ec = ok && resp.is_object() ? resp.value("error_code", 0) : 0;
+    }
+    if (!ok) {
+        // sem resposta: o registro deste cliente pode ter caducado. Registra de novo e repete uma vez.
+        {
+            std::lock_guard<std::recursive_mutex> l(m_mutex);
+            if (m_mqtt) {
+                m_mqtt->publish("elegoo/" + m_sn + "/api_register", json{{"client_id", m_client_id}, {"request_id", m_client_id}}.dump());
+                m_mqtt->publish("elegoo/" + m_sn + "/" + m_client_id + "/api_request", json{{"type", "PING"}}.dump());
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
         ok = request_wait(1020, json{{"filename", remote}, {"storage_media", "local"}, {"config", cfg}}, 20000, resp);
         ec = ok && resp.is_object() ? resp.value("error_code", 0) : 0;
     }

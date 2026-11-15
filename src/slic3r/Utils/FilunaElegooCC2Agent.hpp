@@ -99,6 +99,7 @@ private:
     int                                 m_next_id = 1;
     std::atomic<bool>                   m_pediu_arquivos{false};
     std::chrono::steady_clock::time_point m_pediu_camera{};
+    std::chrono::steady_clock::time_point m_ultimo_ping{};
     std::mutex                          m_wait_mutex; // respostas esperadas por request_wait
     std::condition_variable             m_wait_cv;
     std::map<int, nlohmann::json>       m_wait;       // id -> resposta (null enquanto não chega)

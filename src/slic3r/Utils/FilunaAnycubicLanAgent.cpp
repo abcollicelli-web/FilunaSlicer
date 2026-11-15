@@ -796,13 +796,27 @@ bool FilunaAnycubicLanAgent::enviar_arquivo(const std::string& local, const std:
         return false;
     }
     json info = json::parse(corpo, nullptr, false);
-    if (!info.is_object() || !info.contains("fileUploadurl") || !info["fileUploadurl"].is_string()) {
-        erro = "a impressora não informou onde receber o arquivo";
+    std::string destino = info.is_object() && info.contains("fileUploadurl") && info["fileUploadurl"].is_string() ?
+                              info["fileUploadurl"].get<std::string>() : std::string();
+    if (destino.empty()) {
+        // alguns firmwares só dão o endereço no relatório "info" do MQTT (urls.fileUploadurl)
+        std::lock_guard<std::recursive_mutex> l(m_mutex);
+        const json urls = m_estado.value("info", json::object()).value("urls", json::object());
+        if (urls.is_object() && urls.contains("fileUploadurl") && urls["fileUploadurl"].is_string())
+            destino = urls["fileUploadurl"].get<std::string>();
+    }
+    if (destino.empty()) {
+        std::string chaves;
+        if (info.is_object())
+            for (auto it = info.begin(); it != info.end(); ++it)
+                chaves += (chaves.empty() ? "" : ",") + it.key();
+        erro = "a impressora não informou onde receber o arquivo (modo: " + (info.is_object() ? info.value("ctrlType", std::string("?")) : std::string("?")) +
+               "; campos: " + chaves + ")";
         return false;
     }
     unsigned short porta;
     std::string    caminho, consulta;
-    partes_da_url(info["fileUploadurl"].get<std::string>(), PORTA_INFO, porta, caminho, consulta);
+    partes_da_url(destino, PORTA_INFO, porta, caminho, consulta);
     std::ifstream in(local, std::ios::binary);
     if (!in) {
         erro = "não foi possível abrir " + local;
