@@ -90,6 +90,7 @@
 .passosLan{margin-top:14px}.passosLan li{margin:8px 0 8px 18px;font-size:14.5px}
 .spin{width:22px;height:22px;border:3px solid #ddd;border-top-color:var(--magenta-deep);border-radius:50%;animation:gira 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
 @keyframes gira{to{transform:rotate(360deg)}}
+.estq{position:fixed;inset:0;background:rgba(30,26,24,.45);display:flex;align-items:center;justify-content:center;z-index:50}.estq .cx{background:#fff;border-radius:18px;padding:26px 28px;width:min(520px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.25)}.estq h3{margin:0 0 6px;font-size:19px}.estq .sub{color:#6B6660;font-size:13.5px;margin-bottom:16px}.estq .slot{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#FFF8F0;border-radius:12px;margin-bottom:14px}.estq .slot .bola{width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.16);flex:none}.estq .op{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.estq .op button{text-align:left}.estq .cp{display:flex;gap:10px;margin-bottom:12px}.estq .cp label{flex:1;font-size:12.5px;color:#6B6660;display:flex;flex-direction:column;gap:4px}.estq .cp input{padding:9px 10px;border:1px solid #E7E3DD;border-radius:10px;font:inherit}.estq .pe{display:flex;justify-content:space-between;align-items:center;margin-top:6px}.estq .pe a{color:#8a817a;font-size:13px;cursor:pointer}.estq .er{color:#D9480F;font-size:13px;margin-bottom:8px}
 .arqs{margin-top:14px}.arq{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:13px}.arq .an{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arq .ai{color:#8a817a;white-space:nowrap}
 .fils{margin:16px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.filrow{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}.fil{width:72px;text-align:center}.fil .bola{display:block;width:46px;height:46px;border-radius:50%;margin:0 auto 8px;border:1px solid rgba(0,0,0,.16);box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)}.fil .bola.vazia{border:1.5px dashed rgba(0,0,0,.28);box-shadow:none}.fil .fn{font-weight:700;font-size:13.5px}.fil .fe{font-size:11.5px;color:#8a817a;margin-top:1px}.fil .fa{display:flex;gap:6px;justify-content:center;margin-top:8px}.fil .fa button{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.16);background:#fff;color:#5e5752;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}.fil .fa button:hover{background:#FFE8F2;border-color:#B3125C;color:#B3125C}
 .ctlvivo .ctlon{font-size:12.5px;color:#1B7F4B;font-weight:600}.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin,.fils .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label,.fils .lin label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select,.fils .lin input{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
@@ -330,6 +331,7 @@ function unidade(app, u) {
 		}
 	}
 	if (i.camera_em) camera(i.id);
+	if (ativa) estoqueIdentificar(v);
 	app.querySelector("#voltar").onclick = function () { estado.vista = "lista"; desenhar(); };
 	var selVel = app.querySelector("#cVel"); if (selVel && mem.velocidade != null) selVel.value = String(mem.velocidade);
 	app.querySelectorAll("[data-ctl]").forEach(function (b) { b.onclick = function () {
@@ -413,6 +415,82 @@ function materiais(i) {
 	}).join("");
 }
 
+
+// ---------- Filamentos identificados na impressora -> estoque (02-DADOS §4) ----------
+// Cada entrada com filamento precisa de uma bobina do estoque ligada a ela (bobina.local). Para as que não
+// têm, a tela pergunta: é uma bobina que já existe (mesmo material e cor parecida) ou é nova? Nova pede marca
+// e peso e confirma de novo antes de gravar. Vale para qualquer marca que informe as entradas.
+var estq = { aberto: false, adiado: {} };
+function corPerto(a, b) {
+	var h = function (c) { c = String(c || "").replace("#", "").slice(0, 6); return c.length == 6 ? [parseInt(c.slice(0, 2), 16), parseInt(c.slice(2, 4), 16), parseInt(c.slice(4, 6), 16)] : null; };
+	var x = h(a), y = h(b); if (!x || !y) return false;
+	return Math.sqrt(Math.pow(x[0] - y[0], 2) + Math.pow(x[1] - y[1], 2) + Math.pow(x[2] - y[2], 2)) < 60;
+}
+function estoqueIdentificar(v) {
+	if (estq.aberto || !v || !v.cores || !v.cores.length) return;
+	var chaveImp = v.cadastro_id || v.dev_id;
+	var localDe = function (c) { return "impressora:" + chaveImp + ":slot:" + ((+c.unidade || 0) * 4 + (+c.slot || 0) + 1); };
+	var assinatura = chaveImp + "|" + v.cores.map(function (c) { return c.vazio ? "-" : (c.material || "") + c.cor; }).join(",");
+	if (estq.adiado[assinatura]) return;
+	estq.aberto = true;
+	Filuna.nativo("estoque.listar").then(function (r) {
+		var bobinas = (r.bobinas || []).filter(function (b) { return b.estado == "lacrada" || b.estado == "em_uso"; });
+		var igual = function (b, c) { var t = b.tipo || {}; return String(t.material || "").toUpperCase() == String(c.material || "").toUpperCase() && corPerto(t.cor_hex, c.cor); };
+		var pend = v.cores.filter(function (c) {
+			if (c.vazio || !c.material) return false;
+			return !bobinas.some(function (b) { return b.local == localDe(c) && igual(b, c); });
+		});
+		if (!pend.length) { estq.aberto = false; return; }
+		var total = pend.length, n = 0, novo = null, erro = "";
+		var el = document.createElement("div"); el.className = "estq"; document.body.appendChild(el);
+		var fechar = function (adiar) { if (adiar) estq.adiado[assinatura] = 1; el.remove(); estq.aberto = false; };
+		var ligar = function (id, c) {
+			if (!id) return Promise.reject(new Error("O estoque não devolveu a bobina criada."));
+			// a bobina que estava nesta entrada antes volta para a prateleira
+			var antigas = bobinas.filter(function (b) { return b.local == localDe(c) && b.id != id; });
+			return Promise.all(antigas.map(function (b) { b.local = ""; return Filuna.nativo("estoque.local", { id: b.id, local: "" }); }))
+				.then(function () { return Filuna.nativo("estoque.local", { id: id, local: localDe(c) }); });
+		};
+		var passo = function () {
+			if (n >= pend.length) { fechar(false); estado.ctlMsg = "Filamentos da impressora ligados ao seu estoque."; desenhar(); return; }
+			var c = pend[n], num = (+c.slot || 0) + 1;
+			var cand = bobinas.filter(function (b) { return igual(b, c) && String(b.local || "").indexOf("impressora:") != 0; }).slice(0, 3);
+			var h = '<div class="cx"><h3>' + (n == 0 ? "Foram identificados " + total + " filamento" + (total > 1 ? "s" : "") + " na " + E(v.nome) : "Filamento " + (n + 1) + " de " + total) + '</h3>' +
+				'<div class="sub">Vamos ligar cada um ao seu estoque, para o Filuna descontar o que for usado.</div>' +
+				'<div class="slot"><span class="bola" style="background:' + corCss(c.cor) + '"></span><div><b>Entrada ' + num + " · " + E(c.material) + "</b>" + (c.marca ? '<div style="font-size:12.5px;color:#6B6660">' + E(c.marca) + "</div>" : "") + "</div></div>" +
+				(erro ? '<div class="er">' + E(erro) + "</div>" : "");
+			if (!novo) {
+				h += '<div class="op">' + cand.map(function (b, k) {
+					var t = b.tipo || {};
+					return '<button class="btn" data-ex="' + k + '">É o da etiqueta <b>' + E(b.codigo) + "</b> · " + E([t.marca, t.material, t.cor_nome].filter(Boolean).join(" ")) + " · " + Math.round(b.restante_g) + " g</button>"; }).join("") +
+					'<button class="btn' + (cand.length ? "" : " primario") + '" id="eNovo">' + (cand.length ? "É um filamento novo no estoque" : "Cadastrar este filamento no estoque") + "</button></div>";
+			} else {
+				h += '<div class="cp"><label>Marca do filamento<input id="eMarca" value="' + E(novo.marca || "") + '" placeholder="Ex.: Elegoo, eSun, Voolt"></label>' +
+					'<label>Peso que ainda tem (g)<input id="ePeso" type="number" min="1" max="10000" value="' + (novo.peso || 1000) + '"></label></div>' +
+					(novo.confirmar ? '<div class="sub" style="margin-bottom:10px">Confirma: <b>' + E(novo.marca || "sem marca") + " " + E(c.material) + "</b> com <b>" + novo.peso + " g</b> entra no estoque como bobina nova?</div>" : "") +
+					'<div class="op"><button class="btn primario" id="eGravar">' + (novo.confirmar ? "Confirmar e salvar no estoque" : "Continuar") + '</button><button class="btn" id="eVolta">Voltar</button></div>';
+			}
+			h += '<div class="pe"><span style="font-size:12.5px;color:#8a817a">' + (n + 1) + " de " + total + '</span><a id="eDepois">Agora não</a></div></div>';
+			el.innerHTML = h;
+			el.querySelector("#eDepois").onclick = function () { fechar(true); };
+			el.querySelectorAll("[data-ex]").forEach(function (b) { b.onclick = function () {
+				ligar(cand[+b.dataset.ex].id, c).then(function () { erro = ""; n++; passo(); }, function (e) { erro = e.message || "Não foi possível ligar a bobina."; passo(); });
+			}; });
+			var bn = el.querySelector("#eNovo"); if (bn) bn.onclick = function () { novo = { marca: c.marca ? String(c.marca).split(" ")[0] : "", peso: 1000, confirmar: false }; erro = ""; passo(); };
+			var bv = el.querySelector("#eVolta"); if (bv) bv.onclick = function () { novo = null; erro = ""; passo(); };
+			var bg = el.querySelector("#eGravar"); if (bg) bg.onclick = function () {
+				novo.marca = el.querySelector("#eMarca").value.trim(); novo.peso = Math.round(+el.querySelector("#ePeso").value || 0);
+				if (novo.peso < 1 || novo.peso > 10000) { erro = "Informe o peso em gramas (1 a 10000)."; passo(); return; }
+				if (!novo.confirmar) { novo.confirmar = true; erro = ""; passo(); return; }
+				var hex = "#" + String(c.cor || "").replace("#", "").slice(0, 6);
+				Filuna.nativo("estoque.criar", { marca: novo.marca, material: c.material, cor_hex: hex, cor_nome: "", capacidade_g: Math.max(1000, novo.peso), usada: true, restante_g: novo.peso, estimado: true })
+					.then(function (x) { return ligar((x.ids || [])[0], c); })
+					.then(function () { novo = null; erro = ""; n++; passo(); }, function (e) { erro = e.message || "Não foi possível salvar no estoque."; passo(); });
+			};
+		};
+		passo();
+	}, function () { estq.aberto = false; });
+}
 
 // últimos arquivos guardados na impressora (quando a marca informa)
 function arquivosHtml(v) {

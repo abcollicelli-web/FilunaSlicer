@@ -926,3 +926,25 @@ O proprietário exigiu **100% do módulo OEM de REDE em Dispositivos e 100% do m
   - Servidor (`filuna-site` `site-v2/producao` 4c96452, publicado): `GET /api/slicer/v1/modulos/logos/<id>` (logos dos repositórios AGPL dos fatiadores, em `/var/lib/filuna-v2/modulos/logos/` — o proprietário pode trocar o arquivo), `POST /api/slicer/v1/dispositivos/estado` e `GET /api/slicer/v1/dispositivos` (app Android lê).
   - Aviso honesto: a Anycubic Kobra de fábrica fala pelo protocolo LAN próprio (MQTT); o agente Moonraker foi provado só no emulador — o teste físico com a Kobra 3 V2 decide; se não conectar, o caminho é o cliente LAN próprio (como a Printago faz), que vira a próxima etapa do módulo de rede.
 - **14/11 03:05 UTC — v1-teste-fisico COMPILADA NO WINDOWS (run 43535424302, commit 7f67534) e módulos publicados.** Executável portátil `filuna-teste-fisico-windows-exe-7f67534…` (212 MB) com a Fase B completa (Dispositivos: logos → modelos homologados → foto → "Baixar complemento" → LAN → outros meios → ponte assistida → cards ao vivo; Preparar troca sozinho; estado → conta → Android); testes obrigatórios verdes no Windows e no Linux (rc=0). Correções do caminho: wxTimer no namespace errado, CMake 4 × Boost.Locale (fixado ~3.31), sha256_hex duplicado, raw string em macro no MSVC (teste Bambu LAN). **Catálogo assinado agora serve `engine_cli` Windows** de Snapmaker 2.4.1, Elegoo 1.5.3.5 e Flashforge 1.7.9 (compilados da fonte no commit homologado, sem binários fechados — o `snapmaker_control` baixado pelo script oficial foi removido do pacote; prova de execução no CI; 160–180 MB cada, dentro do limite de 256 MB do cliente). Creality: Breakpad exige DIA SDK + numpy no runner (corrigido; run 43535388939 em andamento). NSIS: a trava de branch não cobria `v1-teste-*` (corrigida; o teste físico usa o portátil). Falta para o pacote Windows completo: Bambu/Prusa/QIDI (`build_win.bat`, QIDI com substitutos) e a ponte 3MF↔CLI no Filuna (o engine_cli publicado já é o insumo dela).
+
+## 2026-11-15 04:00 UTC — update único em preparação (2.5.0-beta.59), NÃO publicado
+
+Pedido do dono: um update só com a lista de 14 itens; ele decide ao acordar se recebe o que estiver pronto.
+Publicado antes: 2.5.0-beta.58 (e2250232d) com a impressão pelo agente da marca (sem prova em impressora ainda).
+
+Pronto e compilado no Windows (run 43671011900, commit 0c4723ec8), validado só por compilação e pelo que está dito abaixo:
+- Controles padrão para marcas sem tabela própria (Bambu, Snapmaker, QIDI, Creality, Klipper): comandos do MachineObject.
+- Ícones das barras da área 3D nas cores do tema escuro (GLTexture: dark_mode fixo) — o habilitado sumia.
+- Abertura nova (personagem + logo Filuna 3D + barra com flores) e logo oficial na barra do topo.
+- Atualização: baixa/prepara em segundo plano, confere a cada 20 min; fecha uma vez só para aplicar.
+- Filamento por marca e tipo (marca lida do carretel) na sincronização da Preparação.
+- Últimos arquivos na impressora (CC2, método 1044); atalhos para telas do Orca removidos do Dispositivo.
+- Câmera HTTP-FLV pelo repasse local (FilunaCameraRelay): provado no servidor contra fluxo FLV H.264 do ffmpeg,
+  inclusive corpo em pedaços; o tocador mpegts.js na tela NÃO foi provado em navegador.
+Depois desse commit (precisa de nova compilação rápida): marca do carretel no cartão; tela "foram identificados N
+filamentos" (só HTML, usa estoque.listar/criar/local do banco local).
+Site (no ar): impressora conectada no Slicer vira linha de farm_impressoras (cadastro único); WhatsApp/ajuda só
+listam ativas; mesa da Kobra 3 V2 corrigida.
+
+Falta da lista: Autoajuda (§6 do guia, não construída), rodapé da Preparação do desenho aprovado, Home homologada com
+modelos 3D do site, últimos arquivos na Kobra, revisão do agente snapmaker, prova em impressora de tudo acima.

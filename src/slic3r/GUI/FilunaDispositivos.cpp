@@ -274,7 +274,7 @@ json cores_de(MachineObject* o)
         for (auto& [tray_id, tray] : ams->GetTrays()) {
             if (tray == nullptr)
                 continue;
-            cores.push_back({{"unidade", ams_id}, {"slot", tray_id}, {"cor", tray->color}, {"material", tray->m_fila_type},
+            cores.push_back({{"unidade", ams_id}, {"slot", tray_id}, {"cor", tray->color}, {"material", tray->m_fila_type}, {"marca", tray->sub_brands},
                              {"vazio", tray->color.empty()}});
         }
     }
