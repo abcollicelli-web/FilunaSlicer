@@ -972,3 +972,21 @@ Provado em impressora pelo dono (Elegoo Centauri Carbon 2 e Anycubic Kobra 3 V2 
 - Fechamento: vigia de saída de 30 s para 8 s (processo que ficava aberto depois de fechar).
 Site: /admin/impressoras (só leitura: impressoras de cada cliente, online/imprimindo, erro atual e histórico em
 slc_dispositivo_erro).
+
+## 2026-11-15 — 64 publicada (canal beta, run 43734227953, 1b4fb1ea0); 65 em compilação
+
+64 sem falha relatada pelo dono. Antes do 65 entrou no ramo o trabalho da outra sessão (câmera para a conta:
+camera-conta.js, 13cff1c29/a88bb41d3); o 65 foi feito por cima, sem conflito.
+65 (validado só por compilação no Linux; nada provado em impressora):
+- Troca de filamento em todas as marcas: entrada que ganha carretel ou muda material/cor depois da 1ª leitura,
+  confirmada em 2 leituras seguidas → aviso no programa e no Windows; a tela pergunta do estoque de novo para essa
+  entrada (`dispositivos.troca_vista` limpa a marca).
+- Anycubic: pede multiColorBox/getInfo a cada 15 s (o ACE não avisa todas as trocas sozinho).
+- Anycubic: entrada só conta como cheia com situação 4 ou 5 (ou sem o campo); mostrava 4 filamentos com 2 no ACE
+  Pro. O registro grava situação e tipo de cada entrada quando mudam.
+- Erro da impressora na tela, no alerta e no site para todas as marcas (regra vinda de Anycubic/CC2): Bambu
+  (print_error com o texto oficial do HMS), Flashforge (status error + errorCode), Elegoo antiga SDCP
+  (PrintInfo.ErrorNumber), Prusa (estado ERROR e ATTENTION).
+- Regra "filamento N na entrada N": entre os agentes Filuna só a Anycubic não remapeia (Bambu ams_mapping, CC2
+  slot_map e Flashforge materialMappings enviam a escolha). Snapmaker, Creality e Moonraker usam o fluxo do Orca
+  e ficam para quando houver prova nessas impressoras.

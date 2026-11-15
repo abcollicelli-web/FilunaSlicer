@@ -1,4 +1,5 @@
 #include "FilunaElegooSDCPAgent.hpp"
+#include "FilunaCameraUrls.hpp"
 
 #include <chrono>
 #include <deque>
@@ -132,6 +133,9 @@ json FilunaElegooSDCPAgent::to_push_status(const json& msg)
            {"mc_remaining_time", std::max(0, (pi.value("TotalTicks", 0) - pi.value("CurrentTicks", 0)) / 60000)},
            {"nozzle_temper", st.value("TempOfNozzle", 0.0)}, {"nozzle_target_temper", st.value("TempTargetNozzle", 0.0)},
            {"bed_temper", st.value("TempOfHotbed", 0.0)}, {"bed_target_temper", st.value("TempTargetHotbed", 0.0)}};
+    // erro informado pela impressora (PrintInfo.ErrorNumber, 0 = sem erro): texto para a tela e os alertas
+    const int en = pi.contains("ErrorNumber") && pi["ErrorNumber"].is_number_integer() ? pi["ErrorNumber"].get<int>() : 0;
+    p["filuna_erro"] = en != 0 ? "A impressora informou um erro (código " + std::to_string(en) + ")" : std::string();
     return json{{"print", p}};
 }
 
@@ -239,7 +243,14 @@ int FilunaElegooSDCPAgent::connect_printer(const PrinterConnectionParams& p)
                 m_status.merge_patch(j["Status"]);
                 snap = m_status;
             }
-            dispatch(to_push_status(snap).dump());
+            const json ps = to_push_status(snap);
+            std::string dev;
+            {
+                std::lock_guard<std::recursive_mutex> l(m_mutex);
+                dev = m_mainboard;
+            }
+            Filuna::set_erro(dev, ps["print"].value("filuna_erro", std::string()));
+            dispatch(ps.dump());
         }
     };
     w->on_closed = [this](const std::string& why) { dispatch_connect(ConnectStatusLost, why); };

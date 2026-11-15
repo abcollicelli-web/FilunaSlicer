@@ -1,4 +1,5 @@
 #include "FilunaFlashforgeAgent.hpp"
+#include "FilunaCameraUrls.hpp"
 
 #include <array>
 #include <chrono>
@@ -98,6 +99,17 @@ json FilunaFlashforgeAgent::to_push_status(const json& reply)
     else if (st == "cancel")
         gs = "FAILED";
     p["gcode_state"]          = gs;
+    {   // erro informado pela impressora: texto para a tela e os alertas (vazio limpa)
+        std::string cod;
+        if (d.contains("errorCode") && d["errorCode"].is_string())
+            cod = d["errorCode"].get<std::string>();
+        else if (d.contains("errorCode") && d["errorCode"].is_number() && d["errorCode"].get<long long>() != 0)
+            cod = std::to_string(d["errorCode"].get<long long>());
+        if (cod == "0")
+            cod.clear();
+        p["filuna_erro"] = st != "error" ? std::string() : // só com a impressora em erro (o código antigo pode ficar no relatório)
+                           !cod.empty() ? "A impressora informou um erro (código " + cod + ")" : std::string("A impressora informou um erro");
+    }
     p["mc_percent"]           = int(d.value("printProgress", 0.0) * 100.0 + 0.5);
     p["mc_remaining_time"]    = int(d.value("estimatedTime", 0.0) / 60);
     p["subtask_name"]         = d.value("printFileName", std::string());
@@ -216,7 +228,9 @@ void FilunaFlashforgeAgent::poll_loop()
         }
         if (post_json("detail", json{{"serialNumber", sn}, {"checkCode", code}}, r, err)) {
             falhas = 0;
-            dispatch(to_push_status(r).dump());
+            const json ps = to_push_status(r);
+            Filuna::set_erro(sn, ps["print"].value("filuna_erro", std::string()));
+            dispatch(ps.dump());
         } else if (++falhas == 5) {
             dispatch_connect(ConnectStatusLost, err);
         }

@@ -1,4 +1,5 @@
 #include "FilunaPrusaLinkAgent.hpp"
+#include "FilunaCameraUrls.hpp"
 
 #include <chrono>
 #include <cstdio>
@@ -152,6 +153,9 @@ json FilunaPrusaLinkAgent::to_push_status(const json& s)
            {"mc_percent", int(jb.value("progress", 0.0) + 0.5)}, {"mc_remaining_time", jb.value("time_remaining", 0) / 60},
            {"nozzle_temper", pr.value("temp_nozzle", 0.0)}, {"nozzle_target_temper", pr.value("target_nozzle", 0.0)},
            {"bed_temper", pr.value("temp_bed", 0.0)}, {"bed_target_temper", pr.value("target_bed", 0.0)}};
+    // erro ou pedido de atenção da impressora (filamento acabou, falha…): texto para a tela e os alertas
+    p["filuna_erro"] = st == "ERROR" ? std::string("A impressora informou um erro: veja a tela dela") :
+                       st == "ATTENTION" ? std::string("A impressora pede atenção: veja a tela dela") : std::string();
     return json{{"print", p}};
 }
 
@@ -201,7 +205,14 @@ void FilunaPrusaLinkAgent::poll_loop()
                 std::lock_guard<std::recursive_mutex> l(m_mutex);
                 m_job_id = j["job"].value("id", 0);
             }
-            dispatch(to_push_status(j).dump());
+            const json ps = to_push_status(j);
+            std::string dev;
+            {
+                std::lock_guard<std::recursive_mutex> l(m_mutex);
+                dev = m_dev_id;
+            }
+            Filuna::set_erro(dev, ps["print"].value("filuna_erro", std::string()));
+            dispatch(ps.dump());
         } else if (++falhas == 5)
             dispatch_connect(ConnectStatusLost, "sem resposta da PrusaLink");
         for (int i = 0; i < m_poll_ms / 50 && m_polling; ++i)

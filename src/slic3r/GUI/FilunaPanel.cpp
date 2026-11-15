@@ -679,6 +679,8 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return FD::comando(d.value("dev_id", std::string()), d.value("cmd", std::string()));
     if (action == "dispositivos.selecionar")
         return FD::selecionar(d.value("dev_id", std::string()));
+    if (action == "dispositivos.troca_vista")
+        return FD::troca_vista(d.value("dev_id", std::string()));
     if (action == "dispositivos.mesa_veredito") {
         // resultado da conferência da mesa pela câmera; a janela de impressão consulta antes de enviar
         Filuna::set_mesa(d.value("dev_id", std::string()),

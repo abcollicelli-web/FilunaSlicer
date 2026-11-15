@@ -45,6 +45,8 @@ json selecionar(const std::string& dev_id);
 json comando(const std::string& dev_id, const std::string& cmd);
 json controle(const std::string& dev_id, const nlohmann::json& dados);
 // Liga o vigia das impressoras (uma vez; independe da aba aberta): avisa impressão concluída e envia o estado.
+// o cliente respondeu a pergunta do estoque sobre as entradas com filamento trocado
+json troca_vista(const std::string& dev_id);
 void monitor_iniciar();
 // Envia o estado resumido para a conta (servidor → app Android). Pouco tráfego: chamar a cada ~30 s.
 void sincronizar_estado(const json& estado, const std::string& token);

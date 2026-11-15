@@ -354,7 +354,11 @@ json FilunaAnycubicLanAgent::to_push_status(const json& e)
                 json t;
                 t["id"] = std::to_string(s.contains("index") && s["index"].is_number() ? s["index"].get<int>() : 0);
                 const std::string tipo = s.value("type", std::string());
-                if (!tipo.empty()) {
+                // Entrada com carretel: situação 4 (pronto) ou 5 (no bico). A unidade guarda o último tipo e cor de
+                // entradas vazias, então só o tipo preenchido mostrava 4 filamentos com 2 carretéis no ACE Pro.
+                // Sem o campo situação (firmware que não informa), vale o tipo.
+                const int situacao = s.contains("status") && s["status"].is_number() ? s["status"].get<int>() : -1;
+                if (!tipo.empty() && (situacao < 0 || situacao == 4 || situacao == 5)) {
                     t["tray_type"]  = tipo;
                     t["tray_info_idx"] = ""; // sem este campo o DeviceManager descarta o tipo (PLA, PETG, ABS…)
                     t["tray_color"] = cor_rgba(s.value("color", json::array()));
@@ -472,6 +476,21 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
         return;
     const std::string tipo = semfim.substr(barra + 1);
     json              j    = json::parse(payload, nullptr, false);
+    {
+        // A unidade de cores (ACE) só avisa sozinha em parte das trocas: sem perguntar de tempos em tempos, um
+        // carretel trocado ou retirado continuava na tela como estava ao conectar. Pergunta a cada 15 s.
+        bool perguntar = false;
+        {
+            std::lock_guard<std::recursive_mutex> l(m_mutex);
+            const auto agora = std::chrono::steady_clock::now();
+            if (agora - m_ultima_caixa > std::chrono::seconds(15)) {
+                m_ultima_caixa = agora;
+                perguntar      = true;
+            }
+        }
+        if (perguntar)
+            pedir("multiColorBox", "getInfo", nullptr);
+    }
     if (j.is_object() && tipo == "video") {
         // {"state":"initSuccess","code":200}: o vídeo ao vivo fica em http://<ip>:18088/flv (HTTP-FLV, H.264)
         const std::string st = j.value("state", std::string());
@@ -621,6 +640,19 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
                         }
                     if (!achou)
                         slots.push_back(ns);
+                }
+            }
+            {
+                std::string r;
+                for (const auto& c : caixas)
+                    for (const auto& sl : c.value("slots", json::array()))
+                        if (sl.is_object())
+                            r += " [" + std::to_string(sl.value("index", -1)) + ": situação " +
+                                 (sl.contains("status") && sl["status"].is_number() ? std::to_string(sl["status"].get<int>()) : std::string("?")) +
+                                 ", tipo '" + sl.value("type", std::string()) + "']";
+                if (r != m_caixa_log) {
+                    m_caixa_log = r;
+                    BOOST_LOG_TRIVIAL(info) << "FilunaAnycubicLanAgent: entradas da unidade de cores:" << r;
                 }
             }
         } else if (tipo == "info" || tipo == "tempature" || tipo == "fan" || tipo == "light") {

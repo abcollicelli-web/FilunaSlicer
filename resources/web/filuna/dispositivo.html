@@ -460,7 +460,10 @@ function estoqueIdentificar(v) {
 	if (estq.aberto || !v || !v.cores || !v.cores.length) return;
 	var chaveImp = v.cadastro_id || v.dev_id;
 	var localDe = function (c) { return "impressora:" + chaveImp + ":slot:" + ((+c.unidade || 0) * 4 + (+c.slot || 0) + 1); };
-	var assinatura = chaveImp + "|" + v.cores.map(function (c) { return c.vazio ? "-" : (c.material || "") + c.cor; }).join(",");
+	// entradas em que o filamento foi trocado depois de conectar: pergunta de novo, mesmo que material e cor sejam iguais
+	var trocados = v.trocados || [];
+	var trocado = function (c) { return trocados.indexOf(c.unidade + ":" + c.slot) >= 0; };
+	var assinatura = chaveImp + "|" + v.cores.map(function (c) { return c.vazio ? "-" : (c.material || "") + c.cor; }).join(",") + "|" + trocados.join(",");
 	if (estq.adiado[assinatura]) return;
 	estq.aberto = true;
 	Filuna.nativo("estoque.listar").then(function (r) {
@@ -469,12 +472,13 @@ function estoqueIdentificar(v) {
 		var igual = function (b, c) { var t = b.tipo || {}; return baseDoTipo(t.material) == baseDoTipo(c.material) && corPerto(t.cor_hex, c.cor); };
 		var pend = v.cores.filter(function (c) {
 			if (c.vazio || !c.material) return false;
-			return !bobinas.some(function (b) { return b.local == localDe(c) && igual(b, c); });
+			return trocado(c) || !bobinas.some(function (b) { return b.local == localDe(c) && igual(b, c); });
 		});
-		if (!pend.length) { estq.aberto = false; return; }
+		if (!pend.length) { estq.aberto = false; if (trocados.length) Filuna.nativo("dispositivos.troca_vista", { dev_id: v.dev_id }).catch(function () {}); return; }
 		var total = pend.length, n = 0, novo = null, erro = "";
 		var el = document.createElement("div"); el.className = "estq"; document.body.appendChild(el);
-		var fechar = function (adiar) { if (adiar) estq.adiado[assinatura] = 1; el.remove(); estq.aberto = false; };
+		var fechar = function (adiar) { if (adiar) estq.adiado[assinatura] = 1; el.remove(); estq.aberto = false;
+			if (!adiar && trocados.length) Filuna.nativo("dispositivos.troca_vista", { dev_id: v.dev_id }).catch(function () {}); };
 		var ligar = function (id, c) {
 			if (!id) return Promise.reject(new Error("O estoque não devolveu a bobina criada."));
 			// a bobina que estava nesta entrada antes volta para a prateleira

@@ -4,6 +4,7 @@
 #include "FilunaDados.hpp"
 #include "FilunaPanel.hpp"
 #include "GUI_App.hpp"
+#include "HMS.hpp"
 #include "MainFrame.hpp"
 #include "Plater.hpp"
 #include "Tab.hpp"
@@ -269,6 +270,14 @@ std::string estado_legivel(MachineObject* o)
     return "livre";
 }
 
+// Entradas em que o filamento foi trocado depois de conectar (dev_id -> {"unidade:slot"}). Fica até o cliente
+// responder a pergunta do estoque na tela de Dispositivos ("dispositivos.troca_vista").
+std::map<std::string, std::set<std::string>>& trocados()
+{
+    static std::map<std::string, std::set<std::string>> t;
+    return t;
+}
+
 json cores_de(MachineObject* o)
 {
     json cores = json::array();
@@ -342,9 +351,21 @@ json card(MachineObject* o)
         if (porta > 0)
             c["camera_flv"] = "http://127.0.0.1:" + std::to_string(porta) + "/cam?u=" + Http::url_encode(cam);
     }
-    const std::string err = Filuna::erro(o->get_dev_id());
+    std::string err = Filuna::erro(o->get_dev_id());
+    // Bambu: o erro vem no próprio relatório (print_error), com o texto oficial da Bambu quando conhecido
+    if (err.empty() && o->print_error != 0 && o->printer_agent_id == "filuna_bambu_lan") {
+        wxString txt;
+        if (HMSQuery* q = wxGetApp().get_hms_query())
+            txt = q->query_print_error_msg(o, o->print_error);
+        err = (txt.empty() ? std::string("A impressora informou um erro") : std::string(txt.ToUTF8().data())) + " (código " + o->get_print_error_str() + ")";
+    }
     if (!err.empty())
         c["erro"] = err; // último erro informado pela impressora
+    {
+        auto tr = trocados().find(o->get_dev_id());
+        if (tr != trocados().end() && !tr->second.empty())
+            c["trocados"] = json(tr->second); // entradas com filamento trocado, à espera do cadastro no estoque
+    }
     const json ajs = json::parse(Filuna::ajustes(o->get_dev_id()), nullptr, false);
     if (ajs.is_object() && !ajs.empty())
         c["ajustes"] = ajs; // ventiladores e velocidade como a impressora informa
@@ -813,6 +834,12 @@ void sincronizar_estado(const json& estado, const std::string& token);
 // uma impressão termina (aviso dentro do programa e do Windows) e manda o estado para a conta a cada 30 s —
 // é daí que o site, o app e os alertas (WhatsApp/Telegram) ficam sabendo. Antes isso só rodava com a tela
 // Dispositivo aberta, então fora dela ninguém era avisado. Vale para qualquer marca.
+json troca_vista(const std::string& dev_id)
+{
+    trocados().erase(dev_id);
+    return json{{"ok", true}};
+}
+
 void monitor_iniciar()
 {
     static wxTimer* vigia = nullptr;
@@ -841,6 +868,57 @@ void monitor_iniciar()
                         nm->push_notification(std::string(texto.ToUTF8().data()));
                 wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer"), texto, wxGetApp().mainframe);
                 aviso.Show();
+            }
+            {
+                // Troca de filamento (qualquer marca): a entrada passou a ter um carretel, ou mudou de material/cor,
+                // depois da primeira leitura. Só vale quando a leitura nova se repete (20 s), para não avisar no
+                // meio de um carregamento. Avisa e deixa marcado para a tela perguntar do estoque.
+                static std::map<std::string, std::map<std::string, std::string>> fil_antes, fil_cand;
+                std::map<std::string, std::string> agora_f;
+                for (const auto& cr : i.value("cores", json::array())) {
+                    if (!cr.is_object())
+                        continue;
+                    const auto txt = [&cr](const char* k) {
+                        return cr.contains(k) ? (cr[k].is_string() ? cr[k].get<std::string>() : cr[k].dump()) : std::string();
+                    };
+                    agora_f[txt("unidade") + ":" + txt("slot")] = cr.value("vazio", false) ? std::string() : txt("material") + "|" + txt("cor");
+                }
+                const bool primeira = fil_antes.find(dev) == fil_antes.end();
+                auto&      ant      = fil_antes[dev];
+                auto&      cand     = fil_cand[dev];
+                std::string novas;
+                for (const auto& [k, sig] : agora_f) {
+                    if (primeira) {
+                        ant[k] = sig;
+                        continue;
+                    }
+                    if (ant[k] == sig) {
+                        cand.erase(k);
+                        continue;
+                    }
+                    if (cand[k] != sig) { // primeira vez que aparece assim: espera a próxima leitura confirmar
+                        cand[k] = sig;
+                        continue;
+                    }
+                    ant[k] = sig;
+                    cand.erase(k);
+                    if (sig.empty())
+                        continue; // carretel retirado: nada a cadastrar
+                    trocados()[dev].insert(k);
+                    const auto pt = k.find(':');
+                    int        n  = 0;
+                    try { n = std::stoi(k.substr(pt + 1)) + 1; } catch (...) {}
+                    novas += (novas.empty() ? "" : ", ") + std::to_string(n) + " (" + sig.substr(0, sig.find('|')) + ")";
+                }
+                if (!novas.empty()) {
+                    const wxString texto = wxString::FromUTF8("Filamento trocado na " + i.value("nome", std::string("impressora")) + ": entrada " + novas +
+                                                              ". Abra Dispositivo para cadastrar no estoque.");
+                    if (Plater* pl = wxGetApp().plater())
+                        if (auto* nm = pl->get_notification_manager())
+                            nm->push_notification(std::string(texto.ToUTF8().data()));
+                    wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer — filamento trocado"), texto, wxGetApp().mainframe);
+                    aviso.Show();
+                }
             }
             const std::string err = i.value("erro", std::string());
             static std::map<std::string, std::string> erro_antes;

@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <chrono>
 #include <string>
 #include <thread>
 
@@ -94,6 +95,8 @@ private:
     Sessao                              m_s;
     std::string                         m_ip, m_selected, m_client_id;
     nlohmann::json                      m_estado = nlohmann::json::object(); // relatórios mesclados por tipo
+    std::chrono::steady_clock::time_point m_ultima_caixa{};                  // última consulta à unidade de cores
+    std::string                         m_caixa_log;                         // último retrato das entradas que foi para o registro
     std::map<std::string, std::string>  m_seen;                             // série -> JSON de descoberta
     std::atomic<bool>                   m_discovering{false};
     std::thread                         m_discovery;
