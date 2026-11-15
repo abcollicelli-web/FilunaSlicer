@@ -60,6 +60,7 @@
 #include <thread>
 #if wxUSE_WEBVIEW_EDGE
 #include <wx/msw/webview_edge.h>
+#include <WebView2.h>
 #endif
 #include "Widgets/WebView.hpp"
 
