@@ -716,6 +716,7 @@ void Analise::amostra(const Amostra& a)
                 previsto += m_plano.camadas[c - 1].duracao_s;
             previsto *= fator_velocidade(m_velocidade);
             const double real = std::max(0., (a.t - m_t_camada) - (m_pausado_s - m_pausa_na_camada));
+            m_previsto_feito += previsto;
             if (m_ultima_camada > m_camada_inicial || m_camada_inicial <= 1) { // a 1ª camada vista pode ter começado antes
                 Ritmo& r = m_janela_ritmo;
                 if (r.de < 0) {
@@ -883,8 +884,17 @@ json Analise::relatorio(const std::string& estado_final)
     }
     // tempo total contra o previsto
     const double real = comecou() ? std::max(0., t_fim - m_inicio - m_pausado_s) : 0.;
-    double       prev = m_plano.valido ? m_plano.camadas_s() * fator_velocidade(m_velocidade) : 0.;
-    if (estado_final == "concluida" && prev > 0. && m_camada_inicial <= 1 && real > prev * 1.25 && real - prev > 600.) {
+    double prev = 0.;
+    if (m_plano.valido && m_previsto_feito > 0.) { // camadas feitas na velocidade de cada momento + as que faltaram
+        prev = m_previsto_feito;
+        for (int c = std::max(m_ultima_camada, 1); c <= n; ++c)
+            prev += m_plano.camadas[c - 1].duracao_s * fator_velocidade(m_velocidade);
+    } else if (m_plano.valido)
+        prev = m_plano.camadas_s() * fator_velocidade(m_velocidade);
+    // a demora já explicada por um trecho lento ou uma parada não vira outra ocorrência
+    const bool explicada = std::any_of(m_ocorrencias.begin(), m_ocorrencias.end(),
+                                       [](const Ocorrencia& o) { return o.tipo == "lento" || o.tipo == "parada"; });
+    if (estado_final == "concluida" && prev > 0. && !explicada && m_camada_inicial <= 1 && real > prev * 1.25 && real - prev > 600.) {
         Ocorrencia o;
         o.tipo      = "tempo";
         o.gravidade = "info";

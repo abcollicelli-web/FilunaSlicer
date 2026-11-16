@@ -134,6 +134,7 @@ private:
     // ritmo por camada
     int                     m_ultima_camada{-1};
     double                  m_t_camada{0.}, m_pausa_na_camada{0.};
+    double                  m_previsto_feito{0.}; // previsto das camadas já feitas, com a velocidade de cada momento
     Ritmo                   m_janela_ritmo;
     std::vector<RitmoAberto> m_ritmo_aberto; // lento/rapido em andamento (um por tipo)
     // parada

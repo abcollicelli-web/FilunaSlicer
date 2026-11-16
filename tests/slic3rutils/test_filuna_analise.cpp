@@ -334,3 +334,18 @@ TEST_CASE("Filuna análise: monitor guarda o plano e entrega o relatório no fim
     boost::system::error_code ec;
     boost::filesystem::remove_all(dir, ec);
 }
+
+TEST_CASE("Filuna análise: previsto acompanha a velocidade de cada trecho", "[filuna][analise]")
+{
+    const PlanoImpressao p = plano_simples(20, 60.);
+    Analise              an(p, "Peça", "P2S");
+    // da camada 11 em diante no Esporte (0,81 do tempo): o previsto é 10 x 60 + 10 x 48,6 s
+    const json r = simular(an, p, [](int i) { return i >= 10 ? 48.6 : 60.; }, [](Amostra& a) {
+        if (a.camada >= 11)
+            a.velocidade = 3;
+    });
+    CHECK(perto(r["previsto_s"].get<double>(), 1086., 60.));
+    CHECK(conta(r, "velocidade") == 1);
+    CHECK(conta(r, "tempo") == 0);
+    CHECK(conta(r, "lento") == 0);
+}
