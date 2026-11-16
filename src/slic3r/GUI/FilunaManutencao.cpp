@@ -69,6 +69,27 @@ std::string g_token;
 std::atomic<bool> g_iniciado{false}, g_ocupado{false};
 std::atomic<bool> g_sem_patch{false}; // a diferença binária falhou nesta sessão: pede o pacote normal
 
+// Instalado pela Microsoft Store (pacote MSIX): a pasta do programa é só leitura e a Store faz as atualizações,
+// então o atualizador próprio e a entrada de "iniciar com o Windows" no registro ficam desligados.
+bool via_microsoft_store()
+{
+#ifdef _WIN32
+    static const bool loja = [] {
+        using Fn = LONG(WINAPI*)(UINT32*, PWSTR);
+        const HMODULE kernel = ::GetModuleHandleW(L"kernel32.dll");
+        const auto    fn     = kernel ? reinterpret_cast<Fn>(::GetProcAddress(kernel, "GetCurrentPackageFullName")) : nullptr;
+        if (fn == nullptr)
+            return false;
+        UINT32 tamanho = 0;
+        const LONG r   = fn(&tamanho, nullptr);
+        return r == ERROR_INSUFFICIENT_BUFFER || r == ERROR_SUCCESS; // APPMODEL_ERROR_NO_PACKAGE = programa comum
+    }();
+    return loja;
+#else
+    return false;
+#endif
+}
+
 std::string texto_cfg(const std::string& chave)
 {
     AppConfig* cfg = wxGetApp().app_config;
@@ -181,6 +202,8 @@ void preparar_em_segundo_plano();
 
 void verificar_agora()
 {
+    if (via_microsoft_store())
+        return situacao("loja");
     const std::string token = token_atual();
     if (token.empty() || g_ocupado.exchange(true))
         return;
@@ -443,7 +466,7 @@ void preparar_em_segundo_plano()
         doc = g_doc;
     }
     const std::string token = token_atual();
-    if (doc.is_null() || token.empty() || g_ocupado.exchange(true))
+    if (via_microsoft_store() || doc.is_null() || token.empty() || g_ocupado.exchange(true))
         return;
     std::thread([doc, token] {
 #ifdef _WIN32
@@ -483,7 +506,7 @@ void aplicar_agora()
         doc = g_doc;
     }
     const std::string token = token_atual();
-    if (doc.is_null() || token.empty() || g_ocupado.exchange(true))
+    if (via_microsoft_store() || doc.is_null() || token.empty() || g_ocupado.exchange(true))
         return;
     std::thread([doc, token] {
         auto falha = [&](const std::string& motivo) {
@@ -541,6 +564,8 @@ json preferencias()
 void aplicar_inicio_windows(bool ligar)
 {
 #ifdef _WIN32
+    if (via_microsoft_store())
+        return;
     wxRegKey k(wxRegKey::HKCU, "Software\\Microsoft\\Windows\\CurrentVersion\\Run");
     if (!k.Exists() && !k.Create())
         return;
@@ -624,6 +649,10 @@ void iniciar()
         std::lock_guard<std::mutex> g(g_trava);
         g_token = texto_cfg("filuna_token");
     }
+    if (via_microsoft_store()) {
+        situacao("loja");
+        return;
+    }
     // atualização anterior que não conseguiu copiar: avisa o servidor
     try {
         const fs::path falhou = pasta_espera() / "falhou.txt";
@@ -657,6 +686,7 @@ bool acao(const std::string& nome, const json& d, json& resposta)
             aplicar_agora();
         std::lock_guard<std::mutex> g(g_trava);
         resposta           = g_estado;
+        resposta["loja"]   = via_microsoft_store();
         resposta["build"]  = identidade().value("build", std::string());
         resposta["versao"] = identidade().value("versao", std::string());
         return true;
