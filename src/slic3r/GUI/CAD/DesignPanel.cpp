@@ -105,6 +105,7 @@
 #include "libslic3r/CAD/ThreadStandards.hpp" // ISO metric / Unified imperial thread tables
 #include "libslic3r/Model.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
+#include "libslic3r/PresetBundle.hpp"
 #include "slic3r/GUI/Plater.hpp"
 #include "slic3r/GUI/MainFrame.hpp"
 #include "slic3r/GUI/GUI_ObjectList.hpp"
@@ -3446,6 +3447,11 @@ DesignPanel::DesignPanel(wxWindow* parent)
         m_dof_status->SetFont(f);
     }
     root->Add(m_dof_status, 0, wxLEFT | wxRIGHT | wxBOTTOM, 12);
+
+    // Filuna CAD — Receita: peso e custo em reais da peça, pelo filamento escolhido na Preparação.
+    m_filuna_receita = new wxStaticText(m_form, wxID_ANY, "");
+    m_filuna_receita->Hide();
+    root->Add(m_filuna_receita, 0, wxLEFT | wxRIGHT | wxBOTTOM, 12);
 
 
     m_shape->Bind(wxEVT_COMBOBOX, [this](wxCommandEvent& e) { on_shape_changed(); e.Skip(); });
@@ -7746,6 +7752,73 @@ void DesignPanel::sync_body_xform()
 // re-merged from the transformed per-body meshes IN THE SAME body order as tessellate_bodies,
 // so display_tri_face/display_tri_body stay aligned. m_disp_pick_mesh keeps a stable address —
 // the tool holds a pointer to it, so an in-place rebuild updates picking without re-pointing.
+// Filuna CAD — Receita: soma o volume dos corpos visíveis e converte em gramas e reais com a densidade e o preço por
+// quilo do filamento escolhido. Só texto: qualquer falha aqui esconde a linha e não atrapalha a aba.
+void DesignPanel::filuna_atualizar_receita()
+{
+    if (m_filuna_receita == nullptr)
+        return;
+    auto esconder = [this] {
+        if (m_filuna_receita->IsShown()) {
+            m_filuna_receita->Hide();
+            if (m_form)
+                m_form->Layout();
+        }
+    };
+    try {
+        // mover um corpo não muda o volume: as malhas só são medidas de novo quando a forma muda
+        const std::vector<TriangleMesh>& corpos = m_doc.display_body_meshes;
+        if (m_filuna_volumes_gen != m_doc.topo_generation || m_filuna_volumes.size() != corpos.size()) {
+            m_filuna_volumes.assign(corpos.size(), 0.);
+            for (size_t b = 0; b < corpos.size(); ++b) {
+                TriangleMesh m = corpos[b];
+                m_filuna_volumes[b] = std::abs(double(m.volume()));
+            }
+            m_filuna_volumes_gen = m_doc.topo_generation;
+        }
+        double mm3 = 0.;
+        for (size_t b = 0; b < m_filuna_volumes.size(); ++b)
+            if (b >= m_body_visible.size() || m_body_visible[b])
+                mm3 += m_filuna_volumes[b];
+        if (!(mm3 > 1e-3)) {
+            esconder();
+            return;
+        }
+        double      dens = 1.24, preco_kg = 0.;
+        std::string mat  = "PLA";
+        if (PresetBundle* pb = wxGetApp().preset_bundle) {
+            const DynamicPrintConfig& c = pb->filaments.get_edited_preset().config;
+            if (auto* o = c.option<ConfigOptionFloats>("filament_density"); o && !o->values.empty() && o->get_at(0) > 0)
+                dens = o->get_at(0);
+            if (auto* o = c.option<ConfigOptionFloats>("filament_cost"); o && !o->values.empty())
+                preco_kg = o->get_at(0);
+            if (auto* o = c.option<ConfigOptionStrings>("filament_type"); o && !o->values.empty() && !o->get_at(0).empty())
+                mat = o->get_at(0);
+        }
+        const double g   = mm3 / 1000. * dens;
+        auto         num = [](double v, int casas) {
+            wxString s = wxString::Format("%.*f", casas, v);
+            s.Replace(".", ",");
+            return s;
+        };
+        wxString t = wxString::FromUTF8("Peça: ") + num(g, g < 10 ? 1 : 0) + " g";
+        if (preco_kg > 0)
+            t += wxString::FromUTF8(" · R$ ") + num(g / 1000. * preco_kg, 2) + " (" + wxString::FromUTF8(mat) +
+                 wxString::FromUTF8(" a R$ ") + num(preco_kg, 0) + "/kg)";
+        else
+            t += " (" + wxString::FromUTF8(mat) + ")";
+        if (m_filuna_receita->GetLabel() != t)
+            m_filuna_receita->SetLabel(t);
+        if (!m_filuna_receita->IsShown()) {
+            m_filuna_receita->Show();
+            if (m_form)
+                m_form->Layout();
+        }
+    } catch (const std::exception&) {
+        esconder();
+    }
+}
+
 void DesignPanel::rebuild_disp_meshes()
 {
     sync_body_visible();
@@ -7785,6 +7858,7 @@ void DesignPanel::feed_bodies()
     if (m_viewport == nullptr) return;
     rebuild_disp_meshes();
     m_viewport->set_bodies(&m_disp_body_meshes, m_body_visible);
+    filuna_atualizar_receita();
     // A new topology may renumber faces, so the feature's faces are found again; until then the
     // viewport drops those on a body whose shape has changed.
     if (m_hl_generation != m_doc.topo_generation)

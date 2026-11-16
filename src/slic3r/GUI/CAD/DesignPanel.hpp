@@ -1023,6 +1023,10 @@ private:
     // not include the tool's, and the .cpp (which does) casts it back.
     void              on_sketch_step(int mode, int step, int picks);
     wxStaticText*     m_dof_status{nullptr};   // DoF / constraint-state readout (P3)
+    wxStaticText*     m_filuna_receita{nullptr}; // Filuna CAD: peso e custo da peça pelo filamento escolhido
+    void              filuna_atualizar_receita();
+    std::vector<double> m_filuna_volumes;        // volume (mm³) de cada corpo, recalculado só quando a forma muda
+    uint64_t          m_filuna_volumes_gen{0};
     // Last live-solve result, so entering Constrain can restore the readout without a solve.
     int               m_dof_last{-1};
     bool              m_dof_last_ok{true};
