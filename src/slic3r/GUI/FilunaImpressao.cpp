@@ -2,6 +2,7 @@
 #include "FilunaAoVivo.hpp"
 
 #include "FilunaManutencao.hpp"
+#include "slic3r/Filuna/FilunaAnalise.hpp"
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
 #include "MsgDialog.hpp"
@@ -11,6 +12,10 @@
 #include "DeviceManager.hpp"
 #include "DeviceCore/DevManager.h"
 #include "DeviceCore/DevFilaSystem.h"
+#include "DeviceCore/DevBed.h"
+#include "DeviceCore/DevExtruderSystem.h"
+#include "DeviceCore/DevFan.h"
+#include "DeviceCore/DevPrintOptions.h"
 #include "libslic3r/AppConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "slic3r/Utils/NetworkAgent.hpp"
@@ -578,6 +583,12 @@ void imprimir(int plate_idx)
         rc = and_->rc, msg = and_->msg;
     }
     if (rc == BAMBU_NETWORK_SUCCESS) {
+        if (!so_envio)
+#ifdef _WIN32
+            analise_comecar(o->get_dev_id(), boost::nowide::narrow(origem.wstring()), nome, o->get_dev_name());
+#else
+            analise_comecar(o->get_dev_id(), origem.string(), nome, o->get_dev_name());
+#endif
         BOOST_LOG_TRIVIAL(info) << "FilunaImpressao: " << (so_envio ? "arquivo enviado" : "impressão pedida") << " agente=" << agente
                                 << " arquivo=" << nome << " mapa=" << p.ams_mapping;
         avisar(wxString::FromUTF8(so_envio ? "Arquivo enviado para " + o->get_dev_name() + "." :
@@ -1222,6 +1233,8 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     if (rc_envio != 0)
         return "a impressora recusou a mesa (" + (msg_envio.empty() ? "código " + std::to_string(rc_envio) : msg_envio) + ")";
     farm_http("POST", "/trabalhos/" + tid, {{"estado", "enviado"}}, token);
+    analise_comecar(m.dev_id, utf8_de(envio), texto_de(t, "descricao").empty() ? envio.stem().string() : texto_de(t, "descricao"),
+                    t.is_object() && t.contains("impressora") ? texto_de(t["impressora"], "nome") : std::string(), tid);
     ativo.id = tid, ativo.dev_id = m.dev_id, ativo.desde = (long long) std::time(nullptr), ativo.gramas = gramas, ativo.posicao = posicao;
     ativo.viu_imprimindo = false;
     fsf::remove(modelo, ec);
@@ -1596,6 +1609,7 @@ void farm_iniciar()
 {
     if (g_farm_iniciada.exchange(true))
         return;
+    analise_monitor();
     const std::string salvos = wxGetApp().app_config->get("filuna_farm_ativos"), salvo = wxGetApp().app_config->get("filuna_farm_ativo");
     std::thread([salvos, salvo] {
         FarmAtivos ativos = farm_ler_ativos(salvos, salvo);
@@ -1612,5 +1626,118 @@ void farm_iniciar()
         }
     }).detach();
 }
+
+// ============================================================================================================
+// Análise da impressão: amostras de todas as impressoras a cada 5 s para o Filuna::Monitor; o relatório final vai
+// para a conta do cliente no site (POST /analises) e fica uma cópia na pasta de dados (filuna/analise/relatorios).
+// ============================================================================================================
+namespace {
+
+std::atomic<bool> g_analise_iniciada{false};
+
+bool analise_ligada() { return wxGetApp().app_config != nullptr && wxGetApp().app_config->get("filuna_analise") != "0"; }
+
+struct AmostraDe
+{
+    std::string     dev_id, nome;
+    Filuna::Amostra amostra;
+};
+
+// Linha da tela: a impressora selecionada (pelo MachineObject) e as acompanhadas em segundo plano (relatório ao vivo).
+std::vector<AmostraDe> analise_amostras()
+{
+    std::vector<AmostraDe> v;
+    const double   agora = double(std::time(nullptr));
+    DeviceManager* dev   = wxGetApp().getDeviceManager();
+    if (dev == nullptr)
+        return v;
+    std::map<std::string, MachineObject*> todas = dev->get_my_machine_list();
+    for (auto& [id, o] : dev->get_local_machinelist())
+        todas.emplace(id, o);
+    MachineObject* sel = dev->get_selected_machine();
+    if (sel != nullptr) {
+        json rel = {{"gcode_state", sel->print_status}, {"layer_num", sel->curr_layer}, {"total_layer_num", sel->total_layers},
+                    {"mc_percent", sel->mc_print_percent}, {"stg_cur", sel->stage_curr}, {"print_error", sel->print_error}};
+        if (DevExtderSystem* ext = sel->GetExtderSystem()) {
+            rel["nozzle_temper"]        = ext->GetNozzleTempCurrent(0);
+            rel["nozzle_target_temper"] = ext->GetNozzleTempTarget(0);
+        }
+        if (DevBed* bed = sel->GetBed()) {
+            rel["bed_temper"]        = bed->GetBedTemp();
+            rel["bed_target_temper"] = bed->GetBedTempTarget();
+        }
+        if (DevFan* fan = sel->GetFan())
+            rel["cooling_fan_speed"] = std::to_string(fan->GetCoolingFanSpeed());
+        if (DevPrintOptions* op = sel->GetPrintOptions())
+            rel["spd_lvl"] = int(op->GetPrintingSpeedLevel());
+        AmostraDe a{sel->get_dev_id(), sel->get_dev_name(), Filuna::amostra_do_relatorio_bambu(rel, agora)};
+        if (!sel->is_online())
+            a.amostra.estado = "desligada";
+        v.push_back(std::move(a));
+    }
+    for (const FilunaAoVivo::Ligada& l : FilunaAoVivo::ligadas()) {
+        if (sel != nullptr && l.dev_id == sel->get_dev_id())
+            continue;
+        auto        it   = todas.find(l.dev_id);
+        std::string nome = it != todas.end() && it->second != nullptr ? it->second->get_dev_name() : l.dev_id;
+        v.push_back({l.dev_id, nome, Filuna::amostra_do_relatorio_bambu(l.relatorio, agora)});
+    }
+    return v;
+}
+
+void analise_enviar(const json& r)
+{
+    const std::string token = wxGetApp().app_config->get("filuna_token");
+    BOOST_LOG_TRIVIAL(info) << "Filuna análise: relatório de " << r.value("nome", std::string()) << " nota " << r.value("nota", 0) << " ("
+                            << r["ocorrencias"].size() << " ocorrências)";
+    if (token.empty())
+        return; // sem conta ligada: fica só a cópia no computador
+    FarmResp resp = farm_http("POST", "/analises", r, token);
+    if (resp.status != 200)
+        BOOST_LOG_TRIVIAL(warning) << "Filuna análise: o site não recebeu o relatório (" << resp.erro << ")";
+}
+
+} // namespace
+
+void analise_monitor()
+{
+    if (g_analise_iniciada.exchange(true))
+        return;
+    Filuna::Monitor::get().pasta(utf8_de(fsf::path(data_dir()) / "filuna" / "analise"));
+    std::thread([] {
+        std::this_thread::sleep_for(std::chrono::seconds(15));
+        for (;;) {
+            try {
+                std::vector<AmostraDe> v;
+                if (analise_ligada() && na_janela<std::vector<AmostraDe>>([] { return analise_amostras(); }, v, 10))
+                    for (const AmostraDe& a : v)
+                        if (auto r = Filuna::Monitor::get().amostra(a.dev_id, a.nome, a.amostra))
+                            analise_enviar(*r);
+            } catch (const std::exception& e) {
+                BOOST_LOG_TRIVIAL(warning) << "Filuna análise: " << e.what();
+            } catch (...) {
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
+    }).detach();
+}
+
+void analise_comecar(const std::string& dev_id, const std::string& gcode_utf8, const std::string& nome, const std::string& impressora,
+                     const std::string& trabalho_id)
+{
+    if (!analise_ligada() || dev_id.empty())
+        return;
+    analise_monitor();
+    std::thread([=] { // G-code grande leva alguns segundos para ler: fora da linha da tela
+        try {
+            Filuna::PlanoImpressao plano = Filuna::plano_do_gcode(gcode_utf8);
+            BOOST_LOG_TRIVIAL(info) << "Filuna análise: plano de " << nome << " com " << plano.camadas.size() << " camadas";
+            Filuna::Monitor::get().comecar(dev_id, plano, nome, impressora, trabalho_id);
+        } catch (const std::exception& e) {
+            BOOST_LOG_TRIVIAL(warning) << "Filuna análise: plano não lido: " << e.what();
+        }
+    }).detach();
+}
+
 
 }}} // namespace Slic3r::GUI::FilunaImpressao

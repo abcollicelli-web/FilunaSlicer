@@ -55,4 +55,13 @@ nlohmann::json farm_acao(const std::string& acao, const nlohmann::json& d, std::
 
 std::string filamento_id_do_tipo(const std::string& tipo, const std::string& marca = std::string());
 
+// Análise da impressão (Filuna/FilunaAnalise.hpp): com o G-code que o Filuna enviou, monta o plano camada a camada
+// no computador e acompanha a impressora a cada 5 s, sem interferir. No fim manda só o relatório (anomalias com a
+// camada e a altura) para a conta do cliente; o G-code e o arquivo não saem do computador. Desliga com
+// filuna_analise=0 no app_config. O plano é lido fora da linha da tela.
+void analise_comecar(const std::string& dev_id, const std::string& gcode_utf8, const std::string& nome, const std::string& impressora,
+                     const std::string& trabalho_id = std::string());
+// Liga o acompanhamento de todas as impressoras (uma vez; a Farm chama ao subir).
+void analise_monitor();
+
 }}} // namespace Slic3r::GUI::FilunaImpressao
