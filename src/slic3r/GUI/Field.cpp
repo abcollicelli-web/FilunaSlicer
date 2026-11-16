@@ -357,6 +357,10 @@ void Field::PostInitialize()
 
 	BUILD();
 
+    // Filuna — Autoajuda: parâmetro com ilustração ganha o cartão com imagem no lugar da dica simples
+    if (wxWindow* w = getWindow())
+        FilunaAutoajuda::ligar_cartao(w, m_opt_id);
+
     if (getWindow()) {
         if (m_opt.readonly) {
             this->disable();

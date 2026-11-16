@@ -5,6 +5,14 @@
 #include "libslic3r/Utils.hpp"
 
 #include <boost/filesystem.hpp>
+#include <wx/display.h>
+#include <wx/image.h>
+#include <wx/popupwin.h>
+#include <wx/sizer.h>
+#include <wx/statbmp.h>
+#include <wx/stattext.h>
+#include <wx/timer.h>
+#include <wx/weakref.h>
 #include <boost/nowide/fstream.hpp>
 #include <nlohmann/json.hpp>
 
@@ -14,6 +22,16 @@
 namespace Slic3r { namespace GUI { namespace FilunaAutoajuda {
 
 namespace {
+
+struct Partes
+{
+    std::string titulo, oque, efeito;
+};
+std::map<std::string, Partes>& partes_m()
+{
+    static std::map<std::string, Partes> m;
+    return m;
+}
 
 const std::map<std::string, wxString>& cartoes()
 {
@@ -36,14 +54,149 @@ const std::map<std::string, wxString>& cartoes()
                 std::string t = titulo + "\n\n" + oque;
                 if (!efeito.empty())
                     t += "\n\n" + efeito;
-                m[it.key()] = wxString::FromUTF8(t);
+                m[it.key()]         = wxString::FromUTF8(t);
+                partes_m()[it.key()] = {titulo, oque, efeito};
             }
         } catch (const std::exception&) {}
     });
     return m;
 }
 
+// ---- cartão com imagem ----
+std::string sem_indice(const std::string& k) { return k.substr(0, k.find('#')); }
+
+boost::filesystem::path imagem_de(const std::string& chave)
+{
+    return boost::filesystem::path(resources_dir()) / "filuna" / "autoajuda" / "img" / (chave + ".png");
+}
+
+class Cartao : public wxPopupWindow
+{
+public:
+    Cartao(wxWindow* pai, const Partes& p, const boost::filesystem::path& img) : wxPopupWindow(pai, wxBORDER_SIMPLE)
+    {
+        SetBackgroundColour(wxColour(255, 253, 249));
+        const int larg = FromDIP(300), m = FromDIP(12);
+        auto*     s    = new wxBoxSizer(wxVERTICAL);
+        wxImage   im;
+        if (im.LoadFile(wxString::FromUTF8(img.string()), wxBITMAP_TYPE_PNG) && im.IsOk()) {
+            im.Rescale(larg, larg * im.GetHeight() / std::max(1, im.GetWidth()), wxIMAGE_QUALITY_HIGH);
+            s->Add(new wxStaticBitmap(this, wxID_ANY, wxBitmap(im)), 0, wxLEFT | wxRIGHT | wxTOP, m);
+        }
+        auto* t = new wxStaticText(this, wxID_ANY, wxString::FromUTF8(p.titulo));
+        t->SetFont(t->GetFont().Bold().Scaled(1.15f));
+        t->SetForegroundColour(wxColour(179, 18, 79));
+        s->Add(t, 0, wxLEFT | wxRIGHT | wxTOP, m);
+        std::string corpo = p.oque;
+        if (!p.efeito.empty())
+            corpo += "\n\n" + p.efeito;
+        auto* c = new wxStaticText(this, wxID_ANY, wxString::FromUTF8(corpo));
+        c->SetForegroundColour(wxColour(60, 55, 50));
+        c->Wrap(larg);
+        s->Add(c, 0, wxALL, m);
+        SetSizerAndFit(s);
+    }
+};
+
+wxWeakRef<wxWindow> g_alvo;
+std::string         g_chave;
+Cartao*             g_cartao = nullptr;
+
+void esconder()
+{
+    if (g_cartao != nullptr) {
+        g_cartao->Destroy();
+        g_cartao = nullptr;
+    }
+}
+
+bool mouse_dentro(wxWindow* w)
+{
+    return w != nullptr && w->IsShownOnScreen() && w->GetScreenRect().Contains(wxGetMousePosition());
+}
+
+wxTimer& relogio()
+{
+    static wxTimer* t = [] {
+        auto* r = new wxTimer();
+        r->Bind(wxEVT_TIMER, [](wxTimerEvent&) {
+            wxWindow* w = g_alvo.get();
+            if (w == nullptr || !ligada() || !mouse_dentro(w))
+                return;
+            const auto it = partes_m().find(g_chave);
+            if (it == partes_m().end())
+                return;
+            esconder();
+            g_cartao        = new Cartao(wxGetTopLevelParent(w), it->second, imagem_de(g_chave));
+            wxPoint       p = wxGetMousePosition() + wxPoint(w->FromDIP(14), w->FromDIP(18));
+            const wxSize  t = g_cartao->GetSize();
+            const int     d = wxDisplay::GetFromPoint(p);
+            const wxRect  a = wxDisplay(d == wxNOT_FOUND ? 0 : d).GetClientArea();
+            if (p.x + t.x > a.GetRight())
+                p.x = std::max(a.GetLeft(), a.GetRight() - t.x);
+            if (p.y + t.y > a.GetBottom())
+                p.y = std::max(a.GetTop(), wxGetMousePosition().y - t.y - w->FromDIP(10));
+            g_cartao->Position(p, wxSize(0, 0));
+            g_cartao->Show();
+        });
+        return r;
+    }();
+    return *t;
+}
+
+void sem_dica(wxWindow* w)
+{
+    w->UnsetToolTip();
+    for (wxWindow* f : w->GetChildren())
+        sem_dica(f);
+}
+
+void prender(wxWindow* raiz, wxWindow* w, const std::string& chave)
+{
+    w->Bind(wxEVT_ENTER_WINDOW, [raiz, chave](wxMouseEvent& e) {
+        e.Skip();
+        if (!ligada())
+            return;
+        sem_dica(raiz); // o campo pode ter posto a dica de novo ao mudar o valor
+        if (g_alvo.get() != raiz || g_cartao == nullptr) {
+            esconder();
+            g_alvo  = raiz;
+            g_chave = chave;
+            relogio().StartOnce(450);
+        }
+    });
+    w->Bind(wxEVT_LEAVE_WINDOW, [raiz](wxMouseEvent& e) {
+        e.Skip();
+        if (mouse_dentro(raiz))
+            return; // passou para uma parte de dentro do mesmo campo
+        relogio().Stop();
+        esconder();
+        if (g_alvo.get() == raiz)
+            g_alvo = nullptr;
+    });
+    w->Bind(wxEVT_LEFT_DOWN, [](wxMouseEvent& e) {
+        e.Skip();
+        relogio().Stop();
+        esconder();
+    });
+    for (wxWindow* f : w->GetChildren())
+        prender(raiz, f, chave);
+}
+
 } // namespace
+
+void ligar_cartao(wxWindow* campo, const std::string& opt_key)
+{
+    if (campo == nullptr || !ligada())
+        return;
+    const std::string chave = sem_indice(opt_key);
+    cartoes(); // carrega os textos
+    boost::system::error_code ec;
+    if (!partes_m().count(chave) || !boost::filesystem::exists(imagem_de(chave), ec))
+        return;
+    sem_dica(campo);
+    prender(campo, campo, chave);
+}
 
 bool ligada()
 {

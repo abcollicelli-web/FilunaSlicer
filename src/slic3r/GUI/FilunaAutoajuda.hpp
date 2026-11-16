@@ -8,6 +8,8 @@
 #include <string>
 #include <wx/string.h>
 
+class wxWindow;
+
 namespace Slic3r { namespace GUI { namespace FilunaAutoajuda {
 
 bool     ligada();
@@ -17,5 +19,8 @@ wxString cartao(const std::string& opt_key);
 // Cartão de uma ferramenta da área 3D: "ferramenta:<nome>" (barra de cima) ou "gizmo:<ícone sem _dark/.svg>".
 // Em UTF-8; vazio quando não há texto ou a Autoajuda está desligada.
 std::string cartao_ferramenta(const std::string& chave);
+// Parâmetro com ilustração (resources/filuna/autoajuda/img/<chave>.png): a dica simples do campo vira um cartão com a
+// imagem, o título e o texto, mostrado ao parar o mouse sobre o campo. Sem imagem, fica a dica de texto. Linha da tela.
+void ligar_cartao(wxWindow* campo, const std::string& opt_key);
 
 }}} // namespace Slic3r::GUI::FilunaAutoajuda
