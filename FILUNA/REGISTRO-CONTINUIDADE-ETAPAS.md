@@ -1165,3 +1165,11 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
 - estado(): impressora ativa conectada e sem cadastro é cadastrada uma vez (sobe para o site/app). Caso: Fernando com 5
   impressoras e só 2 no site.
 - Utils/FilunaRede.hpp ganhou portas_abertas, enderecos_locais e cn_do_certificado.
+
+## 2026-11-16 — 77 publicada (77f5e87a1); 78: Farm sai da barra de cima
+
+- Com Novo e Salvar na barra (75), o botão Fatiar ficava escondido. A aba Farm ganhou ShowPageButton(false), como
+  Paramétricos e Modelos 3D; abre pelo menu do Início e pelos botões de Meu espaço.
+- Rochelly: a 76 não abre (0xc0e90002 no OrcaSlicer.dll). Pacote e diferença conferidos no servidor (SHA-256 igual) e o
+  cliente confere o SHA-256 antes de trocar: é o Controle Inteligente de Aplicativos do Windows 11 bloqueando DLL sem
+  assinatura. Definitivo: assinatura de código (certificado do dono) na compilação.
