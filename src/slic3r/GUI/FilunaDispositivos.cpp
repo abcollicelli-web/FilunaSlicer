@@ -356,7 +356,7 @@ json card(MachineObject* o)
               {"modelo_nome", std::string(o->get_printer_type_display_str().ToUTF8().data())},
               {"ligada", o->is_online()},      {"estado", estado_legivel(o)},
               {"conexao", o->dev_connection_type}, {"agente", o->printer_agent_id},
-              {"progresso", o->mc_print_percent}, {"restante_s", o->mc_left_time},
+              {"progresso", o->mc_print_percent}, {"restante_s", o->mc_left_time}, {"etapa", o->stage_curr},
               {"camera", o->has_ipcam},          {"cores", cores_de(o)},
               {"sinc_filamentos", true}}; // a tela pode pedir "dispositivos.filamentos_projeto"
     if (DevBed* bed = o->GetBed())
@@ -1256,6 +1256,7 @@ void sincronizar_estado(const json& estado, const std::string& token)
                          {"estado", c.value("estado", std::string())}, {"ligada", c.value("ligada", false)},
                          {"erro", c.value("erro", std::string())},
                          {"progresso", c.value("progresso", 0)}, {"restante_s", c.value("restante_s", 0)},
+                         {"etapa", c.value("etapa", -1)}, // etapa da impressora: o site avisa aquecendo, troca de filamento e paradas
                          {"cores", c.value("cores", json::array())}, {"camera", c.value("camera", false)},
                          {"bico", c.value("bico", json::object())}, {"mesa", c.value("mesa", json::object())}});
     std::thread([corpo, token] {

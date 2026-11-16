@@ -326,6 +326,7 @@ json estado_de(const std::string& dev_id)
                                                                                  : "livre";
     r["progresso"]  = int(num(p, "mc_percent"));
     r["restante_s"] = int(num(p, "mc_remaining_time") * 60);
+    r["etapa"]      = int(num(p, "stg_cur")); // etapa Bambu: aquecendo, trocando filamento, parada por erro (avisos do WhatsApp)
     r["bico"]       = {{"atual", num(p, "nozzle_temper")}, {"alvo", num(p, "nozzle_target_temper")}};
     r["mesa"]       = {{"atual", num(p, "bed_temper")}};
     json cores      = json::array();
