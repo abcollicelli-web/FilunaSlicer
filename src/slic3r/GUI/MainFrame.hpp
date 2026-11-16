@@ -395,6 +395,7 @@ public:
 
 	void        update_title_colour_after_set_title();
     void        show_option(bool show);
+    void        filuna_salvar_projeto();
     void        init_tabpanel();
     void        create_preset_tabs();
     //BBS: GUI refactor
@@ -576,6 +577,8 @@ public:
     SideButton* m_slice_option_btn{ nullptr };
     SideButton* m_print_btn{ nullptr };
     SideButton* m_print_option_btn{ nullptr };
+    SideButton* m_novo_btn{ nullptr };   // Filuna: Novo trabalho
+    SideButton* m_salvar_btn{ nullptr }; // Filuna: Salvar projeto (pasta Filuna do cliente)
 
     SidePopup*  m_slice_option_pop_up{ nullptr };
 

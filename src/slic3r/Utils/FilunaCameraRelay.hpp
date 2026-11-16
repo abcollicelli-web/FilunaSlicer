@@ -23,6 +23,8 @@
 #include <boost/asio/connect.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/asio/ssl.hpp>
+
+#include "FilunaRtspFlv.hpp"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/read_until.hpp>
@@ -66,7 +68,16 @@ public:
     static void set_bambu(const std::string& dev_id, const std::string& ip, const std::string& codigo)
     {
         std::lock_guard<std::mutex> l(bambu_mutex());
-        bambu_map()[dev_id] = {ip, codigo};
+        AcessoBambu& a = bambu_map()[dev_id];
+        a.ip           = ip;
+        a.codigo       = codigo;
+    }
+
+    // P2S, X1, H2: vídeo RTSPS ("rtsps://<ip>:322/streaming/live/1", do relatório da impressora), entregue como FLV
+    static void set_bambu_rtsp(const std::string& dev_id, const std::string& rtsp_url)
+    {
+        std::lock_guard<std::mutex> l(bambu_mutex());
+        bambu_map()[dev_id].rtsp = rtsp_url;
     }
 
     static std::string url_decodificar(const std::string& s)
@@ -121,6 +132,12 @@ private:
                 const std::string r = "HTTP/1.1 " + estado + "\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
                 asio::write(cli, asio::buffer(r), ec);
             };
+            const std::string chave_rtsp = "/bambu-rtsp?d=";
+            if (metodo == "GET" && alvo.compare(0, chave_rtsp.size(), chave_rtsp) == 0) {
+                camera_bambu_rtsp(cli, url_decodificar(alvo.substr(chave_rtsp.size())), responder);
+                cli.close(ec);
+                return;
+            }
             const std::string chave_bambu = "/bambu?d=";
             if (metodo == "GET" && alvo.compare(0, chave_bambu.size(), chave_bambu) == 0) {
                 camera_bambu(cli, url_decodificar(alvo.substr(chave_bambu.size())), responder);
@@ -220,8 +237,50 @@ private:
 
     struct AcessoBambu
     {
-        std::string ip, codigo;
+        std::string ip, codigo, rtsp;
     };
+
+    template<class Responder> static void camera_bambu_rtsp(boost::asio::ip::tcp::socket& cli, const std::string& dev_id, Responder& responder)
+    {
+        AcessoBambu a;
+        {
+            std::lock_guard<std::mutex> l(bambu_mutex());
+            auto it = bambu_map().find(dev_id);
+            if (it != bambu_map().end())
+                a = it->second;
+        }
+        // "rtsps://ip:322/caminho" -> ip, porta, caminho (só rede local, como o resto do repasse)
+        const std::string pre = "rtsps://";
+        std::string       host, porta, caminho, h, pt, cm;
+        if (a.rtsp.compare(0, pre.size(), pre) == 0) {
+            const std::size_t barra = a.rtsp.find('/', pre.size());
+            const std::string hp    = a.rtsp.substr(pre.size(), barra == std::string::npos ? std::string::npos : barra - pre.size());
+            caminho                 = barra == std::string::npos ? std::string("/streaming/live/1") : a.rtsp.substr(barra);
+            const std::size_t dp    = hp.find(':');
+            host                    = hp.substr(0, dp);
+            porta                   = dp == std::string::npos ? std::string("322") : hp.substr(dp + 1);
+        }
+        if (host.empty() || a.codigo.empty() || !destino_valido("http://" + host + "/", h, pt, cm)) {
+            responder("404 Not Found");
+            return;
+        }
+        bool                      comecou = false;
+        boost::system::error_code ec;
+        const std::string erro = Rtsp::tocar(host, porta, caminho, "bblp", a.codigo, [&](const std::string& bytes) {
+            if (!comecou) {
+                const std::string cab = "HTTP/1.1 200 OK\r\nContent-Type: video/x-flv\r\nAccess-Control-Allow-Origin: *\r\n"
+                                        "Cache-Control: no-store\r\nConnection: close\r\n\r\n";
+                boost::asio::write(cli, boost::asio::buffer(cab), ec);
+                comecou = true;
+            }
+            if (!ec)
+                boost::asio::write(cli, boost::asio::buffer(bytes), ec);
+            return !ec; // false = a tela fechou o vídeo
+        });
+        if (!comecou)
+            responder("502 Bad Gateway");
+        (void) erro;
+    }
     static std::mutex& bambu_mutex()
     {
         static std::mutex m;

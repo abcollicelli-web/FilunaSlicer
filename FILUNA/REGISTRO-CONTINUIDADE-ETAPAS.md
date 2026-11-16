@@ -1125,3 +1125,18 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
 - U1/Klipper: MoonrakerPrinterAgent, ao conectar, lê /server/webcams/list e grava a câmera MJPEG (caminho relativo vai
   para a porta 80). Controles da tela viram G-code (gcode_moonraker: M104, M140, G28, G91/G1/G90, M106, M220, M112) para
   snapmaker, qidi, crealityprint e moonraker. Impressão já existia nos dois agentes (FTPS+project_file / upload Moonraker).
+
+## 2026-11-16 — 74 publicada (fdac81008); 75: câmera P2S, Exportar, Novo/Salvar, impressora desligada não trava
+
+- Câmera RTSPS (P2S, X1, H2): Utils/FilunaRtspFlv.hpp (DESCRIBE com Basic e, se pedir, Digest MD5; SETUP intercalado
+  em TCP; PLAY; RTP H.264 com NAL simples, STAP-A e FU-A; FLV/AVC com SPS/PPS do SDP ou do vídeo; OPTIONS a cada 25 s).
+  Repasse "/bambu-rtsp?d=<serie>" entrega video/x-flv ao mpegts.js. Testado com H.264 do ffmpeg num RTSPS simulado
+  (Digest conferido; 90/90 quadros 1280x720 decodificados sem erro, também pelo repasse).
+- Exportar: a trava do catálogo era uma chave global e ficava ligada para os modelos do cliente. Agora marca os
+  OBJETOS do catálogo (input_file "filuna-catalogo:..."); trava só enquanto um deles estiver na mesa.
+- Barra: botões Novo (new_project, pergunta se há algo sem salvar) e Salvar (projeto com arquivo salva no lugar;
+  projeto novo vai para Documentos/Filuna/Projetos/<nome>.3mf sem janela). MainFrame::filuna_salvar_projeto.
+- Impressora desligada: MachineObject::connect chama connect_printer dos agentes filuna_* numa linha separada (uma por
+  vez); o resultado volta por ConnectStatusOk/Failed na linha da tela. Trocar de impressora não prende mais o programa.
+- Assistente: Voltar da busca vai sempre aos modelos (antes podia cair no complemento, que voltava sozinho para a busca
+  e rodava preparar de novo — sem saída); botão "Trocar fabricante" na busca.

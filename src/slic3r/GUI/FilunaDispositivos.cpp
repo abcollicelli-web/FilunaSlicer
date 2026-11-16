@@ -394,8 +394,17 @@ json card(MachineObject* o)
             c["camera_url"]     = "bambu-lan";
             c["camera_repasse"] = "http://127.0.0.1:" + std::to_string(porta) + "/bambu?d=" + Http::url_encode(o->get_dev_id());
         }
-    } else if (o->printer_agent_id == "filuna_bambu_lan" && boost::algorithm::starts_with(o->local_rtsp_url, "rtsp"))
-        c["camera_aviso"] = "A câmera deste modelo (vídeo RTSP) chega numa próxima versão do Filuna Slicer.";
+    } else if (o->printer_agent_id == "filuna_bambu_lan" && boost::algorithm::starts_with(o->local_rtsp_url, "rtsps://") &&
+               !o->get_access_code().empty()) {
+        // P2S, X1, H2: H.264 por RTSPS, convertido para FLV no repasse (tocador mpegts.js da tela)
+        Filuna::CameraRelay::set_bambu(o->get_dev_id(), o->get_dev_ip(), o->get_access_code());
+        Filuna::CameraRelay::set_bambu_rtsp(o->get_dev_id(), o->local_rtsp_url);
+        if (const int porta = Filuna::CameraRelay::porta(); porta > 0) {
+            c["camera"]     = true;
+            c["camera_url"] = "bambu-rtsp/flv";
+            c["camera_flv"] = "http://127.0.0.1:" + std::to_string(porta) + "/bambu-rtsp?d=" + Http::url_encode(o->get_dev_id());
+        }
+    }
     const std::string cam = Filuna::camera_url(o->get_dev_id());
     if (!cam.empty())
         c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu

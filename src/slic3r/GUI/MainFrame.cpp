@@ -122,6 +122,7 @@
 #include "UnsavedChangesDialog.hpp"
 #include "PublishSettingsDialog.hpp"
 #include "MsgDialog.hpp"
+#include <wx/stdpaths.h>
 #include "Notebook.hpp"
 #include "GUI_Factories.hpp"
 #include "NotificationManager.hpp"
@@ -1456,6 +1457,50 @@ void MainFrame::update_title_colour_after_set_title()
 #endif
 }
 
+// Filuna: Salvar da barra. Projeto que já tem arquivo salva no lugar; projeto novo vai direto para a pasta Filuna do
+// cliente (Documentos/Filuna/Projetos/<nome>.3mf), sem janela, e passa a ser o arquivo do projeto.
+void MainFrame::filuna_salvar_projeto()
+{
+    Plater* plater = wxGetApp().plater();
+    if (plater == nullptr)
+        return;
+    if (plater->model().objects.empty()) {
+        MessageDialog(this, wxString::FromUTF8("Não há nada na mesa para salvar."), wxString::FromUTF8("Salvar projeto"), wxOK).ShowModal();
+        return;
+    }
+    if (!plater->get_project_filename(".3mf").IsEmpty()) {
+        plater->save_project(false);
+        return;
+    }
+    if (FilunaImpressao::saida_barrada())
+        return;
+    namespace fs = boost::filesystem;
+    const fs::path pasta = into_path(wxStandardPaths::Get().GetDocumentsDir()) / "Filuna" / "Projetos";
+    boost::system::error_code ec;
+    fs::create_directories(pasta, ec);
+    if (ec) {
+        MessageDialog(this, wxString::FromUTF8("Não foi possível criar a pasta Documentos › Filuna › Projetos: ") + from_u8(ec.message()),
+                      wxString::FromUTF8("Salvar projeto"), wxOK | wxICON_WARNING).ShowModal();
+        return;
+    }
+    std::string nome = into_u8(plater->get_project_name());
+    for (char& c : nome)
+        if (c == '/' || c == '\\' || c == ':' || c == '*' || c == '?' || c == '"' || c == '<' || c == '>' || c == '|')
+            c = '_';
+    if (nome.empty() || nome == into_u8(_L("Untitled")))
+        nome = "Projeto";
+    fs::path arq = pasta / into_path(from_u8(nome + ".3mf"));
+    for (int i = 2; fs::exists(arq, ec) && i < 1000; ++i)
+        arq = pasta / into_path(from_u8(nome + " (" + std::to_string(i) + ").3mf"));
+    plater->set_project_filename(from_path(arq));
+    if (plater->save_project(false) == wxID_CANCEL) {
+        plater->set_project_filename(wxEmptyString);
+        return;
+    }
+    if (auto* nm = plater->get_notification_manager())
+        nm->push_notification(into_u8(wxString::FromUTF8("Projeto salvo em Documentos › Filuna › Projetos: ") + from_path(arq.filename())));
+}
+
 void MainFrame::show_option(bool show)
 {
     if (!show) {
@@ -1464,6 +1509,10 @@ void MainFrame::show_option(bool show)
             m_print_btn->Hide();
             m_slice_option_btn->Hide();
             m_print_option_btn->Hide();
+            if (m_novo_btn != nullptr) {
+                m_novo_btn->Hide();
+                m_salvar_btn->Hide();
+            }
             Layout();
         }
     } else {
@@ -1472,6 +1521,10 @@ void MainFrame::show_option(bool show)
             m_print_btn->Show();
             m_slice_option_btn->Show();
             m_print_option_btn->Show();
+            if (m_novo_btn != nullptr) {
+                m_novo_btn->Show();
+                m_salvar_btn->Show();
+            }
             Layout();
         }
     }
@@ -2403,6 +2456,23 @@ wxBoxSizer* MainFrame::create_side_tools()
     m_slice_option_btn = new SideButton(slice_panel, "", "sidebutton_dropdown", 0, 14);
     m_print_btn = new SideButton(print_panel, _L("Print plate"), "");
     m_print_option_btn = new SideButton(print_panel, "", "filuna_dropdown_dark", 0, 14); // Filuna: dark arrow on the outlined Exportar
+    // Filuna: Novo trabalho e Salvar projeto ficam na barra (antes só no menu do logo)
+    auto proj_panel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
+    m_novo_btn      = new SideButton(proj_panel, wxString::FromUTF8("Novo"), "");
+    m_salvar_btn    = new SideButton(proj_panel, wxString::FromUTF8("Salvar"), "");
+    m_novo_btn->SetToolTip(wxString::FromUTF8("Novo trabalho: mesa limpa (pergunta antes se há algo sem salvar)"));
+    m_salvar_btn->SetToolTip(wxString::FromUTF8("Salvar o projeto. Projeto novo vai para Documentos › Filuna › Projetos"));
+    {
+        auto proj_sizer = new wxBoxSizer(wxHORIZONTAL);
+        proj_sizer->Add(m_novo_btn, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(8));
+        proj_sizer->Add(m_salvar_btn, 0, wxALIGN_CENTER_VERTICAL);
+        proj_panel->SetSizer(proj_sizer);
+    }
+    m_novo_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
+        if (Plater* plater = wxGetApp().plater())
+            plater->new_project();
+    });
+    m_salvar_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { filuna_salvar_projeto(); });
 
     // Orca: restore the last used print/export action if the user opted to remember it
     PrintSelectType remembered_print_select;
@@ -2497,6 +2567,8 @@ wxBoxSizer* MainFrame::create_side_tools()
     sizer->Add(FromDIP(14), 0, 0, 0, 0);
     sizer->Add(divider, 0, wxALIGN_CENTER_VERTICAL);
     sizer->Add(FromDIP(14), 0, 0, 0, 0);
+    sizer->Add(proj_panel, 0, wxALIGN_CENTER_VERTICAL);
+    sizer->Add(FromDIP(12), 0, 0, 0, 0);
     sizer->Add(print_panel, 0, wxALIGN_CENTER_VERTICAL);
     sizer->Add(FromDIP(12), 0, 0, 0, 0);
     sizer->Add(slice_panel, 0, wxALIGN_CENTER_VERTICAL);
@@ -2888,6 +2960,19 @@ void MainFrame::update_side_button_style()
                                     std::pair{wxColour(231, 227, 221), (int) StateColor::Normal});
     const StateColor dark_text(std::pair{wxColour(154, 148, 140), (int) StateColor::Disabled},
                                std::pair{wxColour(44, 42, 40), (int) StateColor::Normal});
+    for (SideButton* b : {m_novo_btn, m_salvar_btn}) {
+        if (b == nullptr)
+            continue;
+        b->SetBottomColour(bar_bg);
+        b->SetCornerRadius(FromDIP(10));
+        b->SetTextLayout(SideButton::EHorizontalOrientation::HO_Center, FromDIP(15));
+        b->SetExtraSize(wxSize(FromDIP(28), FromDIP(10)));
+        b->SetMinSize(wxSize(-1, FromDIP(36)));
+        b->SetBackgroundColor(outline_bg);
+        b->SetBorderColor(outline_border);
+        b->SetForegroundColor(dark_text);
+        b->GetParent()->SetBackgroundColour(bar_bg);
+    }
     for (SideButton* b : {m_print_btn, m_print_option_btn}) {
         b->SetBackgroundColor(outline_bg);
         b->SetBorderColor(outline_border);

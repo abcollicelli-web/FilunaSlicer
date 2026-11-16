@@ -2728,6 +2728,23 @@ int MachineObject::connect()
                 use_ssl,
                 ca_file
             };
+            // Filuna: os agentes Filuna conectam de forma síncrona (MQTT/TLS, HTTP). Com a impressora desligada isso
+            // prendia a tela até o tempo de conexão estourar (trocar de impressora travava o programa). Conectam numa
+            // linha separada; o agente avisa o resultado pelo retorno de conexão local (ConnectStatusOk/Failed), e só
+            // o Imprimir mostra que ela está desligada. Uma conexão por vez, para não se atropelarem.
+            std::shared_ptr<IPrinterAgent> agente = m_agent->get_printer_agent();
+            if (agente && boost::starts_with(printer_agent_id, "filuna_")) {
+                std::thread([agente, params] {
+                    static std::mutex uma_por_vez;
+                    std::lock_guard<std::mutex> l(uma_por_vez);
+                    try {
+                        agente->connect_printer(params);
+                    } catch (const std::exception& e) {
+                        BOOST_LOG_TRIVIAL(warning) << "Filuna: conexão com " << params.dev_id << " falhou: " << e.what();
+                    }
+                }).detach();
+                return 0;
+            }
             return m_agent->connect_printer(params);
         } catch (...) {
             ;

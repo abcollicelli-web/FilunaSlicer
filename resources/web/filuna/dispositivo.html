@@ -754,7 +754,7 @@ function assistente(app) {
 		html += '<div class="caixa"><h3>' + (a.achadas.length ? "Impressoras encontradas" : '<span class="spin"></span>Verificando a rede LAN') + '</h3><p>A impressora precisa estar ligada, na mesma rede e com o modo LAN ativo.</p>' +
 			(a.achadas.length ? '<div class="achadas">' + a.achadas.map(function (d) { return '<div class="achada" data-d="' + E(d.dev_id) + '"><div class="nm">' + E(d.nome) + '</div><div class="ip">' + E((d.modelo_nome || d.modelo || "") + " · " + d.ip) + (d.precisa_codigo && a.marca && a.marca.id == "bambu" ? " · pede código de acesso" : "") + '</div></div>'; }).join("") + "</div>" : "") +
 			(a.pedirCodigo ? '<div class="campo" style="margin-top:14px"><label>Código de acesso (está na tela da impressora)</label><input type="text" id="codigo" value="' + E(a.codigo) + '"></div><div class="acoes"><button class="btn primario" id="conectarCod">Conectar</button></div>' : "") +
-			'<div class="acoes">' + (a.tentativas >= 8 || a.achadas.length ? '<button class="btn" id="outros">Não achei · outros meios</button>' : "") + '<button class="btn" id="procurar">Procurar de novo</button></div>' + (a.erro ? '<div class="erro">' + E(a.erro) + "</div>" : "") + "</div>";
+			'<div class="acoes">' + (a.tentativas >= 8 || a.achadas.length ? '<button class="btn" id="outros">Não achei · outros meios</button>' : "") + '<button class="btn" id="procurar">Procurar de novo</button><button class="btn" id="trocarMarca">Trocar fabricante</button></div>' + (a.erro ? '<div class="erro">' + E(a.erro) + "</div>" : "") + "</div>";
 	} else if (a.passo == "ip") {
 		html += '<div class="h1">Outros meios de conexão</div><div class="sub">Se a busca automática não achou, informe o endereço da impressora.</div></div>';
 		html += '<div class="caixa"><h3>Conectar pelo endereço IP</h3><p>O IP aparece na tela da impressora em Configurações › Rede.</p>' +
@@ -778,7 +778,7 @@ function assistente(app) {
 	app.querySelector("#voltarA").onclick = function () {
 		if (a.passo == "marcas") { estado.vista = "lista"; desenhar(); return; }
 		a.erro = "";
-		a.passo = a.passo == "modelos" ? "marcas" : a.passo == "complemento" ? "modelos" : a.passo == "procurar" ? (a.comp && a.comp.instalado ? "modelos" : "complemento") : a.passo == "ip" ? "procurar" : a.passo == "ponte" ? "ip" : "marcas";
+		a.passo = a.passo == "modelos" ? "marcas" : a.passo == "complemento" ? "modelos" : a.passo == "procurar" ? "modelos" : a.passo == "ip" ? "procurar" : a.passo == "ponte" ? "ip" : "marcas";
 		if (a.passo == "complemento") a.prog = null;
 		desenhar();
 	};
@@ -790,6 +790,8 @@ function assistente(app) {
 	if ((b = app.querySelector("#depois"))) b.onclick = function () { estado.vista = "lista"; desenhar(); };
 	if ((b = app.querySelector("#procurar"))) b.onclick = function () { a.erro = ""; a.tentativas = 0; preparar(); desenhar(); };
 	if ((b = app.querySelector("#procurarP"))) b.onclick = function () { a.erro = ""; a.tentativas = 0; a.passo = "procurar"; preparar(); desenhar(); };
+	// Fabricante errado: sai da busca a qualquer momento (a busca da tela para sozinha fora do passo "procurar")
+	if ((b = app.querySelector("#trocarMarca"))) b.onclick = function () { a.passo = "marcas"; a.marca = null; a.modelo = null; a.modelos = []; a.achadas = []; a.erro = ""; a.pedirCodigo = false; desenhar(); };
 	if ((b = app.querySelector("#outros"))) b.onclick = function () { a.passo = "ip"; a.erro = ""; desenhar(); };
 	if ((b = app.querySelector("#irIp"))) b.onclick = function () { a.passo = "ip"; a.erro = ""; desenhar(); };
 	if ((b = app.querySelector("#ponte"))) b.onclick = function () { Filuna.nativo("dispositivos.ponte", { fabricante: a.marca.id }).then(function (r) { a.ponte = r; a.passo = "ponte"; desenhar(); }); };

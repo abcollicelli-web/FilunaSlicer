@@ -6,6 +6,7 @@
 #include "MsgDialog.hpp"
 #include "PartPlate.hpp"
 #include "Plater.hpp"
+#include "libslic3r/Model.hpp"
 #include "DeviceManager.hpp"
 #include "DeviceCore/DevManager.h"
 #include "DeviceCore/DevFilaSystem.h"
@@ -1346,17 +1347,39 @@ json farm_acao(const std::string& acao, const json& d, std::function<void(const 
 }
 
 // ---------------- Modelos 3D do catálogo: só imprimir ----------------
-namespace { std::atomic<bool> g_protegido{false}; }
-bool modelo_protegido() { return g_protegido.load(); }
-void proteger_modelo(bool ligar) { g_protegido = ligar; }
+// A trava vale para os OBJETOS do catálogo, não para o programa: cada objeto aberto do catálogo leva a marca em
+// input_file. Modelos do próprio cliente (outros arquivos, outros projetos) salvam e exportam normalmente; se ele
+// apagar o modelo do catálogo da mesa, a trava sai junto.
+namespace { const std::string MARCA_CATALOGO = "filuna-catalogo:"; }
+bool modelo_protegido()
+{
+    Plater* plater = wxGetApp().plater();
+    if (plater == nullptr)
+        return false;
+    for (const ModelObject* o : plater->model().objects)
+        if (o != nullptr && o->input_file.rfind(MARCA_CATALOGO, 0) == 0)
+            return true;
+    return false;
+}
+void proteger_modelo(bool ligar)
+{
+    // ligar: marca os objetos que estão na mesa (o modelo do catálogo acabou de abrir num projeto novo).
+    // desligar: nada a fazer — projeto novo ou outro projeto não têm objetos marcados.
+    if (!ligar)
+        return;
+    if (Plater* plater = wxGetApp().plater())
+        for (ModelObject* o : plater->model().objects)
+            if (o != nullptr)
+                o->input_file = MARCA_CATALOGO + o->input_file;
+}
 bool saida_barrada()
 {
-    if (!g_protegido)
+    if (!modelo_protegido())
         return false;
     MessageDialog dlg(wxGetApp().mainframe,
                       wxString::FromUTF8("Este projeto tem um modelo 3D do catálogo Filuna. Ele pode ser impresso nas suas impressoras, "
                                          "mas não pode ser salvo nem exportado (projeto, 3MF, STL, G-code ou arquivo fatiado).\n\n"
-                                         "Para trabalhar com outros arquivos, comece um projeto novo."),
+                                         "Para salvar ou exportar os seus modelos, tire o modelo do catálogo da mesa ou comece um projeto novo."),
                       wxString::FromUTF8("Modelo do catálogo Filuna"), wxOK | wxICON_INFORMATION);
     dlg.ShowModal();
     return true;
