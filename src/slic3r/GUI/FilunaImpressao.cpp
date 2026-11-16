@@ -958,10 +958,6 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     if (tid.empty() || tid.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-") != std::string::npos)
         return "trabalho com identificador inválido";
     const int posicao = std::max(1, inteiro(t, "posicao", 1)), qtd = std::max(1, std::min(200, inteiro(t, "quantidade", 1)));
-    // Marcas que imprimem o filamento N pela entrada N (Anycubic): a Farm por enquanto usa a Entrada 1 nelas
-    if (entrada_fixa(m.agente) && posicao != 1)
-        return "nesta impressora a Farm só imprime pela Entrada 1 por enquanto: coloque o " + material + " " +
-               texto_de(t, "cor_nome") + " na Entrada 1";
     {
         const std::string confere = farm_conferir(t, m);
         if (!confere.empty())
@@ -992,11 +988,27 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     if (!na_janela<FarmPerfis>([material, pasta] { return farm_perfis(material, pasta); }, perf) || !perf.ok)
         return perf.erro.empty() ? "não leu os perfis da impressora" : perf.erro;
     const fsf::path saida = pasta / "saida";
-    const int rc = rodar_fatiamento({"--datadir", utf8_de(pasta / "dados"), "--load-settings", perf.maquina + ";" + perf.processo,
-                                     "--load-filaments", perf.filamento, "--clone-objects", std::to_string(qtd), "--arrange", "1",
-                                     "--ensure-on-bed", "--allow-newer-file", "--slice", "0", "--export-statistics", "--outputdir",
-                                     utf8_de(saida), utf8_de(modelo)},
-                                    30 * 60);
+    // Marcas que imprimem o filamento N pela entrada N (Anycubic: a impressora segue a ferramenta do G-code e ignora a
+    // entrada escolhida): a peça é fatiada como filamento N, o da entrada onde está a cor (entrada global + 1).
+    const int global_cor = (!m.cores.empty() && posicao <= int(m.cores.size())) ? m.cores[posicao - 1].value("global", 0) : 0;
+    const int filamento_n = entrada_fixa(m.agente) ? std::max(1, std::min(16, global_cor + 1)) : 1;
+    const bool projeto_3mf = ext == ".3mf"; // o fatiador sem tela não clona nem troca o filamento de um projeto 3MF
+    if (projeto_3mf && filamento_n > 1)
+        return "este projeto 3MF imprime pela Entrada 1 nesta impressora: coloque o " + material + " " + texto_de(t, "cor_nome") +
+               " na Entrada 1 ou mande o modelo em STL";
+    std::string filamentos = perf.filamento;
+    for (int k = 1; k < filamento_n; ++k)
+        filamentos += ";" + perf.filamento;
+    std::vector<std::string> args{"--datadir", utf8_de(pasta / "dados"), "--load-settings", perf.maquina + ";" + perf.processo,
+                                  "--load-filaments", filamentos};
+    if (!projeto_3mf) {
+        args.insert(args.end(), {"--clone-objects", std::to_string(qtd)});
+        if (filamento_n > 1)
+            args.insert(args.end(), {"--load-filament-ids", std::to_string(filamento_n)});
+    }
+    args.insert(args.end(), {"--arrange", "1", "--ensure-on-bed", "--allow-newer-file", "--slice", "0", "--export-statistics",
+                             "--outputdir", utf8_de(saida), utf8_de(modelo)});
+    const int rc = rodar_fatiamento(args, 30 * 60);
     const fsf::path gcode = saida / "plate_1.gcode";
     if (rc != 0 || !fsf::exists(gcode, ec)) {
         std::string motivo = "o fatiamento da mesa falhou (código " + std::to_string(rc) + ")";
@@ -1026,9 +1038,13 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     const fsf::path envio = pasta / nome;
     fsf::copy_file(gcode, envio, fsf::copy_options::overwrite_existing, ec);
     // posição da cor na impressora (1 = primeira entrada informada) -> entrada global do sistema de cores
+    // (na Anycubic a cor está no filamento N: as posições antes dele ficam sem entrada)
     json mapa = json::array();
-    if (!m.cores.empty() && posicao <= int(m.cores.size()))
-        mapa.push_back(m.cores[posicao - 1].value("global", 0));
+    if (!m.cores.empty() && posicao <= int(m.cores.size())) {
+        for (int k = 1; k < filamento_n; ++k)
+            mapa.push_back(-1);
+        mapa.push_back(global_cor);
+    }
     PrintParams p                 = perf.base;
     p.filename                    = utf8_de(envio);
     p.project_name                = envio.stem().string();
