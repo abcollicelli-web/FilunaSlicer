@@ -112,6 +112,67 @@ D["xy_contour_compensation"] = antes_depois(f'<rect x="38" y="42" width="64" hei
 D["print_sequence"] = antes_depois(mesa(20, 126, 100) + camadas(30, 126, 30, 6, 8) + camadas(80, 126, 30, 6, 8, (BLUE,)), mesa(160, 126, 100) + camadas(170, 126, 30, 12, 8) + camadas(220, 126, 30, 2, 8, (BLUE,)), "por camada", "peça por peça")
 D["curr_bed_type"] = "".join(f'<rect x="{24 + i * 84}" y="{60}" width="72" height="44" rx="6" fill="{c}"/>' for i, c in enumerate((INK, "#5C5650", "#C9A15A"))) + txt(60, 124, "lisa (PEI)") + txt(144, 124, "texturizada") + txt(228, 124, "fria / engenharia") + txt(140, 36, "o tipo de mesa muda a temperatura", INK)
 
+
+# ---------------- ilustrações da 2ª leva (todas as abas) ----------------
+def peca_lado(x, y, w, h, cor=MAG):
+    return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6" fill="{cor}"/>'
+
+D["staggered_inner_seams"] = antes_depois(
+    "".join(f'<rect x="30" y="{40 + i * 14}" width="80" height="10" rx="5" fill="{MAG}"/><circle cx="96" cy="{45 + i * 14}" r="3.5" fill="{INK}"/>' for i in range(6)),
+    "".join(f'<rect x="170" y="{40 + i * 14}" width="80" height="10" rx="5" fill="{MAG}"/><circle cx="{186 + (i * 23) % 60}" cy="{45 + i * 14}" r="3.5" fill="{INK}"/>' for i in range(6)),
+    "costuras alinhadas", "costuras alternadas")
+D["seam_gap"] = f'<path d="M140 26a44 44 0 1 1-1 0" fill="none" stroke="{MAG}" stroke-width="10" stroke-linecap="round" stroke-dasharray="256 20"/>' + seta(196, 26, 152, 26, ORA, 2) + txt(226, 30, "folga", ORA, 12, 700) + txt(140, 140, "o fim da volta para antes do começo", INK)
+D["seam_slope_type"] = antes_depois(
+    f'<rect x="30" y="60" width="80" height="12" rx="6" fill="{MAG}"/><rect x="30" y="76" width="80" height="12" rx="6" fill="{MAG}"/><circle cx="70" cy="66" r="7" fill="{INK}"/>',
+    f'<path d="M170 88h80v-12h-60l-20 -16z" fill="{MAG}"/><path d="M170 72l20 0h60" stroke="#F7648F" stroke-width="12" stroke-linecap="round"/>',
+    "costura comum (gota)", "costura em rampa")
+D["wall_sequence"] = f'<rect x="40" y="40" width="200" height="80" rx="12" fill="none" stroke="{MAG}" stroke-width="7"/><rect x="54" y="54" width="172" height="52" rx="8" fill="none" stroke="#F7648F" stroke-width="7"/>' + txt(140, 85, "1º dentro  →  2º fora", INK, 13, 700) + txt(140, 140, "a parede de fora sai por último, mais bonita", GRAY, 10)
+D["is_infill_first"] = f'<rect x="40" y="40" width="200" height="80" rx="12" fill="none" stroke="{MAG}" stroke-width="7"/>' + grade(50, 50, 180, 60, 12) + txt(140, 140, "o miolo é feito antes das paredes", INK)
+D["ironing_pattern"] = antes_depois(f'<rect x="30" y="40" width="80" height="70" rx="6" fill="{MAG}"/>' + "".join(f'<path d="M34 {48 + i * 8}h72" stroke="#F7648F" stroke-width="3"/>' for i in range(8)),
+    f'<rect x="170" y="40" width="80" height="70" rx="6" fill="{MAG}"/>' + "".join(f'<rect x="{174 + i * 7}" y="{44 + i * 7}" width="{72 - i * 14}" height="{62 - i * 14}" rx="4" fill="none" stroke="#F7648F" stroke-width="2.5"/>' for i in range(4)),
+    "linhas", "concêntrico")
+D["top_surface_pattern"] = antes_depois(f'<rect x="30" y="40" width="80" height="70" rx="6" fill="#fff" stroke="{MAG}" stroke-width="3"/>' + "".join(f'<path d="M34 {46 + i * 7}h72" stroke="{MAG}" stroke-width="3.5"/>' for i in range(9)),
+    f'<rect x="170" y="40" width="80" height="70" rx="6" fill="#fff" stroke="{MAG}" stroke-width="3"/>' + "".join(f'<rect x="{174 + i * 7}" y="{44 + i * 7}" width="{72 - i * 14}" height="{62 - i * 14}" rx="4" fill="none" stroke="{MAG}" stroke-width="3"/>' for i in range(4)),
+    "monotônico", "concêntrico")
+D["detect_thin_wall"] = antes_depois(f'<rect x="40" y="40" width="60" height="80" rx="6" fill="{MAG}"/><path d="M70 40v80" stroke="{PAPER}" stroke-width="3"/>' + txt(70, 132, "parede some", GRAY, 10),
+    f'<rect x="180" y="40" width="60" height="80" rx="6" fill="{MAG}"/><rect x="206" y="20" width="8" height="20" fill="{MAG}"/>' + txt(210, 132, "parede fina aparece", GRAY, 10), "sem detectar", "detectando")
+D["infill_anchor"] = f'<rect x="40" y="34" width="200" height="90" rx="10" fill="none" stroke="{MAG}" stroke-width="6"/>' + "".join(f'<path d="M{70 + i * 30} 40v78" stroke="{GRAY}" stroke-width="3"/><path d="M{70 + i * 30} 40h14" stroke="{ORA}" stroke-width="4"/>' for i in range(6)) + txt(140, 142, "âncora: o miolo segura na parede", INK)
+D["support_top_z_distance"] = mesa() + f'<rect x="60" y="34" width="150" height="26" rx="5" fill="{MAG}"/>' + "".join(f'<path d="M{70 + i * 12} 82v44" stroke="{GRAY}" stroke-width="4"/>' for i in range(12)) + f'<path d="M222 60v22M216 60h12M216 82h12" stroke="{ORA}" stroke-width="2.5" stroke-linecap="round"/>' + txt(234, 75, "vão", ORA, 13, 700, "start") + txt(140, 24, "vão entre o suporte e a peça em cima", INK)
+D["support_bottom_z_distance"] = mesa() + f'<rect x="40" y="96" width="200" height="30" rx="5" fill="{MAG}"/><rect x="40" y="30" width="200" height="20" rx="5" fill="{MAG}"/>' + "".join(f'<path d="M{60 + i * 14} 50v40" stroke="{GRAY}" stroke-width="4"/>' for i in range(12)) + txt(140, 145, "vão entre o suporte e a peça embaixo", INK, 10.5)
+D["support_interface_top_layers"] = mesa() + f'<rect x="60" y="36" width="160" height="22" rx="5" fill="{MAG}"/>' + camadas(62, 72, 156, 3, 4.5, (BLUE,)) + "".join(f'<path d="M{70 + i * 16} 72v54" stroke="{GRAY}" stroke-width="3"/>' for i in range(10)) + txt(140, 26, "camadas fechadas onde o suporte encosta", INK)
+D["support_object_xy_distance"] = mesa() + f'<rect x="60" y="40" width="70" height="86" rx="5" fill="{MAG}"/>' + "".join(f'<path d="M{150 + i * 12} 50v76" stroke="{GRAY}" stroke-width="4"/>' for i in range(6)) + f'<rect x="146" y="40" width="80" height="10" fill="{MAG}"/>' + seta(132, 100, 148, 100, ORA, 2) + txt(140, 26, "vão de lado entre suporte e peça", INK)
+D["tree_support_branch_angle"] = mesa() + f'<rect x="40" y="30" width="200" height="14" rx="4" fill="{MAG}"/><path d="M140 126V96M140 96L70 44M140 96L210 44M140 96v-52" stroke="{GRAY}" stroke-width="6" fill="none" stroke-linecap="round"/>' + f'<path d="M140 76A20 20 0 0 1 124 84" fill="none" stroke="{ORA}" stroke-width="3"/>' + txt(170, 90, "ângulo", ORA, 11, 700, "start")
+D["support_style"] = D["support_type"]
+D["skirt_distance"] = f'<rect x="100" y="54" width="80" height="50" rx="10" fill="{INK}"/><rect x="66" y="30" width="148" height="98" rx="18" fill="none" stroke="{MAG}" stroke-width="3"/>' + seta(182, 78, 212, 78, ORA, 2) + seta(212, 78, 182, 78, ORA, 2) + txt(140, 145, "distância da saia até a peça", INK)
+D["draft_shield"] = mesa() + f'<rect x="100" y="60" width="80" height="66" rx="6" fill="{MAG}"/><path d="M72 126V56M208 126V56" stroke="{BLUE}" stroke-width="5" stroke-linecap="round"/>' + "".join(f'<path d="M{18 + i * 4} {70 + i * 14}c12-6 24 6 40 0" fill="none" stroke="{GRAY}" stroke-width="2.5" stroke-linecap="round"/>' for i in range(3)) + txt(140, 40, "cortina protege do vento", INK)
+D["skirt_height"] = D["draft_shield"]
+D["brim_object_gap"] = f'<ellipse cx="140" cy="84" rx="110" ry="42" fill="none" stroke="{MAG}" stroke-width="10"/><ellipse cx="140" cy="84" rx="64" ry="24" fill="{INK}"/><ellipse cx="140" cy="84" rx="78" ry="30" fill="none" stroke="{PAPER}" stroke-width="5"/>' + txt(140, 22, "vão pequeno: a aba sai sem marcar", INK)
+D["close_fan_the_first_x_layers"] = mesa() + camadas(60, 126, 160, 3, 8, (ORA,)) + camadas(60, 102, 160, 6, 8) + txt(140, 30, "primeiras camadas sem ventoinha", INK) + "".join(f'<path d="M232 {50 + i * 14}c8-4 16 4 26 0" fill="none" stroke="{BLUE}" stroke-width="3" stroke-linecap="round"/>' for i in range(3))
+D["slow_down_for_layer_cooling"] = mesa() + f'<path d="M120 126h40l-6-80h-28z" fill="{MAG}"/>' + velocimetro(214, 96, 34, .25, ORA) + txt(140, 30, "camada pequena: mais devagar para esfriar", INK, 10.5)
+D["enable_arc_fitting"] = antes_depois(f'<path d="M30 110L44 70L64 48L90 40L110 44" fill="none" stroke="{MAG}" stroke-width="4" stroke-linejoin="round"/>' + "".join(f'<circle cx="{x}" cy="{y}" r="3" fill="{INK}"/>' for x, y in ((30, 110), (44, 70), (64, 48), (90, 40), (110, 44))),
+    f'<path d="M170 110C176 60 210 38 250 44" fill="none" stroke="{MAG}" stroke-width="4"/>', "muitos segmentos", "um arco")
+D["make_overhang_printable"] = antes_depois(mesa(20, 126, 100) + f'<path d="M50 126V70h60v14H66v42z" fill="{MAG}"/>', mesa(160, 126, 100) + f'<path d="M190 126V70h60v14h-14L206 126z" fill="{MAG}"/>', "beiral reto", "beiral com apoio")
+D["thick_bridges"] = antes_depois(mesa(20, 126, 100) + f'<rect x="24" y="66" width="20" height="60" fill="{MAG}"/><rect x="96" y="66" width="20" height="60" fill="{MAG}"/><path d="M44 70h52" stroke="#F7648F" stroke-width="3"/>',
+    mesa(160, 126, 100) + f'<rect x="164" y="66" width="20" height="60" fill="{MAG}"/><rect x="236" y="66" width="20" height="60" fill="{MAG}"/><path d="M184 70h52" stroke="#F7648F" stroke-width="8"/>', "ponte fina", "ponte grossa")
+D["bridge_flow"] = D["thick_bridges"]
+D["z_offset"] = bico(140, 74) + f'<rect x="60" y="100" width="160" height="10" rx="4" fill="{INK}"/>' + seta(186, 72, 186, 98, ORA, 2) + seta(186, 98, 186, 72, ORA, 2) + txt(196, 88, "ajuste Z", ORA, 12, 700, "start") + txt(140, 136, "sobe ou desce o bico em tudo", INK)
+D["nozzle_diameter"] = antes_depois(bico(70, 74) + f'<path d="M70 86v24" stroke="{MAG}" stroke-width="4" stroke-linecap="round"/>', bico(210, 74) + f'<path d="M210 86v24" stroke="{MAG}" stroke-width="10" stroke-linecap="round"/>', "0,2 mm · detalhe", "0,6 mm · rápido")
+D["printable_height"] = mesa() + f'<rect x="110" y="40" width="60" height="86" rx="6" fill="{MAG}"/><path d="M40 34h200" stroke="{ORA}" stroke-width="3" stroke-dasharray="6 4"/>' + txt(140, 26, "altura máxima da impressora", ORA, 11, 700)
+D["extruder_clearance_radius"] = f'<circle cx="140" cy="80" r="52" fill="{SOFT}" stroke="{MAG}" stroke-width="2" stroke-dasharray="5 4"/>' + bico(140, 92) + seta(140, 80, 190, 80, ORA, 2) + txt(140, 145, "espaço livre em volta do bico", INK)
+D["pressure_advance"] = antes_depois(f'<path d="M30 110V50h80" fill="none" stroke="{MAG}" stroke-width="8"/><circle cx="30" cy="50" r="8" fill="{MAG}"/>', f'<path d="M170 110V50h80" fill="none" stroke="{MAG}" stroke-width="8" stroke-linejoin="miter"/>', "canto com sobra", "canto certo")
+D["enable_pressure_advance"] = D["pressure_advance"]
+D["filament_diameter"] = f'<circle cx="140" cy="76" r="44" fill="none" stroke="{MAG}" stroke-width="18"/>' + seta(96, 76, 184, 76, INK, 2) + seta(184, 76, 96, 76, INK, 2) + txt(140, 140, "quase sempre 1,75 mm", INK, 12, 700)
+D["filament_shrink"] = antes_depois(f'<rect x="30" y="40" width="80" height="80" rx="6" fill="none" stroke="{INK}" stroke-width="2" stroke-dasharray="4 3"/><rect x="38" y="48" width="64" height="64" rx="6" fill="{MAG}"/>',
+    f'<rect x="170" y="40" width="80" height="80" rx="6" fill="{MAG}"/>', "encolheu ao esfriar", "compensado")
+D["enable_overhang_speed"] = mesa() + f'<path d="M60 126V60h150v14H80v52z" fill="{MAG}"/>' + velocimetro(222, 110, 26, .25, ORA) + txt(140, 40, "beiral mais devagar", INK)
+D["small_perimeter_speed"] = antes_depois(f'<circle cx="70" cy="74" r="30" fill="none" stroke="{MAG}" stroke-width="6" stroke-dasharray="8 3"/>', f'<circle cx="210" cy="74" r="30" fill="none" stroke="{MAG}" stroke-width="6"/>', "rápido: furo torto", "devagar: furo redondo")
+D["support_interface_spacing"] = D["support_interface_top_layers"]
+D["tree_support_branch_diameter"] = D["tree_support_branch_angle"]
+D["fuzzy_skin_thickness"] = D["fuzzy_skin"]
+D["hole_to_polyhole"] = antes_depois(f'<rect x="30" y="34" width="80" height="80" rx="8" fill="{MAG}"/><circle cx="70" cy="74" r="18" fill="{PAPER}"/>',
+    f'<rect x="170" y="34" width="80" height="80" rx="8" fill="{MAG}"/><polygon points="210,54 227,64 227,84 210,94 193,84 193,64" fill="{PAPER}"/>', "furo redondo", "furo poligonal")
+D["gcode_flavor"] = f'<rect x="60" y="30" width="160" height="96" rx="10" fill="#fff" stroke="{LINE}" stroke-width="2"/>' + "".join(txt(76, 54 + i * 18, t, INK if i % 2 == 0 else MAG, 12, 600, "start") for i, t in enumerate(("G28 ; zerar", "M104 S220", "G1 X10 Y10", "M106 S255"))) + txt(140, 145, "a linguagem que a impressora entende", INK, 10.5)
+
 os.makedirs(OUT, exist_ok=True)
 for k, corpo in D.items():
     open(os.path.join(OUT, f"filuna_aj_{k}.svg"), "w").write(svg(corpo))

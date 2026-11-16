@@ -378,5 +378,810 @@
 "titulo": "Textura em relevo",
 "oque": "Aplica uma textura de imagem na superfície.",
 "efeito": "Cria relevo real, impresso."
+},
+"initial_layer_line_width": {
+"titulo": "Largura da linha da 1ª camada",
+"oque": "Largura do fio na camada que encosta na mesa.",
+"efeito": "Um pouco mais larga gruda melhor e cobre pequenas falhas de nivelamento."
+},
+"outer_wall_line_width": {
+"titulo": "Largura da parede externa",
+"oque": "Largura do fio da parede que fica à mostra.",
+"efeito": "Mais fina mostra mais detalhe; mais larga deixa a parede mais forte e rápida."
+},
+"inner_wall_line_width": {
+"titulo": "Largura das paredes internas",
+"oque": "Largura do fio das paredes escondidas.",
+"efeito": "Mais larga deixa a peça mais forte e imprime mais rápido."
+},
+"top_surface_line_width": {
+"titulo": "Largura da linha do topo",
+"oque": "Largura do fio da última camada de cima.",
+"efeito": "Mais fina deixa o topo mais liso e fechado."
+},
+"sparse_infill_line_width": {
+"titulo": "Largura da linha do preenchimento",
+"oque": "Largura do fio usado dentro da peça.",
+"efeito": "Mais larga enche mais rápido e deixa o miolo mais forte."
+},
+"internal_solid_infill_line_width": {
+"titulo": "Largura do preenchimento sólido interno",
+"oque": "Largura do fio das camadas sólidas de dentro.",
+"efeito": "Mais larga imprime mais rápido; mais fina fecha melhor."
+},
+"support_line_width": {
+"titulo": "Largura da linha do suporte",
+"oque": "Largura do fio do suporte.",
+"efeito": "Mais fina tira mais fácil; mais larga segura com mais firmeza."
+},
+"bridge_line_width": {
+"titulo": "Largura da linha da ponte",
+"oque": "Largura do fio esticado no ar.",
+"efeito": "Mais fina esfria rápido e cai menos."
+},
+"staggered_inner_seams": {
+"titulo": "Costuras internas alternadas",
+"oque": "Espalha o ponto onde cada parede interna começa e termina.",
+"efeito": "Evita que todas as costuras fiquem uma em cima da outra e enfraqueçam a peça."
+},
+"seam_gap": {
+"titulo": "Folga da costura",
+"oque": "Quanto o fim da volta para antes de encontrar o começo.",
+"efeito": "Uma folga pequena evita o \"calombo\" na costura."
+},
+"seam_slope_type": {
+"titulo": "Costura em rampa (scarf)",
+"oque": "Começa e termina a volta da parede subindo aos poucos, em rampa.",
+"efeito": "A costura quase some na peça; demora um pouco mais."
+},
+"wipe_on_loops": {
+"titulo": "Limpar ao fechar a volta",
+"oque": "Ao terminar a parede, o bico anda um pouco por dentro antes de subir.",
+"efeito": "Esconde o ponto da costura e diminui a gota."
+},
+"wipe_speed": {
+"titulo": "Velocidade da limpeza",
+"oque": "Velocidade do movimento de limpar o bico no fim da linha.",
+"efeito": "Rápida demais não limpa; lenta demais derrete a parede."
+},
+"resolution": {
+"titulo": "Resolução do modelo",
+"oque": "Simplifica detalhes menores que este valor ao fatiar.",
+"efeito": "Valor maior fatia mais rápido e gera arquivo menor, com menos detalhe."
+},
+"enable_arc_fitting": {
+"titulo": "Curvas em arco (G2/G3)",
+"oque": "Troca muitos segmentos retos por arcos no G-code.",
+"efeito": "Arquivo menor e curvas mais suaves, se a impressora aceitar arcos."
+},
+"precise_outer_wall": {
+"titulo": "Parede externa precisa",
+"oque": "Ajusta a distância entre paredes para a medida externa sair exata.",
+"efeito": "Ajuda peças de encaixe a saírem na medida."
+},
+"precise_z_height": {
+"titulo": "Altura exata em Z",
+"oque": "Ajusta as últimas camadas para a peça sair com a altura certa.",
+"efeito": "Bom para peças com medida de altura importante."
+},
+"ironing_pattern": {
+"titulo": "Padrão do alisamento",
+"oque": "Desenho das passadas de alisar o topo.",
+"efeito": "Concêntrico combina com peças redondas; linhas com peças retas."
+},
+"ironing_flow": {
+"titulo": "Fluxo do alisamento",
+"oque": "Quanto plástico sai ao passar o bico de novo no topo.",
+"efeito": "Pouco demais deixa riscos; demais deixa bolhas."
+},
+"ironing_spacing": {
+"titulo": "Espaço entre passadas de alisar",
+"oque": "Distância entre as linhas do alisamento.",
+"efeito": "Menor deixa mais liso e demora mais."
+},
+"wall_sequence": {
+"titulo": "Ordem das paredes",
+"oque": "Se a parede de dentro ou a de fora é feita primeiro.",
+"efeito": "Dentro → fora deixa a parede externa mais bonita; fora → dentro deixa a medida mais exata."
+},
+"is_infill_first": {
+"titulo": "Preenchimento antes das paredes",
+"oque": "Imprime o miolo antes das paredes em cada camada.",
+"efeito": "Paredes mais firmes, mas o preenchimento pode marcar por fora."
+},
+"print_flow_ratio": {
+"titulo": "Fluxo geral do processo",
+"oque": "Multiplica todo o plástico que sai neste processo.",
+"efeito": "Use para corrigir peça com falha (subir) ou com sobra (descer)."
+},
+"only_one_wall_top": {
+"titulo": "Uma parede só no topo",
+"oque": "Na camada de cima usa só uma parede.",
+"efeito": "Topo mais limpo e mais espaço para o preenchimento do topo."
+},
+"only_one_wall_first_layer": {
+"titulo": "Uma parede só na 1ª camada",
+"oque": "Na camada da mesa usa só uma parede.",
+"efeito": "Primeira camada mais rápida e mais lisa."
+},
+"reduce_crossing_wall": {
+"titulo": "Evitar cruzar paredes",
+"oque": "O bico desvia para não passar por cima das paredes ao viajar.",
+"efeito": "Menos fios e marcas por fora; viagens um pouco mais longas."
+},
+"bridge_flow": {
+"titulo": "Fluxo da ponte",
+"oque": "Quanto plástico sai nas partes no ar.",
+"efeito": "Um pouco menos deixa a ponte esticada e sem cair."
+},
+"thick_bridges": {
+"titulo": "Pontes grossas",
+"oque": "Usa a largura do bico inteira na ponte.",
+"efeito": "Ponte mais forte e confiável; um pouco mais pesada."
+},
+"enable_extra_bridge_layer": {
+"titulo": "Camada extra de ponte",
+"oque": "Faz uma segunda camada de ponte por cima da primeira.",
+"efeito": "Fecha melhor o topo de vãos grandes."
+},
+"detect_overhang_wall": {
+"titulo": "Detectar parede em balanço",
+"oque": "Identifica paredes que ficam para fora da camada de baixo.",
+"efeito": "Permite deixar essas partes mais lentas e ventiladas."
+},
+"make_overhang_printable": {
+"titulo": "Deixar beirais imprimíveis",
+"oque": "Altera a forma por baixo dos beirais para dar apoio sem suporte.",
+"efeito": "Imprime beirais sem suporte; muda um pouco o formato."
+},
+"extra_perimeters_on_overhangs": {
+"titulo": "Paredes extras nos beirais",
+"oque": "Adiciona paredes onde a peça fica no ar.",
+"efeito": "Beirais saem melhores, gastando um pouco mais."
+},
+"overhang_reverse": {
+"titulo": "Inverter o sentido nos beirais",
+"oque": "Alterna o sentido das paredes nas camadas com beiral.",
+"efeito": "Diminui o enrolamento das bordas no ar."
+},
+"hole_to_polyhole": {
+"titulo": "Furo poligonal",
+"oque": "Troca furos redondos por polígonos.",
+"efeito": "Furos saem na medida, bons para parafusos e eixos."
+},
+"zaa_enabled": {
+"titulo": "Antisserrilhado em Z",
+"oque": "Ajusta a altura do bico dentro da camada nas superfícies inclinadas.",
+"efeito": "Topos inclinados ficam mais lisos, com menos degraus."
+},
+"wall_distribution_count": {
+"titulo": "Paredes que absorvem a variação",
+"oque": "Quantas paredes podem mudar de largura nas partes finas (Arachne).",
+"efeito": "Mais paredes espalham melhor a diferença."
+},
+"min_bead_width": {
+"titulo": "Largura mínima da linha",
+"oque": "A linha mais fina que o fatiador ainda usa.",
+"efeito": "Menor imprime detalhes mais finos; muito pequena pode falhar."
+},
+"min_feature_size": {
+"titulo": "Menor detalhe impresso",
+"oque": "Detalhe menor que isto é ignorado.",
+"efeito": "Menor mantém mais detalhes pequenos."
+},
+"top_solid_infill_flow_ratio": {
+"titulo": "Fluxo do topo",
+"oque": "Plástico na última camada de cima.",
+"efeito": "Ajuste fino para o topo ficar fechado e liso."
+},
+"bottom_solid_infill_flow_ratio": {
+"titulo": "Fluxo do fundo",
+"oque": "Plástico nas camadas sólidas de baixo.",
+"efeito": "Ajuste fino para o fundo sair firme."
+},
+"first_layer_flow_ratio": {
+"titulo": "Fluxo da 1ª camada",
+"oque": "Plástico na camada da mesa.",
+"efeito": "Um pouco mais ajuda a grudar; demais faz \"pé de elefante\"."
+},
+"detect_thin_wall": {
+"titulo": "Detectar parede fina",
+"oque": "Imprime paredes finas demais para duas linhas com uma linha só.",
+"efeito": "Detalhes finos aparecem em vez de sumir."
+},
+"alternate_extra_wall": {
+"titulo": "Parede extra alternada",
+"oque": "Coloca uma parede a mais em camadas alternadas.",
+"efeito": "Paredes mais fortes sem gastar como uma parede inteira."
+},
+"top_surface_pattern": {
+"titulo": "Padrão do topo",
+"oque": "Desenho das linhas da última camada de cima.",
+"efeito": "Monotônico deixa o topo mais uniforme; concêntrico combina com peças redondas."
+},
+"bottom_surface_pattern": {
+"titulo": "Padrão do fundo",
+"oque": "Desenho das linhas da camada de baixo.",
+"efeito": "Muda a aparência da base da peça."
+},
+"top_surface_density": {
+"titulo": "Densidade do topo",
+"oque": "O quanto a última camada de cima é fechada.",
+"efeito": "100% fecha tudo; menos deixa um efeito decorativo."
+},
+"internal_solid_infill_pattern": {
+"titulo": "Padrão do sólido interno",
+"oque": "Desenho das camadas sólidas de dentro.",
+"efeito": "Retilíneo é o mais rápido e firme."
+},
+"gyroid_optimized": {
+"titulo": "Giroide otimizado",
+"oque": "Versão mais leve do preenchimento giroide.",
+"efeito": "Fatia mais rápido com quase a mesma resistência."
+},
+"infill_direction": {
+"titulo": "Direção do preenchimento",
+"oque": "Ângulo das linhas do preenchimento.",
+"efeito": "Gire para alinhar a força com o esforço que a peça vai receber."
+},
+"infill_anchor": {
+"titulo": "Âncora do preenchimento",
+"oque": "Pedaço de linha que liga o preenchimento à parede.",
+"efeito": "Liga melhor o miolo às paredes."
+},
+"infill_anchor_max": {
+"titulo": "Âncora máxima",
+"oque": "Tamanho máximo do pedaço que liga o preenchimento à parede.",
+"efeito": "Maior liga mais; demais deixa marcas."
+},
+"filter_out_gap_fill": {
+"titulo": "Ignorar frestas pequenas",
+"oque": "Não preenche frestas menores que este valor.",
+"efeito": "Menos movimentos curtos e mais rapidez."
+},
+"infill_wall_overlap": {
+"titulo": "Sobreposição preenchimento/parede",
+"oque": "Quanto o preenchimento entra na parede.",
+"efeito": "Mais sobreposição liga melhor; demais marca por fora."
+},
+"ensure_vertical_shell_thickness": {
+"titulo": "Garantir espessura das laterais",
+"oque": "Adiciona sólido onde as paredes ficariam finas em superfícies inclinadas.",
+"efeito": "Evita buracos em laterais inclinadas."
+},
+"minimum_sparse_infill_area": {
+"titulo": "Área mínima de preenchimento",
+"oque": "Áreas menores que isto viram sólidas.",
+"efeito": "Partes pequenas ficam firmes."
+},
+"infill_combination": {
+"titulo": "Combinar camadas de preenchimento",
+"oque": "Faz o preenchimento a cada duas camadas, mais grosso.",
+"efeito": "Imprime mais rápido sem mudar as paredes."
+},
+"top_bottom_infill_wall_overlap": {
+"titulo": "Sobreposição topo/fundo e parede",
+"oque": "Quanto o topo e o fundo entram na parede.",
+"efeito": "Mais sobreposição evita frestas na borda."
+},
+"extra_solid_infills": {
+"titulo": "Camadas sólidas extras",
+"oque": "Coloca camadas sólidas a mais em alturas escolhidas.",
+"efeito": "Reforça a peça onde ela vai sofrer mais."
+},
+"initial_layer_infill_speed": {
+"titulo": "Preenchimento da 1ª camada",
+"oque": "Velocidade do miolo da camada da mesa.",
+"efeito": "Mais devagar gruda melhor."
+},
+"initial_layer_travel_speed": {
+"titulo": "Deslocamento na 1ª camada",
+"oque": "Velocidade de viagem sem imprimir na primeira camada.",
+"efeito": "Mais devagar evita descolar o que acabou de sair."
+},
+"slow_down_layers": {
+"titulo": "Camadas lentas no começo",
+"oque": "Quantas camadas aceleram aos poucos depois da primeira.",
+"efeito": "Mais camadas dão tempo para a base firmar."
+},
+"small_perimeter_speed": {
+"titulo": "Contornos pequenos",
+"oque": "Velocidade de furos e contornos pequenos.",
+"efeito": "Mais devagar deixa furos redondos e detalhes limpos."
+},
+"internal_solid_infill_speed": {
+"titulo": "Sólido interno",
+"oque": "Velocidade das camadas sólidas de dentro.",
+"efeito": "Pode ser rápido: não aparece."
+},
+"top_surface_speed": {
+"titulo": "Topo",
+"oque": "Velocidade da última camada de cima.",
+"efeito": "Mais devagar deixa o topo mais liso."
+},
+"gap_infill_speed": {
+"titulo": "Frestas",
+"oque": "Velocidade de preencher frestas entre paredes.",
+"efeito": "Mais devagar fecha melhor as frestas."
+},
+"ironing_speed": {
+"titulo": "Alisamento",
+"oque": "Velocidade da passada que alisa o topo.",
+"efeito": "Mais devagar alisa melhor."
+},
+"support_speed": {
+"titulo": "Suporte",
+"oque": "Velocidade do suporte.",
+"efeito": "Pode ser rápido: o suporte sai depois."
+},
+"support_interface_speed": {
+"titulo": "Interface do suporte",
+"oque": "Velocidade da camada que encosta na peça.",
+"efeito": "Mais devagar deixa a parte de baixo da peça mais bonita."
+},
+"enable_overhang_speed": {
+"titulo": "Diminuir velocidade nos beirais",
+"oque": "Imprime mais devagar as partes que ficam no ar.",
+"efeito": "Beirais e pontes saem melhores."
+},
+"outer_wall_acceleration": {
+"titulo": "Aceleração da parede externa",
+"oque": "Quanto rápido chega na velocidade na parede à mostra.",
+"efeito": "Menor deixa a parede mais bonita, sem \"fantasmas\"."
+},
+"travel_acceleration": {
+"titulo": "Aceleração do deslocamento",
+"oque": "Quanto rápido acelera ao viajar sem imprimir.",
+"efeito": "Maior economiza tempo; demais faz a impressora tremer."
+},
+"initial_layer_acceleration": {
+"titulo": "Aceleração da 1ª camada",
+"oque": "Aceleração na camada da mesa.",
+"efeito": "Menor ajuda a peça a grudar."
+},
+"default_jerk": {
+"titulo": "Solavanco (jerk)",
+"oque": "Mudança de velocidade instantânea nas curvas.",
+"efeito": "Menor deixa as curvas mais suaves; maior imprime mais rápido."
+},
+"max_volumetric_extrusion_rate_slope": {
+"titulo": "Suavizar mudança de fluxo",
+"oque": "Limita quão rápido o fluxo de plástico muda.",
+"efeito": "Evita falhas ao trocar de velocidade."
+},
+"support_style": {
+"titulo": "Estilo do suporte",
+"oque": "Formato do suporte: grade, árvore fina, árvore orgânica…",
+"efeito": "Orgânico gasta menos e sai fácil; grade é mais firme."
+},
+"support_top_z_distance": {
+"titulo": "Distância do suporte ao topo",
+"oque": "Vão entre o suporte e a peça em cima dele.",
+"efeito": "Maior tira mais fácil; menor deixa a parte de baixo mais lisa."
+},
+"support_bottom_z_distance": {
+"titulo": "Distância do suporte embaixo",
+"oque": "Vão entre a peça e o suporte que nasce sobre ela.",
+"efeito": "Maior solta mais fácil."
+},
+"support_interface_top_layers": {
+"titulo": "Camadas de interface de cima",
+"oque": "Camadas mais fechadas onde o suporte encosta na peça.",
+"efeito": "Mais camadas deixam a parte de baixo da peça mais lisa."
+},
+"support_interface_bottom_layers": {
+"titulo": "Camadas de interface de baixo",
+"oque": "Camadas fechadas onde o suporte nasce sobre a peça.",
+"efeito": "Protege a superfície que está embaixo."
+},
+"support_interface_pattern": {
+"titulo": "Padrão da interface",
+"oque": "Desenho das linhas que encostam na peça.",
+"efeito": "Concêntrico ou retilíneo mudam o acabamento e a facilidade de tirar."
+},
+"support_interface_spacing": {
+"titulo": "Espaço na interface",
+"oque": "Distância entre as linhas da interface.",
+"efeito": "Menor deixa a peça mais lisa; maior solta mais fácil."
+},
+"support_base_pattern": {
+"titulo": "Padrão do corpo do suporte",
+"oque": "Desenho do miolo do suporte.",
+"efeito": "Retilíneo é leve; colmeia é mais firme."
+},
+"support_base_pattern_spacing": {
+"titulo": "Espaço no corpo do suporte",
+"oque": "Distância entre as linhas do miolo do suporte.",
+"efeito": "Maior gasta menos e tira mais fácil."
+},
+"support_object_xy_distance": {
+"titulo": "Distância lateral do suporte",
+"oque": "Vão de lado entre o suporte e a peça.",
+"efeito": "Maior não gruda na lateral da peça."
+},
+"support_remove_small_overhang": {
+"titulo": "Ignorar beirais pequenos",
+"oque": "Não faz suporte para beirais muito pequenos.",
+"efeito": "Menos suporte e menos marcas."
+},
+"bridge_no_support": {
+"titulo": "Ponte sem suporte",
+"oque": "Não faz suporte embaixo de pontes.",
+"efeito": "Economiza suporte quando a ponte é curta."
+},
+"max_bridge_length": {
+"titulo": "Ponte máxima sem suporte",
+"oque": "Até que comprimento a ponte fica sem suporte.",
+"efeito": "Acima disso, ganha suporte no meio."
+},
+"tree_support_branch_angle": {
+"titulo": "Ângulo dos galhos",
+"oque": "Inclinação máxima dos galhos do suporte em árvore.",
+"efeito": "Maior alcança mais longe; menor fica mais firme."
+},
+"tree_support_branch_diameter": {
+"titulo": "Grossura dos galhos",
+"oque": "Diâmetro dos galhos do suporte em árvore.",
+"efeito": "Mais grosso fica mais firme."
+},
+"tree_support_tip_diameter": {
+"titulo": "Ponta dos galhos",
+"oque": "Diâmetro da ponta que toca a peça.",
+"efeito": "Mais fina deixa marca menor."
+},
+"tree_support_wall_count": {
+"titulo": "Paredes dos galhos",
+"oque": "Quantas paredes cada galho tem.",
+"efeito": "Mais paredes deixam o galho mais firme."
+},
+"raft_contact_distance": {
+"titulo": "Vão entre jangada e peça",
+"oque": "Espaço entre a jangada e a primeira camada da peça.",
+"efeito": "Maior solta mais fácil; menor deixa a base mais lisa."
+},
+"raft_expansion": {
+"titulo": "Aumento da jangada",
+"oque": "Quanto a jangada passa da borda da peça.",
+"efeito": "Maior segura melhor na mesa."
+},
+"support_filament": {
+"titulo": "Filamento do suporte",
+"oque": "Qual filamento imprime o suporte.",
+"efeito": "Usar outro material (solúvel ou de interface) facilita tirar."
+},
+"support_interface_filament": {
+"titulo": "Filamento da interface",
+"oque": "Qual filamento faz a camada que encosta na peça.",
+"efeito": "Um material de interface deixa o suporte sair limpo."
+},
+"support_ironing": {
+"titulo": "Alisar a interface do suporte",
+"oque": "Passa o bico de novo no topo do suporte.",
+"efeito": "A parte de baixo da peça fica mais lisa."
+},
+"support_critical_regions_only": {
+"titulo": "Suporte só nas partes críticas",
+"oque": "Faz suporte só onde a peça cairia sem ele.",
+"efeito": "Menos suporte e menos limpeza."
+},
+"prime_volume": {
+"titulo": "Volume de limpeza na torre",
+"oque": "Plástico gasto na torre ao trocar de cor.",
+"efeito": "Mais volume limpa melhor a cor anterior; gasta mais."
+},
+"prime_tower_brim_width": {
+"titulo": "Aba da torre",
+"oque": "Aba em volta da torre de limpeza.",
+"efeito": "Segura a torre na mesa para não cair."
+},
+"ooze_prevention": {
+"titulo": "Evitar escorrer",
+"oque": "Baixa a temperatura do bico parado em impressoras de vários bicos.",
+"efeito": "Menos gotas e fios entre as cores."
+},
+"flush_into_objects": {
+"titulo": "Purga dentro da peça",
+"oque": "A limpeza da troca de cor vai para dentro de outra peça.",
+"efeito": "Economiza filamento usando a peça como lixo."
+},
+"flush_into_support": {
+"titulo": "Purga no suporte",
+"oque": "A limpeza da troca de cor vai para o suporte.",
+"efeito": "Economiza filamento; o suporte sai colorido."
+},
+"interlocking_beam": {
+"titulo": "Encaixe entre cores",
+"oque": "Cria encaixes entre partes de materiais diferentes.",
+"efeito": "As partes ficam presas, sem descolar."
+},
+"purge_in_prime_tower": {
+"titulo": "Purga na torre",
+"oque": "Faz a limpeza da troca de cor na torre.",
+"efeito": "Protege a peça de restos da cor anterior."
+},
+"wipe_tower_type": {
+"titulo": "Tipo de torre",
+"oque": "Modelo de torre de limpeza usado nas trocas de cor.",
+"efeito": "Cada tipo muda o tamanho e o gasto da torre."
+},
+"skirt_type": {
+"titulo": "Tipo de saia",
+"oque": "Saia em volta de cada peça ou de todas juntas.",
+"efeito": "Uma saia para tudo economiza tempo."
+},
+"skirt_distance": {
+"titulo": "Distância da saia",
+"oque": "Espaço entre a saia e a peça.",
+"efeito": "Perto demais pode grudar na peça."
+},
+"skirt_height": {
+"titulo": "Altura da saia",
+"oque": "Quantas camadas a saia tem.",
+"efeito": "Mais camadas protegem do vento (cortina)."
+},
+"draft_shield": {
+"titulo": "Cortina contra vento",
+"oque": "Transforma a saia numa parede em volta da peça, da altura dela.",
+"efeito": "Protege ABS e ASA de correntes de ar e rachaduras."
+},
+"brim_object_gap": {
+"titulo": "Vão entre aba e peça",
+"oque": "Pequeno espaço entre a aba e a parede da peça.",
+"efeito": "Facilita tirar a aba sem marcar."
+},
+"extra_brim_width": {
+"titulo": "Aba extra",
+"oque": "Largura a mais da aba.",
+"efeito": "Mais aba segura mais."
+},
+"slicing_mode": {
+"titulo": "Modo de fatiar",
+"oque": "Como o fatiador trata modelos com furos ou abertos.",
+"efeito": "Regular é o normal; os outros ajudam modelos com defeito."
+},
+"print_order": {
+"titulo": "Ordem da impressão",
+"oque": "Ordem em que as peças da mesa são feitas.",
+"efeito": "Muda o tempo de viagem entre as peças."
+},
+"fuzzy_skin_mode": {
+"titulo": "Onde vai a textura áspera",
+"oque": "Escolhe se a textura vale só por fora ou também nos furos.",
+"efeito": "Use só por fora para manter os encaixes lisos."
+},
+"fuzzy_skin_thickness": {
+"titulo": "Profundidade da textura",
+"oque": "Quanto a textura áspera entra e sai da parede.",
+"efeito": "Maior deixa a textura mais forte."
+},
+"fuzzy_skin_point_distance": {
+"titulo": "Tamanho do grão",
+"oque": "Distância entre os pontos da textura.",
+"efeito": "Menor deixa o grão mais fino."
+},
+"timelapse_type": {
+"titulo": "Timelapse",
+"oque": "Como a câmera grava o vídeo da impressão.",
+"efeito": "Suave tira a peça da frente a cada foto."
+},
+"exclude_object": {
+"titulo": "Permitir cancelar uma peça",
+"oque": "Marca cada peça no G-code para poder cancelar só uma.",
+"efeito": "Se uma falhar, as outras continuam."
+},
+"gcode_label_objects": {
+"titulo": "Nome das peças no G-code",
+"oque": "Escreve o nome de cada peça no arquivo.",
+"efeito": "Necessário para cancelar peças na impressora."
+},
+"reduce_infill_retraction": {
+"titulo": "Menos retração no preenchimento",
+"oque": "Não retrai ao viajar dentro do preenchimento.",
+"efeito": "Imprime mais rápido; o fio fica escondido."
+},
+"filament_type": {
+"titulo": "Tipo de material",
+"oque": "PLA, PETG, ABS, TPU…",
+"efeito": "Define temperaturas e regras do material."
+},
+"filament_diameter": {
+"titulo": "Diâmetro do filamento",
+"oque": "Grossura do fio: quase sempre 1,75 mm.",
+"efeito": "Errado faz a peça sair com falha ou sobra."
+},
+"filament_density": {
+"titulo": "Densidade",
+"oque": "Peso por volume do material.",
+"efeito": "Usado para calcular quantos gramas a peça gasta."
+},
+"filament_cost": {
+"titulo": "Preço do filamento",
+"oque": "Quanto custa o quilo da bobina.",
+"efeito": "Usado no custo da peça e no preço de venda."
+},
+"filament_shrink": {
+"titulo": "Encolhimento",
+"oque": "Quanto o material encolhe ao esfriar.",
+"efeito": "O fatiador aumenta a peça para compensar."
+},
+"filament_soluble": {
+"titulo": "Material solúvel",
+"oque": "Material que dissolve em água ou solvente.",
+"efeito": "Bom para suporte que some sozinho."
+},
+"filament_is_support": {
+"titulo": "Material de suporte",
+"oque": "Material próprio para suporte.",
+"efeito": "Usado na interface para o suporte sair limpo."
+},
+"enable_pressure_advance": {
+"titulo": "Avanço de pressão",
+"oque": "Compensa a pressão dentro do bico nas mudanças de velocidade.",
+"efeito": "Cantos mais retos e sem sobra."
+},
+"pressure_advance": {
+"titulo": "Valor do avanço de pressão",
+"oque": "O quanto a impressora compensa a pressão.",
+"efeito": "Calibre por material: cantos certos e sem falha."
+},
+"temperature_vitrification": {
+"titulo": "Temperatura de amolecimento",
+"oque": "Temperatura em que o material começa a amolecer.",
+"efeito": "Ajuda a decidir a ventilação e a mesa."
+},
+"idle_temperature": {
+"titulo": "Temperatura em espera",
+"oque": "Temperatura do bico parado em impressoras com vários bicos.",
+"efeito": "Menos escorrimento enquanto espera."
+},
+"filament_colour": {
+"titulo": "Cor do filamento",
+"oque": "A cor que aparece no programa.",
+"efeito": "Ajuda a conferir as cores antes de imprimir."
+},
+"filament_vendor": {
+"titulo": "Marca do filamento",
+"oque": "Fabricante da bobina.",
+"efeito": "Ajuda a escolher o perfil certo."
+},
+"close_fan_the_first_x_layers": {
+"titulo": "Sem ventoinha no começo",
+"oque": "Quantas camadas iniciais saem sem ventoinha.",
+"efeito": "A base fica quente e gruda melhor."
+},
+"initial_layer_fan_speed": {
+"titulo": "Ventoinha na 1ª camada",
+"oque": "Força da ventoinha na camada da mesa.",
+"efeito": "Geralmente desligada para grudar."
+},
+"full_fan_speed_layer": {
+"titulo": "Ventoinha cheia a partir de",
+"oque": "Camada em que a ventoinha chega na força máxima.",
+"efeito": "Sobe aos poucos para não descolar a base."
+},
+"slow_down_for_layer_cooling": {
+"titulo": "Desacelerar camadas pequenas",
+"oque": "Imprime mais devagar camadas que terminam rápido demais.",
+"efeito": "Dá tempo de esfriar; pontas não derretem."
+},
+"dont_slow_down_outer_wall": {
+"titulo": "Não desacelerar a parede externa",
+"oque": "A parede externa mantém a velocidade ao desacelerar.",
+"efeito": "Aparência uniforme por fora."
+},
+"slow_down_min_speed": {
+"titulo": "Velocidade mínima",
+"oque": "O mais devagar que a impressora vai ao esperar esfriar.",
+"efeito": "Evita ficar parada derretendo a peça."
+},
+"enable_overhang_bridge_fan": {
+"titulo": "Ventoinha extra em beirais",
+"oque": "Aumenta a ventoinha em beirais e pontes.",
+"efeito": "Partes no ar firmam mais rápido."
+},
+"overhang_fan_threshold": {
+"titulo": "A partir de que beiral",
+"oque": "Quanto o beiral precisa avançar para ganhar ventoinha extra.",
+"efeito": "Menor ventila mais partes."
+},
+"internal_bridge_fan_speed": {
+"titulo": "Ventoinha na ponte interna",
+"oque": "Força da ventoinha nas pontes de dentro da peça.",
+"efeito": "Pontes internas mais firmes."
+},
+"additional_cooling_fan_speed": {
+"titulo": "Ventoinha auxiliar",
+"oque": "Força da ventoinha lateral da câmara.",
+"efeito": "Ajuda no PLA; desligue para ABS e ASA."
+},
+"ironing_fan_speed": {
+"titulo": "Ventoinha no alisamento",
+"oque": "Força da ventoinha ao alisar o topo.",
+"efeito": "Menos ventoinha deixa o topo mais liso."
+},
+"reduce_fan_stop_start_freq": {
+"titulo": "Ventoinha sem liga e desliga",
+"oque": "Mantém a ventoinha ligada entre camadas.",
+"efeito": "Menos desgaste e esfriamento mais uniforme."
+},
+"printable_height": {
+"titulo": "Altura máxima",
+"oque": "A peça mais alta que a impressora faz.",
+"efeito": "O fatiador avisa quando passa disso."
+},
+"z_offset": {
+"titulo": "Ajuste de altura do bico (Z)",
+"oque": "Sobe ou desce o bico em todas as camadas.",
+"efeito": "Corrige primeira camada muito apertada ou solta."
+},
+"gcode_flavor": {
+"titulo": "Tipo de firmware",
+"oque": "Linguagem de G-code que a impressora entende.",
+"efeito": "Errado faz a impressora ignorar comandos."
+},
+"use_relative_e_distances": {
+"titulo": "Extrusão relativa",
+"oque": "Conta o plástico de cada movimento separado.",
+"efeito": "Padrão da maioria das impressoras atuais."
+},
+"use_firmware_retraction": {
+"titulo": "Retração pela impressora",
+"oque": "Deixa a impressora fazer a retração (G10/G11).",
+"efeito": "Ajuste a retração direto na impressora."
+},
+"auxiliary_fan": {
+"titulo": "Tem ventoinha auxiliar",
+"oque": "Informa se a impressora tem ventoinha lateral.",
+"efeito": "Liga os comandos dessa ventoinha."
+},
+"extruder_clearance_radius": {
+"titulo": "Espaço em volta do bico",
+"oque": "Raio livre ao redor do bico.",
+"efeito": "Usado para imprimir uma peça de cada vez sem bater."
+},
+"extruder_clearance_height_to_rod": {
+"titulo": "Altura até a barra",
+"oque": "Altura entre o bico e a barra do eixo X.",
+"efeito": "Limita peças altas impressas uma por vez."
+},
+"time_cost": {
+"titulo": "Custo por hora da impressora",
+"oque": "Quanto custa uma hora de máquina ligada.",
+"efeito": "Entra no custo da peça."
+},
+"nozzle_diameter": {
+"titulo": "Diâmetro do bico",
+"oque": "Tamanho do furo do bico: 0,4 mm é o comum.",
+"efeito": "Bico maior imprime rápido; menor faz detalhe."
+},
+"nozzle_type": {
+"titulo": "Material do bico",
+"oque": "Latão, aço endurecido…",
+"efeito": "Materiais com fibra pedem bico endurecido."
+},
+"min_layer_height": {
+"titulo": "Camada mínima",
+"oque": "A camada mais fina que este bico faz.",
+"efeito": "Limite para a camada variável."
+},
+"max_layer_height": {
+"titulo": "Camada máxima",
+"oque": "A camada mais grossa que este bico faz.",
+"efeito": "Normalmente até 75% do bico."
+},
+"retract_length_toolchange": {
+"titulo": "Retração na troca de cor",
+"oque": "Quanto o filamento recua ao trocar de bico ou cor.",
+"efeito": "Evita gotas na troca."
+},
+"extruder_offset": {
+"titulo": "Posição do bico",
+"oque": "Deslocamento deste bico em relação ao primeiro.",
+"efeito": "Alinha as cores em impressoras de vários bicos."
+},
+"emit_machine_limits_to_gcode": {
+"titulo": "Enviar limites da máquina",
+"oque": "Coloca no G-code as velocidades e acelerações máximas.",
+"efeito": "A impressora respeita os limites do perfil."
 }
 }
