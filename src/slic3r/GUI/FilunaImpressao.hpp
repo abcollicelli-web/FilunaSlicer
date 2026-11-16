@@ -37,6 +37,9 @@ bool agente_entrada_fixa();
 // Filuna Farm: o Slicer imprime as mesas da fila do site pela impressora conectada (fila, fatiamento sem tela,
 // envio e andamento). Desliga com filuna_farm_auto=0 no app_config.
 void farm_iniciar();
+// Reparo pelo suporte remoto: esquece as mesas que o programa acha que estão em andamento (mesa presa depois de a
+// impressora sumir). As mesas continuam no site; a próxima volta da Farm recomeça do estado real das impressoras.
+void farm_destravar();
 
 // Modelos 3D do catálogo Filuna: abertos no fatiador só para imprimir. Enquanto um estiver no projeto, salvar e
 // exportar (projeto, 3MF, STL/OBJ, G-code, mesa fatiada, caminhos) ficam bloqueados; imprimir pela impressora vale.

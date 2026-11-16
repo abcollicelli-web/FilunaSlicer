@@ -354,6 +354,20 @@ std::vector<std::string> acompanhadas()
     return v;
 }
 
+void esquecer(const std::string& dev_id)
+{
+    {
+        std::lock_guard<std::mutex> l(mtx());
+        auto                        it = mapa().find(dev_id);
+        if (it != mapa().end()) {
+            desligar(it->second);
+            mapa().erase(it);
+        }
+    }
+    if (AppConfig* cfg = wxGetApp().app_config)
+        cfg->erase(SECAO, dev_id);
+}
+
 std::vector<Ligada> ligadas()
 {
     std::lock_guard<std::mutex> l(mtx());

@@ -363,7 +363,7 @@ var Filuna = (function () {
 	// o resultado. Nada de comando livre, nada fora do Filuna. Sem autorização em vigor o servidor não entrega nada.
 	var SUP_ACOES = ["coletar", "diagnostico.enviar", "atualizacao.verificar", "atualizacao.aplicar", "dispositivos.fabricantes",
 		"dispositivos.modelos", "dispositivos.complemento", "dispositivos.complemento.baixar", "dispositivos.preparar",
-		"dispositivos.descobertas", "dispositivos.estado", "recarregar"];
+		"dispositivos.descobertas", "dispositivos.estado", "recarregar", "dispositivos.esquecer", "dispositivos.reconectar", "farm.destravar"];
 	function supSeguro(acao, dados) { return nativo(acao, dados).catch(function (e) { return { erro: (e && e.message) || "falhou" }; }); }
 	function supExecutar(c) {
 		if (SUP_ACOES.indexOf(c.acao) < 0) return Promise.resolve({ erro: "ação fora da lista permitida" });
@@ -376,7 +376,7 @@ var Filuna = (function () {
 				return { programa: r[0], marcas: r[1], impressoras: r[2], rede_local: r[3], preferencias: r[4],
 					tela: location.pathname.split("/").pop(), sistema: navigator.userAgent, hora: new Date().toISOString() };
 			});
-		return supSeguro(c.acao, { fabricante: d.fabricante || "", modelo: d.modelo || "" });
+		return supSeguro(c.acao, { fabricante: d.fabricante || "", modelo: d.modelo || "", dev_id: d.dev_id || "" });
 	}
 	function supCiclo() {
 		if (!token) { setTimeout(supCiclo, 120000); return; }

@@ -42,6 +42,9 @@ json registrar(const std::string& nome, const std::string& modulo_id, const std:
 json estado();
 // Troca a impressora ativa (Preparar + agente + perfil) para a cadastrada.
 json selecionar(const std::string& dev_id);
+// Reparo pelo suporte remoto: tira a impressora da lista do programa, do acompanhamento ao vivo e do vínculo com a
+// conta (cadastro errado, IP trocado). Não mexe na impressora aberta no programa.
+json esquecer(const std::string& dev_id);
 json comando(const std::string& dev_id, const std::string& cmd);
 json controle(const std::string& dev_id, const nlohmann::json& dados);
 // Liga o vigia das impressoras (uma vez; independe da aba aberta): avisa impressão concluída e envia o estado.

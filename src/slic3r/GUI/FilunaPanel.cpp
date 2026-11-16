@@ -605,6 +605,10 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         CallAfter([tab, section] { open_tab(tab, section); });
         return json::object();
     }
+    if (action == "farm.destravar") { // reparo pelo suporte remoto
+        FilunaImpressao::farm_destravar();
+        return json{{"ok", true}};
+    }
     if (action.rfind("farm.", 0) == 0 || action.rfind("modelo3d.", 0) == 0) {   // Farm local: abrir, analisar, medir e salvar o projeto (respostas longas por evento)
         FilunaPanel* eu = this;
         return FilunaImpressao::farm_acao(action, d, [eu](const std::string& nome, const json& dados) {
@@ -877,6 +881,10 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return FD::comando(d.value("dev_id", std::string()), d.value("cmd", std::string()));
     if (action == "dispositivos.selecionar")
         return FD::selecionar(d.value("dev_id", std::string()));
+    if (action == "dispositivos.esquecer") // reparo pelo suporte remoto
+        return FD::esquecer(d.value("dev_id", std::string()));
+    if (action == "dispositivos.reconectar") // reparo pelo suporte remoto: refaz a conexão com o código guardado
+        return FD::conectar(d.value("dev_id", std::string()), std::string());
     if (action == "dispositivos.troca_vista")
         return FD::troca_vista(d.value("dev_id", std::string()));
     if (action == "dispositivos.mesa_veredito") {

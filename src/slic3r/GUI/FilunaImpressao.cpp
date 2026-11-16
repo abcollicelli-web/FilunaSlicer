@@ -975,7 +975,8 @@ struct FarmAtivo // a mesa da Farm que esta impressora está fazendo (sobrevive 
 };
 
 std::atomic<bool> g_farm_iniciada{false};
-std::atomic<bool> g_farm_agora{false};   // projeto salvo agora: a volta não espera os 20 s
+std::atomic<bool> g_farm_agora{false};
+std::atomic<bool> g_farm_destravar{false}; // suporte remoto: esquecer as mesas em andamento   // projeto salvo agora: a volta não espera os 20 s
 std::mutex        g_farm_indice_trava;
 
 fsf::path farm_indice() { return fsf::path(data_dir()) / "filuna" / "farm" / "locais.json"; }
@@ -1282,6 +1283,11 @@ bool farm_acompanhar(FarmAtivo& ativo, const FarmMaquina& m, const std::string& 
 // voltar.
 void farm_volta(FarmAtivos& ativos)
 {
+    if (g_farm_destravar.exchange(false)) {
+        BOOST_LOG_TRIVIAL(warning) << "Filuna Farm: " << ativos.size() << " mesa(s) em andamento esquecidas pelo suporte";
+        ativos.clear();
+        farm_gravar_ativos(ativos);
+    }
     const std::string token = wxGetApp().app_config->get("filuna_token");
     if (token.empty() || wxGetApp().app_config->get("filuna_farm_auto") == "0")
         return;
@@ -1578,6 +1584,12 @@ bool saida_barrada()
                       wxString::FromUTF8("Modelo do catálogo Filuna"), wxOK | wxICON_INFORMATION);
     dlg.ShowModal();
     return true;
+}
+
+void farm_destravar()
+{
+    g_farm_destravar = true;
+    g_farm_agora     = true;
 }
 
 void farm_iniciar()

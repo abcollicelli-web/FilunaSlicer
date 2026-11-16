@@ -963,6 +963,23 @@ json estado()
     return {{"impressoras", lista}, {"agente", dev->get_current_printer_agent_id()}};
 }
 
+json esquecer(const std::string& dev_id)
+{
+    DeviceManager* dev = wxGetApp().getDeviceManager();
+    AppConfig*     cfg = wxGetApp().app_config;
+    if (dev == nullptr || cfg == nullptr || dev_id.empty())
+        return {{"erro", "Informe a impressora (dev_id)."}};
+    if (MachineObject* s = dev->get_selected_machine(); s != nullptr && s->get_dev_id() == dev_id)
+        return {{"erro", "É a impressora aberta no programa: abra outra impressora antes de esquecer esta."}};
+    FilunaAoVivo::esquecer(dev_id);
+    dev->erase_local_machine(dev_id);
+    cfg->erase_local_machine(dev_id);
+    cfg->erase("app", "filuna_dispositivo_" + dev_id);
+    cfg->save();
+    BOOST_LOG_TRIVIAL(info) << "Filuna Dispositivos: impressora esquecida pelo suporte: " << dev_id;
+    return {{"ok", true}, {"esquecida", dev_id}};
+}
+
 json selecionar(const std::string& dev_id)
 {
     DeviceManager* dev = wxGetApp().getDeviceManager();

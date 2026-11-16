@@ -28,6 +28,8 @@ void ativa(const std::string& dev_id);
 // Estado ao vivo de uma impressora acompanhada (campos do cartão: ligada, estado, progresso, restante_s, bico, mesa,
 // cores, ao_vivo); objeto vazio se não está sendo acompanhada.
 nlohmann::json estado_de(const std::string& dev_id);
+// Para de acompanhar e apaga o que foi guardado desta impressora (reparo pelo suporte remoto). Linha da tela.
+void esquecer(const std::string& dev_id);
 // Séries das impressoras acompanhadas.
 std::vector<std::string> acompanhadas();
 
