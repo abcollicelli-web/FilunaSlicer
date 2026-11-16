@@ -100,7 +100,7 @@ const json* primeira(const json& r, const std::string& tipo)
 
 } // namespace
 
-TEST_CASE("Filuna análise: plano do G-code da Bambu (CHANGE_LAYER)", "[filuna][analise]")
+TEST_CASE("Filuna analise: plano do G-code da Bambu (CHANGE_LAYER)", "[filuna][analise]")
 {
     const std::string g = "; HEADER_BLOCK_START\n"
                           "; model printing time: 10m 0s; total estimated time: 12m 0s\n"
@@ -142,7 +142,7 @@ TEST_CASE("Filuna análise: plano do G-code da Bambu (CHANGE_LAYER)", "[filuna][
     CHECK(q.camadas[2].tipos == p.camadas[2].tipos);
 }
 
-TEST_CASE("Filuna análise: plano do G-code comum (LAYER_CHANGE) e extrusão absoluta", "[filuna][analise]")
+TEST_CASE("Filuna analise: plano do G-code comum (LAYER_CHANGE) e extrusao absoluta", "[filuna][analise]")
 {
     const std::string g = "M82\nM104 S200\nG92 E0\n"
                           ";LAYER_CHANGE\n;Z:0.3\n;HEIGHT:0.3\n;TYPE:External perimeter\nG1 Z0.3 F600\nG1 X20 Y0 E1.0 F1800\nG1 X20 Y20 E2.0\n"
@@ -159,7 +159,7 @@ TEST_CASE("Filuna análise: plano do G-code comum (LAYER_CHANGE) e extrusão abs
     CHECK(plano_do_texto("G1 X1 Y1\n").valido == false); // sem camadas: sem plano
 }
 
-TEST_CASE("Filuna análise: impressão que bate com o plano não tem ocorrências", "[filuna][analise]")
+TEST_CASE("Filuna analise: impressao que bate com o plano nao tem ocorrencias", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(30, 60.);
     Analise              an(p, "Peça", "P2S");
@@ -173,7 +173,7 @@ TEST_CASE("Filuna análise: impressão que bate com o plano não tem ocorrência
     CHECK_FALSE(r["serie"].empty());
 }
 
-TEST_CASE("Filuna análise: camadas lentas viram um trecho com a altura", "[filuna][analise]")
+TEST_CASE("Filuna analise: camadas lentas viram um trecho com a altura", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(30, 60.);
     Analise              an(p, "Peça", "P2S");
@@ -190,7 +190,7 @@ TEST_CASE("Filuna análise: camadas lentas viram um trecho com a altura", "[filu
     CHECK(r["nota"].get<int>() < 100);
 }
 
-TEST_CASE("Filuna análise: bico frio por mais de 30 s", "[filuna][analise]")
+TEST_CASE("Filuna analise: bico frio por mais de 30 s", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(30, 60.);
     Analise              an(p, "Peça", "P2S");
@@ -212,7 +212,7 @@ TEST_CASE("Filuna análise: bico frio por mais de 30 s", "[filuna][analise]")
     CHECK(conta(r2, "bico") == 0);
 }
 
-TEST_CASE("Filuna análise: pausa anotada e fora da conta do ritmo", "[filuna][analise]")
+TEST_CASE("Filuna analise: pausa anotada e fora da conta do ritmo", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(20, 60.);
     Analise              an(p, "Peça", "A1");
@@ -242,7 +242,7 @@ TEST_CASE("Filuna análise: pausa anotada e fora da conta do ritmo", "[filuna][a
     CHECK(perto(r["pausado_s"].get<double>(), 900., 10.));
 }
 
-TEST_CASE("Filuna análise: erro da impressora e parada sem avançar", "[filuna][analise]")
+TEST_CASE("Filuna analise: erro da impressora e parada sem avancar", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(10, 60.);
     Analise              an(p, "Peça", "P2S");
@@ -274,7 +274,7 @@ TEST_CASE("Filuna análise: erro da impressora e parada sem avançar", "[filuna]
     CHECK(r["nota"].get<int>() <= 25);
 }
 
-TEST_CASE("Filuna análise: relatório da Bambu vira amostra", "[filuna][analise]")
+TEST_CASE("Filuna analise: relatorio da Bambu vira amostra", "[filuna][analise]")
 {
     const json p = {{"gcode_state", "RUNNING"}, {"layer_num", 12}, {"total_layer_num", 80}, {"mc_percent", 15},
                     {"nozzle_temper", 219.6}, {"nozzle_target_temper", 220}, {"bed_temper", 59.8}, {"bed_target_temper", 60},
@@ -293,7 +293,7 @@ TEST_CASE("Filuna análise: relatório da Bambu vira amostra", "[filuna][analise
     CHECK(amostra_do_relatorio_bambu(json{{"gcode_state", "IDLE"}}, 0.).estado == "livre");
 }
 
-TEST_CASE("Filuna análise: monitor guarda o plano e entrega o relatório no fim", "[filuna][analise]")
+TEST_CASE("Filuna analise: monitor guarda o plano e entrega o relatorio no fim", "[filuna][analise]")
 {
     const boost::filesystem::path dir = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("filuna-analise-%%%%%%");
     Monitor& m = Monitor::get();
@@ -336,7 +336,7 @@ TEST_CASE("Filuna análise: monitor guarda o plano e entrega o relatório no fim
     boost::filesystem::remove_all(dir, ec);
 }
 
-TEST_CASE("Filuna análise: previsto acompanha a velocidade de cada trecho", "[filuna][analise]")
+TEST_CASE("Filuna analise: previsto acompanha a velocidade de cada trecho", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(20, 60.);
     Analise              an(p, "Peça", "P2S");
@@ -351,7 +351,7 @@ TEST_CASE("Filuna análise: previsto acompanha a velocidade de cada trecho", "[f
     CHECK(conta(r, "lento") == 0);
 }
 
-TEST_CASE("Filuna análise: mapa de checkpoints cresce com a impressão e marca os pontos críticos", "[filuna][analise]")
+TEST_CASE("Filuna analise: mapa de checkpoints cresce com a impressao e marca os pontos criticos", "[filuna][analise]")
 {
     // 1 h de impressão: rotina a cada 5 min
     PlanoImpressao uma = plano_simples(60, 60.);
@@ -394,7 +394,7 @@ TEST_CASE("Filuna análise: mapa de checkpoints cresce com a impressão e marca 
     CHECK(mapa_checkpoints(PlanoImpressao()).empty());
 }
 
-TEST_CASE("Filuna análise: troca de cor no G-code", "[filuna][analise]")
+TEST_CASE("Filuna analise: troca de cor no G-code", "[filuna][analise]")
 {
     const std::string g = "T0\n; CHANGE_LAYER\n; Z_HEIGHT: 0.2\nG1 X10 E1 F1200\n"
                           "; CHANGE_LAYER\n; Z_HEIGHT: 0.4\nG1 X0 E1\n"
@@ -409,7 +409,7 @@ TEST_CASE("Filuna análise: troca de cor no G-code", "[filuna][analise]")
     CHECK(PlanoImpressao::from_json(p.to_json()).camadas[2].troca_cor);
 }
 
-TEST_CASE("Filuna análise: impressão conforme o plano passa por todos os checkpoints sem alerta", "[filuna][analise]")
+TEST_CASE("Filuna analise: impressao conforme o plano passa por todos os checkpoints sem alerta", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(60, 60.);
     Analise              an(p, "Peça", "P2S");
@@ -421,7 +421,7 @@ TEST_CASE("Filuna análise: impressão conforme o plano passa por todos os check
         CHECK(k["ok"] == true);
 }
 
-TEST_CASE("Filuna análise: atraso grande no checkpoint avisa com a camada esperada e a real, sem repetir depois", "[filuna][analise]")
+TEST_CASE("Filuna analise: atraso grande no checkpoint avisa com a camada esperada e a real, sem repetir depois", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(60, 60.);
     Analise              an(p, "Suporte", "P2S-KYLLE");
@@ -450,7 +450,7 @@ TEST_CASE("Filuna análise: atraso grande no checkpoint avisa com a camada esper
     CHECK(a["conferencia"]["ok"] == false);
 }
 
-TEST_CASE("Filuna análise: bico frio dispara alerta na hora e o checkpoint confere a temperatura", "[filuna][analise]")
+TEST_CASE("Filuna analise: bico frio dispara alerta na hora e o checkpoint confere a temperatura", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(60, 60.);
     Analise              an(p, "Peça", "A1");
@@ -474,7 +474,7 @@ TEST_CASE("Filuna análise: bico frio dispara alerta na hora e o checkpoint conf
     CHECK(alertas.size() <= 2); // 10 min entre alertas que não são erro
 }
 
-TEST_CASE("Filuna análise: erro da impressora é alerta urgente e há limite de alertas", "[filuna][analise]")
+TEST_CASE("Filuna analise: erro da impressora e alerta urgente e ha limite de alertas", "[filuna][analise]")
 {
     const PlanoImpressao p = plano_simples(200, 60.);
     Analise              an(p, "Peça", "P2S");
