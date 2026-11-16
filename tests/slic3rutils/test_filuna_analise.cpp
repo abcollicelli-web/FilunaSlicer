@@ -494,3 +494,76 @@ TEST_CASE("Filuna analise: erro da impressora e alerta urgente e ha limite de al
     CHECK(alertas.size() == 12);
     CHECK(alertas[0]["tipo"] == "erro");
 }
+
+TEST_CASE("Filuna analise: temperatura pedida longe do arquivo vira alerta", "[filuna][analise]")
+{
+    const PlanoImpressao p = plano_simples(60, 60.);
+    Analise              an(p, "Cubo", "P1P");
+    std::vector<json>    alertas;
+    double               t = 1000.;
+    for (int i = 0; i < 20; ++i) {
+        for (double s = 0.; s < 60.; s += 5.) {
+            Amostra a = normal(t + s, i + 1, 60, i * 100 / 60);
+            if (i >= 8)
+                a.bico = a.bico_alvo = 195.; // alguém mandou M104 S195: o bico acompanha o alvo errado
+            an.amostra(a);
+            for (json& x : an.alertas())
+                alertas.push_back(x);
+        }
+        t += 60.;
+    }
+    REQUIRE(alertas.size() == 1);
+    CHECK(alertas[0]["tipo"] == "bico");
+    CHECK(alertas[0]["conferencia"]["bico_esperado"] == 220);
+    CHECK(alertas[0]["mensagem"].get<std::string>().find("195 °C") != std::string::npos);
+}
+
+TEST_CASE("Filuna analise: uma camada a menos que o plano e a mesa desligada no fim", "[filuna][analise]")
+{
+    const PlanoImpressao p = plano_simples(30, 30.);
+    Analise              an(p, "Cubo", "A1");
+    double               t = 1000.;
+    for (int i = 0; i < 29; ++i) {
+        for (double s = 0.; s < 30.; s += 5.) {
+            Amostra a = normal(t + s, i + 1, 29, i * 100 / 29); // a impressora conta 29 camadas: duas foram juntadas
+            if (i == 28 && s >= 15.)
+                a.mesa_alvo = 0.; // o fim do arquivo desliga a mesa
+            an.amostra(a);
+        }
+        t += 30.;
+    }
+    const json r = an.relatorio("concluida");
+    CHECK(conta(r, "camadas") == 1);
+    CHECK(conta(r, "mesa") == 0);
+}
+
+TEST_CASE("Filuna analise: alvo do bico muito longe vira alerta em 30 s, na camada onde comecou", "[filuna][analise]")
+{
+    const PlanoImpressao p = plano_simples(60, 30.);
+    Analise              an(p, "Cubo", "A1");
+    double               t = 1000., alerta_em = -1.;
+    std::vector<json>    alertas;
+    for (int i = 0; i < 20; ++i) {
+        for (double s = 0.; s < 30.; s += 5.) {
+            Amostra a = normal(t + s, i + 1, 60, i * 100 / 60);
+            if (i >= 8)
+                a.bico = a.bico_alvo = 195.;
+            an.amostra(a);
+            for (json& x : an.alertas()) {
+                alertas.push_back(x);
+                alerta_em = t + s;
+            }
+        }
+        t += 30.;
+    }
+    REQUIRE(alertas.size() == 1);
+    CHECK(alerta_em - (1000. + 8 * 30.) <= 40.);
+    const json r = an.relatorio("concluida");
+    bool achou = false;
+    for (const auto& o : r["ocorrencias"])
+        if (o["tipo"] == "bico") {
+            CHECK(o["camada_de"] == 9);
+            achou = true;
+        }
+    CHECK(achou);
+}

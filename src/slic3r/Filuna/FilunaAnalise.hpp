@@ -176,6 +176,7 @@ private:
     // temperaturas e ventoinha
     Janela                  m_bico, m_mesa, m_vent;
     double                  m_alvo_mudou_t{-1.}, m_alvo_visto{NAN};
+    int                     m_alvo_camada{-1};
     std::vector<int>        m_alvos_anotados;
     int                     m_velocidade_ant{-1}, m_velocidade{-1};
     std::string             m_erro_ant;

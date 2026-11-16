@@ -172,3 +172,14 @@ TEST_CASE("Filuna ajuste: para quando a impressao termina e nao manda mais nada"
     CHECK(aj.resumo()["estado"] == "interrompido");
     CHECK(aj.passo(leitura(1020., 43)).empty());
 }
+
+TEST_CASE("Filuna ajuste: temperatura pedida baixada volta a do arquivo", "[filuna][ajuste]")
+{
+    const PlanoImpressao p = plano_pla(100, 30.);
+    AjusteAssistido aj(p, "bico", json{{"bico_esperado", 220}, {"bico_real", 195}, {"bico_alvo", 195}});
+    const auto cmds = rodar(aj, 30., leitura(1000., 20, 195., 195.));
+    REQUIRE(conta(cmds, "bico") == 1);
+    CHECK(cmds[0].valor == 220);
+    CHECK(conta(cmds, "ventoinha") == 0);
+    CHECK(aj.desfazer()[0].valor == 195);
+}

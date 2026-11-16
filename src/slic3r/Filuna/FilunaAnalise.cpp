@@ -893,7 +893,7 @@ void Analise::amostra(const Amostra& a)
         conferir(m_checkpoints[m_proximo++], a, idx);
 
     // número de camadas diferente do plano: a impressora pode estar com outro arquivo
-    if (!m_camadas_anotado && m_plano.valido && a.total_camadas > 0 && std::abs(a.total_camadas - int(m_plano.camadas.size())) > 1) {
+    if (!m_camadas_anotado && m_plano.valido && a.total_camadas > 0 && a.total_camadas != int(m_plano.camadas.size())) {
         m_camadas_anotado = true;
         Ocorrencia o;
         o.tipo      = "camadas";
@@ -902,7 +902,8 @@ void Analise::amostra(const Amostra& a)
         o.titulo        = "Número de camadas diferente do plano";
         o.detalhe       = "A impressora informa " + std::to_string(a.total_camadas) + " camadas e o arquivo fatiado tem " +
                     std::to_string(m_plano.camadas.size()) + ".";
-        o.sugestao = "A impressora pode estar com outro arquivo: as comparações de ritmo deste relatório ficam menos precisas.";
+        o.sugestao = "A impressora está com um arquivo diferente do fatiado (camadas juntadas, mais grossas ou a menos): confira a "
+                     "altura das camadas e a peça; as comparações de ritmo deste relatório ficam menos precisas.";
         anotar(o);
     }
 
@@ -1025,19 +1026,34 @@ void Analise::amostra(const Amostra& a)
             if (std::isnan(m_alvo_visto) || int(m_alvo_visto) != alvo) {
                 m_alvo_visto   = alvo;
                 m_alvo_mudou_t = a.t;
-            } else if (a.t - m_alvo_mudou_t >= 60. &&
+                m_alvo_camada  = cam;
+            } else if (a.t - m_alvo_mudou_t >= (std::abs(alvo - pedido) >= 15 ? 30. : 60.) &&
                        std::find(m_alvos_anotados.begin(), m_alvos_anotados.end(), alvo) == m_alvos_anotados.end()) {
                 m_alvos_anotados.push_back(alvo);
                 Ocorrencia o;
                 o.tipo      = "temp_alterada";
                 o.gravidade = "info";
-                o.camada_de = o.camada_ate = cam;
+                o.camada_de = m_alvo_camada > 0 ? m_alvo_camada : cam;
+                o.camada_ate = cam;
                 o.t_de = o.t_ate = ds;
                 o.titulo        = "Temperatura do bico mudada na impressora";
                 o.detalhe       = "O arquivo pedia " + std::to_string(pedido) + " °C e a impressora passou a usar " + std::to_string(alvo) + " °C.";
                 o.sugestao      = alvo < pedido ? "Temperatura menor que a do perfil pode enfraquecer a união das camadas a partir daqui."
                                                 : "Temperatura maior que a do perfil pode deixar fios e brilho diferente a partir daqui.";
+                if (std::abs(alvo - pedido) >= 15) { // longe demais do arquivo: alerta (o ajuste devolve ao do arquivo)
+                    o.gravidade = "problema";
+                    o.tipo      = "bico";
+                }
                 anotar(o);
+                if (std::abs(alvo - pedido) >= 15) {
+                    const Ocorrencia& k   = m_ocorrencias.back();
+                    const std::string alt = std::isnan(k.z_de) ? std::string() : " (" + num_br(k.z_de, 1) + " mm de altura)";
+                    alertar(k,
+                            m_nome + (m_impressora.empty() ? "" : " na " + m_impressora) + ": o arquivo pede o bico a " + std::to_string(pedido) +
+                                " °C e a impressora passou a usar " + std::to_string(alvo) + " °C. " + k.sugestao +
+                                " Verifique se há partes imperfeitas na impressão" + alt + " e se o acabamento está como você deseja.",
+                            json{{"bico_esperado", pedido}, {"bico_real", std::lround(a.bico)}, {"bico_alvo", alvo}}, false);
+                }
             }
         } else
             m_alvo_visto = NAN;
@@ -1051,7 +1067,8 @@ void Analise::amostra(const Amostra& a)
             m_mesa.camada1 = idx;
         } else
             fechar_janela(m_mesa, "mesa", a.t, 60.);
-        if (a.mesa_alvo <= 0. && m_plano.temp_mesa > 0 && !m_mesa_desligada_anotada && cam > 1) {
+        if (a.mesa_alvo <= 0. && m_plano.temp_mesa > 0 && !m_mesa_desligada_anotada && cam > 1 &&
+            cam < int(m_plano.camadas.size()) - 1 && a.progresso < 97) { // o fim do arquivo desliga a mesa
             m_mesa_desligada_anotada = true;
             Ocorrencia o;
             o.tipo      = "mesa";

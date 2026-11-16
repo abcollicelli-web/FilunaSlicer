@@ -1746,16 +1746,19 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
                 } else if (r.value("oferecer_ajuste", false)) {
                     pergunta->SetLabel(wxString::FromUTF8("Quer que a Filuna ajuste e acompanhe a impressão por 3 minutos? Ela pode mudar a "
                                                           "temperatura do bico e da mesa, a velocidade e a ventoinha, dentro da faixa "
-                                                          "segura do material, e no fim manda o resumo com a opção de desfazer."));
+                                                          "segura do material, e no fim manda o resumo com a opção de desfazer. Só aceite "
+                                                          "se você estiver junto da impressora, verificando a impressão."));
                     pergunta->Wrap(540);
-                    auto* sim = new wxButton(dd, wxID_ANY, wxString::FromUTF8("Sim, ajustar"));
+                    auto* sim = new wxButton(dd, wxID_ANY, wxString::FromUTF8("Sim, estou junto da impressora"));
                     auto* nao = new wxButton(dd, wxID_ANY, wxString::FromUTF8("Não"));
                     linha->Add(sim, 0, wxRIGHT, 8);
                     linha->Add(nao);
                     auto decidir = [ref, pergunta, sim, nao, aid](const std::string& acao) {
                         sim->Disable();
                         nao->Disable();
-                        analise_responder("/analises/alertas/" + aid + "/ajuste", json{{"acao", acao}}, [ref, pergunta, sim, nao, acao](const json& r2) {
+                        // "Sim, estou junto da impressora": o clique é a confirmação de presença que o site exige
+                        analise_responder("/analises/alertas/" + aid + "/ajuste", json{{"acao", acao}, {"presente", acao == "sim"}},
+                                          [ref, pergunta, sim, nao, acao](const json& r2) {
                             if (!ref)
                                 return;
                             sim->Hide();

@@ -162,6 +162,9 @@ void AjusteAssistido::rodada(int n, const Amostra& a, std::vector<ComandoImpress
                 mudar(cmds, "velocidade", m_vel - 1); // menos fluxo pedido ao bico
         } else if (n == 2 && ainda_lento && m_vel > 1)
             mudar(cmds, "velocidade", m_vel - 1);
+    } else if (m_causa == "bico_frio" && m_base_bico > 0 && m_bico < m_base_bico - 5) {
+        if (n == 0)
+            mudar(cmds, "bico", m_base_bico); // a temperatura pedida foi baixada: volta à do arquivo
     } else if (m_causa == "bico_frio") {
         if (n == 0) {
             if (m_vent > 60)
@@ -263,7 +266,7 @@ json AjusteAssistido::resumo() const
 {
     static const std::map<std::string, std::string> causas{
         {"fluxo", "a impressão estava atrasada (o bico não estava dando conta do plástico)"},
-        {"bico_frio", "o bico estava abaixo da temperatura"},
+        {"bico_frio", "o bico estava abaixo da temperatura do arquivo"},
         {"bico_quente", "o bico estava acima da temperatura"},
         {"mesa", "a mesa estava fria"},
         {"ventoinha", "a ventoinha da peça estava parada"},
