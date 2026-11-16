@@ -1,0 +1,107 @@
+name: Filuna Microsoft Store (pacote MSIX e envio)
+# Monta o pacote MSIX da Microsoft Store a partir de um build já compilado (compilação rápida ou completa) e, quando
+# a conta da Store está ligada (segredos MSSTORE_*), envia para o Partner Center e manda para a certificação.
+# Mesmo pacote que foi aprovado na mão: identidade AndersonBarroso.FilunaSlicer, manifesto e ícones de FILUNA/loja-msix.
+# A Microsoft não aceita um envio novo enquanto outro está em certificação: dispare depois que o anterior sair.
+#
+#   gh workflow run filuna-loja-msix.yml -f run_id=<run do build> -f versao=2.5.80.0 [-f enviar=false]
+#
+# Segredos (Settings › Secrets and variables › Actions): MSSTORE_TENANT_ID, MSSTORE_SELLER_ID, MSSTORE_CLIENT_ID,
+# MSSTORE_CLIENT_SECRET — do aplicativo do Microsoft Entra ligado ao Partner Center (função Gerente).
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "run da compilação com o programa (artefato *-windows-exe-*)"
+        required: true
+      versao:
+        description: "versão do pacote na Store, sempre maior que a anterior (ex.: 2.5.80.0)"
+        required: true
+      enviar:
+        description: "enviar para a Store e pedir certificação"
+        type: boolean
+        default: true
+      ramo:
+        description: "branch com o manifesto e os ícones (FILUNA/loja-msix)"
+        default: "filuna/v1-teste-fisico"
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: filuna-loja-msix
+  cancel-in-progress: false
+env:
+  APP_ID: 9MV6C5DJ3201
+jobs:
+  msix:
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - name: Conferir a versão
+        shell: pwsh
+        run: |
+          if ('${{ inputs.versao }}' -notmatch '^\d+\.\d+\.\d+\.0$') { throw "versão inválida: use quatro números terminando em .0 (ex.: 2.5.80.0)" }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ramo }}
+          sparse-checkout: FILUNA/loja-msix
+          persist-credentials: false
+      - name: Baixar o programa compilado
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          pattern: "*-windows-exe-*"
+          path: artefato
+      - name: Montar o pacote
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem artefato -Recurse -Filter FilunaSlicer.exe | Select-Object -First 1
+          if (-not $exe) { throw "FilunaSlicer.exe não está no artefato do run ${{ inputs.run_id }}" }
+          $raiz = $exe.Directory.FullName
+          $pacote = Join-Path $env:RUNNER_TEMP "pacote"
+          New-Item -ItemType Directory -Force $pacote | Out-Null
+          Copy-Item -Path (Join-Path $raiz '*') -Destination $pacote -Recurse
+          Copy-Item -Path FILUNA/loja-msix/Assets -Destination (Join-Path $pacote 'Assets') -Recurse
+          $m = (Get-Content FILUNA/loja-msix/AppxManifest.xml -Raw).Replace('@MSIX_VERSION@', '${{ inputs.versao }}')
+          [IO.File]::WriteAllText((Join-Path $pacote 'AppxManifest.xml'), $m, (New-Object Text.UTF8Encoding($false)))
+          $sdk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter makeappx.exe | Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $sdk) { throw "makeappx.exe não encontrado no Windows SDK" }
+          $saida = Join-Path $env:GITHUB_WORKSPACE "FilunaSlicer_${{ inputs.versao }}_x64.msix"
+          & $sdk.FullName pack /d $pacote /p $saida /o /h SHA256 | Out-File makeappx.log
+          if ($LASTEXITCODE -ne 0) { Get-Content makeappx.log -Tail 40; throw "makeappx falhou ($LASTEXITCODE)" }
+          "MSIX=$saida" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host ("pacote: " + (Get-Item $saida).Length + " bytes")
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FilunaSlicer_${{ inputs.versao }}_x64_msix
+          path: ${{ env.MSIX }}
+          retention-days: 30
+      - name: Conferir a conta da Store
+        id: conta
+        shell: pwsh
+        env:
+          T: ${{ secrets.MSSTORE_TENANT_ID }}
+          S: ${{ secrets.MSSTORE_SELLER_ID }}
+          C: ${{ secrets.MSSTORE_CLIENT_ID }}
+          CS: ${{ secrets.MSSTORE_CLIENT_SECRET }}
+        run: |
+          $ok = $env:T -and $env:S -and $env:C -and $env:CS
+          "ligada=$([int][bool]$ok)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          if (-not $ok) { Write-Host "::notice::Conta da Store não ligada (segredos MSSTORE_*): o pacote ficou no artefato para enviar à mão no Partner Center." }
+      - name: Instalar a ferramenta da Microsoft Store
+        if: inputs.enviar && steps.conta.outputs.ligada == '1'
+        uses: microsoft/microsoft-store-apppublisher@v1.1
+      - name: Enviar para a Store e pedir certificação
+        if: inputs.enviar && steps.conta.outputs.ligada == '1'
+        shell: pwsh
+        env:
+          T: ${{ secrets.MSSTORE_TENANT_ID }}
+          S: ${{ secrets.MSSTORE_SELLER_ID }}
+          C: ${{ secrets.MSSTORE_CLIENT_ID }}
+          CS: ${{ secrets.MSSTORE_CLIENT_SECRET }}
+        run: |
+          msstore reconfigure --tenantId $env:T --sellerId $env:S --clientId $env:C --clientSecret $env:CS
+          if ($LASTEXITCODE -ne 0) { throw "a Store recusou as credenciais (confira os segredos MSSTORE_*)" }
+          msstore publish -i $env:MSIX -id $env:APP_ID
+          if ($LASTEXITCODE -ne 0) { throw "o envio falhou: se já há uma versão em certificação, espere ela sair e dispare de novo" }
