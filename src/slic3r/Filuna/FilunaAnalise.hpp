@@ -52,6 +52,7 @@ struct PlanoImpressao
     double                   tempo_total_s{0.};
     double                   filamento_mm{0.};
     int                      temp_mesa{0};
+    std::string              material; // "PLA", "PETG"… (1º filamento do G-code)
     double camadas_s() const; // soma do tempo previsto das camadas
     // Camada (índice em camadas) em que o tempo previsto desde a 1ª camada é t; -1 se não há plano.
     int camada_no_tempo(double t) const;
@@ -212,6 +213,8 @@ public:
         std::vector<nlohmann::json>   alertas;   // alertas novos desta amostra
         std::optional<nlohmann::json> relatorio; // quando a impressão terminou
     };
+    // O plano da impressão que esta impressora está fazendo (para o ajuste assistido).
+    std::optional<PlanoImpressao> plano(const std::string& dev_id);
     // Uma amostra da impressora: os alertas novos e, no fim da impressão, o relatório.
     Resultado amostra(const std::string& dev_id, const std::string& impressora, const Amostra& a);
 

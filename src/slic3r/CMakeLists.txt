@@ -14,6 +14,8 @@ set(SLIC3R_GUI_SOURCES
     Filuna/FilunaGcodeResumo.hpp
     Filuna/FilunaAnalise.cpp
     Filuna/FilunaAnalise.hpp
+    Filuna/FilunaAjuste.cpp
+    Filuna/FilunaAjuste.hpp
     Filuna/FilunaProduto.cpp
     Filuna/FilunaProduto.hpp
     Filuna/FilunaVersoes.hpp

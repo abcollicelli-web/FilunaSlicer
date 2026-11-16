@@ -3,6 +3,7 @@
 
 #include "FilunaManutencao.hpp"
 #include "slic3r/Filuna/FilunaAnalise.hpp"
+#include "slic3r/Filuna/FilunaAjuste.hpp"
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
 #include "MsgDialog.hpp"
@@ -1688,8 +1689,21 @@ std::vector<AmostraDe> analise_amostras()
     return v;
 }
 
-// Janela do alerta: a mensagem e a foto da mesa (quando a câmera mandou uma recente). Não trava o programa.
-void analise_janela(const std::string& titulo, const std::string& mensagem, const std::string& jpeg, const std::string& link)
+// Resposta da janela ao site, fora da linha da tela; `depois` roda na linha da tela com o corpo da resposta.
+void analise_responder(const std::string& rota, const json& corpo, std::function<void(const json&)> depois)
+{
+    const std::string token = wxGetApp().app_config->get("filuna_token");
+    std::thread([rota, corpo, token, depois] {
+        FarmResp r = farm_http("POST", rota, corpo, token);
+        const json j = r.status == 200 && r.corpo.is_object() ? r.corpo : json{{"ok", false}};
+        wxGetApp().CallAfter([j, depois] { depois(j); });
+    }).detach();
+}
+
+// Janela do alerta: a mensagem, a foto da mesa (quando a câmera mandou uma recente) e "Como está a impressão?".
+// Não trava o programa.
+void analise_janela(const std::string& titulo, const std::string& mensagem, const std::string& jpeg, const std::string& link,
+                    const std::string& aid)
 {
     wxDialog* d = new wxDialog(wxGetApp().mainframe, wxID_ANY, wxString::FromUTF8(titulo), wxDefaultPosition, wxDefaultSize,
                                wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP);
@@ -1706,6 +1720,72 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
     auto* txt = new wxStaticText(d, wxID_ANY, wxString::FromUTF8(mensagem));
     txt->Wrap(540);
     col->Add(txt, 0, wxLEFT | wxRIGHT | wxBOTTOM, 14);
+    if (!aid.empty()) {
+        // Como está a impressão? Boa / Ruim. Com Ruim (e a opção ligada na conta) vem a oferta do ajuste de 3 min.
+        auto* pergunta = new wxStaticText(d, wxID_ANY, wxString::FromUTF8("Como está a impressão?"));
+        pergunta->SetFont(pergunta->GetFont().Bold());
+        auto* linha = new wxBoxSizer(wxHORIZONTAL);
+        auto* boa   = new wxButton(d, wxID_ANY, wxString::FromUTF8("Boa"));
+        auto* ruim  = new wxButton(d, wxID_ANY, wxString::FromUTF8("Ruim"));
+        linha->Add(boa, 0, wxRIGHT, 8);
+        linha->Add(ruim);
+        col->Add(pergunta, 0, wxLEFT | wxRIGHT, 14);
+        col->Add(linha, 0, wxALL, 10);
+        wxWeakRef<wxDialog> ref(d);
+        auto responder = [ref, pergunta, boa, ruim, linha, aid](const std::string& resposta) {
+            boa->Disable();
+            ruim->Disable();
+            analise_responder("/analises/alertas/" + aid + "/resposta", json{{"resposta", resposta}}, [ref, pergunta, boa, ruim, linha, aid, resposta](const json& r) {
+                if (!ref)
+                    return;
+                wxDialog* dd = ref.get();
+                boa->Hide();
+                ruim->Hide();
+                if (!r.value("ok", false)) {
+                    pergunta->SetLabel(wxString::FromUTF8("Não foi possível mandar a resposta. Responda pelo site."));
+                } else if (r.value("oferecer_ajuste", false)) {
+                    pergunta->SetLabel(wxString::FromUTF8("Quer que a Filuna ajuste e acompanhe a impressão por 3 minutos? Ela pode mudar a "
+                                                          "temperatura do bico e da mesa, a velocidade e a ventoinha, dentro da faixa "
+                                                          "segura do material, e no fim manda o resumo com a opção de desfazer."));
+                    pergunta->Wrap(540);
+                    auto* sim = new wxButton(dd, wxID_ANY, wxString::FromUTF8("Sim, ajustar"));
+                    auto* nao = new wxButton(dd, wxID_ANY, wxString::FromUTF8("Não"));
+                    linha->Add(sim, 0, wxRIGHT, 8);
+                    linha->Add(nao);
+                    auto decidir = [ref, pergunta, sim, nao, aid](const std::string& acao) {
+                        sim->Disable();
+                        nao->Disable();
+                        analise_responder("/analises/alertas/" + aid + "/ajuste", json{{"acao", acao}}, [ref, pergunta, sim, nao, acao](const json& r2) {
+                            if (!ref)
+                                return;
+                            sim->Hide();
+                            nao->Hide();
+                            pergunta->SetLabel(wxString::FromUTF8(!r2.value("ok", false) ? "Não foi possível mandar. Responda pelo site."
+                                                                  : acao == "sim" ? "A Filuna vai ajustar e acompanhar por 3 minutos. O resumo chega no fim."
+                                                                                  : "Tudo bem: a Filuna não vai mexer na impressora."));
+                            pergunta->Wrap(540);
+                            ref->Layout();
+                            ref->Fit();
+                        });
+                    };
+                    sim->Bind(wxEVT_BUTTON, [decidir](wxCommandEvent&) { decidir("sim"); });
+                    nao->Bind(wxEVT_BUTTON, [decidir](wxCommandEvent&) { decidir("nao"); });
+                } else if (resposta == "boa") {
+                    pergunta->SetLabel(wxString::FromUTF8("Obrigado! A Filuna segue acompanhando."));
+                } else {
+                    pergunta->SetLabel(wxString::FromUTF8(r.value("pode_ligar", false)
+                                                              ? "Obrigado. Para a Filuna poder ajustar a impressora numa próxima vez, ligue "
+                                                                "\"Deixar a Filuna ajustar minha impressora\" em filuna3d.com › Relatórios."
+                                                              : "Obrigado. Confira a peça e decida se segue a impressão."));
+                    pergunta->Wrap(540);
+                }
+                dd->Layout();
+                dd->Fit();
+            });
+        };
+        boa->Bind(wxEVT_BUTTON, [responder](wxCommandEvent&) { responder("boa"); });
+        ruim->Bind(wxEVT_BUTTON, [responder](wxCommandEvent&) { responder("ruim"); });
+    }
     auto* botoes = new wxBoxSizer(wxHORIZONTAL);
     if (!link.empty()) {
         auto* ver = new wxButton(d, wxID_ANY, wxString::FromUTF8("Ver no site"));
@@ -1731,11 +1811,12 @@ void analise_alertar(json alerta, const std::string& ref)
     BOOST_LOG_TRIVIAL(warning) << "Filuna análise: alerta (" << alerta.value("tipo", std::string()) << ") " << alerta.value("mensagem", std::string());
     alerta["cadastro_id"] = ref;
     const std::string token = wxGetApp().app_config->get("filuna_token");
-    std::string       jpeg, link;
+    std::string       jpeg, link, aid;
     if (!token.empty()) {
         FarmResp resp = farm_http("POST", "/analises/alertas", alerta, token);
         if (resp.status == 200 && resp.corpo.is_object()) {
             link = resp.corpo.value("link", std::string());
+            aid  = resp.corpo.value("id", std::string());
             const std::string foto = resp.corpo.value("foto_url", std::string());
             if (!foto.empty())
                 Http::get(foto).timeout_connect(10).timeout_max(30).on_complete([&jpeg](std::string b, unsigned st) {
@@ -1746,7 +1827,109 @@ void analise_alertar(json alerta, const std::string& ref)
             BOOST_LOG_TRIVIAL(warning) << "Filuna análise: o site não recebeu o alerta (" << resp.erro << ")";
     }
     const std::string titulo = alerta.value("titulo", std::string("Impressão fora do previsto")), msg = alerta.value("mensagem", std::string());
-    wxGetApp().CallAfter([titulo, msg, jpeg, link] { analise_janela(titulo, msg, jpeg, link); });
+    wxGetApp().CallAfter([titulo, msg, jpeg, link, aid] { analise_janela(titulo, msg, jpeg, link, aid); });
+}
+
+struct AjusteAtivo
+{
+    std::string                              dev_id;
+    std::unique_ptr<Filuna::AjusteAssistido> ajuste;
+    bool                                     terminado{false};
+    long long                                fim{0};
+};
+std::map<std::string, AjusteAtivo> g_ajustes; // por alerta; só a linha do monitor mexe
+
+// Manda os comandos do ajuste para a impressora: a selecionada pelo programa, as outras pelo acompanhamento ao vivo.
+bool analise_executar(const std::string& dev_id, const std::vector<Filuna::ComandoImpressora>& cmds)
+{
+    if (cmds.empty())
+        return true;
+    int sel = -2;
+    na_janela<int>([dev_id, cmds]() -> int {
+        DeviceManager* dev = wxGetApp().getDeviceManager();
+        MachineObject* o   = dev != nullptr ? dev->get_selected_machine() : nullptr;
+        if (o == nullptr || o->get_dev_id() != dev_id)
+            return -2; // não é a selecionada
+        int rc = 0;
+        for (const Filuna::ComandoImpressora& c : cmds) {
+            const std::string t = c.texto();
+            if (t.rfind("gcode:", 0) == 0)
+                rc |= o->publish_gcode(t.substr(6) + "\n");
+            else
+                rc |= o->command_set_printing_speed(DevPrintingSpeedLevel(c.valor));
+        }
+        return rc;
+    }, sel);
+    if (sel != -2)
+        return sel == 0;
+    bool ok = true;
+    for (const Filuna::ComandoImpressora& c : cmds)
+        ok = FilunaAoVivo::comando(dev_id, c.texto()) == 0 && ok;
+    return ok;
+}
+
+// Pedidos do site: começar, parar ou desfazer o ajuste de um alerta (só os das impressoras deste computador).
+void analise_pedidos(const std::vector<AmostraDe>& aqui, const std::string& token)
+{
+    FarmResp r = farm_http("GET", "/analises/ajustes", json(), token);
+    if (r.status != 200 || !r.corpo.is_object())
+        return;
+    for (const auto& p : r.corpo.value("ajustes", json::array())) {
+        const std::string aid = texto_de(p, "id"), dev = texto_de(p, "dev_id"), acao = texto_de(p, "acao");
+        const bool        meu = std::any_of(aqui.begin(), aqui.end(), [&dev](const AmostraDe& a) { return a.dev_id == dev; });
+        if (aid.empty() || !meu)
+            continue;
+        auto it = g_ajustes.find(aid);
+        if (acao == "iniciar" && it == g_ajustes.end()) {
+            std::optional<Filuna::PlanoImpressao> plano = Filuna::Monitor::get().plano(dev);
+            AjusteAtivo a;
+            a.dev_id = dev;
+            a.ajuste = std::make_unique<Filuna::AjusteAssistido>(plano ? *plano : Filuna::PlanoImpressao(), texto_de(p, "tipo"),
+                                                                 p.value("conferencia", json::object()));
+            g_ajustes.emplace(aid, std::move(a));
+            farm_http("POST", "/analises/ajustes/" + aid, {{"estado", "em_andamento"}}, token);
+            BOOST_LOG_TRIVIAL(warning) << "Filuna ajuste: começou em " << dev << " (alerta " << aid << ")";
+        } else if (acao == "parar" && it != g_ajustes.end() && !it->second.terminado) {
+            it->second.ajuste->parar(double(std::time(nullptr)));
+        } else if (acao == "desfazer" && it != g_ajustes.end() && it->second.terminado) {
+            const bool ok = analise_executar(dev, it->second.ajuste->desfazer());
+            farm_http("POST", "/analises/ajustes/" + aid, {{"estado", ok ? "desfeito" : "falhou"}}, token);
+            g_ajustes.erase(it);
+        } else if (acao == "desfazer" && it == g_ajustes.end()) {
+            farm_http("POST", "/analises/ajustes/" + aid, {{"estado", "falhou"}}, token); // o programa foi fechado: não sabe o que desfazer
+        }
+    }
+}
+
+// Uma volta dos ajustes em andamento: comandos da rodada e, no fim dos 3 min, o resumo para o site.
+void analise_ajustes(const std::vector<AmostraDe>& aqui, const std::string& token)
+{
+    const long long agora = (long long) std::time(nullptr);
+    for (auto it = g_ajustes.begin(); it != g_ajustes.end();) {
+        AjusteAtivo& a = it->second;
+        if (a.terminado) { // guarda 24 h para o desfazer
+            it = agora - a.fim > 86400 ? g_ajustes.erase(it) : std::next(it);
+            continue;
+        }
+        auto am = std::find_if(aqui.begin(), aqui.end(), [&a](const AmostraDe& x) { return x.dev_id == a.dev_id; });
+        if (am != aqui.end()) {
+            const std::vector<Filuna::ComandoImpressora> cmds = a.ajuste->passo(am->amostra);
+            if (!analise_executar(a.dev_id, cmds)) {
+                farm_http("POST", "/analises/ajustes/" + it->first, {{"estado", "falhou"}}, token);
+                it = g_ajustes.erase(it);
+                continue;
+            }
+            for (const Filuna::ComandoImpressora& c : cmds)
+                BOOST_LOG_TRIVIAL(warning) << "Filuna ajuste: " << a.dev_id << " " << c.texto();
+        }
+        if (a.ajuste->terminou()) {
+            const json r = a.ajuste->resumo();
+            farm_http("POST", "/analises/ajustes/" + it->first, {{"estado", r.value("estado", std::string("feito"))}, {"resumo", r}}, token);
+            a.terminado = true;
+            a.fim       = agora;
+        }
+        ++it;
+    }
 }
 
 void analise_enviar(const json& r)
@@ -1770,10 +1953,17 @@ void analise_monitor()
     Filuna::Monitor::get().pasta(utf8_de(fsf::path(data_dir()) / "filuna" / "analise"));
     std::thread([] {
         std::this_thread::sleep_for(std::chrono::seconds(15));
+        unsigned volta = 0;
         for (;;) {
             try {
                 std::vector<AmostraDe> v;
-                if (analise_ligada() && na_janela<std::vector<AmostraDe>>([] { return analise_amostras(); }, v, 10))
+                if (analise_ligada() && na_janela<std::vector<AmostraDe>>([] { return analise_amostras(); }, v, 10)) {
+                    const std::string token = wxGetApp().app_config->get("filuna_token");
+                    if (!token.empty()) {
+                        if (++volta % 2 == 0) // pedidos do site a cada 10 s
+                            analise_pedidos(v, token);
+                        analise_ajustes(v, token);
+                    }
                     for (const AmostraDe& a : v) {
                         Filuna::Monitor::Resultado r = Filuna::Monitor::get().amostra(a.dev_id, a.nome, a.amostra);
                         for (json& alerta : r.alertas)
@@ -1781,6 +1971,7 @@ void analise_monitor()
                         if (r.relatorio)
                             analise_enviar(*r.relatorio);
                     }
+                }
             } catch (const std::exception& e) {
                 BOOST_LOG_TRIVIAL(warning) << "Filuna análise: " << e.what();
             } catch (...) {

@@ -177,7 +177,7 @@ json PlanoImpressao::to_json() const
     for (const CamadaPlano& c : camadas)
         cs.push_back({c.numero, c.z, c.altura, c.inicio_s, c.duracao_s, c.extrusao_mm, c.temp_bico, c.ventoinha, c.tipos, c.troca_cor});
     return {{"valido", valido}, {"preparo_s", preparo_s}, {"tempo_total_s", tempo_total_s}, {"filamento_mm", filamento_mm},
-            {"temp_mesa", temp_mesa}, {"camadas", cs}};
+            {"temp_mesa", temp_mesa}, {"material", material}, {"camadas", cs}};
 }
 
 PlanoImpressao PlanoImpressao::from_json(const json& j)
@@ -190,6 +190,7 @@ PlanoImpressao PlanoImpressao::from_json(const json& j)
     p.tempo_total_s = j.value("tempo_total_s", 0.);
     p.filamento_mm  = j.value("filamento_mm", 0.);
     p.temp_mesa     = j.value("temp_mesa", 0);
+    p.material      = j.value("material", std::string());
     for (const auto& c : j.value("camadas", json::array())) {
         if (!c.is_array() || c.size() < 9)
             continue;
@@ -279,6 +280,9 @@ PlanoImpressao plano_do_texto(const std::string& g)
             } else if (comeca(c, "estimated printing time") && c.find('=') != std::string::npos) {
                 if (tempo_total == 0.)
                     tempo_total = tempo_do_texto(c.substr(c.find('=') + 1));
+            } else if (comeca(c, "filament_type =") && p.material.empty()) {
+                std::string v = apara(c.substr(c.find('=') + 1));
+                p.material    = apara(v.substr(0, v.find(';')));
             } else if (comeca(c, "filament used [mm]") && c.find('=') != std::string::npos) {
                 std::string v = c.substr(c.find('=') + 1);
                 double      soma = 0.;
@@ -1288,6 +1292,15 @@ json Monitor::encerrar(const std::string& dev_id, Sessao& s, const std::string& 
     }
     esquecer_plano(dev_id);
     return r;
+}
+
+std::optional<PlanoImpressao> Monitor::plano(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> l(m_trava);
+    auto it = m_sessoes.find(dev_id);
+    if (it == m_sessoes.end() || !it->second.analise)
+        return std::nullopt;
+    return it->second.analise->plano();
 }
 
 Monitor::Resultado Monitor::amostra(const std::string& dev_id, const std::string& impressora, const Amostra& a)

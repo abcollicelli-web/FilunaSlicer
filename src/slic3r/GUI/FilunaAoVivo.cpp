@@ -416,10 +416,18 @@ int comando(const std::string& dev_id, const std::string& acao)
         return -1;
     // mesmo formato dos comandos do programa (MachineObject::command_task_pause/resume/abort)
     static std::atomic<unsigned> seq{1000};
-    const std::string cmd = acao == "pausar" ? "pause" : acao == "retomar" ? "resume" : acao == "cancelar" ? "stop" : "";
-    if (cmd.empty())
-        return -1;
-    const json j = {{"print", {{"command", cmd}, {"param", ""}, {"sequence_id", std::to_string(seq++)}}}};
+    // ajuste assistido (Filuna/FilunaAjuste): "gcode:M104 S230" (uma linha de G-code) e "velocidade:2"
+    json j;
+    if (acao.rfind("gcode:", 0) == 0)
+        j = {{"print", {{"command", "gcode_line"}, {"param", acao.substr(6) + "\n"}, {"sequence_id", std::to_string(seq++)}}}};
+    else if (acao.rfind("velocidade:", 0) == 0)
+        j = {{"print", {{"command", "print_speed"}, {"param", acao.substr(11)}, {"sequence_id", std::to_string(seq++)}}}};
+    else {
+        const std::string cmd = acao == "pausar" ? "pause" : acao == "retomar" ? "resume" : acao == "cancelar" ? "stop" : "";
+        if (cmd.empty())
+            return -1;
+        j = {{"print", {{"command", cmd}, {"param", ""}, {"sequence_id", std::to_string(seq++)}}}};
+    }
     try {
         return ag->send_message_to_printer(dev_id, j.dump(), 1, 0);
     } catch (const std::exception& e) {

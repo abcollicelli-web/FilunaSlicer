@@ -43,7 +43,8 @@ struct Ligada
 std::vector<Ligada> ligadas();
 // Manda o arquivo e começa a impressão pelo conector desta impressora (fora da linha da tela). 0 = enviada.
 int imprimir(const std::string& dev_id, PrintParams p, std::string& erro);
-// "pausar", "retomar" ou "cancelar" a impressão desta impressora. 0 = comando aceito.
+// "pausar", "retomar" ou "cancelar" a impressão desta impressora; ou um ajuste: "gcode:M104 S230" (uma linha de
+// G-code: temperatura, ventoinha) e "velocidade:1".."velocidade:4". 0 = comando aceito.
 int comando(const std::string& dev_id, const std::string& acao);
 
 }} // namespace GUI::FilunaAoVivo
