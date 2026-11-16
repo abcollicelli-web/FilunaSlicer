@@ -1188,3 +1188,33 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
   O vigia (avisos de fim de impressão, filamento trocado, erro) vale para as acompanhadas e o estado sobe ao site/app.
 - Testado com agente simulado: conecta, junta relatórios parciais, código errado fica desligada e tenta de novo,
   ativa() solta a conexão e ela volta quando deixa de ser a ativa.
+
+## 2026-11-16 — 79 publicada (ad8587eb5, junto com o ajuste da Store); 80: pendências fechadas de uma vez
+
+- Modelos 3D: lista no padrão dos Paramétricos; página do modelo igual à do site (m3d/: filuna.css, publico.css,
+  modelos3d.css, three.js/orbit.js convertidos sem módulos, visualizador.js), dados da API nova
+  /api/slicer/v1/modelos3d/{slug}/pagina (site 17ee670) e vista.3mf com CORS.
+- Conectar pelo IP: ip_da_rede_local() — quatro números sem zero à esquerda e faixa de rede local ("01.09.00.00",
+  versão do firmware da Priscilla, passava). Cadastro errado dela marcado excluído no servidor (cópia em
+  /root/backups/priscilla-mini01-20261116.json).
+- Farm na Anycubic: a impressora segue a ferramenta do G-code e ignora a entrada escolhida; a mesa é fatiada como
+  filamento N (--load-filaments repetido N vezes + --load-filament-ids N, conferido no orca-slicer Linux: M620 S2A
+  com o filamento 3). Mapa com -1 até N-1. Projeto 3MF não recebe --clone-objects (o fatiador recusa).
+- Farm em todas as impressoras ao vivo: FarmMaquina.ao_vivo, farm_maquinas() (selecionada + FilunaAoVivo::ligadas()),
+  uma mesa ativa por impressora (app_config "filuna_farm_ativos", lê o formato antigo), perfis do modelo de cada uma
+  (get_printer_preset + processo/filamento compatíveis, farm_perfis_ao_vivo), envio e comandos pelo agente dela
+  (FilunaAoVivo::imprimir/comando). Uma mesa nova por volta.
+- Farm etapa 2 em 3D: farm-mesa3d.js (abas por impressora e por mesa, grade de encaixe do PADRAO, cor da peça).
+- Suporte remoto com reparos: dispositivos.esquecer, dispositivos.reconectar, farm.destravar (lista fechada na ponte e
+  no site; campo dev_id no painel).
+- Autoajuda com imagem: 50 ilustrações (FILUNA/autoajuda/gerar_imagens.py → SVG → PNG 2x pelo Chrome; nanosvg não
+  desenha texto) em resources/filuna/autoajuda/img/<chave>.png; FilunaAutoajuda::ligar_cartao() em
+  Field::PostInitialize troca a dica pelo cartão (imagem, título, texto) após 450 ms parado sobre o campo.
+- Microsoft Store: .github/workflows/filuna-loja-msix.yml (também no filuna/main para o disparo manual) monta o MSIX
+  com FILUNA/loja-msix (identidade AndersonBarroso.FilunaSlicer) e envia com msstore quando houver os segredos
+  MSSTORE_TENANT_ID/SELLER_ID/CLIENT_ID/CLIENT_SECRET. Sem segredos, o pacote fica no artefato.
+- Instalador NSIS: nome "Filuna Slicer", abrir ao terminar, links de ajuda.
+- Site: /download e faixa da home (Windows → get.microsoft.com/installer/download/9MV6C5DJ3201, instalador assinado
+  pela Microsoft; Store); Download na barra; aviso na hora (push.py, conector Firebase, FCM HTTP v1 assinado com a
+  conta de serviço, canal "celular" em eventos._entregar). App 0.4.0-beta (código 5) liga o Firebase com a
+  configuração do site (sem google-services.json) e registra o aparelho.
