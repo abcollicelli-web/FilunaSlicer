@@ -259,7 +259,9 @@ void iniciar()
     static std::atomic<bool> iniciado{false};
     if (iniciado.exchange(true))
         return;
-    if (AppConfig* cfg = wxGetApp().app_config) {
+    // get_section() do AppConfig não confere se a seção existe (find()->second): sem impressora guardada ainda, a
+    // seção não existe e ler dela fechava o programa na abertura (79 e 80)
+    if (AppConfig* cfg = wxGetApp().app_config; cfg != nullptr && cfg->has_section(SECAO)) {
         std::lock_guard<std::mutex> l(mtx());
         for (const auto& [dev, txt] : cfg->get_section(SECAO)) {
             const json j = json::parse(txt, nullptr, false);
