@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="AndersonBarroso.FilunaSlicer"
+    Publisher="CN=351BBBA7-1B0D-4313-A660-4AF070E02CC5"
+    Version="@MSIX_VERSION@"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Filuna Slicer</DisplayName>
+    <PublisherDisplayName>Anderson Barroso</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Fatiador 3D da Filuna para impressoras FDM, baseado no OrcaSlicer.</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="pt-BR" />
+  </Resources>
+
+  <Applications>
+    <Application Id="FilunaSlicer" Executable="FilunaSlicer.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Filuna Slicer"
+        Description="Fatiador 3D da Filuna"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="modelos3d">
+            <uap:DisplayName>Modelo 3D</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.3mf</uap:FileType>
+              <uap:FileType>.stl</uap:FileType>
+              <uap:FileType>.obj</uap:FileType>
+              <uap:FileType>.step</uap:FileType>
+              <uap:FileType>.stp</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <Capability Name="privateNetworkClientServer" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
