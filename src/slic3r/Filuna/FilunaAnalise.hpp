@@ -1,9 +1,14 @@
 #pragma once
 
-// Filuna — análise da impressão (relatório para o cliente).
+// Filuna — análise da impressão: mapa com checkpoints, alertas com foto e relatório para o cliente.
 //
 // O Filuna Slicer gerou o G-code, então ele monta no computador do cliente o PLANO da impressão (camada a camada:
-// altura, tempo previsto, extrusão, temperatura e ventoinha pedidas). Durante a impressão o monitor das impressoras
+// altura, tempo previsto, extrusão, temperatura e ventoinha pedidas) e, dele, o MAPA de checkpoints: em cada
+// momento da impressão, em que camada e altura ela deve estar, com que temperatura de bico e de mesa e quanto deve
+// estar feito. Os checkpoints vêm de tempos em tempos (mais quanto mais longa a impressão) e nos pontos críticos
+// da peça (fim da 1ª camada, pontes, partes em balanço, troca de cor, superfície de cima, última camada). Em cada
+// checkpoint a situação real é comparada com a prevista; diferença grande vira ALERTA (o Slicer junta a foto da
+// mesa e o cliente recebe no Slicer, no app, no site e por e-mail). Durante a impressão o monitor das impressoras
 // entrega AMOSTRAS do que a impressora informa (estado, camada, progresso, temperaturas, ventoinha, velocidade, erros).
 // A análise compara as duas coisas e anota cada anomalia com a camada e a altura em milímetros, para o cliente achar
 // na peça onde o acabamento pode ter saído ruim. Nada interfere na impressão (não pausa, não para) e o G-code e o
@@ -36,6 +41,7 @@ struct CamadaPlano
     int                      temp_bico{0};  // alvo pedido no G-code (°C); 0 = não informado
     int                      ventoinha{-1}; // maior % pedida na camada; -1 = não informado
     std::vector<std::string> tipos;         // trechos: parede externa, preenchimento, ponte…
+    bool                     troca_cor{false}; // a camada troca de filamento (outra cor ou material)
 };
 
 struct PlanoImpressao
@@ -54,6 +60,23 @@ struct PlanoImpressao
     nlohmann::json to_json() const;
     static PlanoImpressao from_json(const nlohmann::json& j);
 };
+
+// Ponto de conferência do mapa da impressão: o que a impressora deve estar fazendo no tempo t.
+struct Checkpoint
+{
+    double      t{0.};          // segundos de impressão previstos desde o início da 1ª camada
+    int         camada{0};      // camada esperada (1..N)
+    double      z{0.};          // altura esperada (mm)
+    int         temp_bico{0}, temp_mesa{0};
+    int         progresso{0};   // % esperado
+    bool        critico{false}; // ponto delicado da peça
+    std::string motivo;         // "conferência de rotina", "fim da primeira camada", "ponte (parte impressa no ar)"…
+    nlohmann::json to_json() const;
+};
+
+// Mapa da impressão: checkpoints de rotina (a cada 5 min até 1 h de impressão, 10 min até 3 h, 15 min até 8 h e
+// 20 min acima disso) e nos pontos críticos da peça, em ordem de tempo.
+std::vector<Checkpoint> mapa_checkpoints(const PlanoImpressao& p);
 
 // Lê o G-code do Orca (formato Bambu "; CHANGE_LAYER / ; Z_HEIGHT" e o comum ";LAYER_CHANGE / ;Z:").
 PlanoImpressao plano_do_gcode(const std::string& caminho);
@@ -95,6 +118,9 @@ public:
     bool comecou() const { return m_inicio >= 0.; }
     // Relatório (estado_final: concluida, falhou, cancelada, interrompida).
     nlohmann::json                 relatorio(const std::string& estado_final);
+    // Alertas novos desde a última chamada (diferença grande no checkpoint, erro, parada, bico muito fora).
+    std::vector<nlohmann::json>    alertas();
+    const std::vector<Checkpoint>& mapa() const { return m_checkpoints; }
     const PlanoImpressao&          plano() const { return m_plano; }
     const std::vector<Ocorrencia>& ocorrencias() const { return m_ocorrencias; }
 
@@ -117,6 +143,8 @@ private:
         double     real{0.}, previsto{0.};
     };
     void   anotar(Ocorrencia o);
+    void   conferir(const Checkpoint& cp, const Amostra& a, int idx);
+    void   alertar(const Ocorrencia& o, const std::string& mensagem, const nlohmann::json& conferencia, bool urgente);
     void   anotar_ritmo(const RitmoAberto& r);
     void   fechar_temperaturas(double t);
     void   fechar_janela(Janela& j, const std::string& tipo, double t, double minimo_s);
@@ -154,6 +182,15 @@ private:
     bool                    m_camadas_anotado{false}, m_mesa_desligada_anotada{false};
     int                     m_maior_camada{-1};
     int                     m_ultimo_progresso{-1};
+    // mapa da impressão: checkpoints e o que foi conferido
+    std::vector<Checkpoint>     m_checkpoints;
+    size_t                      m_proximo{0};
+    double                      m_t_plano{0.}, m_t_sincronia{0.}; // posição no plano (s) e da última sincronia
+    double                      m_atraso_ant{0.}, m_t_cp_ant{0.};  // atraso medido no checkpoint anterior e quando
+    std::vector<double>         m_bicos, m_mesas;                  // últimas leituras (mediana de ~30 s)
+    std::vector<nlohmann::json> m_conferidos, m_alertas, m_alertas_novos;
+    double                      m_ultimo_alerta{-1e9};
+    bool                        m_bico_alertado{false};
     // séries para o gráfico
     std::vector<nlohmann::json> m_serie;
     double                      m_ultima_serie{-1e9};
@@ -170,14 +207,19 @@ public:
     // A impressão desta impressora foi enviada pelo Filuna: começa a análise com o plano do G-code.
     void comecar(const std::string& dev_id, const PlanoImpressao& plano, const std::string& nome, const std::string& impressora,
                  const std::string& trabalho_id);
-    // Uma amostra da impressora; devolve o relatório quando a impressão terminou.
-    std::optional<nlohmann::json> amostra(const std::string& dev_id, const std::string& impressora, const Amostra& a);
+    struct Resultado
+    {
+        std::vector<nlohmann::json>   alertas;   // alertas novos desta amostra
+        std::optional<nlohmann::json> relatorio; // quando a impressão terminou
+    };
+    // Uma amostra da impressora: os alertas novos e, no fim da impressão, o relatório.
+    Resultado amostra(const std::string& dev_id, const std::string& impressora, const Amostra& a);
 
 private:
     struct Sessao
     {
         std::unique_ptr<Analise> analise;
-        std::string              nome, impressora, trabalho_id;
+        std::string              id, nome, impressora, trabalho_id; // id: liga os alertas ao relatório da mesma impressão
         bool                     viu_imprimindo{false};
         int                      livres{0};
         double                   desligada_desde{-1.};
@@ -188,6 +230,7 @@ private:
     bool        ler_plano(const std::string& dev_id, Sessao& s, double t);
     void        esquecer_plano(const std::string& dev_id) const;
     nlohmann::json encerrar(const std::string& dev_id, Sessao& s, const std::string& estado);
+    void           marcar(const Sessao& s, const std::string& dev_id, std::vector<nlohmann::json>& alertas) const;
 
     std::mutex                    m_trava;
     std::string                   m_pasta;

@@ -11,6 +11,7 @@
 #include <cstring>
 #include <ctime>
 #include <iterator>
+#include <random>
 #include <sstream>
 
 using nlohmann::json;
@@ -174,7 +175,7 @@ json PlanoImpressao::to_json() const
 {
     json cs = json::array();
     for (const CamadaPlano& c : camadas)
-        cs.push_back({c.numero, c.z, c.altura, c.inicio_s, c.duracao_s, c.extrusao_mm, c.temp_bico, c.ventoinha, c.tipos});
+        cs.push_back({c.numero, c.z, c.altura, c.inicio_s, c.duracao_s, c.extrusao_mm, c.temp_bico, c.ventoinha, c.tipos, c.troca_cor});
     return {{"valido", valido}, {"preparo_s", preparo_s}, {"tempo_total_s", tempo_total_s}, {"filamento_mm", filamento_mm},
             {"temp_mesa", temp_mesa}, {"camadas", cs}};
 }
@@ -205,6 +206,7 @@ PlanoImpressao PlanoImpressao::from_json(const json& j)
             for (const auto& t : c[8])
                 if (t.is_string())
                     k.tipos.push_back(t.get<std::string>());
+        k.troca_cor = c.size() > 9 && c[9].is_boolean() && c[9].get<bool>();
         p.camadas.push_back(std::move(k));
     }
     p.valido = p.valido && !p.camadas.empty();
@@ -218,7 +220,7 @@ PlanoImpressao plano_do_texto(const std::string& g)
     bool           e_relativo = true; // o Orca usa extrusão relativa (M83) por padrão
     double         bruto = 0., bruto_camada0 = 0., bruto_preparo = -1.;
     double         tempo_modelo = 0., tempo_total = 0.;
-    int            temp = 0, vent = -1;
+    int            temp = 0, vent = -1, ferramenta = -1;
     bool           em_camada = false;
     CamadaPlano    atual;
     std::vector<double> brutos;
@@ -324,6 +326,13 @@ PlanoImpressao plano_do_texto(const std::string& g)
             if (em_camada && de > 0.)
                 atual.extrusao_mm += de;
             x = nx, y = ny, z = nz;
+        } else if ((cmd.size() >= 2 && cmd.size() <= 3 && cmd[0] == 'T' && std::isdigit((unsigned char) cmd[1])) || comeca(cmd, "M620 S")) {
+            const int f = std::atoi(cmd.c_str() + (cmd[0] == 'T' ? 1 : 6));
+            if (f >= 0 && f < 64 && (cmd[0] == 'T' || cmd.find('A') != std::string::npos)) {
+                if (em_camada && ferramenta >= 0 && f != ferramenta)
+                    atual.troca_cor = true;
+                ferramenta = f;
+            }
         } else if (comeca(cmd, "G4")) {
             if (letra(cmd, 'P', v))
                 bruto += v / 1000.;
@@ -382,6 +391,79 @@ PlanoImpressao plano_do_texto(const std::string& g)
     p.tempo_total_s = tempo_total > 0. ? tempo_total : t + p.preparo_s;
     p.valido        = true;
     return p;
+}
+
+json Checkpoint::to_json() const
+{
+    return {{"t", std::lround(t)}, {"camada", camada}, {"z", std::round(z * 100.) / 100.}, {"temp_bico", temp_bico}, {"temp_mesa", temp_mesa},
+            {"progresso", progresso}, {"critico", critico}, {"motivo", motivo}};
+}
+
+std::vector<Checkpoint> mapa_checkpoints(const PlanoImpressao& p)
+{
+    std::vector<Checkpoint> v;
+    if (!p.valido || p.camadas.empty())
+        return v;
+    const double total = p.camadas_s();
+    if (total <= 0.)
+        return v;
+    auto ponto = [&](double t, bool critico, const std::string& motivo) {
+        t           = std::clamp(t, 0., total);
+        const int i = std::max(0, p.camada_no_tempo(std::max(0., t - 0.5)));
+        Checkpoint k;
+        k.t         = t;
+        k.camada    = i + 1;
+        k.z         = p.camadas[i].z;
+        k.temp_bico = p.camadas[i].temp_bico;
+        k.temp_mesa = p.temp_mesa;
+        k.progresso = int(std::lround(t / total * 100.));
+        k.critico   = critico;
+        k.motivo    = motivo;
+        return k;
+    };
+    // pontos críticos da peça: conferidos quando a camada delicada acabou de ser impressa
+    std::vector<Checkpoint> criticos;
+    auto fim_da = [&](size_t i) { return p.camadas[i].inicio_s + p.camadas[i].duracao_s; };
+    auto tem    = [&](size_t i, const char* tipo) {
+        return std::find(p.camadas[i].tipos.begin(), p.camadas[i].tipos.end(), tipo) != p.camadas[i].tipos.end();
+    };
+    criticos.push_back(ponto(fim_da(0), true, "fim da primeira camada (aderência na mesa)"));
+    for (size_t i = 1; i < p.camadas.size(); ++i) {
+        const std::pair<const char*, const char*> trechos[] = {{"ponte", "ponte (parte impressa no ar)"},
+                                                               {"parede em balanço", "parte em balanço"},
+                                                               {"superfície de cima", "superfície de cima (acabamento que aparece)"}};
+        for (const auto& [tipo, motivo] : trechos)
+            if (tem(i, tipo) && !tem(i - 1, tipo))
+                criticos.push_back(ponto(fim_da(i), true, motivo));
+        if (p.camadas[i].troca_cor && !p.camadas[i - 1].troca_cor)
+            criticos.push_back(ponto(fim_da(i), true, "troca de cor"));
+    }
+    if (p.camadas.size() > 2)
+        criticos.push_back(ponto(p.camadas.back().inicio_s, true, "última camada"));
+    std::sort(criticos.begin(), criticos.end(), [](const Checkpoint& a, const Checkpoint& b) { return a.t < b.t; });
+    // críticos colados (menos de 1 min) viram um só; muitos críticos ficam espaçados por igual (no máximo 24)
+    std::vector<Checkpoint> unicos;
+    for (const Checkpoint& k : criticos)
+        if (unicos.empty() || k.t - unicos.back().t >= 60.)
+            unicos.push_back(k);
+        else if (unicos.back().motivo.find(k.motivo) == std::string::npos)
+            unicos.back().motivo += " e " + k.motivo;
+    if (unicos.size() > 24) {
+        std::vector<Checkpoint> menos;
+        for (size_t i = 0; i < 24; ++i)
+            menos.push_back(unicos[i * (unicos.size() - 1) / 23]);
+        unicos = std::move(menos);
+    }
+    // rotina: quanto mais longa a impressão, mais pontos (sem repetir um crítico a menos de 90 s)
+    const double passo = total <= 3600. ? 300. : total <= 3. * 3600. ? 600. : total <= 8. * 3600. ? 900. : 1200.;
+    for (double t = passo; t < total - 60.; t += passo) {
+        const bool perto = std::any_of(unicos.begin(), unicos.end(), [t](const Checkpoint& k) { return std::fabs(k.t - t) < 90.; });
+        if (!perto)
+            v.push_back(ponto(t, false, "conferência de rotina"));
+    }
+    v.insert(v.end(), unicos.begin(), unicos.end());
+    std::sort(v.begin(), v.end(), [](const Checkpoint& a, const Checkpoint& b) { return a.t < b.t; });
+    return v;
 }
 
 PlanoImpressao plano_do_gcode(const std::string& caminho)
@@ -454,8 +536,122 @@ json Ocorrencia::to_json() const
 
 // ---------- análise ----------
 Analise::Analise(PlanoImpressao plano, std::string nome, std::string impressora)
-    : m_plano(std::move(plano)), m_nome(std::move(nome)), m_impressora(std::move(impressora))
+    : m_plano(std::move(plano)), m_nome(std::move(nome)), m_impressora(std::move(impressora)), m_checkpoints(mapa_checkpoints(m_plano))
 {}
+
+namespace {
+double mediana(std::vector<double> v)
+{
+    if (v.empty())
+        return NAN;
+    std::nth_element(v.begin(), v.begin() + v.size() / 2, v.end());
+    return v[v.size() / 2];
+}
+
+void lembrar(std::vector<double>& v, double x)
+{
+    if (std::isnan(x))
+        return;
+    v.push_back(x);
+    if (v.size() > 6) // ~30 s de leituras: uma leitura isolada não vira alerta
+        v.erase(v.begin());
+}
+} // namespace
+
+std::vector<json> Analise::alertas()
+{
+    std::vector<json> v;
+    v.swap(m_alertas_novos);
+    return v;
+}
+
+void Analise::alertar(const Ocorrencia& o, const std::string& mensagem, const json& conferencia, bool urgente)
+{
+    if (int(m_alertas.size()) >= (urgente ? 12 : 8) || m_ultimo_t - m_ultimo_alerta < (urgente ? 120. : 600.))
+        return; // sem avalanche: o relatório guarda tudo, o cliente recebe o essencial
+    m_ultimo_alerta = m_ultimo_t;
+    json j          = {{"tipo", o.tipo}, {"gravidade", o.gravidade}, {"titulo", "Sua impressão não está conforme o previsto"},
+                       {"mensagem", mensagem}, {"camada", o.camada_de}, {"t", std::lround(o.t_de)}, {"nome", m_nome}, {"impressora", m_impressora},
+                       {"conferencia", conferencia}};
+    j["z"]          = std::isnan(o.z_de) ? json(nullptr) : json(std::round(o.z_de * 100.) / 100.);
+    m_alertas.push_back(j);
+    m_alertas_novos.push_back(j);
+}
+
+void Analise::conferir(const Checkpoint& cp, const Amostra& a, int idx)
+{
+    const int                n = int(m_plano.camadas.size());
+    std::vector<std::string> frases;
+    std::string              grav = "atencao";
+    json                     r    = {{"t", std::lround(cp.t)}, {"camada_esperada", cp.camada}, {"z_esperado", std::round(cp.z * 100.) / 100.},
+                                     {"bico_esperado", cp.temp_bico}, {"mesa_esperada", cp.temp_mesa}, {"progresso_esperado", cp.progresso},
+                                     {"critico", cp.critico}, {"motivo", cp.motivo}, {"progresso_real", a.progresso}};
+    // onde a impressão está contra onde deveria estar (em tempo do plano)
+    if (idx >= 0 && idx < n) {
+        const CamadaPlano& k = m_plano.camadas[idx];
+        r["camada_real"]     = idx + 1;
+        r["z_real"]          = std::round(k.z * 100.) / 100.;
+        const double fim     = k.inicio_s + k.duracao_s;
+        const double atraso  = cp.t > fim ? cp.t - fim : cp.t < k.inicio_s ? -(k.inicio_s - cp.t) : 0.;
+        // o que pesa é o atraso que CRESCEU desde o checkpoint anterior (um atraso antigo que parou de crescer não
+        // avisa de novo) ou um atraso total grande desde a última sincronia
+        const double base   = cp.critico ? 180. : 240.;
+        const double cresceu = atraso - m_atraso_ant;
+        const bool   fora    = std::fabs(cresceu) > std::max(base, 0.25 * (cp.t - m_t_cp_ant)) ||
+                            std::fabs(atraso) > std::max(600., 0.25 * (cp.t - m_t_sincronia));
+        m_atraso_ant = atraso;
+        m_t_cp_ant   = cp.t;
+        if (fora) {
+            frases.push_back("Era para estar na camada " + std::to_string(cp.camada) + " (" + num_br(cp.z, 1) + " mm) e está na camada " +
+                             std::to_string(idx + 1) + " (" + num_br(k.z, 1) + " mm): " +
+                             (atraso > 0. ? "cerca de " + duracao(atraso) + " de atraso." : "cerca de " + duracao(-atraso) + " à frente do previsto."));
+            if (std::fabs(cresceu) > 3. * base)
+                grav = "problema";
+            m_t_plano = m_t_sincronia = m_t_cp_ant = atraso > 0. ? fim : k.inicio_s; // o mapa segue da posição real
+            m_atraso_ant = 0.;
+        }
+    }
+    const double bico = mediana(m_bicos), mesa = mediana(m_mesas);
+    r["bico_real"]    = std::isnan(bico) ? json(nullptr) : json(std::lround(bico));
+    r["mesa_real"]    = std::isnan(mesa) ? json(nullptr) : json(std::lround(mesa));
+    if (cp.temp_bico > 0 && !std::isnan(bico) && std::fabs(bico - cp.temp_bico) > 10.) {
+        std::string f = "O bico deveria estar a " + std::to_string(cp.temp_bico) + " °C e está a " + std::to_string(std::lround(bico)) + " °C.";
+        if (!std::isnan(a.bico_alvo) && std::fabs(a.bico_alvo - cp.temp_bico) >= 5. && std::fabs(bico - a.bico_alvo) <= 5.)
+            f += " A temperatura pedida foi mudada na impressora para " + std::to_string(std::lround(a.bico_alvo)) + " °C.";
+        frases.push_back(f);
+        if (std::fabs(bico - cp.temp_bico) > 18.)
+            grav = "problema";
+    }
+    if (cp.temp_mesa > 0 && !std::isnan(mesa) && mesa < cp.temp_mesa - 8.)
+        frases.push_back("A mesa deveria estar a " + std::to_string(cp.temp_mesa) + " °C e está a " + std::to_string(std::lround(mesa)) + " °C.");
+    r["ok"]         = frases.empty();
+    r["diferencas"] = frases;
+    m_conferidos.push_back(r);
+    if (frases.empty())
+        return;
+    // o ponto crítico só entra no texto se a impressão está nele (atrasada, ela ainda não chegou lá)
+    const bool no_ponto = cp.critico && (idx < 0 || std::abs(idx + 1 - cp.camada) <= 2);
+    Ocorrencia o;
+    o.tipo      = "checkpoint";
+    o.gravidade = grav;
+    o.camada_de = o.camada_ate = idx >= 0 ? idx + 1 : cp.camada;
+    o.t_de = o.t_ate = desde_inicio(a.t);
+    o.titulo        = "Fora do previsto no checkpoint" + std::string(cp.critico ? " crítico" : "");
+    std::string det;
+    for (const std::string& f : frases)
+        det += (det.empty() ? "" : " ") + f;
+    o.detalhe  = det;
+    o.sugestao = no_ponto ? "Neste ponto a peça tem " + cp.motivo + ", onde o acabamento costuma sofrer. Verifique se há partes imperfeitas nessa altura."
+                          : "Verifique se há partes imperfeitas na peça nessa altura e se o acabamento está como você deseja.";
+    anotar(o);
+    const Ocorrencia& anotada = m_ocorrencias.back();
+    const std::string alt     = std::isnan(anotada.z_de) ? std::string() : " (" + num_br(anotada.z_de, 1) + " mm de altura)";
+    alertar(anotada,
+            m_nome + (m_impressora.empty() ? "" : " na " + m_impressora) + ": " + det + " " +
+                (no_ponto ? "Neste ponto a peça tem " + cp.motivo + ", onde o acabamento costuma sofrer. " : std::string()) +
+                "Verifique se há partes imperfeitas na impressão" + alt + " e se o acabamento está como você deseja.",
+            r, false);
+}
 
 double Analise::fator_velocidade(int nivel) const
 {
@@ -493,6 +689,10 @@ void Analise::anotar(Ocorrencia o)
     if (o.camada_de >= 1)
         o.titulo += " (" + onde + (alt.empty() ? "" : ", " + alt) + ")";
     m_ocorrencias.push_back(std::move(o));
+    const Ocorrencia& k = m_ocorrencias.back();
+    if (k.tipo == "erro" || k.tipo == "parada" || (k.tipo == "fim" && k.gravidade == "problema"))
+        alertar(k, m_nome + (m_impressora.empty() ? "" : " na " + m_impressora) + ": " + k.titulo + ". " + k.detalhe + " " + k.sugestao, json::object(),
+                k.tipo != "parada");
 }
 
 void Analise::fechar_janela(Janela& j, const std::string& tipo, double t, double minimo_s)
@@ -614,6 +814,11 @@ void Analise::amostra(const Amostra& a)
         m_ultima_camada  = a.camada >= 1 ? a.camada : -1;
         m_t_camada       = a.t;
         m_pausa_na_camada = m_pausado_s;
+        if (m_plano.valido && idx > 0 && idx < int(m_plano.camadas.size())) {
+            m_t_plano = m_t_sincronia = m_t_cp_ant = m_plano.camadas[idx].inicio_s;
+            while (m_proximo < m_checkpoints.size() && m_checkpoints[m_proximo].t <= m_t_plano)
+                ++m_proximo;
+        }
     }
 
     // erro informado pela impressora (antes ou durante)
@@ -675,6 +880,13 @@ void Analise::amostra(const Amostra& a)
     }
     const double ds = desde_inicio(a.t);
     m_maior_camada  = std::max(m_maior_camada, cam);
+    lembrar(m_bicos, a.bico);
+    lembrar(m_mesas, a.mesa);
+    if (a.velocidade >= 1)
+        m_velocidade = a.velocidade;
+    m_t_plano += dt / fator_velocidade(m_velocidade);
+    while (m_proximo < m_checkpoints.size() && m_t_plano >= m_checkpoints[m_proximo].t)
+        conferir(m_checkpoints[m_proximo++], a, idx);
 
     // número de camadas diferente do plano: a impressora pode estar com outro arquivo
     if (!m_camadas_anotado && m_plano.valido && a.total_camadas > 0 && std::abs(a.total_camadas - int(m_plano.camadas.size())) > 1) {
@@ -782,8 +994,26 @@ void Analise::amostra(const Amostra& a)
             if (std::fabs(dev) > std::fabs(m_bico.pior))
                 m_bico.pior = dev;
             m_bico.camada1 = idx;
-        } else
+            if (!m_bico_alertado && std::fabs(m_bico.pior) >= 15. && a.t - m_bico.t0 >= 30.) {
+                m_bico_alertado = true;
+                Ocorrencia o;
+                o.tipo      = "bico";
+                o.gravidade = "problema";
+                o.camada_de = o.camada_ate = cam;
+                o.t_de = o.t_ate = ds;
+                preencher_altura(o);
+                const std::string alt = std::isnan(o.z_de) ? std::string() : " (" + num_br(o.z_de, 1) + " mm de altura)";
+                alertar(o,
+                        m_nome + (m_impressora.empty() ? "" : " na " + m_impressora) + ": o bico deveria estar a " +
+                            std::to_string(std::lround(a.bico_alvo)) + " °C e está a " + std::to_string(std::lround(a.bico)) + " °C há " +
+                            duracao(a.t - m_bico.t0) + ". Bico " + (dev < 0 ? "frio extruda menos" : "quente demais deixa fios e bolhas") +
+                            ": verifique se há partes imperfeitas na impressão" + alt + " e se o acabamento está como você deseja.",
+                        json{{"bico_esperado", std::lround(a.bico_alvo)}, {"bico_real", std::lround(a.bico)}}, true);
+            }
+        } else {
             fechar_janela(m_bico, "bico", a.t, 30.);
+            m_bico_alertado = false;
+        }
         // alvo mudado na impressora (diferente do G-code) por mais de 1 min
         const int pedido = m_plano.valido && idx >= 0 && idx < int(m_plano.camadas.size()) ? m_plano.camadas[idx].temp_bico : 0;
         const int alvo   = int(std::lround(a.bico_alvo));
@@ -937,6 +1167,9 @@ json Analise::relatorio(const std::string& estado_final)
               {"infos", infos},
               {"resumo", resumo},
               {"ocorrencias", lista},
+              {"checkpoints_previstos", m_checkpoints.size()},
+              {"checkpoints", m_conferidos},
+              {"alertas", m_alertas},
               {"serie", m_serie}};
     return r;
 }
@@ -970,7 +1203,7 @@ void Monitor::guardar_plano(const std::string& dev_id, const Sessao& s, const Pl
     boost::system::error_code ec;
     boost::filesystem::create_directories(boost::filesystem::path(arq).parent_path(), ec);
     boost::nowide::ofstream o(arq, std::ios::binary | std::ios::trunc);
-    o << json{{"nome", s.nome}, {"impressora", s.impressora}, {"trabalho_id", s.trabalho_id}, {"criado", (long long) std::time(nullptr)},
+    o << json{{"id", s.id}, {"nome", s.nome}, {"impressora", s.impressora}, {"trabalho_id", s.trabalho_id}, {"criado", (long long) std::time(nullptr)},
               {"plano", p.to_json()}}
              .dump();
 }
@@ -990,6 +1223,7 @@ bool Monitor::ler_plano(const std::string& dev_id, Sessao& s, double t)
     s.impressora  = j.value("impressora", s.impressora);
     s.trabalho_id = j.value("trabalho_id", std::string());
     s.analise     = std::make_unique<Analise>(PlanoImpressao::from_json(j.value("plano", json::object())), s.nome, s.impressora);
+    s.id          = j.value("id", std::string());
     s.criada      = t;
     return true;
 }
@@ -1002,11 +1236,31 @@ void Monitor::esquecer_plano(const std::string& dev_id) const
         boost::filesystem::remove(arq, ec);
 }
 
+namespace {
+std::string novo_id()
+{
+    static std::mt19937_64 g{std::random_device{}()};
+    char b[24];
+    std::snprintf(b, sizeof(b), "%016llx", (unsigned long long) g());
+    return b;
+}
+} // namespace
+
+void Monitor::marcar(const Sessao& s, const std::string& dev_id, std::vector<json>& alertas) const
+{
+    for (json& a : alertas) {
+        a["sessao"]      = s.id;
+        a["trabalho_id"] = s.trabalho_id;
+        a["dev_id"]      = dev_id;
+    }
+}
+
 void Monitor::comecar(const std::string& dev_id, const PlanoImpressao& plano, const std::string& nome, const std::string& impressora,
                       const std::string& trabalho_id)
 {
     std::lock_guard<std::mutex> l(m_trava);
     Sessao s;
+    s.id          = novo_id();
     s.nome        = nome;
     s.impressora  = impressora;
     s.trabalho_id = trabalho_id;
@@ -1019,6 +1273,7 @@ void Monitor::comecar(const std::string& dev_id, const PlanoImpressao& plano, co
 json Monitor::encerrar(const std::string& dev_id, Sessao& s, const std::string& estado)
 {
     json r = s.analise->relatorio(estado);
+    r["sessao"]      = s.id;
     r["trabalho_id"] = s.trabalho_id;
     r["dev_id"]      = dev_id;
     r["fim_em"]      = (long long) std::time(nullptr);
@@ -1035,16 +1290,18 @@ json Monitor::encerrar(const std::string& dev_id, Sessao& s, const std::string& 
     return r;
 }
 
-std::optional<json> Monitor::amostra(const std::string& dev_id, const std::string& impressora, const Amostra& a)
+Monitor::Resultado Monitor::amostra(const std::string& dev_id, const std::string& impressora, const Amostra& a)
 {
     std::lock_guard<std::mutex> l(m_trava);
+    Resultado res;
     auto it = m_sessoes.find(dev_id);
     const bool imprimindo = a.estado == "imprimindo" || a.estado == "pausada";
     if (it == m_sessoes.end()) {
         if (!imprimindo)
-            return std::nullopt;
+            return res;
         Sessao s;
         s.impressora = impressora;
+        s.id = novo_id();
         if (!ler_plano(dev_id, s, a.t)) { // impressão começada fora do Filuna (ou plano perdido): só o que a impressora informa
             s.nome    = "Impressão em " + impressora;
             s.analise = std::make_unique<Analise>(PlanoImpressao(), s.nome, impressora);
@@ -1059,6 +1316,7 @@ std::optional<json> Monitor::amostra(const std::string& dev_id, const std::strin
         s.desligada_desde = -1.;
     }
     s.analise->amostra(a);
+    res.alertas = s.analise->alertas();
     std::string fim;
     if (a.estado == "concluida" || a.estado == "falhou" || a.estado == "cancelada")
         fim = s.viu_imprimindo ? a.estado : std::string();
@@ -1072,15 +1330,21 @@ std::optional<json> Monitor::amostra(const std::string& dev_id, const std::strin
     } else if (!s.viu_imprimindo && a.t - s.criada > 30 * 60) { // plano registrado e a impressão nunca começou
         esquecer_plano(dev_id);
         m_sessoes.erase(it);
-        return std::nullopt;
+        return res;
     }
-    if (fim.empty())
-        return std::nullopt;
+    if (fim.empty()) {
+        marcar(s, dev_id, res.alertas);
+        return res;
+    }
     json r = encerrar(dev_id, s, fim);
+    for (json& x : s.analise->alertas()) // a falha no fim também avisa
+        res.alertas.push_back(std::move(x));
+    marcar(s, dev_id, res.alertas);
     m_sessoes.erase(it);
     if (!r.value("com_plano", false) && r.value("camada_max", -1) < 1 && r.value("imprimindo_s", 0) < 60)
-        return std::nullopt; // não chegou a imprimir: nada para relatar
-    return r;
+        return res; // não chegou a imprimir: nada para relatar
+    res.relatorio = std::move(r);
+    return res;
 }
 
 }} // namespace Slic3r::Filuna

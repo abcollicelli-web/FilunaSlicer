@@ -305,13 +305,14 @@ TEST_CASE("Filuna análise: monitor guarda o plano e entrega o relatório no fim
     std::optional<json> r;
     for (int i = 0; i < 10 && !r; ++i)
         for (double s = 0.; s < 30. && !r; s += 5.)
-            r = m.amostra("DEV1", "P2S-KYLLE", normal(t + i * 30. + s, i + 1, 10, i * 10));
+            r = m.amostra("DEV1", "P2S-KYLLE", normal(t + i * 30. + s, i + 1, 10, i * 10)).relatorio;
     CHECK_FALSE(r.has_value());
     Amostra fim = normal(t + 300., 10, 10, 100);
     fim.estado  = "concluida";
-    r           = m.amostra("DEV1", "P2S-KYLLE", fim);
+    r           = m.amostra("DEV1", "P2S-KYLLE", fim).relatorio;
     REQUIRE(r.has_value());
     CHECK((*r)["trabalho_id"] == "trab-1");
+    CHECK((*r)["sessao"].get<std::string>().size() == 16);
     CHECK((*r)["nome"] == "Suporte");
     CHECK((*r)["estado_final"] == "concluida");
     CHECK_FALSE(boost::filesystem::exists(dir / "plano-DEV1.json"));
@@ -326,7 +327,7 @@ TEST_CASE("Filuna análise: monitor guarda o plano e entrega o relatório no fim
     for (int k = 0; k < 3; ++k) {
         livre.estado = "livre";
         livre.t += 5.;
-        r = m.amostra("DEV2", "A1", livre);
+        r = m.amostra("DEV2", "A1", livre).relatorio;
     }
     REQUIRE(r.has_value());
     CHECK((*r)["com_plano"] == false);
@@ -348,4 +349,148 @@ TEST_CASE("Filuna análise: previsto acompanha a velocidade de cada trecho", "[f
     CHECK(conta(r, "velocidade") == 1);
     CHECK(conta(r, "tempo") == 0);
     CHECK(conta(r, "lento") == 0);
+}
+
+TEST_CASE("Filuna análise: mapa de checkpoints cresce com a impressão e marca os pontos críticos", "[filuna][analise]")
+{
+    // 1 h de impressão: rotina a cada 5 min
+    PlanoImpressao uma = plano_simples(60, 60.);
+    std::vector<Checkpoint> m1 = mapa_checkpoints(uma);
+    int rotina1 = 0;
+    for (const Checkpoint& k : m1)
+        rotina1 += !k.critico;
+    CHECK(rotina1 >= 9);
+    CHECK(rotina1 <= 11);
+    // 6 h: rotina a cada 15 min, mais pontos no total
+    std::vector<Checkpoint> m6 = mapa_checkpoints(plano_simples(360, 60.));
+    CHECK(m6.size() > m1.size());
+    // o 1º é o fim da 1ª camada; o último crítico é a última camada
+    REQUIRE_FALSE(m1.empty());
+    CHECK(m1.front().critico);
+    CHECK(m1.front().camada == 1);
+    CHECK(m1.front().motivo.find("primeira camada") != std::string::npos);
+    CHECK(m1.back().motivo.find("última camada") != std::string::npos);
+    // ponte e troca de cor viram pontos críticos, conferidos no fim da camada
+    PlanoImpressao p = plano_simples(60, 60.);
+    p.camadas[20].tipos = {"ponte"};
+    p.camadas[21].tipos = {"ponte"};
+    p.camadas[40].troca_cor = true;
+    std::vector<Checkpoint> m = mapa_checkpoints(p);
+    int pontes = 0, trocas = 0;
+    for (const Checkpoint& k : m) {
+        if (k.motivo.find("ponte") != std::string::npos) {
+            ++pontes;
+            CHECK(k.camada == 21);
+            CHECK(std::fabs(k.t - 21 * 60.) < 1.);
+        }
+        trocas += k.motivo.find("troca de cor") != std::string::npos;
+        CHECK(k.temp_bico == 220);
+        CHECK(k.temp_mesa == 60);
+    }
+    CHECK(pontes == 1); // a ponte de 2 camadas é um ponto só
+    CHECK(trocas == 1);
+    for (size_t i = 1; i < m.size(); ++i)
+        CHECK(m[i].t >= m[i - 1].t);
+    CHECK(mapa_checkpoints(PlanoImpressao()).empty());
+}
+
+TEST_CASE("Filuna análise: troca de cor no G-code", "[filuna][analise]")
+{
+    const std::string g = "T0\n; CHANGE_LAYER\n; Z_HEIGHT: 0.2\nG1 X10 E1 F1200\n"
+                          "; CHANGE_LAYER\n; Z_HEIGHT: 0.4\nG1 X0 E1\n"
+                          "; CHANGE_LAYER\n; Z_HEIGHT: 0.6\nM620 S1A\nT1\nG1 X10 E1\n"
+                          "; CHANGE_LAYER\n; Z_HEIGHT: 0.8\nG1 X0 E1\n";
+    const PlanoImpressao p = plano_do_texto(g);
+    REQUIRE(p.camadas.size() == 4);
+    CHECK_FALSE(p.camadas[0].troca_cor); // a ferramenta inicial não é troca
+    CHECK_FALSE(p.camadas[1].troca_cor);
+    CHECK(p.camadas[2].troca_cor);
+    CHECK_FALSE(p.camadas[3].troca_cor);
+    CHECK(PlanoImpressao::from_json(p.to_json()).camadas[2].troca_cor);
+}
+
+TEST_CASE("Filuna análise: impressão conforme o plano passa por todos os checkpoints sem alerta", "[filuna][analise]")
+{
+    const PlanoImpressao p = plano_simples(60, 60.);
+    Analise              an(p, "Peça", "P2S");
+    const json           r = simular(an, p, [](int) { return 60.; });
+    CHECK(an.alertas().empty());
+    CHECK(r["alertas"].empty());
+    CHECK(r["checkpoints"].size() >= mapa_checkpoints(p).size() - 1);
+    for (const auto& k : r["checkpoints"])
+        CHECK(k["ok"] == true);
+}
+
+TEST_CASE("Filuna análise: atraso grande no checkpoint avisa com a camada esperada e a real, sem repetir depois", "[filuna][analise]")
+{
+    const PlanoImpressao p = plano_simples(60, 60.);
+    Analise              an(p, "Suporte", "P2S-KYLLE");
+    std::vector<json>    alertas;
+    double               t = 1000.;
+    for (int i = 0; i < 60; ++i) {
+        const double d = i >= 10 && i < 14 ? 240. : 60.; // camadas 11 a 14 levam 4x: ~12 min de atraso
+        for (double s = 0.; s < d; s += 5.) {
+            an.amostra(normal(t + s, i + 1, 60, i * 100 / 60));
+            for (json& a : an.alertas())
+                alertas.push_back(a);
+        }
+        t += d;
+    }
+    // a lentidão contínua pode avisar de novo (10 min depois); quando o ritmo volta ao normal, o atraso não se repete
+    REQUIRE_FALSE(alertas.empty());
+    CHECK(alertas.size() <= 2);
+    for (const json& x : alertas)
+        CHECK(x["camada"].get<int>() <= 16);
+    const json& a = alertas[0];
+    CHECK(a["tipo"] == "checkpoint");
+    CHECK(a["titulo"] == "Sua impressão não está conforme o previsto");
+    CHECK(a["mensagem"].get<std::string>().find("de atraso") != std::string::npos);
+    CHECK(a["mensagem"].get<std::string>().find("Verifique se há partes imperfeitas") != std::string::npos);
+    CHECK(a["conferencia"]["camada_esperada"].get<int>() > a["conferencia"]["camada_real"].get<int>());
+    CHECK(a["conferencia"]["ok"] == false);
+}
+
+TEST_CASE("Filuna análise: bico frio dispara alerta na hora e o checkpoint confere a temperatura", "[filuna][analise]")
+{
+    const PlanoImpressao p = plano_simples(60, 60.);
+    Analise              an(p, "Peça", "A1");
+    std::vector<json>    alertas;
+    double               t = 1000.;
+    for (int i = 0; i < 30; ++i) {
+        for (double s = 0.; s < 60.; s += 5.) {
+            Amostra a = normal(t + s, i + 1, 60, i * 100 / 60);
+            if (i >= 12 && i < 20)
+                a.bico = 198.; // 22 °C abaixo por 8 min (passa pelo checkpoint dos 15 min)
+            an.amostra(a);
+            for (json& x : an.alertas())
+                alertas.push_back(x);
+        }
+        t += 60.;
+    }
+    REQUIRE_FALSE(alertas.empty());
+    CHECK(alertas[0]["tipo"] == "bico");
+    CHECK(alertas[0]["gravidade"] == "problema");
+    CHECK(alertas[0]["mensagem"].get<std::string>().find("198 °C") != std::string::npos);
+    CHECK(alertas.size() <= 2); // 10 min entre alertas que não são erro
+}
+
+TEST_CASE("Filuna análise: erro da impressora é alerta urgente e há limite de alertas", "[filuna][analise]")
+{
+    const PlanoImpressao p = plano_simples(200, 60.);
+    Analise              an(p, "Peça", "P2S");
+    std::vector<json>    alertas;
+    double               t = 1000.;
+    for (int i = 0; i < 200; ++i) {
+        for (double s = 0.; s < 60.; s += 5.) {
+            Amostra a = normal(t + s, i + 1, 200, i / 2);
+            if (i % 5 == 0 && s == 0.)
+                a.erro = "erro " + std::to_string(i); // um erro novo a cada 5 min
+            an.amostra(a);
+            for (json& x : an.alertas())
+                alertas.push_back(x);
+        }
+        t += 60.;
+    }
+    CHECK(alertas.size() == 12);
+    CHECK(alertas[0]["tipo"] == "erro");
 }

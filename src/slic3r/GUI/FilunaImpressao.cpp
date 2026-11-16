@@ -31,6 +31,9 @@
 #include <cmath>
 #include <map>
 #include <wx/stdpaths.h>
+#include <wx/mstream.h>
+#include <wx/statbmp.h>
+#include <wx/utils.h>
 #include <wx/filedlg.h>
 #include <chrono>
 #include <future>
@@ -1685,6 +1688,67 @@ std::vector<AmostraDe> analise_amostras()
     return v;
 }
 
+// Janela do alerta: a mensagem e a foto da mesa (quando a câmera mandou uma recente). Não trava o programa.
+void analise_janela(const std::string& titulo, const std::string& mensagem, const std::string& jpeg, const std::string& link)
+{
+    wxDialog* d = new wxDialog(wxGetApp().mainframe, wxID_ANY, wxString::FromUTF8(titulo), wxDefaultPosition, wxDefaultSize,
+                               wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP);
+    auto* col = new wxBoxSizer(wxVERTICAL);
+    if (!jpeg.empty()) {
+        wxMemoryInputStream in(jpeg.data(), jpeg.size());
+        wxImage             img;
+        if (img.LoadFile(in, wxBITMAP_TYPE_JPEG) && img.IsOk()) {
+            const int larg = std::min(560, img.GetWidth());
+            img.Rescale(larg, std::max(1, img.GetHeight() * larg / std::max(1, img.GetWidth())), wxIMAGE_QUALITY_HIGH);
+            col->Add(new wxStaticBitmap(d, wxID_ANY, wxBitmap(img)), 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 12);
+        }
+    }
+    auto* txt = new wxStaticText(d, wxID_ANY, wxString::FromUTF8(mensagem));
+    txt->Wrap(540);
+    col->Add(txt, 0, wxLEFT | wxRIGHT | wxBOTTOM, 14);
+    auto* botoes = new wxBoxSizer(wxHORIZONTAL);
+    if (!link.empty()) {
+        auto* ver = new wxButton(d, wxID_ANY, wxString::FromUTF8("Ver no site"));
+        ver->Bind(wxEVT_BUTTON, [link](wxCommandEvent&) { wxLaunchDefaultBrowser(wxString::FromUTF8(link)); });
+        botoes->Add(ver, 0, wxRIGHT, 8);
+    }
+    auto* fechar = new wxButton(d, wxID_OK, wxString::FromUTF8("Fechar"));
+    fechar->Bind(wxEVT_BUTTON, [d](wxCommandEvent&) { d->Destroy(); });
+    botoes->Add(fechar);
+    col->Add(botoes, 0, wxALL | wxALIGN_RIGHT, 12);
+    d->Bind(wxEVT_CLOSE_WINDOW, [d](wxCloseEvent&) { d->Destroy(); });
+    d->SetSizerAndFit(col);
+    d->CentreOnParent();
+    d->Show();
+    if (wxGetApp().mainframe != nullptr)
+        wxGetApp().mainframe->RequestUserAttention();
+}
+
+// Alerta da análise: o site junta a foto da mesa (a última da câmera desta impressora), avisa no app, no site e por
+// e-mail; aqui a janela mostra o mesmo, com a foto.
+void analise_alertar(json alerta, const std::string& ref)
+{
+    BOOST_LOG_TRIVIAL(warning) << "Filuna análise: alerta (" << alerta.value("tipo", std::string()) << ") " << alerta.value("mensagem", std::string());
+    alerta["cadastro_id"] = ref;
+    const std::string token = wxGetApp().app_config->get("filuna_token");
+    std::string       jpeg, link;
+    if (!token.empty()) {
+        FarmResp resp = farm_http("POST", "/analises/alertas", alerta, token);
+        if (resp.status == 200 && resp.corpo.is_object()) {
+            link = resp.corpo.value("link", std::string());
+            const std::string foto = resp.corpo.value("foto_url", std::string());
+            if (!foto.empty())
+                Http::get(foto).timeout_connect(10).timeout_max(30).on_complete([&jpeg](std::string b, unsigned st) {
+                    if (st == 200 && b.size() > 3 && (unsigned char) b[0] == 0xFF && (unsigned char) b[1] == 0xD8)
+                        jpeg = std::move(b);
+                }).perform_sync();
+        } else
+            BOOST_LOG_TRIVIAL(warning) << "Filuna análise: o site não recebeu o alerta (" << resp.erro << ")";
+    }
+    const std::string titulo = alerta.value("titulo", std::string("Impressão fora do previsto")), msg = alerta.value("mensagem", std::string());
+    wxGetApp().CallAfter([titulo, msg, jpeg, link] { analise_janela(titulo, msg, jpeg, link); });
+}
+
 void analise_enviar(const json& r)
 {
     const std::string token = wxGetApp().app_config->get("filuna_token");
@@ -1710,9 +1774,13 @@ void analise_monitor()
             try {
                 std::vector<AmostraDe> v;
                 if (analise_ligada() && na_janela<std::vector<AmostraDe>>([] { return analise_amostras(); }, v, 10))
-                    for (const AmostraDe& a : v)
-                        if (auto r = Filuna::Monitor::get().amostra(a.dev_id, a.nome, a.amostra))
-                            analise_enviar(*r);
+                    for (const AmostraDe& a : v) {
+                        Filuna::Monitor::Resultado r = Filuna::Monitor::get().amostra(a.dev_id, a.nome, a.amostra);
+                        for (json& alerta : r.alertas)
+                            analise_alertar(std::move(alerta), wxGetApp().app_config->get("filuna_dispositivo_" + a.dev_id));
+                        if (r.relatorio)
+                            analise_enviar(*r.relatorio);
+                    }
             } catch (const std::exception& e) {
                 BOOST_LOG_TRIVIAL(warning) << "Filuna análise: " << e.what();
             } catch (...) {
