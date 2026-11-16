@@ -885,6 +885,8 @@ private:
     wxSpinCtrlDouble* m_thread_pitch{nullptr};
     wxSpinCtrlDouble* m_thread_height{nullptr};
     wxSpinCtrlDouble* m_thread_depth{nullptr};
+    wxSpinCtrlDouble* m_thread_folga{nullptr};   // Filuna: folga para impressão 3D (mm, no raio)
+    double            filuna_diametro_rosca() const; // diâmetro nominal com a folga: maior no furo, menor no parafuso
     CheckBox*         m_thread_internal{nullptr};
     wxSpinCtrlDouble* m_thread_x{nullptr};
     wxSpinCtrlDouble* m_thread_y{nullptr};

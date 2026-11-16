@@ -2055,6 +2055,25 @@ DesignPanel::DesignPanel(wxWindow* parent)
     tform->Add(new wxStaticText(m_cards, wxID_ANY, _L("Pos Y")), 0, wxALIGN_CENTER_VERTICAL);
     tform->Add(spin_frame(m_thread_y), 0, wxEXPAND);
 
+    // Filuna: folga para impressão 3D. A rosca exata da norma trava na peça impressa; a folga alarga o furo e
+    // afina o parafuso só na hora de criar (o campo Diâmetro continua o nominal, M6 = 6 mm).
+    {
+        double folga = 0.2;
+        const std::string salvo = wxGetApp().app_config->get("filuna_rosca_folga");
+        if (!salvo.empty()) {
+            try { folga = std::stod(salvo); } catch (...) {}
+        }
+        m_thread_folga = make_spin(m_cards, std::max(0.0, std::min(1.0, folga)), 0.0, 1.0);
+        m_thread_folga->SetIncrement(0.05);
+        m_thread_folga->SetDigits(2);
+        m_thread_folga->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent& e) {
+            wxGetApp().app_config->set("filuna_rosca_folga", std::to_string(m_thread_folga->GetValue()));
+            e.Skip();
+        });
+        tform->Add(new wxStaticText(m_cards, wxID_ANY, wxString::FromUTF8("Folga (impressão 3D)")), 0, wxALIGN_CENTER_VERTICAL);
+        tform->Add(spin_frame(m_thread_folga), 0, wxEXPAND);
+    }
+
     m_thread_internal = new CheckBox(m_cards);
     m_thread_internal->SetValue(false);
     // The diameter field is the NOMINAL (major) diameter either way; what the role changes is
@@ -5420,6 +5439,14 @@ SketchPlane DesignPanel::thread_plane() const
     return p;
 }
 
+double DesignPanel::filuna_diametro_rosca() const
+{
+    const double nominal  = m_thread_radius ? m_thread_radius->GetValue() : 0.0;
+    const double folga    = m_thread_folga ? m_thread_folga->GetValue() : 0.0;
+    const bool   internal = m_thread_internal && m_thread_internal->GetValue();
+    return std::max(0.1, nominal + (internal ? 2.0 * folga : -2.0 * folga));
+}
+
 void DesignPanel::apply_thread_standard()
 {
     if (!m_thread_std) return;
@@ -5474,7 +5501,7 @@ void DesignPanel::on_add_thread()
     SketchPlane plane = thread_plane();
 
     m_feature_counter++;
-    const int tidx = m_doc.add_thread(m_thread_radius->GetValue() * 0.5, m_thread_pitch->GetValue(),
+    const int tidx = m_doc.add_thread(filuna_diametro_rosca() * 0.5, m_thread_pitch->GetValue(),
                      m_thread_height->GetValue(), m_thread_depth->GetValue(),
                      internal, m_thread_x->GetValue(), m_thread_y->GetValue(),
                      plane, feature_name(_L("Thread")));
@@ -9767,6 +9794,7 @@ void DesignPanel::load_feature_into_dialog(const CadFeature& f)
     case CadFeatureType::Thread:
         m_thread_plane->SetSelection(index_from_plane(f.plane));
         m_thread_radius->SetValue(f.thread_radius * 2.0);   // field = diameter
+        if (m_thread_folga) m_thread_folga->SetValue(0.0);   // a folga já está no diâmetro guardado
         m_thread_pitch->SetValue(f.thread_pitch);
         m_thread_height->SetValue(f.thread_height);
         m_thread_depth->SetValue(f.thread_depth);
@@ -10434,7 +10462,7 @@ CadFeature DesignPanel::build_candidate(Tool t) const
     case Tool::Thread:
         f.type            = CadFeatureType::Thread;
         f.plane           = thread_plane();
-        f.thread_radius   = m_thread_radius->GetValue() * 0.5;   // field = diameter -> kernel radius
+        f.thread_radius   = filuna_diametro_rosca() * 0.5;   // field = diameter (+ folga Filuna) -> kernel radius
         f.thread_pitch    = m_thread_pitch->GetValue();
         f.thread_height   = m_thread_height->GetValue();
         f.thread_depth    = m_thread_depth->GetValue();
