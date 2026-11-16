@@ -1976,6 +1976,44 @@ DesignPanel::DesignPanel(wxWindow* parent)
     hform->Add(new wxStaticText(m_cards, wxID_ANY, _L("Hole plane")), 0, wxALIGN_CENTER_VERTICAL);
     hform->Add(m_hole_plane, 0, wxEXPAND);
 
+    // Filuna: encaixes prontos para impressão 3D. Medidas de referência já com a folga de FDM; escolher um item só
+    // preenche diâmetro, profundidade e passante (o resto do cartão segue igual).
+    {
+        struct Encaixe { const char* nome; double diametro, profundidade; bool passante; };
+        static const Encaixe ENCAIXES[] = {
+            {"Inserto roscado M2 (furo 3,2 × 4 mm)", 3.2, 4.0, false},
+            {"Inserto roscado M3 (furo 4,2 × 5,7 mm)", 4.2, 5.7, false},
+            {"Inserto roscado M4 (furo 5,6 × 8,1 mm)", 5.6, 8.1, false},
+            {"Parafuso M3 passante (furo 3,4 mm)", 3.4, 10.0, true},
+            {"Parafuso M4 passante (furo 4,5 mm)", 4.5, 10.0, true},
+            {"Parafuso M5 passante (furo 5,5 mm)", 5.5, 10.0, true},
+            {"Ímã 6 × 3 mm (furo 6,3 × 3,2 mm)", 6.3, 3.2, false},
+            {"Ímã 8 × 2 mm (furo 8,3 × 2,2 mm)", 8.3, 2.2, false},
+            {"Ímã 10 × 3 mm (furo 10,3 × 3,2 mm)", 10.3, 3.2, false},
+            {"Rolamento 608 (furo 22,2 × 7 mm)", 22.2, 7.0, false},
+            {"Pino de pressão Ø5 (furo 5,1 × 8 mm)", 5.1, 8.0, false},
+        };
+        auto* enc = make_combo(m_cards);
+        enc->Append(wxString::FromUTF8("Personalizado"));
+        for (const Encaixe& e : ENCAIXES)
+            enc->Append(wxString::FromUTF8(e.nome));
+        enc->SetSelection(0);
+        enc->Bind(wxEVT_COMBOBOX, [this, enc](wxCommandEvent& ev) {
+            const int i = enc->GetSelection() - 1;
+            if (i >= 0 && i < int(sizeof(ENCAIXES) / sizeof(ENCAIXES[0]))) {
+                const Encaixe& e = ENCAIXES[i];
+                if (m_hole_diameter) m_hole_diameter->SetValue(e.diametro);
+                if (m_hole_depth) m_hole_depth->SetValue(e.profundidade);
+                if (m_hole_through) m_hole_through->SetValue(e.passante);
+                update_hole_gizmo();
+                refresh_preview();
+            }
+            ev.Skip();
+        });
+        hform->Add(new wxStaticText(m_cards, wxID_ANY, wxString::FromUTF8("Encaixe Filuna")), 0, wxALIGN_CENTER_VERTICAL);
+        hform->Add(enc, 0, wxEXPAND);
+    }
+
     m_hole_diameter = make_spin(m_cards, 6.0);
     hform->Add(new wxStaticText(m_cards, wxID_ANY, _L("Diameter")), 0, wxALIGN_CENTER_VERTICAL);
     hform->Add(spin_frame(m_hole_diameter), 0, wxEXPAND);
