@@ -1,5 +1,7 @@
 #include "Plater.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaLateral.hpp"
+#include "slic3r/Filuna/FilunaDb.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaImpressao.hpp"
 #include "DeviceCore/FilunaOEMOverlay.hpp"
@@ -916,6 +918,22 @@ struct Sidebar::priv
     ComboBox *      combo_printer_bed = nullptr;
 
     ImageDPIFrame *big_bed_image_popup = nullptr;
+
+    // Filuna: visual fixo da parte de cima do menu (FilunaLateral). Só visual: as listas acima continuam fazendo o
+    // trabalho, escondidas; cada clique no visual abre a lista original no lugar clicado.
+    FilunaLateral::Faixa*            fl_faixa      = nullptr;
+    FilunaLateral::CartaoImpressora* fl_impressora = nullptr;
+    FilunaLateral::CartaoMesa*       fl_mesa       = nullptr;
+    FilunaLateral::Bobinas*          fl_bobinas    = nullptr;
+    wxTimer*                         fl_timer      = nullptr;
+    bool                             fl_mesa_tipos = false; // a impressora tem tipos de mesa para escolher
+    void fl_criar();
+    void fl_atualizar();
+    bool fl_esconder_originais();
+    void fl_abrir(ComboBox* combo, const wxRect& tela, int largura_min = 0);
+    void fl_tipo_bico(const wxRect& tela);
+    void foto_impressora(const std::string& caminho);
+    void foto_mesa(const std::string& caminho);
     // Printer - sync
     //Button *btn_sync_printer;
     std::shared_ptr<int> counter_sync_printer = std::make_shared<int>();
@@ -1123,7 +1141,8 @@ void Sidebar::priv::layout_printer(bool isBBL, bool isDual)
     const auto& cfg = preset_bundle.printers.get_edited_preset().config;
     // Orca: we use preset_bundle.is_bbl_vendor() instead of isBBL to determine if the plate type combo box should be shown
     // ref: https://github.com/OrcaSlicer/OrcaSlicer/pull/11610#discussion_r2607411847
-    panel_printer_bed->Show(preset_bundle.is_bbl_vendor() || cfg.opt_bool("support_multi_bed_types"));
+    fl_mesa_tipos = preset_bundle.is_bbl_vendor() || cfg.opt_bool("support_multi_bed_types");
+    panel_printer_bed->Show(fl_mesa_tipos);
 
     extruder_dual_sizer->Show(isDual);
 
@@ -1162,6 +1181,217 @@ void Sidebar::priv::layout_printer(bool isBBL, bool isDual)
             m_panel_printer_content->Show();
         }
     }
+    fl_criar();
+    fl_esconder_originais();
+    fl_atualizar();
+}
+
+void Sidebar::priv::fl_criar()
+{
+    if (fl_faixa || !m_panel_printer_content || !vsizer_printer)
+        return;
+    fl_faixa      = new FilunaLateral::Faixa(m_panel_printer_content);
+    fl_impressora = new FilunaLateral::CartaoImpressora(m_panel_printer_content);
+    fl_mesa       = new FilunaLateral::CartaoMesa(m_panel_printer_content);
+    auto* linha   = new wxBoxSizer(wxHORIZONTAL);
+    linha->Add(fl_impressora, 1, wxEXPAND);
+    linha->Add(fl_mesa, 0, wxEXPAND | wxLEFT, fl_faixa->FromDIP(8));
+    auto* bloco = new wxBoxSizer(wxVERTICAL);
+    bloco->Add(fl_faixa, 0, wxEXPAND);
+    bloco->Add(linha, 0, wxEXPAND | wxTOP, fl_faixa->FromDIP(10));
+    vsizer_printer->Insert(0, bloco, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, fl_faixa->FromDIP(SidebarProps::ContentMargin()));
+
+    fl_faixa->ao_clicar = [this] { fl_abrir(combo_printer, wxRect(fl_faixa->GetScreenPosition(), fl_faixa->GetSize())); };
+    fl_impressora->ao_bico = [this](const wxRect& r) { fl_abrir(combo_nozzle_dia, r); };
+    fl_impressora->ao_tipo = [this](const wxRect& r) { fl_tipo_bico(r); };
+    fl_mesa->ao_clicar     = [this](const wxRect& r) { fl_abrir(combo_printer_bed, r, fl_mesa->FromDIP(180)); };
+
+    // Mudanças que vêm de outros caminhos (sincronizar com a impressora, trocar a cor, o perfil…): o visual confere a
+    // cada 0,7 s e só se redesenha quando algo mudou.
+    fl_timer = new wxTimer();
+    fl_timer->Bind(wxEVT_TIMER, [this](wxTimerEvent&) { fl_atualizar(); });
+    fl_timer->Start(700);
+}
+
+bool Sidebar::priv::fl_esconder_originais()
+{
+    bool escondeu = false;
+    for (wxWindow* w : std::initializer_list<wxWindow*>{panel_printer_preset, panel_nozzle_dia, panel_printer_bed})
+        if (w && w->IsShown()) {
+            w->Hide();
+            escondeu = true;
+        }
+    return escondeu;
+}
+
+// Abre a lista original no lugar clicado: ela continua escondida, mas é posta em cima do cartão antes de abrir (a
+// lista se posiciona e toma a largura de quem a abriu). O próximo Layout devolve a lista ao lugar dela.
+void Sidebar::priv::fl_abrir(ComboBox* combo, const wxRect& tela, int largura_min)
+{
+    if (!combo || !combo->GetParent())
+        return;
+    const wxPoint destino = combo->GetParent()->ScreenToClient(tela.GetTopLeft());
+    combo->SetSize(destino.x, destino.y, std::max(tela.width, largura_min), tela.height);
+    combo->ForceDropdownOpen();
+}
+
+// Tipo de bico: as opções do Orca, gravadas no perfil da impressora pela própria aba (o perfil fica "modificado",
+// como se o cliente tivesse mudado lá).
+void Sidebar::priv::fl_tipo_bico(const wxRect& tela)
+{
+    PresetBundle& pb  = *wxGetApp().preset_bundle;
+    const auto*   opt = pb.printers.get_edited_preset().config.option<ConfigOptionEnumsGenericNullable>("nozzle_type");
+    Tab*          tab = wxGetApp().get_tab(Preset::TYPE_PRINTER);
+    if (!opt || !tab)
+        return;
+    const std::vector<std::pair<NozzleType, wxString>> tipos{{ntBrass, _L("Brass")},
+                                                             {ntStainlessSteel, _L("Stainless Steel")},
+                                                             {ntHardenedSteel, _L("Hardened Steel")},
+                                                             {ntTungstenCarbide, _L("Tungsten Carbide")}};
+    wxMenu menu;
+    for (size_t i = 0; i < tipos.size(); ++i) {
+        wxMenuItem* item = menu.AppendRadioItem(wxID_HIGHEST + 700 + int(i), tipos[i].second);
+        if (!opt->values.empty() && opt->values.front() == int(tipos[i].first))
+            item->Check(true);
+    }
+    menu.Bind(wxEVT_MENU, [this, tipos, opt, tab](wxCommandEvent& e) {
+        const size_t i = size_t(e.GetId() - (wxID_HIGHEST + 700));
+        if (i >= tipos.size())
+            return;
+        auto* novo = static_cast<ConfigOptionEnumsGenericNullable*>(opt->clone());
+        for (int& v : novo->values)
+            v = int(tipos[i].first);
+        DynamicPrintConfig c;
+        c.set_key_value("nozzle_type", novo);
+        tab->load_config(c);
+        fl_atualizar();
+    });
+    const wxPoint p = m_panel_printer_content->ScreenToClient(wxPoint(tela.x, tela.GetBottom() + 2));
+    m_panel_printer_content->PopupMenu(&menu, p);
+}
+
+void Sidebar::priv::foto_impressora(const std::string& caminho)
+{
+    image_printer->SetBitmap(create_scaled_bitmap(caminho, scrolled, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+    if (fl_impressora)
+        fl_impressora->definir_foto(create_scaled_bitmap(caminho, scrolled, 100));
+}
+
+void Sidebar::priv::foto_mesa(const std::string& caminho)
+{
+    image_printer_bed->SetBitmap(create_scaled_bitmap(caminho, scrolled, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+    if (fl_mesa)
+        fl_mesa->definir_foto(create_scaled_bitmap(caminho, scrolled, 56));
+}
+
+namespace {
+// Estoque Filuna da bobina: soma do que resta nas bobinas ativas do mesmo material e cor (e marca, quando o perfil
+// diz qual). Consulta o banco no máximo a cada 10 s.
+wxString estoque_filuna(const std::string& material, const std::string& cor_hex, const std::string& marca)
+{
+    struct Item { std::string material, marca; wxColour cor; double g; };
+    static std::vector<Item> cache;
+    static long long         lido = 0;
+    const long long          agora = (long long) std::time(nullptr);
+    if (agora - lido > 10) {
+        lido = agora;
+        cache.clear();
+        try {
+            Filuna::FilunaDb& db = filuna_db();
+            std::map<std::string, Filuna::FilunaDb::TipoCadastrado> tipos;
+            for (const auto& t : db.tipos())
+                tipos[t.id] = t;
+            for (const auto& b : db.bobinas()) {
+                auto it = tipos.find(b.filamento_tipo_id);
+                if (it != tipos.end())
+                    cache.push_back({boost::to_upper_copy(it->second.material), boost::to_upper_copy(it->second.marca),
+                                     wxColour(wxString::FromUTF8(it->second.cor_hex)), b.restante_g});
+            }
+        } catch (...) {
+            cache.clear();
+        }
+    }
+    if (cache.empty())
+        return wxString::FromUTF8("—");
+    const wxColour c(wxString::FromUTF8(cor_hex.substr(0, 7)));
+    const std::string mat = boost::to_upper_copy(material), mar = boost::to_upper_copy(marca);
+    double total = 0.;
+    for (const Item& i : cache) {
+        const bool mesma_cor = c.IsOk() && i.cor.IsOk() &&
+                               std::hypot(std::hypot(c.Red() - i.cor.Red(), c.Green() - i.cor.Green()), c.Blue() - i.cor.Blue()) < 60.;
+        const bool mesma_marca = mar.empty() || i.marca.empty() || i.marca.find(mar) != std::string::npos || mar.find(i.marca) != std::string::npos;
+        if (i.material == mat && mesma_cor && mesma_marca)
+            total += i.g;
+    }
+    if (total <= 0.)
+        return wxString::FromUTF8("sem estoque");
+    if (total >= 1000.) {
+        wxString kg = wxString::Format("%.1f kg", total / 1000.);
+        kg.Replace(".", ",");
+        return kg;
+    }
+    return wxString::Format("%d g", int(std::lround(total)));
+}
+} // namespace
+
+void Sidebar::priv::fl_atualizar()
+{
+    if (!fl_impressora)
+        return;
+    if (fl_esconder_originais())
+        m_panel_printer_content->Layout();
+    PresetBundle& pb = *wxGetApp().preset_bundle;
+    // bico: a variante escolhida ("0.4" → "0,4 mm")
+    wxString bico = combo_nozzle_dia && combo_nozzle_dia->GetSelection() >= 0 ? combo_nozzle_dia->GetString(combo_nozzle_dia->GetSelection()) : wxString();
+    if (bico.empty()) {
+        if (const auto* d = pb.printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter"); d && !d->values.empty())
+            bico = wxString::Format("%g", d->values.front());
+    }
+    bico.Replace(".", ",");
+    if (!bico.empty() && !bico.Contains("mm"))
+        bico += " mm";
+    const wxString tipo = label_nozzle_type ? label_nozzle_type->GetLabel() : wxString("-");
+    fl_impressora->definir(bico, combo_nozzle_dia && combo_nozzle_dia->GetCount() > 1, tipo == "-" ? _L("Undefined") : tipo);
+    if (fl_mesa)
+        fl_mesa->definir(fl_mesa_tipos && combo_printer_bed && combo_printer_bed->GetSelection() >= 0 ?
+                             combo_printer_bed->GetString(combo_printer_bed->GetSelection()) : wxString::FromUTF8("Padrão"),
+                         fl_mesa_tipos && combo_printer_bed && combo_printer_bed->IsEnabled());
+    // bobinas: perfil, cor e estoque de cada filamento do projeto
+    if (fl_bobinas) {
+        std::vector<FilunaLateral::InfoBobina> v;
+        const auto* cores = pb.project_config.option<ConfigOptionStrings>("filament_colour");
+        for (size_t i = 0; i < pb.filament_presets.size(); ++i) {
+            const Preset*   pr  = pb.filaments.find_preset(pb.filament_presets[i]);
+            std::string     marca, tipo_f;
+            if (pr && pr->config.has("filament_vendor"))
+                marca = pr->config.opt_string("filament_vendor", 0u);
+            if (pr && pr->config.has("filament_type"))
+                tipo_f = pr->config.opt_string("filament_type", 0u);
+            const std::string hex = cores && i < cores->values.size() ? cores->values[i] : std::string("#FFFFFF");
+            FilunaLateral::InfoBobina b;
+            b.numero  = wxString::Format("%d", int(i + 1));
+            b.cor     = wxColour(wxString::FromUTF8(hex.substr(0, 7)));
+            if (!b.cor.IsOk())
+                b.cor = *wxWHITE;
+            b.marca   = wxString::FromUTF8(marca == "Generic" ? std::string() : marca);
+            b.tipo    = wxString::FromUTF8(tipo_f.empty() ? std::string("?") : tipo_f);
+            b.estoque = estoque_filuna(tipo_f, hex, marca);
+            v.push_back(b);
+        }
+        const int antes = fl_bobinas->GetMinSize().y;
+        fl_bobinas->definir(v);
+        // as linhas originais dos filamentos ficam escondidas (continuam criadas e funcionando)
+        const bool alguma_visivel = std::any_of(combos_filament.begin(), combos_filament.end(), [](PlaterPresetComboBox* c) {
+            return c && (c->IsShown() || (c->edit_btn && c->edit_btn->IsShown()));
+        });
+        if (alguma_visivel)
+            sizer_filaments->ShowItems(false);
+        if (alguma_visivel || antes != fl_bobinas->GetMinSize().y) {
+            m_panel_filament_content->Layout();
+            plater->sidebar().update_filaments_area_height();
+            scrolled->Layout();
+        }
+    }
 }
 
 void Sidebar::priv::flush_printer_sync(bool restart)
@@ -1178,6 +1408,10 @@ void Sidebar::priv::flush_printer_sync(bool restart)
 
 Sidebar::priv::~priv()
 {
+    if (fl_timer) {
+        fl_timer->Stop();
+        delete fl_timer;
+    }
     // BBS
     //delete object_manipulation;
     delete object_settings;
@@ -3128,7 +3362,7 @@ Sidebar::Sidebar(Plater *parent)
 
         p->combo_printer_bed->Bind(wxEVT_COMBOBOX, [this](auto &e) {
             auto image_path        = get_cur_select_bed_image();
-            p->image_printer_bed->SetBitmap(create_scaled_bitmap(image_path, this, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+            p->foto_mesa(image_path);
             e.Skip();
         });
 
@@ -3432,6 +3666,30 @@ Sidebar::Sidebar(Plater *parent)
 
     //bSizer_filament_content->Add(p->sizer_filaments, 1, wxALIGN_CENTER | wxALL);
     wxSizer *sizer_filaments2 = new wxBoxSizer(wxVERTICAL);
+    // Filuna: as bobinas (4 por linha) no lugar das listas, que ficam escondidas fazendo o trabalho
+    p->fl_bobinas = new FilunaLateral::Bobinas(p->m_panel_filament_content);
+    p->fl_bobinas->ao_clicar = [this](int i, const wxRect& r) {
+        if (i < 0 || i >= int(p->combos_filament.size()) || !p->combos_filament[i])
+            return;
+        const int largura = std::max(r.width, p->m_panel_filament_content->GetClientSize().x - FromDIP(8));
+        const wxPoint em_cima = p->m_panel_filament_content->ScreenToClient(r.GetTopLeft());
+        p->fl_abrir(p->combos_filament[i], wxRect(p->m_panel_filament_content->ClientToScreen(wxPoint(FromDIP(4), em_cima.y)), wxSize(largura, r.height)));
+    };
+    p->fl_bobinas->ao_menu = [this](int i, const wxPoint& tela) {
+        if (i < 0 || i >= int(p->combos_filament.size()) || !p->combos_filament[i])
+            return;
+        if (should_show_SEMM_buttons() && p->combos_filament.size() > 1) { // o mesmo menu do botão do filamento
+            auto    menu = p->plater->filament_action_menu(i);
+            wxPoint pt   = wxGetApp().mainframe->ScreenToClient(tela);
+            p->m_menu_filament_id = i;
+            p->plater->PopupMenu(menu, pt.x, pt.y);
+        } else {
+            p->editing_filament = -1;
+            if (p->combos_filament[i]->switch_to_tab())
+                p->editing_filament = i;
+        }
+    };
+    sizer_filaments2->Add(p->fl_bobinas, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(SidebarProps::ContentMargin()));
     sizer_filaments2->Add(p->sizer_filaments, 0, wxEXPAND, 0);
     p->m_panel_filament_content->SetSizer(sizer_filaments2);
     p->m_panel_filament_content->Layout();
@@ -3923,7 +4181,9 @@ void Sidebar::update_all_preset_comboboxes(bool update_filament_combos)
     }
 
     // ORCA Hide plate selector if not supported by printer
-    p->panel_printer_bed->Show(is_bbl_vendor || cfg.opt_bool("support_multi_bed_types"));
+    p->fl_mesa_tipos = is_bbl_vendor || cfg.opt_bool("support_multi_bed_types");
+    p->panel_printer_bed->Show(p->fl_mesa_tipos);
+    p->fl_esconder_originais();
 
     // Update the print choosers to only contain the compatible presets, update the dirty flags.
     //BBS
@@ -4135,7 +4395,7 @@ void Sidebar::update_presets(Preset::Type preset_type)
                 update_extruder_diameter(0, *p->left_extruder);
                 update_extruder_diameter(1, *p->right_extruder);
             //}
-            p->image_printer_bed->SetBitmap(create_scaled_bitmap(image_path, this, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+            p->foto_mesa(image_path);
         } else {
             AMSCountPopupWindow::UpdateAMSCount(0, p->single_extruder);
             for (size_t row = 0; row < p->single_extruder->NozzleRowCount(); ++row)
@@ -4178,7 +4438,7 @@ void Sidebar::update_presets(Preset::Type preset_type)
             p->label_nozzle_type->SetLabel(nozzle_type);
             p->label_nozzle_type->SetToolTip(nozzle_type == "-" ? "" : nozzle_type);
 
-            p->image_printer_bed->SetBitmap(create_scaled_bitmap(image_path, this, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+            p->foto_mesa(image_path);
         }
 
         if (GUI::wxGetApp().plater())
@@ -5481,6 +5741,14 @@ void Sidebar::decompose_filament_color(int filament_idx)
 void Sidebar::update_filaments_area_height()
 // ORCA
 {
+    if (p->fl_bobinas) { // Filuna: as bobinas (126 px por linha de 4) no lugar das listas escondidas
+        const int preferidas = std::max(4, std::stoi(wxGetApp().app_config->get("filaments_area_preferred_count")));
+        const int maximo     = int(std::ceil(preferidas / 4.)) * FromDIP(132) + FromDIP(12);
+        p->m_panel_filament_content->SetMaxSize(wxSize{-1, maximo});
+        p->m_panel_filament_content->SetMinSize({-1, std::min(maximo, p->fl_bobinas->GetMinSize().y + FromDIP(12))});
+        update_filaments_counter();
+        return;
+    }
     // ORCA use a height with user preference
     auto left_sizer          = p->sizer_filaments->GetItem((size_t) 0)->GetSizer();
     auto combo_sizer         = left_sizer->GetItem((size_t) 0)->GetSizer();
@@ -5546,7 +5814,7 @@ void Sidebar::msw_rescale()
     p->combo_printer_bed->SetMaxSize(FromDIP(wxSize(18,-1))); // ORCA show only arrow
     bool isDual     = static_cast<wxBoxSizer *>(p->panel_printer_preset->GetSizer())->GetOrientation() == wxVERTICAL;
     auto image_path = get_cur_select_bed_image();
-    p->image_printer_bed->SetBitmap(create_scaled_bitmap(image_path, this, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+    p->foto_mesa(image_path);
     if (p->big_bed_image_popup){ // ORCA force rebuild frame. current wxwidget version not supports wxBITMAP_SCALE_FILL flag on wxStaticBitmap
                                  // also     wxImage scaledImage = bit_map.ConvertToImage(); scaledImage.Rescale(FromDIP(m_image_px), FromDIP(m_image_px), wxIMAGE_QUALITY_HIGH);
                                  // didnt worked as expected and it requires use on set_bitmap. so that will try to scale everytime
@@ -7063,7 +7331,7 @@ void Sidebar::update_printer_thumbnail()
     Preset & selected_preset = preset_bundle->printers.get_edited_preset();
     std::string printer_type    = selected_preset.get_current_printer_type(preset_bundle);
     if (printer_thumbnails.find(printer_type) != printer_thumbnails.end()) // Use known cache first
-        p->image_printer->SetBitmap(create_scaled_bitmap(printer_thumbnails[printer_type], this, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+        p->foto_impressora(printer_thumbnails[printer_type]);
     else {
         /* ORCA this part check images folder for BBL covers but not checks file existence and causes crash on Linux
         *       BBL covers already exist on profile folder so no need to use this section
@@ -7088,7 +7356,7 @@ void Sidebar::update_printer_thumbnail()
                                                              .make_preferred();
                     if (boost::filesystem::exists(cover_path)) {
                         try {
-                            p->image_printer->SetBitmap(create_scaled_bitmap(cover_path.string(), this, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+                            p->foto_impressora(cover_path.string());
                             printer_thumbnails[printer_type] = cover_path.string(); // Cache the path so we don't look up again
                             return;
                         } catch (...) {}
@@ -7096,7 +7364,7 @@ void Sidebar::update_printer_thumbnail()
                 }
             }
         }
-        p->image_printer->SetBitmap(create_scaled_bitmap("printer_placeholder", this, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+        p->foto_impressora("printer_placeholder");
         printer_thumbnails[printer_type] = "printer_placeholder"; // Avoid unnecessary try
     }
 }
