@@ -15,6 +15,16 @@ body{font-size:16px;padding:28px 32px 60px}
 .fl-ocupado{opacity:.55;pointer-events:none}
 .fl-carregando{padding:60px;text-align:center;color:var(--ink2)}
 .fm-foto img{width:100%;height:100%;object-fit:contain}
+/* etapa 2 em 3D */
+.fw3d-abas,.fw3d-mesas{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.fw3d-mesas{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+.fw3d-mesa{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);cursor:pointer;font:inherit;color:var(--ink2);text-align:left}
+.fw3d-mesa b{font-size:13.5px;color:var(--ink)}.fw3d-mesa small{font-size:12px}
+.fw3d-mesa.on{border-color:var(--mag);box-shadow:0 0 0 3px var(--mag-soft)}
+.fw3d-mais,.fw3d-vazio{align-self:center;font-size:13px;color:var(--ink3)}
+.fw3d-palco{position:relative;border-radius:18px;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#fff,#F3EDE4 70%);border:1px solid var(--line)}
+.fw3d-vista{height:400px;cursor:grab}.fw3d-vista:active{cursor:grabbing}
+.fw3d-dica{position:absolute;left:14px;bottom:10px;margin:0;font-size:12.5px;color:var(--ink3);pointer-events:none}
 </style>
 </head>
 <body>
@@ -24,6 +34,9 @@ body{font-size:16px;padding:28px 32px 60px}
 <script src="farm-plano.js"></script>
 <script src="farm-wizard.js"></script>
 <script src="farm-app.js"></script>
+<script src="m3d/three.js"></script>
+<script src="m3d/orbit.js"></script>
+<script src="farm-mesa3d.js"></script>
 <script src="farm-pedido.js"></script>
 </body>
 </html>

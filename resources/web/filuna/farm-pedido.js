@@ -36,6 +36,8 @@ function vPedido(c) {
 			'. O Filuna monta as peças na mesa de cada impressora, com folga entre elas, e divide em mais mesas quando não cabe.</p><form method="post" id="fw-qtd"><input type="hidden" name="acao" value="salvar"><input type="hidden" name="passo" value="3"><div class="fw-qtd"><label class="campo fm-curto"><span>Conjuntos</span><input type="number" name="conjuntos" min="1" max="100000" value="' + n + '" required data-fw-qtd></label><div class="fw-rapidos">' +
 			[1, 2, 5, 10, 20].map(function (k) { return '<button type="button" class="fw-chip' + (n == k ? " on" : "") + '" data-fw-n="' + k + '">' + k + "</button>"; }).join("") + "</div></div>" + pq(c.exp, "conjuntos") + '<h3 class="fm-h3">Peças iguais vão juntas na mesa?</h3><div class="fm-ops">' +
 			[["juntas", "Encher a mesa com peças iguais"], ["uma_por_mesa", "Uma peça por mesa"]].map(function (o) { return '<label class="fm-op"><input type="radio" name="iguais" value="' + o[0] + '"' + ((r.iguais || "juntas") == o[0] ? " checked" : "") + "><span>" + o[1] + "</span></label>"; }).join("") + "</div>" + pq(c.exp, "iguais") + "</form></section>";
+		st.mesa3d = { encaixe: c.encaixe, imps: c.imps || [], umaPorMesa: r.iguais == "uma_por_mesa" };
+		h += '<section class="bloco"><h2 class="fw-h">A montagem em 3D</h2><p class="fw-sub">Cada impressora com as peças arrumadas na mesa como a Farm vai imprimir.</p><div class="fw3d" id="fw3d"></div></section>';
 		h += '<section class="bloco"><h2 class="fw-h">Como cada peça cabe nas suas mesas</h2><div class="fw-pecas">';
 		c.encaixe.forEach(function (e) {
 			h += '<article class="fw-peca">' + foto(e.peca.id) + '<div class="fw-peca-txt"><b>' + E(e.peca.nome) + (e.peca.copias > 1 ? " × " + e.peca.copias + " por conjunto" : "") + "</b><small>" + cm(e.peca.x) + " × " + cm(e.peca.y) + " × " + cm(e.peca.z) + " cm · " + e.total + " peça" + pl_(e.total, "", "s") + ' no total</small><ul class="fw-cabem">' +
@@ -310,6 +312,8 @@ function fotos() {
 }
 
 function extras() {   // pagina-farm.js do site: atalhos de quantidade e plano refeito ao trocar a opção
+	var v3d = document.getElementById("fw3d");
+	if (v3d && st.mesa3d && window.FarmMesa3D) window.FarmMesa3D.montar(v3d, st.mesa3d.encaixe, st.mesa3d.imps, st.mesa3d.umaPorMesa);
 	var qtd = document.querySelector("[data-fw-qtd]");
 	document.querySelectorAll("[data-fw-n]").forEach(function (b) { b.onclick = function () { if (qtd) qtd.value = b.getAttribute("data-fw-n"); document.querySelectorAll("[data-fw-n]").forEach(function (x) { x.classList.toggle("on", x === b); }); }; });
 	document.querySelectorAll("[data-fw-auto]").forEach(function (i) { i.onchange = function () { enviarForm(i.form); }; });
