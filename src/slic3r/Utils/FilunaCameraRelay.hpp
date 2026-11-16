@@ -9,6 +9,9 @@
 // Vale para qualquer marca: o agente só precisa informar o endereço da câmera (Filuna::set_camera_url).
 
 #include <atomic>
+#include <cstdint>
+#include <cstring>
+#include <map>
 #include <cctype>
 #include <istream>
 #include <iterator>
@@ -18,6 +21,8 @@
 #include <thread>
 
 #include <boost/asio/connect.hpp>
+#include <boost/asio/read.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/read_until.hpp>
@@ -54,6 +59,14 @@ public:
             return false;
         const auto b = a.to_bytes();
         return b[0] == 10 || (b[0] == 172 && b[1] >= 16 && b[1] <= 31) || (b[0] == 192 && b[1] == 168) || (b[0] == 169 && b[1] == 254);
+    }
+
+    // Câmera da Bambu em modo LAN (A1, A1 mini, P1, A2): JPEG por TLS na porta 6000, com o código de acesso. O
+    // agente registra IP e código aqui; a tela só recebe "/bambu?d=<serie>" (o código não vai para a página).
+    static void set_bambu(const std::string& dev_id, const std::string& ip, const std::string& codigo)
+    {
+        std::lock_guard<std::mutex> l(bambu_mutex());
+        bambu_map()[dev_id] = {ip, codigo};
     }
 
     static std::string url_decodificar(const std::string& s)
@@ -108,6 +121,12 @@ private:
                 const std::string r = "HTTP/1.1 " + estado + "\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
                 asio::write(cli, asio::buffer(r), ec);
             };
+            const std::string chave_bambu = "/bambu?d=";
+            if (metodo == "GET" && alvo.compare(0, chave_bambu.size(), chave_bambu) == 0) {
+                camera_bambu(cli, url_decodificar(alvo.substr(chave_bambu.size())), responder);
+                cli.close(ec);
+                return;
+            }
             const std::string chave = "/cam?u=";
             std::string       host, port, caminho;
             if (metodo != "GET" || alvo.compare(0, chave.size(), chave) != 0 ||
@@ -197,6 +216,93 @@ private:
             }
         } catch (const std::exception&) {}
         cli.close(ec);
+    }
+
+    struct AcessoBambu
+    {
+        std::string ip, codigo;
+    };
+    static std::mutex& bambu_mutex()
+    {
+        static std::mutex m;
+        return m;
+    }
+    static std::map<std::string, AcessoBambu>& bambu_map()
+    {
+        static std::map<std::string, AcessoBambu> m;
+        return m;
+    }
+
+    // Lê os quadros da câmera da Bambu (cabeçalho de 16 bytes com o tamanho em little-endian + JPEG) e entrega
+    // como MJPEG (multipart/x-mixed-replace), que o <img> da tela mostra direto.
+    template<class Responder> static void camera_bambu(boost::asio::ip::tcp::socket& cli, const std::string& dev_id, Responder& responder)
+    {
+        namespace asio = boost::asio;
+        namespace ssl  = asio::ssl;
+        using tcp      = asio::ip::tcp;
+        AcessoBambu a;
+        {
+            std::lock_guard<std::mutex> l(bambu_mutex());
+            auto it = bambu_map().find(dev_id);
+            if (it != bambu_map().end())
+                a = it->second;
+        }
+        std::string h, pt, cm;
+        if (a.ip.empty() || a.codigo.empty() || !destino_valido("http://" + a.ip + "/", h, pt, cm)) {
+            responder("404 Not Found");
+            return;
+        }
+        boost::system::error_code ec;
+        asio::io_context          ioc;
+        ssl::context              ctx(ssl::context::tls_client);
+        ctx.set_verify_mode(ssl::verify_none); // certificado próprio da impressora
+        ssl::stream<tcp::socket> imp(ioc, ctx);
+        tcp::resolver            res(ioc);
+        asio::connect(imp.next_layer(), res.resolve(a.ip, "6000", ec), ec);
+        if (!ec)
+            imp.handshake(ssl::stream_base::client, ec);
+        if (ec) {
+            responder("502 Bad Gateway");
+            return;
+        }
+        unsigned char auth[80] = {0};
+        auto le32 = [&auth](int pos, std::uint32_t v) {
+            for (int i = 0; i < 4; ++i)
+                auth[pos + i] = static_cast<unsigned char>((v >> (8 * i)) & 0xff);
+        };
+        le32(0, 0x40);
+        le32(4, 0x3000);
+        std::memcpy(auth + 16, "bblp", 4);
+        std::memcpy(auth + 48, a.codigo.data(), std::min<std::size_t>(32, a.codigo.size()));
+        asio::write(imp, asio::buffer(auth), ec);
+        if (ec) {
+            responder("502 Bad Gateway");
+            return;
+        }
+        const std::string cab = "HTTP/1.1 200 OK\r\nContent-Type: multipart/x-mixed-replace; boundary=filunaquadro\r\n"
+                                "Access-Control-Allow-Origin: *\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n";
+        asio::write(cli, asio::buffer(cab), ec);
+        std::string jpg;
+        while (!ec) {
+            unsigned char q[16];
+            asio::read(imp, asio::buffer(q), ec);
+            if (ec)
+                break;
+            const std::uint32_t n = std::uint32_t(q[0]) | (std::uint32_t(q[1]) << 8) | (std::uint32_t(q[2]) << 16) | (std::uint32_t(q[3]) << 24);
+            if (n == 0 || n > 8u * 1024u * 1024u)
+                break;
+            jpg.resize(n);
+            asio::read(imp, asio::buffer(&jpg[0], n), ec);
+            if (ec)
+                break;
+            const std::string parte = "--filunaquadro\r\nContent-Type: image/jpeg\r\nContent-Length: " + std::to_string(n) + "\r\n\r\n";
+            asio::write(cli, asio::buffer(parte), ec);
+            if (!ec)
+                asio::write(cli, asio::buffer(jpg), ec);
+            if (!ec)
+                asio::write(cli, asio::buffer(std::string("\r\n")), ec);
+        }
+        imp.next_layer().close(ec);
     }
 
     boost::asio::io_context                         m_ioc;

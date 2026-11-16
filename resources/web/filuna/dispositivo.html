@@ -298,7 +298,7 @@ function unidade(app, u) {
 		(v && v.erro ? '<div class="aviso" style="background:#FDE8DF;color:#D9480F"><span><b>A impressora informou um problema:</b> ' + E(v.erro) + ".</span></div>" : "") +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
 		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
-		'<div class="colv"><div class="view">' + foto + '<div class="vtag">' + (camVivo || flv ? "Câmera ao vivo" : i.camera_em ? "Câmera · última imagem" : "Ilustração · sem câmera ligada") + "</div>" +
+		'<div class="colv"><div class="view">' + foto + '<div class="vtag">' + (camVivo || flv ? "Câmera ao vivo" : i.camera_em ? "Câmera · última imagem" : ativa && v.camera_aviso ? v.camera_aviso : "Ilustração · sem câmera ligada") + "</div>" +
 		'<div class="vbase"><div><div class="vk">Vista da impressão</div><div class="vv">' + (t ? "Mesa " + E(t.mesa || 1) + " de " + E(t.mesas || 1) : "Sem impressão agora") + "</div></div>" +
 		"</div></div>" + mesaHtml(v, camVivo || flv) + arquivosHtml(v) + "</div>" +
 		'<div class="direita"><div class="lbl">Trabalho atual</div>' +

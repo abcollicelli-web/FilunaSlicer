@@ -2,6 +2,7 @@
 #include "AsioUtils.hpp"
 #include "CrealityCfs.hpp"
 #include "Http.hpp"
+#include "FilunaCameraUrls.hpp"
 #include "IPrinterAgent.hpp"
 #include "NetworkAgentFactory.hpp"
 #include "bambu_networking.hpp"
@@ -272,6 +273,19 @@ private:
     bool                    m_sends_bundle = false;
     bool                    m_failed       = false;
 };
+
+// Filuna: endereço da câmera do Klipper. O Moonraker costuma dar o caminho relativo ao servidor web da impressora
+// ("/webcam/?action=stream"), que fica na porta 80 mesmo quando o Moonraker responde na 7125.
+std::string endereco_camera(const std::string& base_url, const std::string& url)
+{
+    if (url.rfind("http://", 0) == 0 || url.rfind("https://", 0) == 0)
+        return url;
+    const std::size_t ini = base_url.find("://");
+    std::string host = ini == std::string::npos ? base_url : base_url.substr(ini + 3);
+    host = host.substr(0, host.find('/'));
+    host = host.substr(0, host.find(':'));
+    return "http://" + host + (url.empty() || url[0] != '/' ? "/" : "") + url;
+}
 
 } // namespace
 
@@ -2529,6 +2543,29 @@ void MoonrakerPrinterAgent::perform_connection_async(const std::string& dev_id, 
             start_status_stream(dev_id, base_url, api_key);
         }
 #endif
+
+        // Filuna: câmera MJPEG do Klipper (crowsnest/ustreamer) para a tela de Dispositivos
+        {
+            nlohmann::json cams;
+            std::string    cam_erro;
+            std::string    cam_url;
+            if (get_json(join_url(base_url, "/server/webcams/list"), api_key, is_stale, cams, cam_erro)) {
+                const nlohmann::json lista = cams.contains("result") ? cams["result"].value("webcams", nlohmann::json::array())
+                                                                     : nlohmann::json::array();
+                for (const auto& w : lista) {
+                    if (!w.is_object() || !w.value("enabled", true))
+                        continue;
+                    const std::string servico = w.value("service", std::string("mjpegstreamer"));
+                    const std::string url     = w.value("stream_url", std::string());
+                    if (!url.empty() && (servico.rfind("mjpeg", 0) == 0 || url.find("action=stream") != std::string::npos)) {
+                        cam_url = endereco_camera(base_url, url);
+                        break;
+                    }
+                }
+            } else
+                BOOST_LOG_TRIVIAL(info) << "MoonrakerPrinterAgent: sem lista de câmeras: " << cam_erro;
+            Filuna::set_camera_url(dev_id, cam_url);
+        }
 
         // Success!
         result = BAMBU_NETWORK_SUCCESS;

@@ -1114,3 +1114,14 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
   GET /printer/info e põe na lista da rede (dev_id "ip-<ip>", agente da marca, código neutro "lan").
 - garantir_codigo passa a dar o código neutro também aos agentes Moonraker (sem código o DeviceManager não seleciona).
 - Uso: Dispositivo › Adicionar impressora › Snapmaker › U1 → a U1 aparece na lista de achadas.
+
+## 2026-11-16 — 73 publicada (8d2d92982); 74: câmera Bambu (A1/A2/P1) e câmera + controles da U1
+
+- Câmera Bambu em modo LAN sem o plug-in: FilunaCameraRelay ganhou "/bambu?d=<serie>": TLS na porta 6000, autenticação
+  de 80 bytes (0x40, 0x3000, "bblp", código de acesso), quadros com cabeçalho de 16 bytes (tamanho LE) + JPEG,
+  entregues como MJPEG ao <img> da tela. O código fica no repasse (set_bambu), não vai para a página. Testado no servidor
+  com uma câmera Bambu simulada (auth conferida, 3 quadros, 404 para série desconhecida).
+  card(): vale quando rtsp_url não começa com "rtsp" (A1, A1 mini, P1, A2). P2S/X1/H2 (RTSPS 322) mostram aviso.
+- U1/Klipper: MoonrakerPrinterAgent, ao conectar, lê /server/webcams/list e grava a câmera MJPEG (caminho relativo vai
+  para a porta 80). Controles da tela viram G-code (gcode_moonraker: M104, M140, G28, G91/G1/G90, M106, M220, M112) para
+  snapmaker, qidi, crealityprint e moonraker. Impressão já existia nos dois agentes (FTPS+project_file / upload Moonraker).

@@ -77,7 +77,44 @@ const std::map<std::string, std::vector<std::string>> CONTROLES = {
                            "carregar", "descarregar", "emergencia", "arquivos"}},
     {"filuna_anycubic_lan", {"bico", "mesa", "home", "mover", "luz", "ventilador", "ventilador_aux", "ventilador_caixa", "velocidade",
                              "carregar", "descarregar", "secar", "arquivos"}},
+    // Klipper/Moonraker (Snapmaker U1, Qidi, Creality K): G-code pelo Moonraker (ver gcode_moonraker)
+    {"snapmaker", {"bico", "mesa", "home", "mover", "ventilador", "velocidade", "emergencia"}},
+    {"qidi", {"bico", "mesa", "home", "mover", "ventilador", "velocidade", "emergencia"}},
+    {"crealityprint", {"bico", "mesa", "home", "mover", "ventilador", "velocidade", "emergencia"}},
+    {"moonraker", {"bico", "mesa", "home", "mover", "ventilador", "velocidade", "emergencia"}},
 };
+
+// Controle da tela -> G-code do Klipper (o agente Moonraker executa "gcode_line" pelo /printer/gcode/script).
+std::string gcode_moonraker(const nlohmann::json& f)
+{
+    const std::string tipo = f.value("command", std::string());
+    if (tipo == "bico")
+        return "M104 S" + std::to_string(f.value("valor", 0));
+    if (tipo == "mesa")
+        return "M140 S" + std::to_string(f.value("valor", 0));
+    if (tipo == "home") {
+        std::string g = "G28";
+        for (char e : f.value("eixos", std::string("xyz")))
+            g += std::string(" ") + char(std::toupper(static_cast<unsigned char>(e)));
+        return f.value("eixos", std::string("xyz")) == "xyz" ? std::string("G28") : g;
+    }
+    if (tipo == "mover") {
+        const std::string e = f.value("eixo", std::string("x"));
+        std::ostringstream g;
+        g << "G91\nG1 " << char(std::toupper(static_cast<unsigned char>(e[0]))) << f.value("distancia", 0.0) << " F" << (e == "z" ? 600 : 3000)
+          << "\nG90";
+        return g.str();
+    }
+    if (tipo == "ventilador")
+        return "M106 S" + std::to_string(f.value("valor", 0) * 255 / 100);
+    if (tipo == "velocidade") { // 0 silencioso, 1 padrão, 2 esporte, 3 turbo (mesma escala da Bambu)
+        static const int pct[] = {50, 100, 124, 166};
+        return "M220 S" + std::to_string(pct[std::max(0, std::min(3, f.value("valor", 1)))]);
+    }
+    if (tipo == "emergencia")
+        return "M112";
+    return std::string();
+}
 
 // Marcas sem tabela própria acima falam os comandos padrão do programa (os mesmos do painel nativo): Bambu
 // (LAN ou conta), Snapmaker, QIDI, Creality, Klipper/Moonraker. Para elas os controles saem pelos comandos do
@@ -347,6 +384,18 @@ json card(MachineObject* o)
     }
     c["controles"]           = controles;
     c["controles_impressao"] = espera; // existem, mas só durante uma impressão
+    // Bambu em modo LAN: A1, A1 mini, P1 e A2 mandam JPEG pela porta 6000 (rtsp_url "disable"); P2S, X1 e H2 usam
+    // RTSPS (rtsp_url "rtsps://..."), que este repasse ainda não converte.
+    if (o->printer_agent_id == "filuna_bambu_lan" && !o->get_access_code().empty() && !o->get_dev_ip().empty() &&
+        !boost::algorithm::starts_with(o->local_rtsp_url, "rtsp")) {
+        Filuna::CameraRelay::set_bambu(o->get_dev_id(), o->get_dev_ip(), o->get_access_code());
+        if (const int porta = Filuna::CameraRelay::porta(); porta > 0) {
+            c["camera"]         = true;
+            c["camera_url"]     = "bambu-lan";
+            c["camera_repasse"] = "http://127.0.0.1:" + std::to_string(porta) + "/bambu?d=" + Http::url_encode(o->get_dev_id());
+        }
+    } else if (o->printer_agent_id == "filuna_bambu_lan" && boost::algorithm::starts_with(o->local_rtsp_url, "rtsp"))
+        c["camera_aviso"] = "A câmera deste modelo (vídeo RTSP) chega numa próxima versão do Filuna Slicer.";
     const std::string cam = Filuna::camera_url(o->get_dev_id());
     if (!cam.empty())
         c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu
@@ -984,6 +1033,11 @@ json controle(const std::string& dev_id, const json& d)
             r = o->command_ams_change_filament(tipo == "carregar", std::to_string(f.value("unidade", 0)), std::to_string(f.value("slot", 0)));
         else
             return {{"erro", "Este controle ainda não existe para esta impressora."}};
+    } else if (agente_moonraker(o->printer_agent_id)) {
+        const std::string g = gcode_moonraker(f);
+        if (g.empty())
+            return {{"erro", "Este controle ainda não existe para esta impressora."}};
+        r = o->publish_json(json{{"print", {{"command", "gcode_line"}, {"param", g}, {"sequence_id", "0"}}}}, 1);
     } else
         r = o->publish_json(json{{"filuna", f}}, 1);
     if (r != 0)
