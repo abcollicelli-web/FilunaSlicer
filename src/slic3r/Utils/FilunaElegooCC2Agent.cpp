@@ -1,4 +1,5 @@
 #include "FilunaElegooCC2Agent.hpp"
+#include "FilunaRede.hpp"
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
@@ -508,12 +509,17 @@ bool FilunaElegooCC2Agent::start_discovery(bool start, bool)
             s.non_blocking(true);
             const std::string probe = R"({"id":0,"method":7000})";
             auto              last  = std::chrono::steady_clock::time_point{};
+            const std::vector<std::string> redes  = Filuna::redes_locais();
+            unsigned                       rodada = 0;
             char              buf[2048];
             while (m_discovering) {
                 if (std::chrono::steady_clock::now() - last > std::chrono::seconds(2)) {
                     boost::system::error_code ec;
                     s.send_to(net::buffer(probe), udp::endpoint(net::ip::address_v4::broadcast(), port), 0, ec);
                     s.send_to(net::buffer(probe), udp::endpoint(net::ip::address_v4::loopback(), port), 0, ec);
+                    // também direto para cada endereço da rede (o firewall do Windows deixa a resposta entrar)
+                    if (rodada++ % 3 == 0)
+                        Filuna::enviar_para_rede(s, port, probe, redes);
                     last = std::chrono::steady_clock::now();
                 }
                 udp::endpoint             from;

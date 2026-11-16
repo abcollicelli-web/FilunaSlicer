@@ -1140,3 +1140,15 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
   vez); o resultado volta por ConnectStatusOk/Failed na linha da tela. Trocar de impressora não prende mais o programa.
 - Assistente: Voltar da busca vai sempre aos modelos (antes podia cair no complemento, que voltava sozinho para a busca
   e rodava preparar de novo — sem saída); botão "Trocar fabricante" na busca.
+
+## 2026-11-16 — 75 publicada (0c4fa8fda); 76: Elegoo SDCP/CC2 achada com firewall, agente e perfil certos ao conectar
+
+- Utils/FilunaRede.hpp: redes_locais() (rota padrão primeiro, até 4 redes /24) e enviar_para_rede(). A busca da Elegoo
+  (SDCP "M99999" porta 3000 e CC2 método 7000) só mandava broadcast; o firewall do Windows barra a resposta a broadcast
+  quando o programa não foi liberado. Agora, a cada 3 rodadas, o pedido vai direto a cada endereço (a resposta entra).
+  Testado com uma Centauri Carbon simulada. Caso: Marcelo (Centauri Carbon 1, beta 73, busca sem achar).
+- conectar(): troca para o agente da marca da impressora (ativar_marca_de, o mesmo bloco de selecionar). Caso Fernando:
+  P2S falhava com "target machine was not found in the current agent's machine list" depois de procurar a U1.
+- preset_instalando(): perfil do modelo instalado na hora se faltar (P2S aparecia com "Perfil Bambu Lab A1").
+- Busca Klipper: redes_locais compartilhado (rota padrão primeiro) e "busca_klipper" (redes, endereços, achadas) no
+  diagnóstico de busca sem resultado.

@@ -26,6 +26,7 @@
 #include "slic3r/Utils/NetworkAgentFactory.hpp"
 #include "slic3r/Utils/FilunaCameraUrls.hpp"
 #include "slic3r/Utils/FilunaCameraRelay.hpp"
+#include "slic3r/Utils/FilunaRede.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <wx/notifmsg.h>
@@ -457,43 +458,6 @@ bool agente_moonraker(const std::string& ag)
     return ag == "snapmaker" || ag == "qidi" || ag == "crealityprint" || ag == "moonraker";
 }
 
-// Prefixos "a.b.c." das redes privadas deste computador (no máximo 3 redes /24).
-std::vector<std::string> redes_locais()
-{
-    namespace net = boost::asio;
-    std::set<std::string> prefixos;
-    auto incluir = [&prefixos](const net::ip::address& a) {
-        if (!a.is_v4())
-            return;
-        const auto b = a.to_v4().to_bytes();
-        const bool privada = b[0] == 10 || (b[0] == 172 && b[1] >= 16 && b[1] <= 31) || (b[0] == 192 && b[1] == 168);
-        if (privada)
-            prefixos.insert(std::to_string(b[0]) + "." + std::to_string(b[1]) + "." + std::to_string(b[2]) + ".");
-    };
-    boost::system::error_code ec;
-    net::io_context io;
-    {
-        // "connect" em UDP não envia nada: só escolhe a interface de saída padrão
-        net::ip::udp::socket s(io);
-        s.open(net::ip::udp::v4(), ec);
-        if (!ec)
-            s.connect({net::ip::make_address_v4("192.0.2.1"), 9}, ec);
-        if (!ec)
-            incluir(s.local_endpoint(ec).address());
-    }
-    net::ip::tcp::resolver r(io);
-    const auto lista = r.resolve(net::ip::host_name(ec), "", ec);
-    if (!ec)
-        for (const auto& e : lista)
-            incluir(e.endpoint().address());
-    else
-        BOOST_LOG_TRIVIAL(info) << "Filuna: endereços do computador: " << ec.message();
-    std::vector<std::string> v(prefixos.begin(), prefixos.end());
-    if (v.size() > 3)
-        v.resize(3);
-    return v;
-}
-
 // IPs que aceitam conexão TCP na porta dentro do tempo dado (todos ao mesmo tempo, sem travar a tela).
 std::vector<std::string> portas_abertas(const std::vector<std::string>& ips, unsigned short porta, std::chrono::milliseconds espera)
 {
@@ -548,6 +512,18 @@ bool moonraker_responde(const std::string& host, std::string& nome)
     return ok;
 }
 
+// Resultado da última busca Klipper, para o diagnóstico da tela ("busca terminou sem achar").
+std::mutex& busca_mutex()
+{
+    static std::mutex m;
+    return m;
+}
+json& busca_info()
+{
+    static json j = json::object();
+    return j;
+}
+
 // Procura na rede local impressoras Moonraker (portas 7125 e 80) e as põe na lista da rede do programa com o
 // agente da marca escolhida no assistente. Roda numa linha separada; o resultado entra pela linha da tela.
 void procurar_moonraker(const std::string& agente, const std::string& modelo, const std::string& printer_type)
@@ -557,7 +533,12 @@ void procurar_moonraker(const std::string& agente, const std::string& modelo, co
         return;
     std::thread([agente, modelo, printer_type] {
         std::vector<std::string> ips;
-        for (const auto& prefixo : redes_locais())
+        const std::vector<std::string> redes = Filuna::redes_locais();
+        {
+            std::lock_guard<std::mutex> l(busca_mutex());
+            busca_info() = {{"redes", redes}, {"rodando", true}};
+        }
+        for (const auto& prefixo : redes)
             for (int i = 1; i < 255; ++i)
                 ips.push_back(prefixo + std::to_string(i));
         std::vector<std::pair<std::string, std::string>> achadas; // endereço (ip ou ip:porta), nome
@@ -574,6 +555,12 @@ void procurar_moonraker(const std::string& agente, const std::string& modelo, co
                 }
             }
         BOOST_LOG_TRIVIAL(info) << "Filuna: busca Moonraker (" << agente << ") achou " << achadas.size() << " em " << ips.size() << " endereços";
+        {
+            std::lock_guard<std::mutex> l(busca_mutex());
+            busca_info()["rodando"]   = false;
+            busca_info()["enderecos"] = ips.size();
+            busca_info()["achadas"]   = achadas.size();
+        }
         wxGetApp().CallAfter([achadas, agente, modelo, printer_type] {
             DeviceManager* dev = wxGetApp().getDeviceManager();
             if (dev == nullptr)
@@ -693,9 +680,10 @@ json complemento(const std::string& modulo_id)
             {"libera", json::array({"rede", "impressão", "controle", "câmera", "cores"})}};
 }
 
-json preparar(const std::string& modulo_id, const std::string& modelo)
+// Perfil de máquina do modelo; se o fabricante/modelo ainda não estiver instalado neste computador, instala como o
+// assistente do Orca faz (PresetBundle::apply_vendor_config) e procura de novo.
+const Preset* preset_instalando(const std::string& vid, const std::string& modelo)
 {
-    const std::string vid = vendor_orca(modulo_id);
     AppConfig* cfg = wxGetApp().app_config;
     PresetBundle* bundle = wxGetApp().preset_bundle;
     const Preset* p = preset_do_modelo(vid, modelo);
@@ -719,6 +707,15 @@ json preparar(const std::string& modulo_id, const std::string& modelo)
         }
         p = preset_do_modelo(vid, modelo);
     }
+    return p;
+}
+
+json preparar(const std::string& modulo_id, const std::string& modelo)
+{
+    const std::string vid = vendor_orca(modulo_id);
+    AppConfig* cfg = wxGetApp().app_config;
+    PresetBundle* bundle = wxGetApp().preset_bundle;
+    const Preset* p = preset_instalando(vid, modelo);
     if (p == nullptr)
         return {{"erro", "Não há perfil de máquina para " + modelo + " nesta versão do Filuna."}};
     const std::string model_id = p->config.has("printer_model") ? p->config.opt_string("printer_model") : std::string();
@@ -766,7 +763,12 @@ json descobertas()
                              {"modelo_nome", std::string(o->get_printer_type_display_str().ToUTF8().data())},
                              {"livre", o->bind_state != "occupied"}, {"ligada", o->is_online()},
                              {"precisa_codigo", o->get_access_code().empty() && !o->has_access_right()}});
-    return {{"impressoras", lista}, {"agente", dev->get_current_printer_agent_id()}};
+    json busca;
+    {
+        std::lock_guard<std::mutex> l(busca_mutex());
+        busca = busca_info();
+    }
+    return {{"impressoras", lista}, {"agente", dev->get_current_printer_agent_id()}, {"busca_klipper", busca}};
 }
 
 // O programa só trata como "acessível" a impressora de rede que tem um código gravado (herança do modo LAN da
@@ -786,6 +788,37 @@ void garantir_codigo(MachineObject* o)
         o->set_access_code("lan", false);
 }
 
+// Torna a marca desta impressora a ativa do programa (agente de rede e perfil do modelo em Preparar). Sem isso,
+// conectar uma Bambu depois de procurar uma Snapmaker falhava: a impressora não estava na lista do agente atual.
+void ativar_marca_de(MachineObject* o)
+{
+    // perfil de máquina do modelo em Preparar (se o fabricante for conhecido pelo agente)
+    const std::string agente = o->printer_agent_id;
+    for (const auto& [mid, ag] : AGENTE)
+        if (ag == agente || (agente == "filuna_elegoo_sdcp" && mid == "elegoo")) {
+            const std::string vid = vendor_orca(mid);
+            // a impressora diz "Centauri Carbon 2"; o perfil chama "Elegoo Centauri Carbon 2"
+            const Preset* p = preset_do_modelo(vid, o->printer_type);
+            if (p == nullptr)
+                p = preset_do_modelo(vid, vid + " " + o->printer_type);
+            if (p == nullptr) {
+                // Bambu: printer_type é o código (N7 = P2S); o nome do modelo vem da tabela da marca. Se o modelo
+                // ainda não estiver instalado (o cliente só tinha a A1), instala o perfil dele agora.
+                const wxString nome = o->get_printer_type_display_str();
+                p = preset_instalando(vid, std::string(nome.ToUTF8().data()));
+            }
+            // O programa mantém UMA impressora ativa: abrir o cartão dela traz de volta o agente de rede e o
+            // perfil da marca dela (antes ficava no da última marca usada e ela aparecia desconectada).
+            if (AppConfig* cfg = wxGetApp().app_config)
+                cfg->set("filuna_agente_" + vid, agente);
+            if (p != nullptr)
+                if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER))
+                    tab->select_preset(p->name);
+            wxGetApp().switch_printer_agent();
+            break;
+        }
+}
+
 json conectar(const std::string& dev_id, const std::string& codigo)
 {
     DeviceManager* dev = wxGetApp().getDeviceManager();
@@ -796,6 +829,8 @@ json conectar(const std::string& dev_id, const std::string& codigo)
         o = dev->get_my_machine(dev_id);
     if (o == nullptr)
         return {{"erro", "Impressora não está mais na rede."}};
+    if (o->printer_agent_id != dev->get_current_printer_agent_id())
+        ativar_marca_de(o);
     if (!codigo.empty())
         o->set_access_code(codigo, false);
     else
@@ -900,29 +935,7 @@ json selecionar(const std::string& dev_id)
         o = dev->get_local_machine(dev_id);
     if (o == nullptr)
         return {{"erro", "Impressora não encontrada."}};
-    // perfil de máquina do modelo em Preparar (se o fabricante for conhecido pelo agente)
-    const std::string agente = o->printer_agent_id;
-    for (const auto& [mid, ag] : AGENTE)
-        if (ag == agente || (agente == "filuna_elegoo_sdcp" && mid == "elegoo")) {
-            const std::string vid = vendor_orca(mid);
-            // a impressora diz "Centauri Carbon 2"; o perfil chama "Elegoo Centauri Carbon 2"
-            const Preset* p = preset_do_modelo(vid, o->printer_type);
-            if (p == nullptr)
-                p = preset_do_modelo(vid, vid + " " + o->printer_type);
-            if (p == nullptr) {
-                const wxString nome = o->get_printer_type_display_str();
-                p = preset_do_modelo(vid, std::string(nome.ToUTF8().data()));
-            }
-            // O programa mantém UMA impressora ativa: abrir o cartão dela traz de volta o agente de rede e o
-            // perfil da marca dela (antes ficava no da última marca usada e ela aparecia desconectada).
-            if (AppConfig* cfg = wxGetApp().app_config)
-                cfg->set("filuna_agente_" + vid, agente);
-            if (p != nullptr)
-                if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER))
-                    tab->select_preset(p->name);
-            wxGetApp().switch_printer_agent();
-            break;
-        }
+    ativar_marca_de(o);
     garantir_codigo(o);
     // A Bambu só conecta com o código de acesso da tela dela: sem ele, pedir o código em vez de falhar calado.
     if (o->printer_agent_id == "filuna_bambu_lan" && o->get_access_code().empty() && !o->has_access_right())

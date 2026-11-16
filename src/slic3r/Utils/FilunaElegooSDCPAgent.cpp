@@ -1,5 +1,6 @@
 #include "FilunaElegooSDCPAgent.hpp"
 #include "FilunaCameraUrls.hpp"
+#include "FilunaRede.hpp"
 
 #include <chrono>
 #include <deque>
@@ -495,12 +496,18 @@ bool FilunaElegooSDCPAgent::start_discovery(bool start, bool)
             s.set_option(net::socket_base::broadcast(true));
             s.non_blocking(true);
             auto last = std::chrono::steady_clock::time_point{};
+            const std::vector<std::string> redes  = Filuna::redes_locais();
+            unsigned                       rodada = 0;
             char buf[2048];
             while (m_discovering) {
                 if (std::chrono::steady_clock::now() - last > std::chrono::seconds(2)) {
                     boost::system::error_code ec;
                     for (auto a : {net::ip::address_v4::broadcast(), net::ip::address_v4::loopback()})
                         s.send_to(net::buffer(std::string("M99999")), udp::endpoint(a, m_ports.discovery), 0, ec);
+                    // também direto para cada endereço da rede (o firewall do Windows deixa a resposta entrar), a cada
+                    // 3 rodadas, para não encher a rede
+                    if (rodada++ % 3 == 0)
+                        Filuna::enviar_para_rede(s, m_ports.discovery, "M99999", redes);
                     last = std::chrono::steady_clock::now();
                 }
                 udp::endpoint             from;

@@ -862,7 +862,7 @@ function daMarca(a) {
 // Diagnóstico: a busca na rede terminou sem achar a impressora — vai para o servidor com marca, modelo e agente.
 function semImpressoraNaRede(a, r) {
 	Filuna.nativo("diagnostico.enviar", { etapa: "dispositivos.procurar", mensagem: "Busca na rede local terminou sem achar a impressora",
-		contexto: { fabricante: a.marca && a.marca.id, modelo: a.modelo && a.modelo.nome, perfil: a.perfil || "", agente: (r && r.agente) || "" } }).catch(function () {});
+		contexto: { fabricante: a.marca && a.marca.id, modelo: a.modelo && a.modelo.nome, perfil: a.perfil || "", agente: (r && r.agente) || "", busca_klipper: (r && r.busca_klipper) || null } }).catch(function () {});
 }
 function pollDescobertas() {
 	var a = estado.assist; if (!a || estado.vista != "assistente" || a.passo != "procurar") return;
