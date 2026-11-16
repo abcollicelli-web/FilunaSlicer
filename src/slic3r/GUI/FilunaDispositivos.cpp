@@ -1,5 +1,6 @@
 #include <boost/asio.hpp> // no Windows o boost precisa vir antes dos cabeçalhos do wxWidgets
 #include "FilunaDispositivos.hpp"
+#include "FilunaAoVivo.hpp"
 
 #include "FilunaAtualizacao.hpp"
 #include "FilunaDados.hpp"
@@ -804,6 +805,7 @@ json conectar(const std::string& dev_id, const std::string& codigo)
         o->set_access_code(codigo, false);
     else
         garantir_codigo(o);
+    FilunaAoVivo::ativa(dev_id); // libera a conexão em segundo plano antes de o programa conectar
     if (!dev->set_selected_machine(dev_id))
         return {{"erro", "Não foi possível conectar. Confira o código de acesso. " "Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o Modo desenvolvedor e copie o Código de acesso."}, {"precisa_codigo", true}};
     dev->set_local_selected_machine(dev_id);
@@ -889,14 +891,23 @@ json estado()
     for (auto& [id, o] : dev->get_local_machinelist())
         todas.emplace(id, o);
     MachineObject* sel = dev->get_selected_machine();
+    FilunaAoVivo::ativa(sel != nullptr ? sel->get_dev_id() : std::string());
     for (auto& [id, o] : todas) {
         if (o == nullptr)
             continue;
         json c = card(o);
+        // não selecionada: o estado vem do acompanhamento em segundo plano (várias impressoras ao vivo)
+        if (sel == nullptr || sel->get_dev_id() != o->get_dev_id()) {
+            const json av = FilunaAoVivo::estado_de(o->get_dev_id()); // guardado: items() aponta para ele
+            for (auto& [k, v] : av.items())
+                c[k] = v;
+        }
         c["selecionada"] = (sel != nullptr && sel->get_dev_id() == o->get_dev_id());
         c["cadastro_id"] = cfg != nullptr ? cfg->get(chave_vinculo(o->get_dev_id())) : std::string();
         // Conectada de verdade e ainda sem cadastro (ex.: aberta pelo cartão, sem passar pelo assistente): cadastra
         // uma vez, para aparecer no site e no app como as do assistente.
+        if (c["selecionada"].get<bool>() && o->is_connected())
+            FilunaAoVivo::lembrar(o); // guarda IP, agente e código para acompanhar em segundo plano depois
         if (cfg != nullptr && c["cadastro_id"].get<std::string>().empty() && c["selecionada"].get<bool>() && o->is_connected()) {
             std::string modulo;
             for (const auto& [mid, ag] : AGENTE)
@@ -912,10 +923,21 @@ json estado()
     // cadastradas no banco local que não estão na rede agora: aparecem desligadas
     for (const auto& imp : filuna_db().impressoras()) {
         const bool vista = std::any_of(lista.begin(), lista.end(), [&](const json& c) { return c.value("cadastro_id", std::string()) == imp.id; });
-        if (!vista)
-            lista.push_back({{"dev_id", std::string()}, {"cadastro_id", imp.id}, {"nome", imp.nome}, {"modelo_nome", imp.modelo},
-                             {"fabricante", imp.fabricante}, {"ligada", false}, {"estado", "desligada"}, {"cores", json::array()},
-                             {"camera", false}, {"selecionada", false}});
+        if (!vista) {
+            json c = {{"dev_id", std::string()}, {"cadastro_id", imp.id}, {"nome", imp.nome}, {"modelo_nome", imp.modelo},
+                      {"fabricante", imp.fabricante}, {"ligada", false}, {"estado", "desligada"}, {"cores", json::array()},
+                      {"camera", false}, {"selecionada", false}};
+            // fora da lista da rede do programa (outra marca ativa), mas acompanhada em segundo plano: estado ao vivo
+            for (const std::string& d : FilunaAoVivo::acompanhadas())
+                if (cfg != nullptr && cfg->get(chave_vinculo(d)) == imp.id) {
+                    c["dev_id"]   = d;
+                    const json av = FilunaAoVivo::estado_de(d);
+                    for (auto& [k, v] : av.items())
+                        c[k] = v;
+                    break;
+                }
+            lista.push_back(c);
+        }
     }
     return {{"impressoras", lista}, {"agente", dev->get_current_printer_agent_id()}};
 }
@@ -932,6 +954,7 @@ json selecionar(const std::string& dev_id)
         return {{"erro", "Impressora não encontrada."}};
     ativar_marca_de(o);
     garantir_codigo(o);
+    FilunaAoVivo::ativa(dev_id); // libera a conexão em segundo plano antes de o programa conectar
     // A Bambu só conecta com o código de acesso da tela dela: sem ele, pedir o código em vez de falhar calado.
     if (o->printer_agent_id == "filuna_bambu_lan" && o->get_access_code().empty() && !o->has_access_right())
         return {{"erro", "Esta impressora pede o código de acesso. " "Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o Modo desenvolvedor e copie o Código de acesso."}, {"precisa_codigo", true}};
@@ -1079,6 +1102,7 @@ void monitor_iniciar()
     static wxTimer* vigia = nullptr;
     if (vigia != nullptr)
         return;
+    FilunaAoVivo::iniciar();
     vigia = new wxTimer();
     vigia->Bind(wxEVT_TIMER, [](wxTimerEvent&) {
         static std::map<std::string, std::string> antes;
@@ -1091,8 +1115,8 @@ void monitor_iniciar()
         }
         for (const auto& i : e.value("impressoras", json::array())) {
             const std::string dev = i.value("dev_id", std::string()), est = i.value("estado", std::string());
-            if (dev.empty() || !i.value("selecionada", false))
-                continue; // só a impressora ativa tem leitura ao vivo
+            if (dev.empty() || !(i.value("selecionada", false) || i.value("ao_vivo", false)))
+                continue; // leitura ao vivo: a impressora ativa e as acompanhadas em segundo plano
             const std::string a = antes[dev];
             if ((a == "imprimindo" || a == "pausada") && (est == "concluida" || est == "livre")) {
                 const wxString texto = wxString::FromUTF8("Impressão concluída na " + i.value("nome", std::string("impressora")) +

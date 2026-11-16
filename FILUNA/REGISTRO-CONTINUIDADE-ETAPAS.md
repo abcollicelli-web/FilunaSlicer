@@ -1173,3 +1173,18 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
 - Rochelly: a 76 não abre (0xc0e90002 no OrcaSlicer.dll). Pacote e diferença conferidos no servidor (SHA-256 igual) e o
   cliente confere o SHA-256 antes de trocar: é o Controle Inteligente de Aplicativos do Windows 11 bloqueando DLL sem
   assinatura. Definitivo: assinatura de código (certificado do dono) na compilação.
+
+## 2026-11-16 — 78 publicada (6baa98a35); 79: várias impressoras ao vivo ao mesmo tempo
+
+- GUI/FilunaAoVivo.cpp/.hpp: cada impressora já conectada uma vez (IP, agente e código guardados em app_config, seção
+  "filuna_ao_vivo", por lembrar() quando é a ativa e está conectada) ganha uma instância NOVA do agente da marca
+  (NetworkAgentFactory::create_new_printer_agent, fora do cache) conectada em segundo plano. O relatório "print" que todos
+  os agentes Filuna e o Moonraker entregam é acumulado (os agentes mandam partes) e vira o estado: ligada, estado,
+  progresso, restante_s, bico, mesa, cores. Bambu: pushall a cada 2 min; sem relatório em 5 min, reconecta; sem conexão
+  em 2 min (Moonraker não avisa falha), tenta de novo em 60 s. Moonraker conecta pela linha da tela (lê o perfil).
+- A impressora ativa do programa sai do acompanhamento (ativa() em estado(), selecionar() e conectar(), antes de o
+  DeviceManager conectar): uma conexão por impressora.
+- estado(): as não selecionadas recebem o estado ao vivo; cadastradas fora da lista da rede (outra marca ativa) também.
+  O vigia (avisos de fim de impressão, filamento trocado, erro) vale para as acompanhadas e o estado sobe ao site/app.
+- Testado com agente simulado: conecta, junta relatórios parciais, código errado fica desligada e tenta de novo,
+  ativa() solta a conexão e ela volta quando deixa de ser a ativa.

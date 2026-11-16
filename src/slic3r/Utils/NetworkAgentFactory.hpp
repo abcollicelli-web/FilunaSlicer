@@ -123,6 +123,10 @@ public:
                                                                      std::shared_ptr<ICloudServiceAgent> cloud_agent,
                                                                      const std::string&                  log_dir);
 
+    // Filuna: instância NOVA do agente (fora do cache), para acompanhar outra impressora da mesma marca em paralelo
+    // com a impressora ativa do programa (FilunaAoVivo). nullptr se o id não existe.
+    static std::shared_ptr<IPrinterAgent> create_new_printer_agent(const std::string& id, const std::string& log_dir);
+
     /**
      * Clear the printer agent cache.
      * Calls disconnect_printer() on each cached agent and releases all shared_ptrs.

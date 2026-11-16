@@ -137,6 +137,16 @@ std::vector<PrinterAgentInfo> NetworkAgentFactory::get_registered_printer_agents
     return result;
 }
 
+std::shared_ptr<IPrinterAgent> NetworkAgentFactory::create_new_printer_agent(const std::string& id, const std::string& log_dir)
+{
+    std::lock_guard<std::mutex> lock(s_registry_mutex);
+    auto&                       agents = get_printer_agents();
+    auto                        it     = agents.find(id);
+    if (it == agents.end())
+        return nullptr;
+    return it->second.factory(nullptr, log_dir);
+}
+
 std::shared_ptr<IPrinterAgent> NetworkAgentFactory::create_printer_agent_by_id(const std::string& id,
                                                                                std::shared_ptr<ICloudServiceAgent> cloud_agent,
                                                                                const std::string& log_dir)
