@@ -1,4 +1,5 @@
 #include "FilunaImpressao.hpp"
+#include "FilunaAoVivo.hpp"
 
 #include "FilunaManutencao.hpp"
 #include "GUI_App.hpp"
@@ -696,10 +697,12 @@ template<class T> bool na_janela(std::function<T()> fn, T& saida, int segundos =
     }
 }
 
-// Impressora conectada agora (a Farm imprime pela conexão viva do programa).
+// Impressora que a Farm pode usar: a selecionada no programa ou uma das acompanhadas ao vivo (FilunaAoVivo), cada
+// uma pela própria conexão.
 struct FarmMaquina
 {
     bool        ok{false};
+    bool        ao_vivo{false}; // true = acompanhada em segundo plano (não é a selecionada no programa)
     std::string dev_id, ref, agente, status, erro;
     bool        online{false}, imprimindo{false}, pausada{false};
     int         progresso{0}, resta_s{0};
@@ -726,6 +729,60 @@ FarmMaquina farm_maquina()
     for (const Entrada& e : entradas_de(o))
         m.cores.push_back({{"global", e.global}, {"tipo", e.tipo}, {"cor", e.cor}});
     return m;
+}
+
+// Impressoras ao vivo para a Farm: a selecionada (como antes) e as acompanhadas em segundo plano. Linha da tela.
+std::vector<FarmMaquina> farm_maquinas()
+{
+    std::vector<FarmMaquina> v;
+    FarmMaquina              sel = farm_maquina();
+    if (sel.ok)
+        v.push_back(sel);
+    for (const FilunaAoVivo::Ligada& l : FilunaAoVivo::ligadas()) {
+        if (sel.ok && l.dev_id == sel.dev_id)
+            continue;
+        FarmMaquina m;
+        const json& p     = l.relatorio;
+        const std::string gs = p.value("gcode_state", std::string());
+        m.ok         = true;
+        m.ao_vivo    = true;
+        m.dev_id     = l.dev_id;
+        m.ref        = wxGetApp().app_config->get("filuna_dispositivo_" + l.dev_id);
+        m.agente     = l.agente;
+        m.status     = gs;
+        m.online     = true;
+        m.imprimindo = gs == "RUNNING" || gs == "PREPARE" || gs == "SLICING" || gs == "PAUSE";
+        m.pausada    = gs == "PAUSE";
+        m.progresso  = p.contains("mc_percent") && p["mc_percent"].is_number() ? p["mc_percent"].get<int>() : 0;
+        m.resta_s    = p.contains("mc_remaining_time") && p["mc_remaining_time"].is_number() ? p["mc_remaining_time"].get<int>() * 60 : 0;
+        if (p.contains("ams") && p["ams"].is_object() && p["ams"].contains("ams") && p["ams"]["ams"].is_array())
+            for (const auto& u : p["ams"]["ams"]) {
+                if (!u.is_object() || !u.contains("tray") || !u["tray"].is_array())
+                    continue;
+                int a = 0;
+                try {
+                    a = u.contains("id") ? (u["id"].is_string() ? std::stoi(u["id"].get<std::string>()) : u["id"].get<int>()) : 0;
+                } catch (...) {
+                    continue;
+                }
+                for (const auto& t : u["tray"]) {
+                    if (!t.is_object())
+                        continue;
+                    const std::string cor = t.value("tray_color", std::string()), tipo = t.value("tray_type", std::string());
+                    if (cor.empty() && tipo.empty())
+                        continue; // entrada vazia
+                    int sl = 0;
+                    try {
+                        sl = t.contains("id") ? (t["id"].is_string() ? std::stoi(t["id"].get<std::string>()) : t["id"].get<int>()) : 0;
+                    } catch (...) {
+                        continue;
+                    }
+                    m.cores.push_back({{"global", a * 4 + sl}, {"tipo", tipo}, {"cor", so_rgb(cor)}});
+                }
+            }
+        v.push_back(m);
+    }
+    return v;
 }
 
 // Perfis da impressora, do processo e do filamento para o fatiamento sem tela (arquivos JSON completos, sem herança).
@@ -780,6 +837,67 @@ FarmPerfis farm_perfis(const std::string& material, const fsf::path& pasta)
     r.altura    = b->prints.get_edited_preset().config.opt_float("layer_height");
     if (!gravar_perfil(b->printers.get_edited_preset().config, "machine", "Filuna Farm maquina", pasta / "maquina.json") ||
         !gravar_perfil(b->prints.get_edited_preset().config, "process", "Filuna Farm processo", pasta / "processo.json") ||
+        !gravar_perfil(fil->config, "filament", "Filuna Farm " + material, pasta / "filamento.json")) {
+        r.erro = "não gravou os perfis para o fatiamento";
+        return r;
+    }
+    r.base.dev_id          = o->get_dev_id();
+    r.base.dev_ip          = o->get_dev_ip();
+    r.base.dev_name        = o->get_dev_name();
+    r.base.password        = o->get_access_code();
+    r.base.connection_type = "lan";
+    r.ok                   = true;
+    return r;
+}
+
+// Perfis para uma impressora ao vivo que não é a da Preparação: o perfil de sistema do modelo dela, com processo e
+// filamento compatíveis (sem trocar a impressora escolhida na Preparação). Linha da tela.
+FarmPerfis farm_perfis_ao_vivo(const std::string& material, const fsf::path& pasta, const FarmMaquina& m)
+{
+    FarmPerfis     r;
+    PresetBundle*  b   = wxGetApp().preset_bundle;
+    DeviceManager* dev = wxGetApp().getDeviceManager();
+    MachineObject* o   = dev != nullptr ? dev->get_local_machine(m.dev_id) : nullptr;
+    if (b == nullptr || o == nullptr) {
+        r.erro = "a impressora não está na lista do programa";
+        return r;
+    }
+    const Preset* pr = get_printer_preset(o);
+    if (pr == nullptr)
+        for (const Preset& x : b->printers)
+            if (x.is_system && x.config.has("printer_model") && x.config.opt_string("printer_model") == o->printer_type &&
+                (pr == nullptr || x.name.find("0.4") != std::string::npos))
+                pr = &x;
+    if (pr == nullptr) {
+        r.erro = "não há perfil instalado para o modelo desta impressora (" + o->printer_type + ")";
+        return r;
+    }
+    const PresetWithVendorProfile pv = b->printers.get_preset_with_vendor_profile(*pr);
+    const Preset*                 proc = nullptr;
+    double                        dif  = 1e9;
+    for (const Preset& x : b->prints) {
+        if (!x.is_system || !is_compatible_with_printer(b->prints.get_preset_with_vendor_profile(x), pv))
+            continue;
+        const double d = std::abs(x.config.opt_float("layer_height") - 0.2) + (x.name.find("Standard") != std::string::npos ? 0 : 0.001);
+        if (d < dif)
+            dif = d, proc = &x;
+    }
+    const std::string fid = filamento_id_do_tipo(material);
+    const Preset*     fil = nullptr;
+    for (const Preset& f : b->filaments)
+        if (f.is_system && !fid.empty() && f.filament_id == fid && is_compatible_with_printer(b->filaments.get_preset_with_vendor_profile(f), pv))
+            fil = fil == nullptr ? &f : fil;
+    if (proc == nullptr || fil == nullptr) {
+        r.erro = proc == nullptr ? "não há perfil de impressão para " + pr->name : "não há perfil de " + material + " para " + pr->name;
+        return r;
+    }
+    r.agente    = m.agente;
+    r.maquina   = utf8_de(pasta / "maquina.json");
+    r.processo  = utf8_de(pasta / "processo.json");
+    r.filamento = utf8_de(pasta / "filamento.json");
+    r.altura    = proc->config.opt_float("layer_height");
+    if (!gravar_perfil(pr->config, "machine", "Filuna Farm maquina", pasta / "maquina.json") ||
+        !gravar_perfil(proc->config, "process", "Filuna Farm processo", pasta / "processo.json") ||
         !gravar_perfil(fil->config, "filament", "Filuna Farm " + material, pasta / "filamento.json")) {
         r.erro = "não gravou os perfis para o fatiamento";
         return r;
@@ -891,22 +1009,50 @@ void farm_avisar(const std::string& texto)
     });
 }
 
-void farm_gravar_ativo(const FarmAtivo& a)
+using FarmAtivos = std::map<std::string, FarmAtivo>; // impressora (dev_id) -> mesa que ela está fazendo
+
+json farm_ativo_json(const FarmAtivo& a)
 {
-    const json j = a.id.empty() ? json() : json{{"id", a.id}, {"dev_id", a.dev_id}, {"desde", a.desde}, {"gramas", a.gramas},
-                                               {"posicao", a.posicao}, {"viu", a.viu_imprimindo}};
-    wxGetApp().CallAfter([t = a.id.empty() ? std::string() : j.dump()] { wxGetApp().app_config->set("filuna_farm_ativo", t); });
+    return {{"id", a.id}, {"dev_id", a.dev_id}, {"desde", a.desde}, {"gramas", a.gramas}, {"posicao", a.posicao}, {"viu", a.viu_imprimindo}};
 }
 
-FarmAtivo farm_ler_ativo(const std::string& texto)
+FarmAtivo farm_ativo_de(const json& j)
 {
-    FarmAtivo  a;
-    const json j = json::parse(texto, nullptr, false);
+    FarmAtivo a;
     if (j.is_object()) {
         a.id = j.value("id", std::string()), a.dev_id = j.value("dev_id", std::string()), a.desde = j.value("desde", 0LL);
         a.gramas = j.value("gramas", 0.0), a.posicao = j.value("posicao", 1), a.viu_imprimindo = j.value("viu", false);
     }
     return a;
+}
+
+void farm_gravar_ativos(const FarmAtivos& as)
+{
+    json j = json::object();
+    for (const auto& [dev, a] : as)
+        if (!a.id.empty())
+            j[dev] = farm_ativo_json(a);
+    wxGetApp().CallAfter([t = j.empty() ? std::string() : j.dump()] {
+        wxGetApp().app_config->set("filuna_farm_ativos", t);
+        wxGetApp().app_config->set("filuna_farm_ativo", ""); // formato antigo (uma impressora só)
+    });
+}
+
+// Lê as mesas em andamento; aceita o formato antigo, de uma mesa só ("filuna_farm_ativo").
+FarmAtivos farm_ler_ativos(const std::string& novo, const std::string& antigo)
+{
+    FarmAtivos as;
+    const json j = json::parse(novo, nullptr, false);
+    if (j.is_object())
+        for (auto it = j.begin(); it != j.end(); ++it) {
+            FarmAtivo a = farm_ativo_de(it.value());
+            if (!a.id.empty())
+                as[a.dev_id.empty() ? it.key() : a.dev_id] = a;
+        }
+    const FarmAtivo velho = farm_ativo_de(json::parse(antigo, nullptr, false));
+    if (!velho.id.empty() && !velho.dev_id.empty() && !as.count(velho.dev_id))
+        as[velho.dev_id] = velho;
+    return as;
 }
 
 // Mesma regra do site (farm_plano.cor_perto): cores "iguais" a até 60 de distância RGB.
@@ -985,7 +1131,8 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
             return "não baixou o modelo da mesa (" + d.erro + ")";
     }
     FarmPerfis perf;
-    if (!na_janela<FarmPerfis>([material, pasta] { return farm_perfis(material, pasta); }, perf) || !perf.ok)
+    if (!na_janela<FarmPerfis>([material, pasta, m] { return m.ao_vivo ? farm_perfis_ao_vivo(material, pasta, m) : farm_perfis(material, pasta); }, perf) ||
+        !perf.ok)
         return perf.erro.empty() ? "não leu os perfis da impressora" : perf.erro;
     const fsf::path saida = pasta / "saida";
     // Marcas que imprimem o filamento N pela entrada N (Anycubic: a impressora segue a ferramenta do G-code e ignora a
@@ -1056,28 +1203,32 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     p.task_flow_cali = p.task_vibration_cali = p.task_layer_inspect = p.task_record_timelapse = false;
     p.task_timelapse_use_internal = p.task_ext_change_assist = p.try_emmc_print = false;
     p.use_ssl_for_ftp = p.use_ssl_for_mqtt = false;
-    NetworkAgent* net = wxGetApp().getAgent();
-    if (net == nullptr)
-        return "sem conexão com a impressora";
     std::string msg_envio;
     int         rc_envio = -1;
-    try {
-        rc_envio = net->start_local_print(p, [&msg_envio](int etapa, int, std::string msg) { if (etapa == PrintingStageERROR) msg_envio = msg; },
-                                          [] { return false; });
-    } catch (const std::exception& e) {
-        msg_envio = e.what();
+    if (m.ao_vivo)
+        rc_envio = FilunaAoVivo::imprimir(m.dev_id, p, msg_envio);
+    else {
+        NetworkAgent* net = wxGetApp().getAgent();
+        if (net == nullptr)
+            return "sem conexão com a impressora";
+        try {
+            rc_envio = net->start_local_print(p, [&msg_envio](int etapa, int, std::string msg) { if (etapa == PrintingStageERROR) msg_envio = msg; },
+                                              [] { return false; });
+        } catch (const std::exception& e) {
+            msg_envio = e.what();
+        }
     }
     if (rc_envio != 0)
         return "a impressora recusou a mesa (" + (msg_envio.empty() ? "código " + std::to_string(rc_envio) : msg_envio) + ")";
     farm_http("POST", "/trabalhos/" + tid, {{"estado", "enviado"}}, token);
     ativo.id = tid, ativo.dev_id = m.dev_id, ativo.desde = (long long) std::time(nullptr), ativo.gramas = gramas, ativo.posicao = posicao;
     ativo.viu_imprimindo = false;
-    farm_gravar_ativo(ativo);
     fsf::remove(modelo, ec);
     return {};
 }
 
-void farm_comandos(const std::string& token, const FarmMaquina& m)
+// Pausar, retomar e cancelar pedidos no site/app: cada comando vai para a impressora dele (a selecionada ou uma ao vivo).
+void farm_comandos(const std::string& token, const std::vector<FarmMaquina>& ms)
 {
     FarmResp r = farm_http("GET", "/comandos", json(), token);
     if (r.status != 200 || !r.corpo.is_object())
@@ -1085,79 +1236,107 @@ void farm_comandos(const std::string& token, const FarmMaquina& m)
     for (const auto& c : r.corpo.value("comandos", json::array())) {
         const std::string cid = texto_de(c, "id"), cmd = texto_de(c, "comando");
         const std::string ref = c.is_object() && c.contains("impressora") ? texto_de(c["impressora"], "ref") : std::string();
-        if (cid.empty() || ref.empty() || ref != m.ref)
+        const auto        m   = std::find_if(ms.begin(), ms.end(), [&ref](const FarmMaquina& x) { return !ref.empty() && x.ref == ref; });
+        if (cid.empty() || m == ms.end())
             continue;
         int rc = -1;
-        na_janela<int>([cmd, dev_id = m.dev_id]() -> int {
-            DeviceManager* dev = wxGetApp().getDeviceManager();
-            MachineObject* o   = dev != nullptr ? dev->get_selected_machine() : nullptr;
-            if (o == nullptr || o->get_dev_id() != dev_id)
-                return -1;
-            return cmd == "pausar" ? o->command_task_pause() : cmd == "retomar" ? o->command_task_resume() : cmd == "cancelar" ? o->command_task_abort() : -1;
-        }, rc);
+        if (m->ao_vivo)
+            rc = FilunaAoVivo::comando(m->dev_id, cmd);
+        else
+            na_janela<int>([cmd, dev_id = m->dev_id]() -> int {
+                DeviceManager* dev = wxGetApp().getDeviceManager();
+                MachineObject* o   = dev != nullptr ? dev->get_selected_machine() : nullptr;
+                if (o == nullptr || o->get_dev_id() != dev_id)
+                    return -1;
+                return cmd == "pausar" ? o->command_task_pause() : cmd == "retomar" ? o->command_task_resume() : cmd == "cancelar" ? o->command_task_abort() : -1;
+            }, rc);
         farm_http("POST", "/comandos/" + cid, {{"estado", rc == 0 ? "feito" : "falhou"}}, token);
     }
 }
 
-void farm_volta(FarmAtivo& ativo)
+// Acompanha a mesa que uma impressora está fazendo. true = a mesa saiu desta impressora (concluída ou falhou).
+bool farm_acompanhar(FarmAtivo& ativo, const FarmMaquina& m, const std::string& token)
+{
+    const long long passou = (long long) std::time(nullptr) - ativo.desde;
+    if (m.imprimindo || m.status == "RUNNING" || m.status == "PREPARE" || m.status == "PAUSE") {
+        ativo.viu_imprimindo = true;
+        farm_http("POST", "/trabalhos/" + ativo.id,
+                  {{"estado", "imprimindo"}, {"progresso", m.progresso}, {"resta_s", m.resta_s}, {"pausada", m.pausada}}, token);
+        return false;
+    }
+    if (ativo.viu_imprimindo && m.status == "FINISH") {
+        farm_http("POST", "/trabalhos/" + ativo.id,
+                  {{"estado", "concluido"}, {"tempo_s", passou}, {"filamentos", json::array({{{"posicao", ativo.posicao}, {"gramas", ativo.gramas}}})}}, token);
+        return true;
+    }
+    if ((ativo.viu_imprimindo && (m.status == "FAILED" || m.status == "IDLE")) || (!ativo.viu_imprimindo && passou > 15 * 60)) {
+        farm_http("POST", "/trabalhos/" + ativo.id, {{"estado", "falhou"}}, token);
+        farm_avisar("a mesa não terminou na impressora (" + (m.status.empty() ? std::string("sem resposta") : m.status) + "); veja no painel da Farm");
+        return true;
+    }
+    return false;
+}
+
+// Uma volta da Farm: acompanha a mesa de cada impressora ao vivo e manda a próxima mesa da fila para uma impressora
+// livre (uma mesa nova por volta, para não fatiar várias ao mesmo tempo). Mesa de impressora que saiu do ar espera ela
+// voltar.
+void farm_volta(FarmAtivos& ativos)
 {
     const std::string token = wxGetApp().app_config->get("filuna_token");
     if (token.empty() || wxGetApp().app_config->get("filuna_farm_auto") == "0")
         return;
-    FarmMaquina m;
-    if (!na_janela<FarmMaquina>([] { return farm_maquina(); }, m) || !m.ok || m.ref.empty())
+    std::vector<FarmMaquina> ms;
+    if (!na_janela<std::vector<FarmMaquina>>([] { return farm_maquinas(); }, ms))
         return;
-    if (!ativo.id.empty()) {
-        if (ativo.dev_id != m.dev_id)
-            return; // a mesa está em outra impressora: espera ela voltar a ser a conectada
-        farm_comandos(token, m);
-        const long long passou = (long long) std::time(nullptr) - ativo.desde;
-        if (m.imprimindo || m.status == "RUNNING" || m.status == "PREPARE" || m.status == "PAUSE") {
-            if (!ativo.viu_imprimindo) {
-                ativo.viu_imprimindo = true;
-                farm_gravar_ativo(ativo);
-            }
-            farm_http("POST", "/trabalhos/" + ativo.id,
-                      {{"estado", "imprimindo"}, {"progresso", m.progresso}, {"resta_s", m.resta_s}, {"pausada", m.pausada}}, token);
-            return;
-        }
-        if (ativo.viu_imprimindo && m.status == "FINISH") {
-            farm_http("POST", "/trabalhos/" + ativo.id,
-                      {{"estado", "concluido"}, {"tempo_s", passou}, {"filamentos", json::array({{{"posicao", ativo.posicao}, {"gramas", ativo.gramas}}})}}, token);
-            ativo = FarmAtivo();
-            farm_gravar_ativo(ativo);
-            return;
-        }
-        if ((ativo.viu_imprimindo && (m.status == "FAILED" || m.status == "IDLE")) || (!ativo.viu_imprimindo && passou > 15 * 60)) {
-            farm_http("POST", "/trabalhos/" + ativo.id, {{"estado", "falhou"}}, token);
-            farm_avisar("a mesa não terminou na impressora (" + (m.status.empty() ? std::string("sem resposta") : m.status) + "); veja no painel da Farm");
-            ativo = FarmAtivo();
-            farm_gravar_ativo(ativo);
-        }
+    ms.erase(std::remove_if(ms.begin(), ms.end(), [](const FarmMaquina& m) { return !m.ok || m.ref.empty(); }), ms.end());
+    if (ms.empty())
         return;
+    farm_comandos(token, ms);
+    bool mudou = false;
+    for (const FarmMaquina& m : ms) {
+        auto it = ativos.find(m.dev_id);
+        if (it == ativos.end())
+            continue;
+        const bool viu = it->second.viu_imprimindo;
+        if (farm_acompanhar(it->second, m, token)) {
+            ativos.erase(it);
+            mudou = true;
+        } else if (it->second.viu_imprimindo != viu)
+            mudou = true;
     }
-    if (!m.online || m.imprimindo)
+    if (mudou)
+        farm_gravar_ativos(ativos);
+    std::vector<const FarmMaquina*> livres;
+    for (const FarmMaquina& m : ms)
+        if (m.online && !m.imprimindo && !ativos.count(m.dev_id))
+            livres.push_back(&m);
+    if (livres.empty())
         return;
     FarmResp f = farm_http("GET", "/fila", json(), token);
     if (f.status != 200 || !f.corpo.is_object())
         return;
-    for (const auto& t : f.corpo.value("trabalhos", json::array())) {
-        const std::string ref = t.is_object() && t.contains("impressora") ? texto_de(t["impressora"], "ref") : std::string();
-        if (ref != m.ref || !(t.contains("pode_iniciar") && t["pode_iniciar"].is_boolean() && t["pode_iniciar"].get<bool>()) ||
-            texto_de(t, "estado") != "aguardando")
-            continue;
-        const auto rec = g_farm_recusadas.find(texto_de(t, "id"));
-        if (rec != g_farm_recusadas.end() && (long long) std::time(nullptr) - rec->second < 10 * 60)
-            continue; // recusada há pouco: não fatia de novo a cada volta
-        const std::string motivo = farm_imprimir_mesa(t, token, m, ativo);
-        if (!motivo.empty()) {
-            g_farm_recusadas[texto_de(t, "id")] = (long long) std::time(nullptr);
-            farm_avisar(motivo);
-            FilunaManutencao::diagnostico("farm", motivo, json{{"trabalho", texto_de(t, "id")}, {"agente", m.agente}});
-        } else
-            g_farm_ultimo_aviso.clear();
-        return; // uma mesa por volta
-    }
+    for (const FarmMaquina* m : livres)
+        for (const auto& t : f.corpo.value("trabalhos", json::array())) {
+            const std::string ref = t.is_object() && t.contains("impressora") ? texto_de(t["impressora"], "ref") : std::string();
+            if (ref != m->ref || !(t.contains("pode_iniciar") && t["pode_iniciar"].is_boolean() && t["pode_iniciar"].get<bool>()) ||
+                texto_de(t, "estado") != "aguardando")
+                continue;
+            const auto rec = g_farm_recusadas.find(texto_de(t, "id"));
+            if (rec != g_farm_recusadas.end() && (long long) std::time(nullptr) - rec->second < 10 * 60)
+                continue; // recusada há pouco: não fatia de novo a cada volta
+            FarmAtivo         novo;
+            const std::string motivo = farm_imprimir_mesa(t, token, *m, novo);
+            if (!motivo.empty()) {
+                g_farm_recusadas[texto_de(t, "id")] = (long long) std::time(nullptr);
+                farm_avisar(motivo);
+                FilunaManutencao::diagnostico("farm", motivo, json{{"trabalho", texto_de(t, "id")}, {"agente", m->agente}});
+            } else {
+                g_farm_ultimo_aviso.clear();
+                ativos[m->dev_id] = novo;
+                farm_gravar_ativos(ativos);
+            }
+            return; // uma mesa por volta
+        }
 }
 } // namespace
 
@@ -1405,13 +1584,13 @@ void farm_iniciar()
 {
     if (g_farm_iniciada.exchange(true))
         return;
-    const std::string salvo = wxGetApp().app_config->get("filuna_farm_ativo");
-    std::thread([salvo] {
-        FarmAtivo ativo = farm_ler_ativo(salvo);
+    const std::string salvos = wxGetApp().app_config->get("filuna_farm_ativos"), salvo = wxGetApp().app_config->get("filuna_farm_ativo");
+    std::thread([salvos, salvo] {
+        FarmAtivos ativos = farm_ler_ativos(salvos, salvo);
         std::this_thread::sleep_for(std::chrono::seconds(40));
         for (;;) {
             try {
-                farm_volta(ativo);
+                farm_volta(ativos);
             } catch (const std::exception& e) {
                 BOOST_LOG_TRIVIAL(warning) << "Filuna Farm: " << e.what();
             } catch (...) {

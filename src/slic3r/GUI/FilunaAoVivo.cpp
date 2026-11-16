@@ -354,4 +354,61 @@ std::vector<std::string> acompanhadas()
     return v;
 }
 
+std::vector<Ligada> ligadas()
+{
+    std::lock_guard<std::mutex> l(mtx());
+    std::vector<Ligada>         v;
+    for (const auto& [dev, m] : mapa())
+        if (dev != ativa_id() && m.agente && m.conectada && Clock::now() - m.ultima_msg < std::chrono::minutes(5))
+            v.push_back({dev, m.acesso.agente, m.relatorio});
+    return v;
+}
+
+namespace {
+std::shared_ptr<IPrinterAgent> agente_ligado(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> l(mtx());
+    auto                        it = mapa().find(dev_id);
+    if (it == mapa().end() || dev_id == ativa_id() || !it->second.conectada)
+        return nullptr;
+    return it->second.agente;
+}
+} // namespace
+
+int imprimir(const std::string& dev_id, PrintParams p, std::string& erro)
+{
+    std::shared_ptr<IPrinterAgent> ag = agente_ligado(dev_id);
+    if (!ag) {
+        erro = "a impressora não está conectada";
+        return -1;
+    }
+    int r = -1;
+    try {
+        r = ag->start_local_print(p, [&erro](int etapa, int, std::string msg) { if (etapa == PrintingStageERROR) erro = msg; },
+                                  [] { return false; });
+    } catch (const std::exception& e) {
+        erro = e.what();
+    }
+    return r;
+}
+
+int comando(const std::string& dev_id, const std::string& acao)
+{
+    std::shared_ptr<IPrinterAgent> ag = agente_ligado(dev_id);
+    if (!ag)
+        return -1;
+    // mesmo formato dos comandos do programa (MachineObject::command_task_pause/resume/abort)
+    static std::atomic<unsigned> seq{1000};
+    const std::string cmd = acao == "pausar" ? "pause" : acao == "retomar" ? "resume" : acao == "cancelar" ? "stop" : "";
+    if (cmd.empty())
+        return -1;
+    const json j = {{"print", {{"command", cmd}, {"param", ""}, {"sequence_id", std::to_string(seq++)}}}};
+    try {
+        return ag->send_message_to_printer(dev_id, j.dump(), 1, 0);
+    } catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(warning) << "Filuna ao vivo: comando " << acao << " em " << dev_id << ": " << e.what();
+        return -1;
+    }
+}
+
 }}} // namespace Slic3r::GUI::FilunaAoVivo

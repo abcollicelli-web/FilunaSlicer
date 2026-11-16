@@ -10,6 +10,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "slic3r/Utils/bambu_networking.hpp"
+
 #include <string>
 #include <vector>
 
@@ -28,6 +30,19 @@ void ativa(const std::string& dev_id);
 nlohmann::json estado_de(const std::string& dev_id);
 // Séries das impressoras acompanhadas.
 std::vector<std::string> acompanhadas();
+
+// Para a Farm imprimir em todas as impressoras, não só na aberta: as acompanhadas que estão ligadas agora (relatório
+// "print" recebido nos últimos 5 minutos), fora a impressora selecionada no programa.
+struct Ligada
+{
+    std::string    dev_id, agente;
+    nlohmann::json relatorio; // "print" acumulado: gcode_state, mc_percent, mc_remaining_time, ams…
+};
+std::vector<Ligada> ligadas();
+// Manda o arquivo e começa a impressão pelo conector desta impressora (fora da linha da tela). 0 = enviada.
+int imprimir(const std::string& dev_id, PrintParams p, std::string& erro);
+// "pausar", "retomar" ou "cancelar" a impressão desta impressora. 0 = comando aceito.
+int comando(const std::string& dev_id, const std::string& acao);
 
 }} // namespace GUI::FilunaAoVivo
 } // namespace Slic3r
