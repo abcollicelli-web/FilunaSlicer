@@ -126,8 +126,11 @@ wxTimer& relogio()
             const auto it = partes_m().find(g_chave);
             if (it == partes_m().end())
                 return;
+            wxWindow* janela = wxGetTopLevelParent(w);
+            if (janela == nullptr || !janela->IsShownOnScreen())
+                return;
             esconder();
-            g_cartao        = new Cartao(wxGetTopLevelParent(w), it->second, imagem_de(g_chave));
+            g_cartao        = new Cartao(janela, it->second, imagem_de(g_chave));
             wxPoint       p = wxGetMousePosition() + wxPoint(w->FromDIP(14), w->FromDIP(18));
             const wxSize  t = g_cartao->GetSize();
             const int     d = wxDisplay::GetFromPoint(p);
