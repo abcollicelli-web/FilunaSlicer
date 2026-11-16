@@ -814,6 +814,31 @@ json conectar(const std::string& dev_id, const std::string& codigo)
     return {{"ok", true}, {"impressora", card(o)}};
 }
 
+// IP de impressora na rede de casa: quatro números de 0 a 255 sem zero à esquerda (a versão do firmware, como
+// "01.09.00.00", parece um IP e passava) e numa faixa de rede local (192.168, 10, 172.16-31, 169.254).
+bool ip_da_rede_local(const std::string& ip)
+{
+    std::vector<int> n;
+    std::string parte;
+    for (size_t i = 0; i <= ip.size(); ++i) {
+        if (i == ip.size() || ip[i] == '.') {
+            if (parte.empty() || parte.size() > 3 || (parte.size() > 1 && parte[0] == '0'))
+                return false;
+            const int v = std::stoi(parte);
+            if (v > 255)
+                return false;
+            n.push_back(v);
+            parte.clear();
+        } else if (ip[i] >= '0' && ip[i] <= '9')
+            parte += ip[i];
+        else
+            return false;
+    }
+    if (n.size() != 4)
+        return false;
+    return n[0] == 10 || (n[0] == 192 && n[1] == 168) || (n[0] == 172 && n[1] >= 16 && n[1] <= 31) || (n[0] == 169 && n[1] == 254);
+}
+
 json conectar_ip(const std::string& modulo_id, const std::string& modelo, const std::string& ip, const std::string& codigo,
                  const std::string& nome)
 {
@@ -822,13 +847,9 @@ json conectar_ip(const std::string& modulo_id, const std::string& modelo, const 
         return {{"erro", "Gerenciador de dispositivos indisponível."}};
     if (ip.empty())
         return {{"erro", "Informe o endereço IP da impressora."}};
-    {
-        boost::system::error_code ec;
-        boost::asio::ip::make_address_v4(ip, ec);
-        if (ec)
-            return {{"erro", "\"" + ip + "\" não é um endereço IP (exemplo: 192.168.0.50). Ele aparece na tela da impressora, "
-                              "em Configurações › Rede (WLAN) › IP — não confunda com a versão do firmware."}};
-    }
+    if (!ip_da_rede_local(ip))
+        return {{"erro", "\"" + ip + "\" não é um endereço da sua rede (exemplo: 192.168.0.50). Ele aparece na tela da impressora, "
+                          "em Configurações › Rede (WLAN) › IP — não confunda com a versão do firmware."}};
     const std::string vid = vendor_orca(modulo_id);
     const Preset* p = preset_do_modelo(vid, modelo);
     BBLocalMachine m;
