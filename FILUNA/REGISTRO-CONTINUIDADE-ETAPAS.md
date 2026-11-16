@@ -1218,3 +1218,14 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
   pela Microsoft; Store); Download na barra; aviso na hora (push.py, conector Firebase, FCM HTTP v1 assinado com a
   conta de serviço, canal "celular" em eventos._entregar). App 0.4.0-beta (código 5) liga o Firebase com a
   configuração do site (sem google-services.json) e registra o aparelho.
+
+## 2026-11-16 — 81 (correção da abertura) e organização
+
+- 81 (f81c09eeb): FilunaAoVivo::iniciar lia cfg->get_section("filuna_ao_vivo") sem has_section(); o get_section do
+  AppConfig é find()->second e, sem a seção, lia lixo: 0xc0000005 no OrcaSlicer.dll ao criar a janela (79 e 80; nem
+  sempre, depende da memória). Achado pela tabela .pdata do DLL (capstone) no endereço do relatório do Windows.
+- MSIX 2.5.81.0 gerado pelo filuna-loja-msix.yml (run 43880108580) para trocar o envio 2.5.78.0 em certificação, que
+  foi montado da ad8587eb5 (79) e tem o defeito.
+- Autoajuda em todas as abas FDM: 161 cartões novos (237 no total) e 40 ilustrações novas (90 no total).
+- Versões dos motores atualizadas: camada Filuna 1.3.0-beta; Filuna Telas 1.3.0 (Dispositivos, Farm 3D, Modelos 3D);
+  Filuna Atualização 1.1.0 (diferença binária, modo Store). cad, dados e sincronizacao sem mudança.

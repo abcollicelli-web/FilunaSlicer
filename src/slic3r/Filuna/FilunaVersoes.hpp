@@ -16,7 +16,7 @@
 namespace Slic3r::Filuna {
 
 // Versão da camada Filuna do produto (não é a versão do Orca que serve de base).
-inline constexpr const char* VERSAO_FILUNA_SLICER = "1.2.0-beta";
+inline constexpr const char* VERSAO_FILUNA_SLICER = "1.3.0-beta";
 
 struct Motor
 {
@@ -32,8 +32,8 @@ inline const std::vector<Motor>& motores_filuna()
         {"cad", "Filuna CAD", "1.1.0"},                   // aba Design: seleção, esboço, receita (base Orca + camada Filuna)
         {"dados", "Filuna Dados", "1.2.0"},               // banco local, fórmulas de estoque e leitor de G-code
         {"sincronizacao", "Filuna Sincronização", "1.0.0"}, // fila, enviar/receber e restauração
-        {"telas", "Filuna Telas", "1.2.0"},               // páginas web internas (Meu espaço, Estoque, Histórico, Painel)
-        {"atualizacao", "Filuna Atualização", "1.0.0"},   // catálogo assinado, download, SHA-256 e ponteiro de versão
+        {"telas", "Filuna Telas", "1.3.0"},               // páginas web internas (Meu espaço, Estoque, Dispositivos, Farm, Modelos 3D)
+        {"atualizacao", "Filuna Atualização", "1.1.0"},   // catálogo assinado, download, SHA-256, diferença binária e modo Store
     };
     return lista;
 }
