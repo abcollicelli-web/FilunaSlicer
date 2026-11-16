@@ -21,6 +21,7 @@
 #include <nlohmann/json.hpp>
 
 #include "FilunaMqttClient.hpp"
+#include "FilunaRede.hpp"
 
 namespace Slic3r {
 
@@ -223,43 +224,105 @@ bool FilunaBambuLanAgent::start_discovery(bool start, bool)
     return true;
 }
 
+std::string FilunaBambuLanAgent::modelo_pela_serie(const std::string& serie)
+{
+    static const std::pair<const char*, const char*> tabela[] = {
+        {"00M", "BL-P001"}, {"00W", "BL-P002"}, {"03W", "C13"}, {"01S", "C11"}, {"01P", "C12"},
+        {"030", "N1"},      {"039", "N2S"},     {"094", "O1D"}, {"22E", "N7"},  {"26A", "N9"},
+    };
+    for (const auto& [prefixo, modelo] : tabela)
+        if (serie.rfind(prefixo, 0) == 0)
+            return modelo;
+    return std::string();
+}
+
+void FilunaBambuLanAgent::anunciar(const std::string& js)
+{
+    OnMsgArrivedFn fn;
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
+        const std::string serial = nlohmann::json::parse(js).value("dev_id", "");
+        m_seen[serial]           = js;
+        fn                       = m_on_ssdp;
+    }
+    if (fn)
+        fn(js);
+}
+
+void FilunaBambuLanAgent::varrer_rede()
+{
+    for (const std::string& ip : Filuna::portas_abertas(Filuna::enderecos_locais(), 8883, std::chrono::milliseconds(900))) {
+        if (!m_discovering)
+            return;
+        {
+            std::lock_guard<std::recursive_mutex> lock(m_mutex);
+            bool ja = false;
+            for (const auto& [serial, js] : m_seen)
+                ja = ja || nlohmann::json::parse(js, nullptr, false).value("dev_ip", "") == ip;
+            if (ja)
+                continue;
+        }
+        const std::string serie = Filuna::cn_do_certificado(ip, 8883);
+        if (serie.size() < 10 || serie.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") != std::string::npos)
+            continue;
+        nlohmann::json j;
+        j["dev_id"]       = serie;
+        j["dev_ip"]       = ip;
+        j["dev_type"]     = modelo_pela_serie(serie);
+        j["dev_name"]     = serie;
+        j["dev_signal"]   = "0";
+        j["connect_type"] = "lan";
+        j["bind_state"]   = "free";
+        j["sec_link"]     = "secure";
+        j["ssdp_version"] = "v1";
+        BOOST_LOG_TRIVIAL(info) << "FilunaBambuLanAgent: achada pela porta 8883 " << serie << " em " << ip;
+        anunciar(j.dump());
+    }
+}
+
 void FilunaBambuLanAgent::discovery_loop()
 {
     namespace net = boost::asio;
     using udp     = net::ip::udp;
+    net::io_context              ioc;
+    std::unique_ptr<udp::socket> sock;
     try {
-        net::io_context ioc;
-        udp::socket     sock(ioc);
-        sock.open(udp::v4());
-        sock.set_option(udp::socket::reuse_address(true));
-        sock.bind(udp::endpoint(udp::v4(), m_ports.ssdp));
-        sock.non_blocking(true);
-        char buf[2048];
-        while (m_discovering) {
-            udp::endpoint             from;
-            boost::system::error_code ec;
-            const std::size_t         n = sock.receive_from(net::buffer(buf), from, 0, ec);
-            if (ec == net::error::would_block) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                continue;
-            }
-            if (ec)
-                break;
-            const std::string js = ssdp_to_discovery_json(std::string(buf, n), from.address().to_string());
-            if (js.empty())
-                continue;
-            OnMsgArrivedFn fn;
-            {
-                std::lock_guard<std::recursive_mutex> lock(m_mutex);
-                const std::string serial = nlohmann::json::parse(js).value("dev_id", "");
-                m_seen[serial]           = js;
-                fn                       = m_on_ssdp;
-            }
-            if (fn)
-                fn(js);
-        }
+        sock = std::make_unique<udp::socket>(ioc);
+        sock->open(udp::v4());
+        sock->set_option(udp::socket::reuse_address(true));
+        sock->bind(udp::endpoint(udp::v4(), m_ports.ssdp));
+        sock->non_blocking(true);
     } catch (const std::exception& e) {
-        BOOST_LOG_TRIVIAL(warning) << "FilunaBambuLanAgent: descoberta SSDP parou: " << e.what();
+        // porta 2021 ocupada (ex.: Bambu Studio aberto): segue só com a varredura da porta 8883
+        BOOST_LOG_TRIVIAL(warning) << "FilunaBambuLanAgent: anúncio SSDP indisponível (" << e.what() << "); procurando pela porta 8883";
+        sock.reset();
+    }
+    char buf[2048];
+    auto ultima_varredura = std::chrono::steady_clock::now() - std::chrono::seconds(15); // primeira em ~5 s
+    while (m_discovering) {
+        if (std::chrono::steady_clock::now() - ultima_varredura > std::chrono::seconds(20)) {
+            varrer_rede();
+            ultima_varredura = std::chrono::steady_clock::now();
+        }
+        if (!sock) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+        udp::endpoint             from;
+        boost::system::error_code ec;
+        const std::size_t         n = sock->receive_from(net::buffer(buf), from, 0, ec);
+        if (ec == net::error::would_block) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+        if (ec) {
+            BOOST_LOG_TRIVIAL(warning) << "FilunaBambuLanAgent: anúncio SSDP parou: " << ec.message();
+            sock.reset();
+            continue;
+        }
+        const std::string js = ssdp_to_discovery_json(std::string(buf, n), from.address().to_string());
+        if (!js.empty())
+            anunciar(js);
     }
 }
 

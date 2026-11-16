@@ -21,6 +21,7 @@
 #include <boost/asio/write.hpp>
 
 #include <openssl/evp.h>
+#include <boost/log/trivial.hpp>
 
 namespace Slic3r { namespace Filuna { namespace Rtsp {
 
@@ -251,8 +252,26 @@ private:
 
 // Liga na câmera e chama 'escrever' com o FLV (primeiro o cabeçalho). 'escrever' devolve false quando a tela
 // fechou o vídeo. Devolve o erro quando nem chegou a tocar (para a tela receber 502); vazio = tocou e acabou.
+inline std::string tocar_(const std::string& ip, const std::string& porta, const std::string& caminho, const std::string& usuario,
+                          const std::string& senha, const std::function<bool(const std::string&)>& escrever, const std::string& esquema);
+
+// Registra no log do programa cada tentativa e o motivo de uma recusa (o log segue junto com o diagnóstico).
 inline std::string tocar(const std::string& ip, const std::string& porta, const std::string& caminho, const std::string& usuario,
                          const std::string& senha, const std::function<bool(const std::string&)>& escrever)
+{
+    // a Bambu informa "rtsps://..."; os pedidos usam o mesmo esquema (o servidor pode recusar "rtsp://" em TLS)
+    std::string erro = tocar_(ip, porta, caminho, usuario, senha, escrever, "rtsps");
+    if (!erro.empty() && erro.rfind("sem conexão", 0) != 0) {
+        BOOST_LOG_TRIVIAL(warning) << "Filuna câmera RTSPS " << ip << ": " << erro << "; tentando com rtsp://";
+        erro = tocar_(ip, porta, caminho, usuario, senha, escrever, "rtsp");
+    }
+    if (!erro.empty())
+        BOOST_LOG_TRIVIAL(error) << "Filuna câmera RTSPS " << ip << ":" << porta << caminho << " falhou: " << erro;
+    return erro;
+}
+
+inline std::string tocar_(const std::string& ip, const std::string& porta, const std::string& caminho, const std::string& usuario,
+                          const std::string& senha, const std::function<bool(const std::string&)>& escrever, const std::string& esquema)
 {
     namespace asio = boost::asio;
     namespace ssl  = asio::ssl;
@@ -269,7 +288,7 @@ inline std::string tocar(const std::string& ip, const std::string& porta, const 
     if (ec)
         return "sem conexão com a câmera: " + ec.message();
 
-    const std::string url  = "rtsp://" + ip + ":" + porta + caminho;
+    const std::string url  = esquema + "://" + ip + ":" + porta + caminho;
     int               seq  = 0;
     std::string       sobra; // bytes lidos e ainda não usados
     std::string       auth_digest_realm, auth_digest_nonce;
@@ -361,7 +380,10 @@ inline std::string tocar(const std::string& ip, const std::string& porta, const 
 
     Resposta r;
     if (!pedir("DESCRIBE", url, "Accept: application/sdp\r\n", r) || r.status != 200)
-        return r.status == 401 ? std::string("código de acesso recusado pela câmera") : "câmera respondeu " + std::to_string(r.status);
+        return r.status == 401 ? std::string("código de acesso recusado pela câmera (") +
+                                     (r.cab.count("www-authenticate") ? r.cab["www-authenticate"] : std::string("sem WWW-Authenticate")) + ")"
+                               : "DESCRIBE " + url + " respondeu " + std::to_string(r.status) + (ec ? " (" + ec.message() + ")" : std::string());
+    BOOST_LOG_TRIVIAL(info) << "Filuna câmera RTSPS " << ip << " SDP: " << r.corpo.substr(0, 700);
     // SDP: trilha de vídeo, controle e SPS/PPS
     std::string base = r.cab.count("content-base") ? r.cab["content-base"] : url;
     std::string controle, sprop;

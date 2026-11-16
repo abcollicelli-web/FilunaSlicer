@@ -88,6 +88,14 @@ private:
     void dispatch_local_connect(int state, const std::string& dev_id, const std::string& msg);
     void dispatch_message(const std::string& dev_id, const std::string& payload);
     void discovery_loop();
+    // Sem o anúncio SSDP (firewall do Windows, ou o Bambu Studio aberto ocupando a porta 2021): procura quem atende
+    // na porta 8883 da rede e lê o número de série no certificado da impressora.
+    void varrer_rede();
+    void anunciar(const std::string& js);
+public:
+    // Código do modelo pelo começo do número de série (030 = A1 mini, 039 = A1...); vazio se não conhecido.
+    static std::string modelo_pela_serie(const std::string& serie);
+private:
 
     std::shared_ptr<ICloudServiceAgent> m_cloud;
     std::recursive_mutex                m_mutex;

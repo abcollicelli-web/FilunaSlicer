@@ -458,37 +458,6 @@ bool agente_moonraker(const std::string& ag)
     return ag == "snapmaker" || ag == "qidi" || ag == "crealityprint" || ag == "moonraker";
 }
 
-// IPs que aceitam conexão TCP na porta dentro do tempo dado (todos ao mesmo tempo, sem travar a tela).
-std::vector<std::string> portas_abertas(const std::vector<std::string>& ips, unsigned short porta, std::chrono::milliseconds espera)
-{
-    namespace net = boost::asio;
-    net::io_context io;
-    std::vector<std::string> abertos;
-    std::vector<std::unique_ptr<net::ip::tcp::socket>> socks;
-    socks.reserve(ips.size());
-    for (const auto& ip : ips) {
-        boost::system::error_code ec;
-        const auto addr = net::ip::make_address(ip, ec);
-        if (ec)
-            continue;
-        socks.push_back(std::make_unique<net::ip::tcp::socket>(io));
-        net::ip::tcp::socket* s = socks.back().get();
-        s->async_connect({addr, porta}, [ip, &abertos](const boost::system::error_code& e) {
-            if (!e)
-                abertos.push_back(ip);
-        });
-    }
-    net::steady_timer t(io, espera);
-    t.async_wait([&socks](const boost::system::error_code&) {
-        for (auto& s : socks) {
-            boost::system::error_code ig;
-            s->close(ig);
-        }
-    });
-    io.run();
-    return abertos;
-}
-
 // O endereço responde como Moonraker? Devolve o nome da máquina (hostname) quando houver.
 bool moonraker_responde(const std::string& host, std::string& nome)
 {
@@ -544,7 +513,7 @@ void procurar_moonraker(const std::string& agente, const std::string& modelo, co
         std::vector<std::pair<std::string, std::string>> achadas; // endereço (ip ou ip:porta), nome
         std::set<std::string> vistos;
         for (const unsigned short porta : {static_cast<unsigned short>(7125), static_cast<unsigned short>(80)}) // Moonraker direto, depois atrás do nginx
-            for (const auto& ip : portas_abertas(ips, porta, std::chrono::milliseconds(900))) {
+            for (const auto& ip : Filuna::portas_abertas(ips, porta, std::chrono::milliseconds(900))) {
                 if (vistos.count(ip))
                     continue;
                 const std::string host = porta == 80 ? ip : ip + ":" + std::to_string(porta);
@@ -851,12 +820,26 @@ json conectar_ip(const std::string& modulo_id, const std::string& modelo, const 
         return {{"erro", "Gerenciador de dispositivos indisponível."}};
     if (ip.empty())
         return {{"erro", "Informe o endereço IP da impressora."}};
+    {
+        boost::system::error_code ec;
+        boost::asio::ip::make_address_v4(ip, ec);
+        if (ec)
+            return {{"erro", "\"" + ip + "\" não é um endereço IP (exemplo: 192.168.0.50). Ele aparece na tela da impressora, "
+                              "em Configurações › Rede (WLAN) › IP — não confunda com a versão do firmware."}};
+    }
     const std::string vid = vendor_orca(modulo_id);
     const Preset* p = preset_do_modelo(vid, modelo);
     BBLocalMachine m;
     m.dev_name         = nome.empty() ? modelo + " (" + ip + ")" : nome;
     m.dev_ip           = ip;
     m.dev_id           = "ip-" + ip;
+    if (modulo_id == "bambu") {
+        // A Bambu precisa do número de série (é o tópico do MQTT); ele está no certificado da porta 8883.
+        const std::string serie = Filuna::cn_do_certificado(ip, 8883);
+        if (serie.size() < 10)
+            return {{"erro", "Não achei uma Bambu Lab no IP " + ip + ". Confira o IP e se o Modo LAN (Somente LAN) está ligado na impressora."}};
+        m.dev_id = serie;
+    }
     m.printer_type     = (p != nullptr && p->config.has("printer_model")) ? p->config.opt_string("printer_model") : modelo;
     m.printer_agent_id = agente_da_marca(modulo_id, modelo);
     m.access_code      = codigo;
@@ -912,6 +895,18 @@ json estado()
         json c = card(o);
         c["selecionada"] = (sel != nullptr && sel->get_dev_id() == o->get_dev_id());
         c["cadastro_id"] = cfg != nullptr ? cfg->get(chave_vinculo(o->get_dev_id())) : std::string();
+        // Conectada de verdade e ainda sem cadastro (ex.: aberta pelo cartão, sem passar pelo assistente): cadastra
+        // uma vez, para aparecer no site e no app como as do assistente.
+        if (cfg != nullptr && c["cadastro_id"].get<std::string>().empty() && c["selecionada"].get<bool>() && o->is_connected()) {
+            std::string modulo;
+            for (const auto& [mid, ag] : AGENTE)
+                if (ag == o->printer_agent_id || (o->printer_agent_id == "filuna_elegoo_sdcp" && mid == "elegoo"))
+                    modulo = mid;
+            if (!modulo.empty()) {
+                const std::string modelo = std::string(o->get_printer_type_display_str().ToUTF8().data());
+                c["cadastro_id"] = registrar(o->get_dev_name(), modulo, modelo, o->get_dev_id()).value("id", std::string());
+            }
+        }
         lista.push_back(c);
     }
     // cadastradas no banco local que não estão na rede agora: aparecem desligadas

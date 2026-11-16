@@ -1152,3 +1152,16 @@ Anycubic imprime pela Entrada 1; "Enviar ao farm" a partir da Preparação e a m
 - preset_instalando(): perfil do modelo instalado na hora se faltar (P2S aparecia com "Perfil Bambu Lab A1").
 - Busca Klipper: redes_locais compartilhado (rota padrão primeiro) e "busca_klipper" (redes, endereços, achadas) no
   diagnóstico de busca sem resultado.
+
+## 2026-11-16 — 76 publicada (abf6e128a); 77: câmera P2S (diagnóstico), Bambu sem firewall e pelo IP, cadastro automático
+
+- Câmera P2S preta: a tela recebia HttpStatusCodeInvalid (o repasse respondia 502 sem dizer por quê). Rtsp::tocar usa
+  "rtsps://" nos pedidos (como a impressora informa) e, se a câmera recusar, tenta "rtsp://"; registra no log o SDP e o
+  motivo (status, WWW-Authenticate), que segue no diagnóstico. Testado de novo: 90/90 quadros em 3 sessões.
+- Bambu sem SSDP (firewall do Windows ou Bambu Studio ocupando a porta 2021): discovery_loop segue sem o socket e, a cada
+  20 s, varre a porta 8883 da rede e lê o número de série no CN do certificado (Filuna::cn_do_certificado); modelo pelo
+  começo da série (modelo_pela_serie: 030 A1 mini, 039 A1, 22E P2S, 26A A2L...). Casos: Rochelly e Priscilla (A1 mini).
+- Assistente "pelo IP": valida o IP (Priscilla digitou a versão do firmware) e, na Bambu, usa a série do certificado.
+- estado(): impressora ativa conectada e sem cadastro é cadastrada uma vez (sobe para o site/app). Caso: Fernando com 5
+  impressoras e só 2 no site.
+- Utils/FilunaRede.hpp ganhou portas_abertas, enderecos_locais e cn_do_certificado.
