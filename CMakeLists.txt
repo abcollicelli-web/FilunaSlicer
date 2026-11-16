@@ -1390,6 +1390,12 @@ set (CPACK_NSIS_MUI_ICON "${CPACK_PACKAGE_ICON}")
 set (CPACK_NSIS_MUI_UNIICON "${CPACK_PACKAGE_ICON}")
 # Relative to the install dir: CPack's NSIS template prefixes $INSTDIR itself.
 set (CPACK_NSIS_INSTALLED_ICON_NAME "FilunaSlicer.exe")
+# Filuna: nome com espaço nas telas do assistente e no Painel de Controle; abrir o programa na última tela
+set (CPACK_NSIS_DISPLAY_NAME "Filuna Slicer")
+set (CPACK_NSIS_PACKAGE_NAME "Filuna Slicer")
+set (CPACK_NSIS_MUI_FINISHPAGE_RUN "FilunaSlicer.exe")
+set (CPACK_NSIS_URL_INFO_ABOUT "https://filuna3d.com")
+set (CPACK_NSIS_HELP_LINK "https://filuna3d.com/conta/suporte")
 set (CPACK_PACKAGE_CHECKSUM SHA256)
 set (CPACK_PACKAGE_INSTALL_REGISTRY_KEY "FilunaSlicer")
 set (CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
