@@ -467,10 +467,39 @@ function historico() {
 }
 
 // Painel (02-DADOS §9–§11): desperdício, produtos mais impressos, previsão de falta e manutenção.
+// Lucro por produto: custo do filamento real (pelo preço de cada bobina) e o preço de venda que o vendedor informa.
+function lucroProdutos() {
+	var caixa = document.getElementById("pLucro");
+	Filuna.nativo("produto.lucro").then(function (r) {
+		var l = r.produtos || [];
+		if (!l.length) { caixa.innerHTML = "<div class='vazio'>Os produtos aparecem aqui depois da primeira impressão concluída.</div>"; return; }
+		var tot = 0, comPreco = 0;
+		caixa.innerHTML = "<table class='tabela-lucro' style='width:100%;border-collapse:collapse;font-size:13.5px'><tr style='color:var(--ink3);font-size:12px;text-align:left'><th>Produto</th><th>Peças</th><th>Custo/peça</th><th>Preço de venda</th><th>Lucro</th></tr>" +
+			l.map(function (x) {
+				if (x.lucro_total_centavos != null) { tot += x.lucro_total_centavos; comPreco++; }
+				var preco = x.preco_venda_centavos != null ? (x.preco_venda_centavos / 100).toFixed(2).replace(".", ",") : "";
+				return "<tr style='border-top:1px solid var(--line)'><td style='padding:6px 0'><b>" + E(x.nome || "Sem nome") + "</b></td><td>" + x.pecas + "</td><td>" + Filuna.reais(x.custo_peca_centavos / 100) +
+					"</td><td><input data-preco='" + E(x.id) + "' value='" + preco + "' placeholder='R$' inputmode='decimal' style='width:80px'></td><td" +
+					(x.lucro_total_centavos != null && x.lucro_total_centavos < 0 ? " style='color:var(--warn);font-weight:700'" : "") + ">" +
+					(x.lucro_total_centavos != null ? Filuna.reais(x.lucro_peca_centavos / 100) + " por peça · " + Filuna.reais(x.lucro_total_centavos / 100) : "—") + "</td></tr>";
+			}).join("") + "</table><div class='s' style='margin-top:8px'>" + (comPreco ? "Lucro total dos produtos com preço: <b>" + Filuna.reais(tot / 100) + "</b>. " : "") +
+			"O custo conta só o filamento gasto de verdade; energia, mão de obra e taxas de venda entram na calculadora do site.</div>";
+		caixa.querySelectorAll("[data-preco]").forEach(function (inp) {
+			inp.onchange = function () {
+				var v = String(inp.value || "").replace(/[^0-9,\.]/g, "").replace(",", ".");
+				var c = v === "" ? null : Math.round(parseFloat(v) * 100);
+				if (c !== null && !(c >= 0)) { inp.value = ""; return; }
+				Filuna.nativo("produto.preco", { id: inp.dataset.preco, centavos: c }).then(lucroProdutos, function (e) { falha(e); });
+			};
+		});
+	}, function (e) { caixa.innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
+}
+
 function painel() {
 	el().innerHTML = titulo("Meu espaço", "Painel", "Números deste computador, calculados das impressões registradas.") +
 		'<div class="me" style="margin-top:18px"><div class="col"><div class="bloco"><div class="bh"><span class="lbl">Desperdício nos últimos 30 dias</span></div><div class="bb" id="pDes"><div class="carregando">Carregando…</div></div></div>' +
-		'<div class="bloco"><div class="bh"><span class="lbl">Produtos mais impressos</span></div><div class="bb" id="pTop"></div></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">Produtos mais impressos</span></div><div class="bb" id="pTop"></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">Lucro por produto</span></div><div class="bb" id="pLucro"><div class="carregando">Carregando…</div></div></div></div>' +
 		'<div class="col"><div class="bloco"><div class="bh"><span class="lbl">Vai faltar filamento?</span></div><div class="bb" id="pPrev"><div class="carregando">Carregando…</div></div></div>' +
 		'<div class="bloco"><div class="bh"><span class="lbl">Manutenção</span></div><div class="bb" id="pMan"><div class="carregando">Carregando…</div></div></div></div></div>';
 	Filuna.nativo("painel.resumo", { dias: 30 }).then(function (r) {
@@ -481,6 +510,7 @@ function painel() {
 		document.getElementById("pTop").innerHTML = p.length ? p.map(function (x) { return "<div class='linha' style='justify-content:space-between;padding:6px 0'><b>" + E(x.nome || "Sem nome") + "</b><span>" + x.concluidos + "× · " + Filuna.gramas(x.gramas) + "</span></div>"; }).join("")
 			: "<div class='vazio'>Nenhum produto impresso ainda.</div>";
 	}, function (e) { document.getElementById("pDes").innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
+	lucroProdutos();
 	Filuna.nativo("previsao.filamentos").then(function (r) {
 		var l = (r.previsoes || []);
 		document.getElementById("pPrev").innerHTML = l.length ? l.map(function (x) {

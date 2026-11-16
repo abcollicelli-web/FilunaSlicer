@@ -116,6 +116,18 @@ public:
         double      gramas     = 0.;
     };
     std::vector<ProdutoRanking> produtos() const; // mais impressos primeiro
+    // Lucro por produto: impressões concluídas, peças (cópias), filamento real e o custo dele pelo preço de cada bobina.
+    struct ProdutoLucro
+    {
+        std::string                 id, nome;
+        int                         concluidos = 0, pecas = 0;
+        double                      gramas = 0., custo_filamento_centavos = 0.;
+        std::int64_t                tempo_s = 0;
+        std::optional<std::int64_t> preco_venda_centavos;
+    };
+    std::vector<ProdutoLucro> lucro_produtos() const; // mais impressos primeiro
+    // Preço de venda de uma peça do produto (vazio = sem preço). Vai para a conta na sincronização.
+    void definir_preco_venda(const std::string& produto_id, std::optional<std::int64_t> centavos);
     struct TrabalhoLista
     {
         std::string                 id, produto_id, produto_nome, impressora_id, impressora_nome, estado, criado_em, terminado_em;

@@ -431,6 +431,37 @@ TEST_CASE("The product ranking puts the most printed product first", "[FilunaDad
     CHECK(db->impressora_por_nome("luca") == db->impressora_por_nome("luca"));
 }
 
+TEST_CASE("Profit per product uses the real filament weight and the price of each spool", "[FilunaDados]")
+{
+    auto db = banco_em_memoria();
+    // bobina de 1000 g a R$ 100,00: 10 centavos por grama
+    const std::string bobina = db->cadastrar_bobinas(tipo_pla_branco(*db), 1, 1000., 0., 10000).front();
+    GcodeResumo resumo;
+    resumo.filamento_g      = {25.};
+    resumo.tempo_previsto_s = 1800;
+    const std::string produto = db->produto_por_assinatura("lucro", "Chaveiro");
+    for (int i = 0; i < 2; ++i) {
+        const std::string trabalho = db->criar_trabalho(produto, {}, resumo);
+        db->confirmar_bobina(trabalho, 0, bobina);
+        db->finalizar_trabalho(trabalho, FimTrabalho::Concluido, FracaoImpressa{});
+    }
+    auto l = db->lucro_produtos();
+    REQUIRE(l.size() == 1);
+    CHECK(l[0].nome == "Chaveiro");
+    CHECK(l[0].concluidos == 2);
+    CHECK(l[0].pecas == 2);
+    CHECK_THAT(l[0].gramas, WithinAbs(50., 1e-9));
+    CHECK_THAT(l[0].custo_filamento_centavos, WithinAbs(500., 1e-9));
+    CHECK_FALSE(l[0].preco_venda_centavos.has_value());
+    db->definir_preco_venda(produto, 2000);
+    l = db->lucro_produtos();
+    REQUIRE(l[0].preco_venda_centavos.has_value());
+    CHECK(*l[0].preco_venda_centavos == 2000);
+    db->definir_preco_venda(produto, std::nullopt);
+    CHECK_FALSE(db->lucro_produtos()[0].preco_venda_centavos.has_value());
+    CHECK_THROWS(db->definir_preco_venda(produto, -1));
+}
+
 // --- Sincronização (03-SERVIDOR §4) ---------------------------------------------------------
 
 TEST_CASE("Fila de sincronizacao: envia, marca e nao volta", "[FilunaDados]")

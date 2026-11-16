@@ -1132,6 +1132,49 @@ std::vector<FilunaDb::ProdutoRanking> FilunaDb::produtos() const
     return out;
 }
 
+std::vector<FilunaDb::ProdutoLucro> FilunaDb::lucro_produtos() const
+{
+    std::vector<ProdutoLucro> out;
+    Comando c(m_db, "SELECT p.id, COALESCE(p.nome,''), p.preco_venda_centavos, "
+                    "  (SELECT COUNT(*) FROM trabalho t WHERE t.produto_id = p.id AND t.estado = 'concluido' AND t.excluido = 0), "
+                    "  (SELECT COALESCE(SUM(t.copias),0) FROM trabalho t WHERE t.produto_id = p.id AND t.estado = 'concluido' AND t.excluido = 0), "
+                    "  (SELECT COALESCE(SUM(f.real_g),0) FROM trabalho t JOIN trabalho_filamento f ON f.trabalho_id = t.id "
+                    "     WHERE t.produto_id = p.id AND t.estado = 'concluido' AND t.excluido = 0 AND f.excluido = 0), "
+                    "  (SELECT COALESCE(SUM(f.real_g * CASE WHEN b.capacidade_g > 0 THEN b.preco_centavos * 1.0 / b.capacidade_g ELSE 0 END),0) "
+                    "     FROM trabalho t JOIN trabalho_filamento f ON f.trabalho_id = t.id LEFT JOIN bobina b ON b.id = f.bobina_id "
+                    "     WHERE t.produto_id = p.id AND t.estado = 'concluido' AND t.excluido = 0 AND f.excluido = 0), "
+                    "  (SELECT COALESCE(SUM(t.tempo_real_s),0) FROM trabalho t WHERE t.produto_id = p.id AND t.estado = 'concluido' AND t.excluido = 0) "
+                    "FROM produto p WHERE p.excluido = 0 ORDER BY 4 DESC, 2");
+    while (c.passo()) {
+        ProdutoLucro p;
+        p.id                       = c.texto_em(0);
+        p.nome                     = c.texto_em(1);
+        if (!c.nulo_em(2))
+            p.preco_venda_centavos = c.inteiro_em(2);
+        p.concluidos               = static_cast<int>(c.inteiro_em(3));
+        p.pecas                    = static_cast<int>(c.inteiro_em(4));
+        p.gramas                   = c.real_em(5);
+        p.custo_filamento_centavos = c.real_em(6);
+        p.tempo_s                  = c.inteiro_em(7);
+        out.push_back(p);
+    }
+    return out;
+}
+
+void FilunaDb::definir_preco_venda(const std::string& produto_id, std::optional<std::int64_t> centavos)
+{
+    if (centavos && *centavos < 0)
+        throw std::runtime_error("FilunaDb: preço de venda negativo");
+    Transacao t(m_db);
+    Comando(m_db, "UPDATE produto SET preco_venda_centavos = ?2, atualizado_em = ?3 WHERE id = ?1 AND excluido = 0")
+        .texto(1, produto_id)
+        .opcional(2, centavos)
+        .texto(3, agora())
+        .executar();
+    enfileirar("produto", produto_id, "upsert");
+    t.confirmar();
+}
+
 std::vector<FilunaDb::TrabalhoLista> FilunaDb::trabalhos(int limite) const
 {
     std::vector<TrabalhoLista> out;

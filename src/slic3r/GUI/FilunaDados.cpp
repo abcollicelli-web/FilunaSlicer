@@ -284,6 +284,31 @@ std::optional<json> filuna_dados_acao(const std::string& acao, const json& d)
             l.push_back({{"id", p.id}, {"nome", p.nome}, {"concluidos", p.concluidos}, {"gramas", p.gramas}});
         return json{{"produtos", l}};
     }
+    if (acao == "produto.lucro") {
+        json l = json::array();
+        for (const auto& p : db.lucro_produtos()) {
+            if (p.concluidos == 0)
+                continue;
+            const double custo_peca = p.pecas > 0 ? p.custo_filamento_centavos / p.pecas : 0.;
+            json         x          = {{"id", p.id}, {"nome", p.nome}, {"concluidos", p.concluidos}, {"pecas", p.pecas}, {"gramas", p.gramas},
+                                       {"tempo_s", p.tempo_s}, {"custo_filamento_centavos", std::llround(p.custo_filamento_centavos)},
+                                       {"custo_peca_centavos", std::llround(custo_peca)},
+                                       {"preco_venda_centavos", p.preco_venda_centavos ? json(*p.preco_venda_centavos) : json()}};
+            if (p.preco_venda_centavos) {
+                x["lucro_peca_centavos"]  = std::llround(*p.preco_venda_centavos - custo_peca);
+                x["lucro_total_centavos"] = std::llround((*p.preco_venda_centavos - custo_peca) * p.pecas);
+            }
+            l.push_back(x);
+        }
+        return json{{"produtos", l}};
+    }
+    if (acao == "produto.preco") {
+        std::optional<std::int64_t> c;
+        if (d.contains("centavos") && d["centavos"].is_number())
+            c = d["centavos"].get<std::int64_t>();
+        db.definir_preco_venda(id, c);
+        return json{{"ok", true}};
+    }
     if (acao == "produto.unir") {
         db.unir_produtos(d.value("de", std::string()), d.value("para", std::string()));
         return json::object();
