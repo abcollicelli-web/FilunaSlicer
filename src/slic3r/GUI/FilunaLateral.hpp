@@ -1,11 +1,12 @@
 #pragma once
 
-// Filuna — visual fixo do menu lateral (aprovado no canvas "Menu lateral Filuna Slicer", proposta 2).
+// Filuna — visual fixo do menu lateral (aprovado no canvas "Menu lateral Filuna Slicer", proposta 3).
 //
-// Igual para qualquer impressora e perfil: faixa "SELECIONAR IMPRESSORA", um cartão com a foto da impressora, o bico, o
-// tipo de bico e a mesa, as bobinas dos filamentos 4 por linha (a clicada mostra embaixo Cor, Trocar, Ajustes e Tirar),
-// botões com nome no lugar dos ícones pequenos, um resumo de duas linhas quando a parte de cima é recolhida, a faixa de
-// arrastar que dá mais altura ao Processo e as abas do Processo em grade, todas à vista.
+// Igual para qualquer impressora e perfil: um cartão com a faixa "SELECIONAR IMPRESSORA" (com a foto) e, embaixo, bico,
+// tipo de bico e mesa numa linha; as bobinas dos filamentos numa fileira que rola de lado (a clicada mostra embaixo Cor,
+// Trocar, Ajustes e Tirar); botões com nome no lugar dos ícones pequenos; o modo foco, em que impressora e filamentos
+// viram uma faixa de uma linha e o Processo fica com quase a altura toda; Simples/Avançado/Especialista; e as abas do
+// Processo em grade, todas à vista.
 //
 // Os componentes só desenham e avisam o clique: quem faz o trabalho continua sendo o Orca (listas, abas e botões
 // originais, escondidos ou não), chamado por quem monta o menu (Plater, ParamsPanel, Tab).
@@ -59,37 +60,37 @@ void     desenhar_icone(wxGraphicsContext& gc, wxWindow* w, Icone ic, const wxRe
 void     cursor_mao(wxWindow* w, bool mao);
 } // namespace pintura
 
-// Faixa magenta "SELECIONAR IMPRESSORA" com a seta.
-class Faixa : public wxPanel
-{
-public:
-    explicit Faixa(wxWindow* pai);
-    std::function<void()> ao_clicar;
-
-private:
-    void pintar();
-    bool m_sobre{false};
-};
-
-// Cartão lilás: foto da impressora, os seletores "Bico" e "Tipo de bico" e, embaixo, a linha rosa da mesa.
+// Cartão lilás: faixa magenta "SELECIONAR IMPRESSORA" com a foto (e o lápis de editar o perfil da impressora) e, embaixo,
+// os seletores de bico, tipo de bico e mesa. Impressora de 2 bicos: sem o seletor de bico (o Orca mostra os dois bicos
+// logo abaixo, com o tipo de fluxo e o AMS de cada um).
 class CartaoImpressora : public wxPanel
 {
 public:
+    enum Area { NADA = 0, FAIXA, BICO, TIPO, MESA, LAPIS };
+    struct Info
+    {
+        wxString bico, tipo, mesa;
+        bool     mostrar_bico{true}, bico_selecionavel{true}, mesa_selecionavel{true};
+        bool     operator==(const Info& o) const
+        {
+            return bico == o.bico && tipo == o.tipo && mesa == o.mesa && mostrar_bico == o.mostrar_bico && bico_selecionavel == o.bico_selecionavel &&
+                   mesa_selecionavel == o.mesa_selecionavel;
+        }
+    };
     explicit CartaoImpressora(wxWindow* pai);
     void definir_foto(const wxBitmap& foto);
     void definir_foto_mesa(const wxBitmap& foto);
-    void definir(const wxString& bico, bool bico_selecionavel, const wxString& tipo_bico, const wxString& mesa, bool mesa_selecionavel);
-    std::function<void(const wxRect& tela)> ao_bico, ao_tipo, ao_mesa; // área do seletor clicado, na tela
-    std::function<void()>                   ao_editar;                  // lápis na foto: editar o perfil da impressora
-    std::function<void(bool sobre, const wxRect& tela)> ao_mesa_sobre;  // o mouse entrou ou saiu da mesa
+    void definir(const Info& info);
+    std::function<void(int area, const wxRect& tela)>   ao_area;       // clique numa área (FAIXA, BICO, TIPO, MESA, LAPIS)
+    std::function<void(bool sobre, const wxRect& tela)> ao_mesa_sobre; // o mouse entrou ou saiu da mesa
 
 private:
-    void   pintar();
-    wxRect area(int i) const; // 1 = bico, 2 = tipo, 3 = mesa, 4 = lápis
+    void     pintar();
+    wxRect   area(int i) const;
     wxBitmap m_foto, m_foto_mesa;
-    wxString m_bico, m_tipo, m_mesa;
-    bool     m_bico_sel{true}, m_mesa_sel{true};
-    int      m_sobre{0};
+    Info     m_info;
+    bool     m_mostrar_bico{true}, m_bico_sel{true}, m_mesa_sel{true};
+    int      m_sobre{NADA};
 };
 
 struct InfoBobina
@@ -101,27 +102,29 @@ struct InfoBobina
     wxString estoque; // "750 g", "sem estoque", "—"
 };
 
-// Bobinas dos filamentos: 4 por linha, cartão escuro, e um cartão "Adicionar" no fim. A selecionada fica com a borda
-// magenta; o clique seleciona.
+// Bobinas dos filamentos numa fileira que rola de lado (roda do mouse ou as setas das pontas), com um "+" no fim. A
+// selecionada fica com a borda magenta; o clique seleciona.
 class Bobinas : public wxPanel
 {
 public:
+    enum { ALTURA = 92, LARGURA = 60, SETA_ESQ = -2, SETA_DIR = -3 };
     explicit Bobinas(wxWindow* pai);
-    // Só redesenha (e recalcula a altura) quando algo mudou.
+    // Só redesenha quando algo mudou; a selecionada nova é trazida para a vista.
     void definir(const std::vector<InfoBobina>& bobinas, int selecionada);
-    int  altura_linha() const; // altura de uma linha de cartões, com o espaço entre linhas
     std::function<void(int indice)>                      ao_clicar;
     std::function<void()>                                ao_adicionar;
     std::function<void(int indice, const wxPoint& tela)> ao_menu; // botão direito: menu do filamento do Orca
 
 private:
     void   pintar();
-    void   recalcular_altura();
+    void   rolar(int dx);
+    int    passo() const;
+    int    largura_total() const;
     wxRect cartao(int i) const;
-    int    sob(const wxPoint& p) const; // -1: nada; size(): o cartão "Adicionar"
+    int    sob(const wxPoint& p) const; // -1: nada; size(): o "+"; SETA_ESQ / SETA_DIR
     std::vector<InfoBobina> m_bobinas;
     std::vector<wxBitmap>   m_desenhos;
-    int                     m_sel{0}, m_sobre{-1};
+    int                     m_sel{0}, m_sobre{-1}, m_desloc{0};
 };
 
 // Fileira de botões com ícone e nome. `coluna`: ícone em cima do nome, todos da mesma largura (ferramentas do Processo);
@@ -142,7 +145,7 @@ private:
     int                m_sobre{-1};
 };
 
-// Faixa rosa embaixo das bobinas: qual entrada está selecionada e Cor, Trocar, Ajustes e Tirar.
+// Linha rosa fina embaixo das bobinas: qual entrada está selecionada e Cor, Trocar, Ajustes e Tirar.
 class BarraBobina : public wxPanel
 {
 public:
@@ -161,38 +164,39 @@ private:
     int      m_sobre{-1};
 };
 
-// A parte de cima recolhida: uma linha com a foto, o bico e a mesa, e uma com as bolinhas dos filamentos.
+// Modo foco: a parte de cima recolhida numa faixa de uma linha (foto, bico, mesa, as bolinhas dos filamentos e Abrir).
 class Resumo : public wxPanel
 {
 public:
     explicit Resumo(wxWindow* pai);
     void definir_foto(const wxBitmap& foto);
-    void definir(const wxString& linha1, const wxString& linha2, const std::vector<InfoBobina>& bobinas);
-    std::function<void()> ao_abrir, ao_adicionar;
+    void definir(const wxString& linha, const std::vector<InfoBobina>& bobinas, int selecionada);
+    std::function<void()> ao_abrir;
 
 private:
-    void   pintar();
-    wxRect area_abrir() const;
-    wxRect area_mais() const;
+    void                    pintar();
     wxBitmap                m_foto;
-    wxString                m_linha1, m_linha2;
+    wxString                m_linha;
     std::vector<InfoBobina> m_bobinas;
-    int                     m_sobre{0}; // 1 = abrir, 2 = mais
+    int                     m_sel{0};
+    bool                    m_sobre{false};
 };
 
-// Faixa de arrastar acima do Processo: puxar para cima dá mais altura ao Processo.
-class Divisor : public wxPanel
+// Escolha de uma opção entre poucas, em pílula (Simples / Avançado / Especialista).
+class Segmentos : public wxPanel
 {
 public:
-    explicit Divisor(wxWindow* pai);
-    std::function<void()>       ao_comecar;
-    std::function<void(int dy)> ao_arrastar; // deslocamento desde o começo do arraste
-    std::function<void()>       ao_soltar;
+    Segmentos(wxWindow* pai, const std::vector<wxString>& opcoes);
+    void                       selecionar(int i, bool ativo);
+    std::function<void(int i)> ao_escolher;
 
 private:
-    void pintar();
-    int  m_inicio_y{0};
-    bool m_arrastando{false};
+    void                  pintar();
+    wxRect                area(int i) const;
+    int                   sob(const wxPoint& p) const;
+    std::vector<wxString> m_opcoes;
+    int                   m_sel{-1}, m_sobre{-1};
+    bool                  m_ativo{true};
 };
 
 // As abas de uma aba de ajustes do Orca (Qualidade, Resistência…) em grade de 3 colunas, todas à vista. A lista

@@ -182,6 +182,9 @@ class ParamsPanel : public wxPanel
         void update_mode();
         void msw_rescale();
         void switch_to_global();
+        // Filuna: o modo dos ajustes (0 simples, 1 avançado, 2 especialista), para o seletor do título da impressora
+        int  filuna_modo() const;
+        void filuna_modo(int selecao);
         void switch_to_object(bool with_tips = false);
 
         void notify_object_config_changed();

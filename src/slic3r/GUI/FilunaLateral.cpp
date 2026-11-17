@@ -207,8 +207,9 @@ void desenhar_botao(wxGraphicsContext& gc, wxWindow* w, const wxRect& r, const B
     gc.DrawRoundedRectangle(r.x + 0.5, r.y + 0.5, r.width - 1, r.height - 1, w->FromDIP(8));
     const wxColour cor_txt = !b.ativo ? AREIA_ESCURA : b.destaque ? BRANCO : TINTA;
     const wxColour cor_ic  = !b.ativo ? AREIA_ESCURA : b.destaque ? BRANCO : b.icone == Icone::mais ? MAGENTA : CINZA;
-    const double   li      = w->FromDIP(coluna ? 18 : 15);
-    const wxFont   f       = fonte(w, coluna ? 7.5 : 8.5, true);
+    const bool     baixo   = !coluna && r.height <= w->FromDIP(28); // botões baixos: letra e ícone menores, para o nome caber
+    const double   li      = w->FromDIP(coluna ? 18 : baixo ? 13 : 15);
+    const wxFont   f       = fonte(w, coluna || baixo ? 7.5 : 8.5, true);
     gc.SetFont(f, cor_txt);
     const bool   tem_ic = b.icone != Icone::nenhum || b.cor.IsOk();
     const double tw     = b.texto.empty() ? 0. : largura_texto(gc, b.texto);
@@ -227,7 +228,7 @@ void desenhar_botao(wxGraphicsContext& gc, wxWindow* w, const wxRect& r, const B
         texto_centro(gc, w, b.texto, f, cor_txt, r.x + r.width / 2., y0 + li + w->FromDIP(3), r.width - w->FromDIP(4));
         return;
     }
-    const double gap = tem_ic && tw > 0 ? w->FromDIP(5) : 0.;
+    const double gap = tem_ic && tw > 0 ? w->FromDIP(baixo ? 4 : 5) : 0.;
     const double tot = std::min<double>((tem_ic ? li : 0.) + gap + tw, r.width - w->FromDIP(8));
     double       x   = r.x + (r.width - tot) / 2.;
     if (tem_ic) {
@@ -296,91 +297,68 @@ wxBitmap bobina(const wxColour& cor, int largura)
     return wxBitmap(img);
 }
 
-// ------------------------------------------------------------------------------------------------ faixa
-Faixa::Faixa(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE)
-{
-    SetBackgroundStyle(wxBG_STYLE_PAINT);
-    SetMinSize(wxSize(-1, FromDIP(36)));
-    SetToolTip(wxString::FromUTF8("Selecionar impressora"));
-    Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
-    Bind(wxEVT_ENTER_WINDOW, [this](wxMouseEvent&) { m_sobre = true; cursor_mao(this, true); Refresh(); });
-    Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&) { m_sobre = false; cursor_mao(this, false); Refresh(); });
-    Bind(wxEVT_LEFT_UP, [this](wxMouseEvent&) { if (ao_clicar) ao_clicar(); });
-}
-
-void Faixa::pintar()
-{
-    wxAutoBufferedPaintDC dc(this);
-    auto gc = comecar(this, dc);
-    if (!gc)
-        return;
-    const wxSize s = GetClientSize();
-    gc->SetPen(*wxTRANSPARENT_PEN);
-    gc->SetBrush(wxBrush(m_sobre ? MAGENTA_ESCURO : MAGENTA));
-    gc->DrawRoundedRectangle(0, 0, s.x, s.y, FromDIP(10));
-    gc->SetFont(fonte(this, 10., true), BRANCO);
-    double tw = 0, th = 0;
-    gc->GetTextExtent(wxString::FromUTF8("SELECIONAR IMPRESSORA"), &tw, &th);
-    gc->DrawText(wxString::FromUTF8("SELECIONAR IMPRESSORA"), FromDIP(14), (s.y - th) / 2.);
-    seta(*gc, s.x - FromDIP(20), s.y / 2., FromDIP(5), BRANCO, FromDIP(2));
-}
-
 // ------------------------------------------------------------------------------------------------ cartão da impressora
 CartaoImpressora::CartaoImpressora(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
-    SetMinSize(wxSize(FromDIP(220), FromDIP(116)));
+    SetMinSize(wxSize(FromDIP(220), FromDIP(98)));
+    SetToolTip(wxString::FromUTF8("Selecionar impressora"));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
-    auto ativo  = [this](int i) { return i == 1 ? m_bico_sel : i == 3 ? m_mesa_sel : true; };
-    auto mudar  = [this](int s) {
+    Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
+    auto ativo = [this](int i) { return i == BICO ? m_bico_sel && m_mostrar_bico : i == MESA ? m_mesa_sel : true; };
+    auto mudar = [this](int s) {
         if (s == m_sobre)
             return;
-        if ((s == 3) != (m_sobre == 3) && ao_mesa_sobre)
-            ao_mesa_sobre(s == 3, wxRect(ClientToScreen(area(3).GetTopLeft()), area(3).GetSize()));
+        if ((s == MESA) != (m_sobre == MESA) && ao_mesa_sobre)
+            ao_mesa_sobre(s == MESA, wxRect(ClientToScreen(area(MESA).GetTopLeft()), area(MESA).GetSize()));
         m_sobre = s;
-        cursor_mao(this, s != 0);
+        cursor_mao(this, s != NADA);
         Refresh();
     };
-    Bind(wxEVT_MOTION, [this, ativo, mudar](wxMouseEvent& e) {
-        int s = 0;
-        for (int i = 1; i <= 4; ++i)
-            if (ativo(i) && area(i).Contains(e.GetPosition()))
-                s = i;
-        mudar(s);
-    });
-    Bind(wxEVT_LEAVE_WINDOW, [mudar](wxMouseEvent&) { mudar(0); });
-    Bind(wxEVT_LEFT_UP, [this, ativo, mudar](wxMouseEvent& e) {
-        if (area(4).Contains(e.GetPosition())) {
-            if (ao_editar)
-                ao_editar();
+    // o lápis fica por cima da faixa: é procurado primeiro
+    auto sob = [this, ativo](const wxPoint& p) {
+        for (int i : {LAPIS, FAIXA, BICO, TIPO, MESA})
+            if (ativo(i) && area(i).Contains(p))
+                return i;
+        return int(NADA);
+    };
+    Bind(wxEVT_MOTION, [sob, mudar](wxMouseEvent& e) { mudar(sob(e.GetPosition())); });
+    Bind(wxEVT_LEAVE_WINDOW, [mudar](wxMouseEvent&) { mudar(NADA); });
+    Bind(wxEVT_LEFT_UP, [this, sob, mudar](wxMouseEvent& e) {
+        const int i = sob(e.GetPosition());
+        if (i == NADA || !ao_area)
             return;
-        }
-        for (int i = 1; i <= 3; ++i) {
-            if (!ativo(i) || !area(i).Contains(e.GetPosition()))
-                continue;
-            if (i == 3)
-                mudar(0); // a lista da mesa abre: a imagem grande sai
-            const wxRect tela(ClientToScreen(area(i).GetTopLeft()), area(i).GetSize());
-            const auto&  cb = i == 1 ? ao_bico : i == 2 ? ao_tipo : ao_mesa;
-            if (cb)
-                cb(tela);
-        }
+        if (i == MESA)
+            mudar(NADA); // a lista da mesa abre: a imagem grande sai
+        ao_area(i, wxRect(ClientToScreen(area(i).GetTopLeft()), area(i).GetSize()));
     });
 }
 
-// Foto à esquerda (quadrada na altura do cartão); à direita, bico e tipo lado a lado e a mesa embaixo, ocupando os dois.
+// Faixa magenta em cima (com a foto e o lápis) e, embaixo, bico, tipo de bico e mesa numa linha.
 wxRect CartaoImpressora::area(int i) const
 {
-    const wxSize s    = GetClientSize();
-    const int    pad  = FromDIP(8), foto = s.y - 2 * pad, x0 = pad + foto + FromDIP(10), w = s.x - x0 - pad, gap = FromDIP(6);
-    const int    h    = FromDIP(28), y1 = FromDIP(22), y2 = y1 + h + FromDIP(20);
-    const int    w_bico = (w - gap) * 2 / 5;
+    const wxSize s = GetClientSize();
+    const int    pad = FromDIP(6), gap = FromDIP(5), faixa_h = FromDIP(44), linha_y = pad + faixa_h + FromDIP(6), linha_h = FromDIP(36);
+    const int    w = s.x - 2 * pad;
     switch (i) {
-    case 1: return wxRect(x0, y1, w_bico, h);
-    case 2: return wxRect(x0 + w_bico + gap, y1, w - w_bico - gap, h);
-    case 3: return wxRect(x0, y2, w, h);
-    default: return wxRect(pad + foto - FromDIP(26), pad + FromDIP(4), FromDIP(22), FromDIP(22)); // lápis no canto da foto
+    case FAIXA: return wxRect(pad, pad, w, faixa_h);
+    case LAPIS: return wxRect(pad + FromDIP(30), pad + FromDIP(26), FromDIP(16), FromDIP(16));
+    default: break;
     }
+    // larguras na proporção do canvas: bico 0,85, tipo 1,1, mesa 1,25 (sem bico: tipo 1, mesa 1,3)
+    const double pb = m_mostrar_bico ? 0.85 : 0., pt = m_mostrar_bico ? 1.1 : 1., pm = m_mostrar_bico ? 1.25 : 1.3;
+    const int    n = m_mostrar_bico ? 3 : 2, livre = w - (n - 1) * gap;
+    const int    wb = int(livre * pb / (pb + pt + pm)), wt = int(livre * pt / (pb + pt + pm)), wm = livre - wb - wt;
+    int          x = pad;
+    if (m_mostrar_bico) {
+        if (i == BICO)
+            return wxRect(x, linha_y, wb, linha_h);
+        x += wb + gap;
+    }
+    if (i == TIPO)
+        return wxRect(x, linha_y, wt, linha_h);
+    x += wt + gap;
+    return wxRect(x, linha_y, wm, linha_h);
 }
 
 void CartaoImpressora::definir_foto(const wxBitmap& foto)
@@ -395,16 +373,37 @@ void CartaoImpressora::definir_foto_mesa(const wxBitmap& foto)
     Refresh();
 }
 
-void CartaoImpressora::definir(const wxString& bico, bool bico_selecionavel, const wxString& tipo_bico, const wxString& mesa, bool mesa_selecionavel)
+void CartaoImpressora::definir(const Info& info)
 {
-    if (bico == m_bico && bico_selecionavel == m_bico_sel && tipo_bico == m_tipo && mesa == m_mesa && mesa_selecionavel == m_mesa_sel)
+    if (info == m_info)
         return;
-    m_bico     = bico;
-    m_bico_sel = bico_selecionavel;
-    m_tipo     = tipo_bico;
-    m_mesa     = mesa;
-    m_mesa_sel = mesa_selecionavel;
+    m_info         = info;
+    m_mostrar_bico = info.mostrar_bico;
+    m_bico_sel     = info.bico_selecionavel;
+    m_mesa_sel     = info.mesa_selecionavel;
     Refresh();
+}
+
+// Seletor em pílula: rótulo pequeno em cima e o valor embaixo, dentro da caixa.
+static void pilula(wxGraphicsContext& gc, wxWindow* w, const wxRect& r, const wxString& rotulo, const wxString& valor, bool ativo, bool sobre,
+                   const wxColour& borda, const wxColour& fundo, const wxBitmap& imagem)
+{
+    gc.SetPen(wxPen(sobre && ativo ? MAGENTA : borda, w->FromDIP(1)));
+    gc.SetBrush(wxBrush(fundo));
+    gc.DrawRoundedRectangle(r.x + 0.5, r.y + 0.5, r.width - 1, r.height - 1, w->FromDIP(8));
+    int x = r.x + w->FromDIP(7);
+    if (imagem.IsOk()) {
+        const double lado = w->FromDIP(22);
+        const double esc  = std::min(lado / imagem.GetWidth(), lado / imagem.GetHeight());
+        gc.DrawBitmap(imagem, x - w->FromDIP(2), r.y + (r.height - imagem.GetHeight() * esc) / 2., imagem.GetWidth() * esc, imagem.GetHeight() * esc);
+        x += int(lado) + w->FromDIP(3);
+    }
+    const int larg = r.GetRight() - x - w->FromDIP(4);
+    gc.SetFont(fonte(w, 6.5, true), CINZA);
+    gc.DrawText(caber(w, rotulo.Upper(), fonte(w, 6.5, true), larg), x, r.y + w->FromDIP(4));
+    const wxString v = ativo ? valor + wxString::FromUTF8(" ▾") : valor;
+    gc.SetFont(fonte(w, 8.5, true), ativo ? TINTA : CINZA);
+    gc.DrawText(caber(w, v, fonte(w, 8.5, true), larg), x, r.y + w->FromDIP(16));
 }
 
 void CartaoImpressora::pintar()
@@ -416,50 +415,68 @@ void CartaoImpressora::pintar()
     const wxSize s = GetClientSize();
     gc->SetPen(*wxTRANSPARENT_PEN);
     gc->SetBrush(wxBrush(LILAS));
-    gc->DrawRoundedRectangle(0, 0, s.x, s.y, FromDIP(12));
-    const int pad = FromDIP(8), lado = s.y - 2 * pad;
+    gc->DrawRoundedRectangle(0, 0, s.x, s.y, FromDIP(14));
+    // faixa magenta com a foto
+    const wxRect f = area(FAIXA);
+    gc->SetBrush(wxBrush(m_sobre == FAIXA ? MAGENTA_ESCURO : MAGENTA));
+    gc->DrawRoundedRectangle(f.x, f.y, f.width, f.height, FromDIP(10));
+    const int lado = FromDIP(36), fx = f.x + FromDIP(4), fy = f.y + FromDIP(4);
     gc->SetBrush(wxBrush(BRANCO));
-    gc->DrawRoundedRectangle(pad, pad, lado, lado, FromDIP(8));
+    gc->DrawRoundedRectangle(fx, fy, lado, lado, FromDIP(8));
     if (m_foto.IsOk()) {
-        const double esc = std::min(double(lado - FromDIP(6)) / m_foto.GetWidth(), double(lado - FromDIP(6)) / m_foto.GetHeight());
-        const double w = m_foto.GetWidth() * esc, h = m_foto.GetHeight() * esc;
-        gc->DrawBitmap(m_foto, pad + (lado - w) / 2., pad + (lado - h) / 2., w, h);
+        const double esc = std::min(double(lado - FromDIP(2)) / m_foto.GetWidth(), double(lado - FromDIP(2)) / m_foto.GetHeight());
+        gc->DrawBitmap(m_foto, fx + (lado - m_foto.GetWidth() * esc) / 2., fy + (lado - m_foto.GetHeight() * esc) / 2., m_foto.GetWidth() * esc,
+                       m_foto.GetHeight() * esc);
     }
-    seletor(*gc, this, area(1), wxString::FromUTF8("Bico"), m_bico, m_bico_sel, m_sobre == 1, LILAS_BORDA);
-    seletor(*gc, this, area(2), wxString::FromUTF8("Tipo de bico"), m_tipo, true, m_sobre == 2, LILAS_BORDA);
-    seletor(*gc, this, area(3), wxString::FromUTF8("Mesa"), m_mesa, m_mesa_sel, m_sobre == 3, ROSA_BORDA, ROSA, m_foto_mesa);
-    const wxRect l = area(4);
-    gc->SetPen(wxPen(m_sobre == 4 ? MAGENTA : LILAS_BORDA, FromDIP(1)));
+    gc->SetFont(fonte(this, 9.5, true), BRANCO);
+    double tw = 0, th = 0;
+    gc->GetTextExtent(wxString::FromUTF8("SELECIONAR IMPRESSORA"), &tw, &th);
+    gc->DrawText(wxString::FromUTF8("SELECIONAR IMPRESSORA"), fx + lado + FromDIP(10), f.y + (f.height - th) / 2.);
+    seta(*gc, f.GetRight() - FromDIP(16), f.y + f.height / 2., (FromDIP(9) / 2.), BRANCO, FromDIP(2));
+    // lápis no canto da foto: editar o perfil da impressora
+    const wxRect l = area(LAPIS);
+    gc->SetPen(wxPen(m_sobre == LAPIS ? MAGENTA : LILAS_BORDA, FromDIP(1)));
     gc->SetBrush(wxBrush(BRANCO));
     gc->DrawEllipse(l.x, l.y, l.width, l.height);
-    desenhar_icone(*gc, this, Icone::lapis, wxRect2DDouble(l.x + FromDIP(4), l.y + FromDIP(4), l.width - FromDIP(8), l.height - FromDIP(8)),
-                   m_sobre == 4 ? MAGENTA : CINZA, false);
+    desenhar_icone(*gc, this, Icone::lapis, wxRect2DDouble(l.x + FromDIP(3), l.y + FromDIP(3), l.width - FromDIP(6), l.height - FromDIP(6)),
+                   m_sobre == LAPIS ? MAGENTA : CINZA, false);
+    // bico, tipo de bico e mesa
+    if (m_mostrar_bico)
+        pilula(*gc, this, area(BICO), wxString::FromUTF8("Bico"), m_info.bico, m_bico_sel, m_sobre == BICO, LILAS_BORDA, BRANCO, wxBitmap());
+    pilula(*gc, this, area(TIPO), wxString::FromUTF8("Tipo de bico"), m_info.tipo, true, m_sobre == TIPO, LILAS_BORDA, BRANCO, wxBitmap());
+    pilula(*gc, this, area(MESA), wxString::FromUTF8("Mesa"), m_info.mesa, m_mesa_sel, m_sobre == MESA, ROSA_BORDA, ROSA, m_foto_mesa);
 }
 
 // ------------------------------------------------------------------------------------------------ bobinas
 Bobinas::Bobinas(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
+    SetMinSize(wxSize(-1, FromDIP(ALTURA)));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
     Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
-        m_desenhos.clear(); // a largura do cartão mudou: redesenha as bobinas no tamanho novo
-        Refresh();
+        rolar(0);
         e.Skip();
     });
     Bind(wxEVT_MOTION, [this](wxMouseEvent& e) {
         const int i = sob(e.GetPosition());
         if (i != m_sobre) {
             m_sobre = i;
-            cursor_mao(this, i >= 0);
+            cursor_mao(this, i != -1);
             Refresh();
         }
     });
     Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&) { m_sobre = -1; cursor_mao(this, false); Refresh(); });
+    // a fileira rola de lado: roda do mouse, ou as setas nas pontas quando não cabe tudo
+    Bind(wxEVT_MOUSEWHEEL, [this](wxMouseEvent& e) { rolar(e.GetWheelRotation() > 0 ? -passo() : passo()); });
     Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& e) {
         const int i = sob(e.GetPosition());
-        if (i == int(m_bobinas.size()) && ao_adicionar)
+        if (i == SETA_ESQ)
+            rolar(-passo());
+        else if (i == SETA_DIR)
+            rolar(passo());
+        else if (i == int(m_bobinas.size()) && ao_adicionar)
             ao_adicionar();
-        else if (i >= 0 && ao_clicar)
+        else if (i >= 0 && i < int(m_bobinas.size()) && ao_clicar)
             ao_clicar(i);
     });
     Bind(wxEVT_RIGHT_UP, [this](wxMouseEvent& e) {
@@ -467,6 +484,20 @@ Bobinas::Bobinas(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDe
         if (i >= 0 && i < int(m_bobinas.size()) && ao_menu)
             ao_menu(i, ClientToScreen(e.GetPosition()));
     });
+}
+
+int Bobinas::passo() const { return FromDIP(LARGURA) + FromDIP(6); }
+
+int Bobinas::largura_total() const { return int(m_bobinas.size()) * passo() + FromDIP(34); }
+
+void Bobinas::rolar(int dx)
+{
+    const int max = std::max(0, largura_total() - GetClientSize().x);
+    const int novo = std::clamp(m_desloc + dx, 0, max);
+    if (novo == m_desloc && dx != 0)
+        return;
+    m_desloc = novo;
+    Refresh();
 }
 
 void Bobinas::definir(const std::vector<InfoBobina>& bobinas, int selecionada)
@@ -480,29 +511,33 @@ void Bobinas::definir(const std::vector<InfoBobina>& bobinas, int selecionada)
     if (bobinas.size() != m_bobinas.size() ||
         !std::equal(bobinas.begin(), bobinas.end(), m_bobinas.begin(), [](const InfoBobina& a, const InfoBobina& b) { return a.cor == b.cor; }))
         m_desenhos.clear();
-    m_bobinas = bobinas;
-    m_sel     = selecionada;
-    recalcular_altura();
+    const bool nova_sel = selecionada != m_sel;
+    m_bobinas           = bobinas;
+    m_sel               = selecionada;
+    if (nova_sel && m_sel >= 0) { // a selecionada fica à vista
+        const wxRect r = cartao(m_sel);
+        if (r.x < 0)
+            m_desloc += r.x;
+        else if (r.GetRight() > GetClientSize().x)
+            m_desloc += r.GetRight() - GetClientSize().x + FromDIP(2);
+    }
+    rolar(0);
     Refresh();
-}
-
-int Bobinas::altura_linha() const { return FromDIP(104) + FromDIP(6); }
-
-void Bobinas::recalcular_altura()
-{
-    const int linhas = int(m_bobinas.size() + 1 + 3) / 4; // + o cartão "Adicionar"
-    SetMinSize(wxSize(-1, linhas * altura_linha() - FromDIP(6)));
-    InvalidateBestSize();
 }
 
 wxRect Bobinas::cartao(int i) const
 {
-    const int gap = FromDIP(6), w = std::max(FromDIP(40), (GetClientSize().x - 3 * gap) / 4);
-    return wxRect((i % 4) * (w + gap), (i / 4) * altura_linha(), w, FromDIP(104));
+    const int w = i == int(m_bobinas.size()) ? FromDIP(34) : FromDIP(LARGURA);
+    return wxRect(i * passo() - m_desloc, 0, w, FromDIP(ALTURA));
 }
 
 int Bobinas::sob(const wxPoint& p) const
 {
+    const bool cabe = largura_total() <= GetClientSize().x;
+    if (!cabe && m_desloc > 0 && p.x < FromDIP(18))
+        return SETA_ESQ;
+    if (!cabe && m_desloc < largura_total() - GetClientSize().x && p.x > GetClientSize().x - FromDIP(18))
+        return SETA_DIR;
     for (int i = 0; i <= int(m_bobinas.size()); ++i)
         if (cartao(i).Contains(p))
             return i;
@@ -515,52 +550,70 @@ void Bobinas::pintar()
     auto gc = comecar(this, dc);
     if (!gc)
         return;
-    const int larg_bobina = std::min(cartao(0).width - FromDIP(16), FromDIP(58));
+    const int larg_bobina = FromDIP(42);
     if (m_desenhos.size() != m_bobinas.size()) {
         m_desenhos.clear();
         for (const InfoBobina& b : m_bobinas)
             m_desenhos.push_back(bobina(b.cor, larg_bobina));
     }
-    const wxFont f_marca = fonte(this, 7.5, true), f_tipo = fonte(this, 9., true), f_estoque = fonte(this, 7.5, false), f_num = fonte(this, 7., true);
+    const wxFont f_marca = fonte(this, 6.5, true), f_tipo = fonte(this, 8., true), f_estoque = fonte(this, 6.5, false), f_num = fonte(this, 6.5, true);
     for (int i = 0; i < int(m_bobinas.size()); ++i) {
+        const wxRect r = cartao(i);
+        if (r.GetRight() < 0 || r.x > GetClientSize().x)
+            continue;
         const InfoBobina& b   = m_bobinas[i];
-        const wxRect      r   = cartao(i);
         const bool        sel = i == m_sel, s = i == m_sobre;
         gc->SetPen(wxPen(sel || s ? MAGENTA : CARTAO_BORDA, FromDIP(sel ? 2 : 1)));
         gc->SetBrush(wxBrush(sel || s ? CARTAO_SOBRE : CARTAO));
         gc->DrawRoundedRectangle(r.x + 1, r.y + 1, r.width - 2, r.height - 2, FromDIP(10));
         const wxBitmap& d  = m_desenhos[i];
-        const double    bx = r.x + (r.width - d.GetWidth()) / 2., by = r.y + FromDIP(7);
+        const double    bx = r.x + (r.width - d.GetWidth()) / 2., by = r.y + FromDIP(5);
         gc->DrawBitmap(d, bx, by, d.GetWidth(), d.GetHeight());
-        // número da entrada no canto da foto
-        const double nd = FromDIP(17);
+        const double nd = FromDIP(16);
         gc->SetPen(*wxTRANSPARENT_PEN);
         gc->SetBrush(wxBrush(sel ? MAGENTA : TEXTO_CLARO));
-        gc->DrawEllipse(r.x + FromDIP(5), r.y + FromDIP(5), nd, nd);
+        gc->DrawEllipse(r.x + FromDIP(3), r.y + FromDIP(3), nd, nd);
         gc->SetFont(f_num, sel ? BRANCO : TINTA);
         double tw = 0, th = 0;
         gc->GetTextExtent(b.numero, &tw, &th);
-        gc->DrawText(b.numero, r.x + FromDIP(5) + (nd - tw) / 2., r.y + FromDIP(5) + (nd - th) / 2.);
-        // marca, tipo e estoque embaixo
+        gc->DrawText(b.numero, r.x + FromDIP(3) + (nd - tw) / 2., r.y + FromDIP(3) + (nd - th) / 2.);
         const double cx = r.x + r.width / 2.;
-        double       y  = by + d.GetHeight() + FromDIP(1);
-        const int    lt = r.width - FromDIP(8);
+        double       y  = by + d.GetHeight();
+        const int    lt = r.width - FromDIP(6);
         texto_centro(*gc, this, b.marca.empty() ? wxString::FromUTF8("Genérico") : b.marca, f_marca, TEXTO_CLARO, cx, y, lt);
-        y += FromDIP(13);
+        y += FromDIP(11);
         texto_centro(*gc, this, b.tipo, f_tipo, sel ? MAGENTA_CLARO : TEXTO_CLARO, cx, y, lt);
-        y += FromDIP(15);
+        y += FromDIP(13);
         texto_centro(*gc, this, b.estoque, f_estoque, TEXTO_APAGADO, cx, y, lt);
     }
-    // cartão "Adicionar", tracejado
+    // "+" tracejado no fim da fileira
     const wxRect r = cartao(int(m_bobinas.size()));
     const bool   s = m_sobre == int(m_bobinas.size());
     gc->SetPen(wxPen(s ? MAGENTA : AREIA_ESCURA, FromDIP(1), wxPENSTYLE_SHORT_DASH));
     gc->SetBrush(*wxTRANSPARENT_BRUSH);
     gc->DrawRoundedRectangle(r.x + 1, r.y + 1, r.width - 2, r.height - 2, FromDIP(10));
-    const double li = FromDIP(22);
-    desenhar_icone(*gc, this, Icone::mais, wxRect2DDouble(r.x + (r.width - li) / 2., r.y + r.height / 2. - li, li, li), s ? MAGENTA : CINZA, false);
-    texto_centro(*gc, this, wxString::FromUTF8("Adicionar"), fonte(this, 8., true), s ? MAGENTA : CINZA, r.x + r.width / 2., r.y + r.height / 2. + FromDIP(4),
-                 r.width - FromDIP(6));
+    const double li = FromDIP(18);
+    desenhar_icone(*gc, this, Icone::mais, wxRect2DDouble(r.x + (r.width - li) / 2., r.y + (r.height - li) / 2., li, li), MAGENTA, false);
+    // setas nas pontas quando a fileira não cabe
+    auto ponta = [&](bool esquerda) {
+        const double cx = esquerda ? FromDIP(10) : GetClientSize().x - FromDIP(10), cy = FromDIP(ALTURA) / 2.;
+        gc->SetPen(wxPen(AREIA_BORDA, 1));
+        gc->SetBrush(wxBrush(BRANCO));
+        gc->DrawEllipse(cx - FromDIP(9), cy - FromDIP(9), FromDIP(18), FromDIP(18));
+        gc->SetPen(wxPen(TINTA, FromDIP(2)));
+        const double d = esquerda ? 1. : -1., t = (FromDIP(7) / 2.);
+        wxGraphicsPath p = gc->CreatePath();
+        p.MoveToPoint(cx + d * t * 0.5, cy - t);
+        p.AddLineToPoint(cx - d * t * 0.5, cy);
+        p.AddLineToPoint(cx + d * t * 0.5, cy + t);
+        gc->StrokePath(p);
+    };
+    if (largura_total() > GetClientSize().x) {
+        if (m_desloc > 0)
+            ponta(true);
+        if (m_desloc < largura_total() - GetClientSize().x)
+            ponta(false);
+    }
 }
 
 // ------------------------------------------------------------------------------------------------ botões
@@ -623,7 +676,7 @@ void Botoes::pintar()
 BarraBobina::BarraBobina(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
-    SetMinSize(wxSize(-1, FromDIP(44)));
+    SetMinSize(wxSize(-1, FromDIP(32)));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
     Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
     auto sob = [this](const wxPoint& p) {
@@ -666,10 +719,10 @@ wxRect BarraBobina::area(int i) const
 {
     const auto   b   = botoes();
     const wxSize s   = GetClientSize();
-    const int    gap = FromDIP(5), h = FromDIP(30), y = (s.y - h) / 2;
-    int          x   = s.x - FromDIP(6);
+    const int    gap = FromDIP(4), h = FromDIP(24), y = (s.y - h) / 2;
+    int          x   = s.x - FromDIP(4);
     for (int k = int(b.size()) - 1; k >= 0; --k) {
-        const int w = largura_botao(const_cast<BarraBobina*>(this), b[k]);
+        const int w = b[k].texto.empty() ? FromDIP(24) : largura_botao(const_cast<BarraBobina*>(this), b[k]) - FromDIP(4);
         x -= w;
         if (k == i)
             return wxRect(x, y, w, h);
@@ -699,13 +752,13 @@ void BarraBobina::pintar()
     gc->SetPen(wxPen(ROSA_BORDA, FromDIP(1)));
     gc->SetBrush(wxBrush(ROSA_CLARO));
     gc->DrawRoundedRectangle(0.5, 0.5, s.x - 1, s.y - 1, FromDIP(10));
-    const auto b   = botoes();
-    const int  max = area(0).x - FromDIP(16);
-    gc->SetFont(fonte(this, 7., true), VINHO);
-    gc->DrawText(m_entrada.Upper(), FromDIP(10), FromDIP(6));
-    const wxString nome = caber(this, m_nome, fonte(this, 8.5, true), max);
-    gc->SetFont(fonte(this, 8.5, true), TINTA);
-    gc->DrawText(nome, FromDIP(10), FromDIP(20));
+    const auto b = botoes();
+    const wxRect tudo(0, 0, s.x, s.y);
+    gc->SetFont(fonte(this, 8., true), VINHO);
+    const double num_l = largura_texto(*gc, m_entrada);
+    gc->DrawText(m_entrada, FromDIP(10), (s.y - FromDIP(13)) / 2.);
+    const int x = FromDIP(10) + int(num_l) + FromDIP(6);
+    texto_meio(*gc, this, m_nome, fonte(this, 8.5, true), TINTA, x, tudo, area(0).x - x - FromDIP(6));
     for (int i = 0; i < 4; ++i)
         desenhar_botao(*gc, this, area(i), b[i], i == m_sobre, false);
 }
@@ -714,37 +767,14 @@ void BarraBobina::pintar()
 Resumo::Resumo(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
-    SetMinSize(wxSize(-1, FromDIP(110)));
+    SetMinSize(wxSize(-1, FromDIP(48)));
+    SetToolTip(wxString::FromUTF8("Abrir impressora e filamentos"));
+    SetCursor(wxCursor(wxCURSOR_HAND));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
     Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
-    Bind(wxEVT_MOTION, [this](wxMouseEvent& e) {
-        const int s = area_abrir().Contains(e.GetPosition()) ? 1 : area_mais().Contains(e.GetPosition()) ? 2 : 0;
-        if (s != m_sobre) {
-            m_sobre = s;
-            cursor_mao(this, s != 0);
-            Refresh();
-        }
-    });
-    Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&) { m_sobre = 0; cursor_mao(this, false); Refresh(); });
-    Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& e) {
-        if (area_mais().Contains(e.GetPosition())) {
-            if (ao_adicionar)
-                ao_adicionar();
-        } else if (ao_abrir) // qualquer outro ponto do resumo abre a parte de cima de novo
-            ao_abrir();
-    });
-}
-
-wxRect Resumo::area_abrir() const
-{
-    const wxSize s = GetClientSize();
-    return wxRect(s.x - FromDIP(76), FromDIP(14), FromDIP(68), FromDIP(30));
-}
-
-wxRect Resumo::area_mais() const
-{
-    const wxSize s = GetClientSize();
-    return wxRect(s.x - FromDIP(36), FromDIP(70), FromDIP(28), FromDIP(28));
+    Bind(wxEVT_ENTER_WINDOW, [this](wxMouseEvent&) { m_sobre = true; Refresh(); });
+    Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&) { m_sobre = false; Refresh(); });
+    Bind(wxEVT_LEFT_UP, [this](wxMouseEvent&) { if (ao_abrir) ao_abrir(); });
 }
 
 void Resumo::definir_foto(const wxBitmap& foto)
@@ -753,16 +783,15 @@ void Resumo::definir_foto(const wxBitmap& foto)
     Refresh();
 }
 
-void Resumo::definir(const wxString& linha1, const wxString& linha2, const std::vector<InfoBobina>& bobinas)
+void Resumo::definir(const wxString& linha, const std::vector<InfoBobina>& bobinas, int selecionada)
 {
-    const bool igual = linha1 == m_linha1 && linha2 == m_linha2 && bobinas.size() == m_bobinas.size() &&
-                       std::equal(bobinas.begin(), bobinas.end(), m_bobinas.begin(),
-                                  [](const InfoBobina& a, const InfoBobina& b) { return a.cor == b.cor && a.tipo == b.tipo; });
+    const bool igual = linha == m_linha && selecionada == m_sel && bobinas.size() == m_bobinas.size() &&
+                       std::equal(bobinas.begin(), bobinas.end(), m_bobinas.begin(), [](const InfoBobina& a, const InfoBobina& b) { return a.cor == b.cor; });
     if (igual)
         return;
-    m_linha1  = linha1;
-    m_linha2  = linha2;
+    m_linha   = linha;
     m_bobinas = bobinas;
+    m_sel     = selecionada;
     Refresh();
 }
 
@@ -773,102 +802,48 @@ void Resumo::pintar()
     if (!gc)
         return;
     const wxSize s = GetClientSize();
-    // linha da impressora
-    const wxRect a(0, 0, s.x, FromDIP(58));
-    gc->SetPen(*wxTRANSPARENT_PEN);
+    gc->SetPen(m_sobre ? wxPen(MAGENTA, FromDIP(1)) : *wxTRANSPARENT_PEN);
     gc->SetBrush(wxBrush(LILAS));
-    gc->DrawRoundedRectangle(a.x, a.y, a.width, a.height, FromDIP(12));
-    const int lado = FromDIP(46);
-    gc->SetBrush(wxBrush(BRANCO));
-    gc->DrawRoundedRectangle(FromDIP(6), FromDIP(6), lado, lado, FromDIP(6));
-    if (m_foto.IsOk()) {
-        const double esc = std::min(double(lado - FromDIP(4)) / m_foto.GetWidth(), double(lado - FromDIP(4)) / m_foto.GetHeight());
-        gc->DrawBitmap(m_foto, FromDIP(6) + (lado - m_foto.GetWidth() * esc) / 2., FromDIP(6) + (lado - m_foto.GetHeight() * esc) / 2.,
-                       m_foto.GetWidth() * esc, m_foto.GetHeight() * esc);
-    }
-    const int tx = FromDIP(60), tl = area_abrir().x - tx - FromDIP(6);
-    gc->SetFont(fonte(this, 9., true), TINTA);
-    gc->DrawText(caber(this, m_linha1, fonte(this, 9., true), tl), tx, FromDIP(11));
-    gc->SetFont(fonte(this, 8.5, false), CINZA);
-    gc->DrawText(caber(this, m_linha2, fonte(this, 8.5, false), tl), tx, FromDIP(30));
-    Botao abrir{wxString::FromUTF8("Abrir"), Icone::seta_baixo};
-    desenhar_botao(*gc, this, area_abrir(), abrir, m_sobre == 1, false);
-    // linha dos filamentos
-    const wxRect b(0, FromDIP(64), s.x, FromDIP(40));
+    gc->DrawRoundedRectangle(0.5, 0.5, s.x - 1, s.y - 1, FromDIP(12));
+    const int lado = FromDIP(40), fx = FromDIP(4), fy = (s.y - lado) / 2;
     gc->SetPen(*wxTRANSPARENT_PEN);
-    gc->SetBrush(wxBrush(CARTAO));
-    gc->DrawRoundedRectangle(b.x, b.y, b.width, b.height, FromDIP(12));
-    gc->SetFont(fonte(this, 8.5, true), TEXTO_CLARO);
-    gc->DrawText(wxString::FromUTF8("Filamentos"), FromDIP(10), b.y + (b.height - FromDIP(14)) / 2.);
-    double x = FromDIP(84);
-    const double ch = FromDIP(24), lim = area_mais().x - FromDIP(6);
-    for (const InfoBobina& f : m_bobinas) {
-        const wxString t  = f.numero + " " + f.tipo;
-        gc->SetFont(fonte(this, 7.5, true), TEXTO_CLARO);
-        const double   cw = FromDIP(26) + largura_texto(*gc, t);
-        if (x + cw > lim)
-            break;
-        const double y = b.y + (b.height - ch) / 2.;
-        gc->SetPen(*wxTRANSPARENT_PEN);
-        gc->SetBrush(wxBrush(CARTAO_BORDA));
-        gc->DrawRoundedRectangle(x, y, cw, ch, ch / 2.);
-        gc->SetBrush(wxBrush(f.cor));
-        gc->DrawEllipse(x + FromDIP(3), y + FromDIP(3), ch - FromDIP(6), ch - FromDIP(6));
-        gc->SetBrush(wxBrush(wxColour(0x14, 0x14, 0x16)));
-        gc->DrawEllipse(x + ch / 2. - FromDIP(3), y + ch / 2. - FromDIP(3), FromDIP(6), FromDIP(6));
-        gc->DrawText(t, x + ch + FromDIP(1), y + (ch - FromDIP(13)) / 2.);
-        x += cw + FromDIP(5);
+    gc->SetBrush(wxBrush(BRANCO));
+    gc->DrawRoundedRectangle(fx, fy, lado, lado, FromDIP(9));
+    if (m_foto.IsOk()) {
+        const double esc = std::min(double(lado - FromDIP(2)) / m_foto.GetWidth(), double(lado - FromDIP(2)) / m_foto.GetHeight());
+        gc->DrawBitmap(m_foto, fx + (lado - m_foto.GetWidth() * esc) / 2., fy + (lado - m_foto.GetHeight() * esc) / 2., m_foto.GetWidth() * esc,
+                       m_foto.GetHeight() * esc);
     }
-    const wxRect m = area_mais();
-    gc->SetPen(wxPen(m_sobre == 2 ? MAGENTA : wxColour(0x8A, 0x85, 0x90), FromDIP(1), wxPENSTYLE_SHORT_DASH));
-    gc->SetBrush(*wxTRANSPARENT_BRUSH);
-    gc->DrawRoundedRectangle(m.x, m.y, m.width, m.height, FromDIP(8));
-    desenhar_icone(*gc, this, Icone::mais, wxRect2DDouble(m.x + FromDIP(7), m.y + FromDIP(7), FromDIP(14), FromDIP(14)), TEXTO_CLARO, false);
-}
-
-// ------------------------------------------------------------------------------------------------ divisor
-Divisor::Divisor(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE)
-{
-    SetBackgroundStyle(wxBG_STYLE_PAINT);
-    SetMinSize(wxSize(-1, FromDIP(14)));
-    SetCursor(wxCursor(wxCURSOR_SIZENS));
-    SetToolTip(wxString::FromUTF8("Arraste para dar mais espaço ao Processo"));
-    Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
-    Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& e) {
-        m_inicio_y   = ClientToScreen(e.GetPosition()).y;
-        m_arrastando = true;
-        CaptureMouse();
-        if (ao_comecar)
-            ao_comecar();
-    });
-    Bind(wxEVT_MOTION, [this](wxMouseEvent& e) {
-        if (m_arrastando && ao_arrastar)
-            ao_arrastar(ClientToScreen(e.GetPosition()).y - m_inicio_y);
-    });
-    auto soltar = [this]() {
-        if (!m_arrastando)
-            return;
-        m_arrastando = false;
-        if (HasCapture())
-            ReleaseMouse();
-        if (ao_soltar)
-            ao_soltar();
-    };
-    Bind(wxEVT_LEFT_UP, [soltar](wxMouseEvent&) { soltar(); });
-    Bind(wxEVT_MOUSE_CAPTURE_LOST, [soltar](wxMouseCaptureLostEvent&) { soltar(); });
-}
-
-void Divisor::pintar()
-{
-    wxAutoBufferedPaintDC dc(this);
-    dc.SetBackground(wxBrush(AREIA));
-    dc.Clear();
-    const wxSize s = GetClientSize();
-    dc.SetPen(*wxTRANSPARENT_PEN);
-    dc.SetBrush(wxBrush(AREIA_ESCURA));
-    const int w = FromDIP(36), x = (s.x - w) / 2, y = s.y / 2 - FromDIP(3);
-    dc.DrawRoundedRectangle(x, y, w, FromDIP(2), 1);
-    dc.DrawRoundedRectangle(x, y + FromDIP(4), w, FromDIP(2), 1);
+    // "Abrir" à direita
+    gc->SetFont(fonte(this, 8., true), BRANCO);
+    const wxString abrir = wxString::FromUTF8("Abrir");
+    const double   aw    = largura_texto(*gc, abrir) + FromDIP(30);
+    const wxRect   a(int(s.x - aw - FromDIP(8)), (s.y - FromDIP(26)) / 2, int(aw), FromDIP(26));
+    gc->SetBrush(wxBrush(m_sobre ? MAGENTA_ESCURO : MAGENTA));
+    gc->DrawRoundedRectangle(a.x, a.y, a.width, a.height, a.height / 2.);
+    seta(*gc, a.x + FromDIP(12), a.y + a.height / 2., (FromDIP(7) / 2.), BRANCO, FromDIP(2));
+    gc->DrawText(abrir, a.x + FromDIP(20), a.y + (a.height - FromDIP(13)) / 2.);
+    // linha do bico e da mesa; embaixo, as bolinhas dos filamentos
+    const int tx = fx + lado + FromDIP(8), tl = a.x - tx - FromDIP(6);
+    gc->SetFont(fonte(this, 8.5, true), TINTA);
+    gc->DrawText(caber(this, m_linha, fonte(this, 8.5, true), tl), tx, FromDIP(6));
+    double x = tx;
+    const double ch = FromDIP(16), cy = FromDIP(26);
+    for (int i = 0; i < int(m_bobinas.size()); ++i) {
+        gc->SetFont(fonte(this, 6.5, true), TEXTO_CLARO);
+        const double cw = ch + FromDIP(4) + largura_texto(*gc, m_bobinas[i].numero);
+        if (x + cw > tx + tl)
+            break;
+        gc->SetPen(*wxTRANSPARENT_PEN);
+        gc->SetBrush(wxBrush(i == m_sel ? VINHO : CARTAO));
+        gc->DrawRoundedRectangle(x, cy, cw, ch, ch / 2.);
+        gc->SetBrush(wxBrush(m_bobinas[i].cor));
+        gc->DrawEllipse(x + FromDIP(2), cy + FromDIP(2), ch - FromDIP(4), ch - FromDIP(4));
+        gc->SetBrush(wxBrush(wxColour(0x14, 0x14, 0x16)));
+        gc->DrawEllipse(x + ch / 2. - FromDIP(2), cy + ch / 2. - FromDIP(2), FromDIP(4), FromDIP(4));
+        gc->DrawText(m_bobinas[i].numero, x + ch, cy + (ch - FromDIP(10)) / 2.);
+        x += cw + FromDIP(4);
+    }
 }
 
 // ------------------------------------------------------------------------------------------------ abas em grade
@@ -876,7 +851,7 @@ GradeAbas::GradeAbas(wxWindow* pai, TabCtrl* abas)
     : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE), m_abas(abas)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
-    SetMinSize(wxSize(-1, FromDIP(36)));
+    SetMinSize(wxSize(-1, FromDIP(28)));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
     Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
     Bind(wxEVT_MOTION, [this](wxMouseEvent& e) {
@@ -916,7 +891,7 @@ void GradeAbas::conferir()
     m_sel                = sel;
     if (mudou_qtd) {
         const int linhas = std::max(1, int(m_itens.size() + 2) / 3);
-        SetMinSize(wxSize(-1, linhas * FromDIP(36)));
+        SetMinSize(wxSize(-1, linhas * FromDIP(28)));
         if (GetParent())
             GetParent()->Layout();
     }
@@ -926,7 +901,7 @@ void GradeAbas::conferir()
 wxRect GradeAbas::area(int i) const
 {
     const int gap = FromDIP(4), w = (GetClientSize().x - 2 * gap) / 3;
-    return wxRect((i % 3) * (w + gap), (i / 3) * FromDIP(36), w, FromDIP(32));
+    return wxRect((i % 3) * (w + gap), (i / 3) * FromDIP(28), w, FromDIP(25));
 }
 
 int GradeAbas::sob(const wxPoint& p) const
@@ -952,13 +927,90 @@ void GradeAbas::pintar()
         gc->SetPen(s && !sel ? wxPen(MAGENTA, FromDIP(1)) : *wxTRANSPARENT_PEN);
         gc->SetBrush(wxBrush(sel ? MAGENTA : AREIA));
         gc->DrawRoundedRectangle(r.x + 0.5, r.y + 0.5, r.width - 1, r.height - 1, FromDIP(8));
-        texto_centro(*gc, this, it.nome, fonte(this, 9., true), sel ? BRANCO : mudada ? it.cor : TINTA, r.x + r.width / 2., r.y + (r.height - FromDIP(15)) / 2.,
+        texto_centro(*gc, this, it.nome, fonte(this, 8., true), sel ? BRANCO : mudada ? it.cor : TINTA, r.x + r.width / 2., r.y + (r.height - FromDIP(13)) / 2.,
                      r.width - FromDIP(12));
         if (mudada && sel) { // selecionada e mudada: o ponto na cor do Orca
             gc->SetPen(wxPen(BRANCO, 1));
             gc->SetBrush(wxBrush(it.cor));
             gc->DrawEllipse(r.x + FromDIP(6), r.y + r.height / 2. - FromDIP(4), FromDIP(8), FromDIP(8));
         }
+    }
+}
+
+// ------------------------------------------------------------------------------------------------ segmentos
+Segmentos::Segmentos(wxWindow* pai, const std::vector<wxString>& opcoes)
+    : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE), m_opcoes(opcoes)
+{
+    SetBackgroundStyle(wxBG_STYLE_PAINT);
+    wxClientDC dc(this);
+    dc.SetFont(fonte(this, 7.5, true));
+    int w = FromDIP(4);
+    for (const wxString& o : m_opcoes)
+        w += dc.GetTextExtent(o).x + FromDIP(12);
+    SetMinSize(wxSize(w, FromDIP(24)));
+    Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
+    Bind(wxEVT_MOTION, [this](wxMouseEvent& e) {
+        const int i = sob(e.GetPosition());
+        if (i != m_sobre) {
+            m_sobre = i;
+            cursor_mao(this, i >= 0 && m_ativo);
+            Refresh();
+        }
+    });
+    Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&) { m_sobre = -1; cursor_mao(this, false); Refresh(); });
+    Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& e) {
+        const int i = sob(e.GetPosition());
+        if (i >= 0 && m_ativo && i != m_sel && ao_escolher)
+            ao_escolher(i);
+    });
+}
+
+void Segmentos::selecionar(int i, bool ativo)
+{
+    if (i == m_sel && ativo == m_ativo)
+        return;
+    m_sel   = i;
+    m_ativo = ativo;
+    Refresh();
+}
+
+wxRect Segmentos::area(int i) const
+{
+    wxClientDC dc(const_cast<Segmentos*>(this));
+    dc.SetFont(fonte(const_cast<Segmentos*>(this), 7.5, true));
+    int x = FromDIP(2);
+    for (int k = 0; k < i; ++k)
+        x += dc.GetTextExtent(m_opcoes[k]).x + FromDIP(12);
+    return wxRect(x, FromDIP(2), dc.GetTextExtent(m_opcoes[i]).x + FromDIP(12), GetClientSize().y - FromDIP(4));
+}
+
+int Segmentos::sob(const wxPoint& p) const
+{
+    for (int i = 0; i < int(m_opcoes.size()); ++i)
+        if (area(i).Contains(p))
+            return i;
+    return -1;
+}
+
+void Segmentos::pintar()
+{
+    wxAutoBufferedPaintDC dc(this);
+    auto gc = comecar(this, dc);
+    if (!gc)
+        return;
+    const wxSize s = GetClientSize();
+    gc->SetPen(*wxTRANSPARENT_PEN);
+    gc->SetBrush(wxBrush(wxColour(0xEF, 0xE9, 0xE1)));
+    gc->DrawRoundedRectangle(0, 0, s.x, s.y, s.y / 2.);
+    for (int i = 0; i < int(m_opcoes.size()); ++i) {
+        const wxRect r   = area(i);
+        const bool   sel = i == m_sel;
+        if (sel || i == m_sobre) {
+            gc->SetBrush(wxBrush(sel ? (m_ativo ? MAGENTA : AREIA_ESCURA) : BRANCO));
+            gc->DrawRoundedRectangle(r.x, r.y, r.width, r.height, r.height / 2.);
+        }
+        texto_centro(*gc, this, m_opcoes[i], fonte(this, 7.5, true), sel ? BRANCO : wxColour(0x4A, 0x41, 0x3A), r.x + r.width / 2.,
+                     r.y + (r.height - FromDIP(12)) / 2., r.width);
     }
 }
 

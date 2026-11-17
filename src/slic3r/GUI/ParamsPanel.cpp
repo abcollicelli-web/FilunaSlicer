@@ -319,7 +319,8 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
         m_setting_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent &) { wxGetApp().plater()->PopupObjectTable(-1, -1, {0, 0}); });
 
         // Filuna: as mesmas 4 ferramentas, maiores e com nome (os ícones pequenos do Orca ficam escondidos)
-        m_filuna_ferramentas = new FilunaLateral::Botoes(m_top_panel, true);
+        m_filuna_ferramentas = new FilunaLateral::Botoes(m_top_panel, false);
+        m_filuna_ferramentas->SetMinSize(wxSize(-1, FromDIP(28)));
         m_filuna_ferramentas->ao_clicar = [this](int i, const wxRect &) {
             switch (i) {
             case 0: // Visibilidade: o mesmo que o ícone do Orca (simples → avançado → especialista)
@@ -441,6 +442,15 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
     //Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { wxGetApp().plater()->search(false); }, wxID_FIND);
     //m_export_to_file->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { wxGetApp().mainframe->export_config(); });
     //m_import_from_file->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { wxGetApp().mainframe->load_config_file(); });
+}
+
+int ParamsPanel::filuna_modo() const { return m_mode_view ? m_mode_view->GetSelection() : 0; }
+
+void ParamsPanel::filuna_modo(int selecao)
+{
+    if (m_mode_view && wxGetApp().get_mode() != comDevelop)
+        m_mode_view->SelectAndNotify(selecao);
+    filuna_ferramentas_atualizar();
 }
 
 void ParamsPanel::filuna_ferramentas_atualizar()

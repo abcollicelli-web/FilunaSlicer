@@ -922,20 +922,17 @@ struct Sidebar::priv
 
     // Filuna: visual fixo do menu (FilunaLateral, proposta 2). As listas e botões do Orca continuam fazendo o trabalho,
     // escondidos; o visual abre a lista original no lugar clicado ou chama o mesmo código do botão original.
-    FilunaLateral::Faixa*            fl_faixa         = nullptr;
     FilunaLateral::CartaoImpressora* fl_impressora    = nullptr;
     FilunaLateral::Bobinas*          fl_bobinas       = nullptr;
-    FilunaLateral::Botoes*           fl_barra         = nullptr; // Adicionar, Sincronizar, Misto
+    FilunaLateral::Botoes*           fl_titulo_botoes = nullptr; // Sincronizar e Misto no título dos filamentos
     FilunaLateral::BarraBobina*      fl_barra_bobina  = nullptr; // Cor, Trocar, Ajustes, Tirar da bobina selecionada
     FilunaLateral::Resumo*           fl_resumo        = nullptr; // a parte de cima recolhida
-    FilunaLateral::Divisor*          fl_divisor       = nullptr;
+    FilunaLateral::Segmentos*        fl_modo          = nullptr; // Simples / Avançado / Especialista
     FilunaLateral::Botoes*           fl_recolher_btn  = nullptr;
     wxTimer*                         fl_timer         = nullptr;
     bool                             fl_mesa_tipos    = false; // a impressora tem tipos de mesa para escolher
     bool                             fl_recolhido     = false;
     int                              fl_sel           = 0;     // bobina selecionada
-    int                              fl_altura        = 0;     // altura das bobinas escolhida na faixa de arrastar (0: a padrão)
-    int                              fl_altura_inicio = 0;
     std::string                      fl_mesa_imagem;           // imagem da mesa atual (a grande é "big_" + esta)
     void fl_criar();
     void fl_atualizar();
@@ -1204,24 +1201,24 @@ void Sidebar::priv::layout_printer(bool isBBL, bool isDual)
 
 void Sidebar::priv::fl_criar()
 {
-    if (fl_faixa || !m_panel_printer_content || !vsizer_printer)
+    if (fl_impressora || !m_panel_printer_content || !vsizer_printer)
         return;
-    fl_faixa      = new FilunaLateral::Faixa(m_panel_printer_content);
     fl_impressora = new FilunaLateral::CartaoImpressora(m_panel_printer_content);
-    auto* bloco   = new wxBoxSizer(wxVERTICAL);
-    bloco->Add(fl_faixa, 0, wxEXPAND);
-    bloco->Add(fl_impressora, 0, wxEXPAND | wxTOP, fl_faixa->FromDIP(8));
-    vsizer_printer->Insert(0, bloco, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, fl_faixa->FromDIP(SidebarProps::ContentMargin()));
-
-    fl_faixa->ao_clicar = [this] { fl_abrir(combo_printer, wxRect(fl_faixa->GetScreenPosition(), fl_faixa->GetSize())); };
-    fl_impressora->ao_bico = [this](const wxRect& r) { fl_abrir(combo_nozzle_dia, r); };
-    fl_impressora->ao_tipo = [this](const wxRect& r) { fl_tipo_bico(r); };
-    fl_impressora->ao_mesa = [this](const wxRect& r) { fl_abrir(combo_printer_bed, r, fl_impressora->FromDIP(180)); };
-    // o lápis da impressora do Orca (aparecia ao passar o mouse): abre a aba do perfil da impressora
-    fl_impressora->ao_editar = [this] {
-        editing_filament = -1;
-        if (combo_printer->switch_to_tab())
-            editing_filament = 0;
+    vsizer_printer->Insert(0, fl_impressora, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, fl_impressora->FromDIP(SidebarProps::ContentMargin()));
+    using Cartao           = FilunaLateral::CartaoImpressora;
+    fl_impressora->ao_area = [this](int area, const wxRect& r) {
+        switch (area) {
+        case Cartao::FAIXA: fl_abrir(combo_printer, r); break;
+        case Cartao::BICO: fl_abrir(combo_nozzle_dia, r); break;
+        case Cartao::TIPO: fl_tipo_bico(r); break;
+        case Cartao::MESA: fl_abrir(combo_printer_bed, r, fl_impressora->FromDIP(180)); break;
+        case Cartao::LAPIS: // o lápis da impressora do Orca: abre a aba do perfil da impressora
+            editing_filament = -1;
+            if (combo_printer->switch_to_tab())
+                editing_filament = 0;
+            break;
+        default: break;
+        }
     };
     // a imagem grande da mesa ao passar o mouse, como no Orca
     fl_impressora->ao_mesa_sobre = [this](bool sobre, const wxRect& r) {
@@ -1388,7 +1385,7 @@ std::vector<FilunaLateral::InfoBobina> Sidebar::priv::fl_infos() const
         b.cor    = wxColour(wxString::FromUTF8(hex.substr(0, 7)));
         if (!b.cor.IsOk())
             b.cor = *wxWHITE;
-        b.marca   = wxString::FromUTF8(marca == "Generic" ? std::string() : marca);
+        b.marca   = wxString::FromUTF8(marca == "Generic" || marca == "(Undefined)" ? std::string() : marca);
         b.tipo    = wxString::FromUTF8(tipo_f.empty() ? std::string("?") : tipo_f);
         b.estoque = estoque_filuna(tipo_f, hex, marca);
         v.push_back(b);
@@ -1417,8 +1414,18 @@ void Sidebar::priv::fl_atualizar()
     const wxString mesa      = fl_mesa_tipos && combo_printer_bed && combo_printer_bed->GetSelection() >= 0 ?
                                    combo_printer_bed->GetString(combo_printer_bed->GetSelection()) :
                                    wxString::FromUTF8("Padrão");
-    fl_impressora->definir(bico, combo_nozzle_dia && combo_nozzle_dia->GetCount() > 1, tipo, mesa,
-                           fl_mesa_tipos && combo_printer_bed && combo_printer_bed->IsEnabled());
+    FilunaLateral::CartaoImpressora::Info info;
+    info.bico = bico;
+    info.tipo = tipo;
+    info.mesa = mesa;
+    // 2 bicos: o Orca mostra os dois logo abaixo do cartão (diâmetro, tipo de fluxo e AMS de cada um)
+    const auto* diametros  = pb.printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
+    info.mostrar_bico      = !(diametros && diametros->values.size() > 1);
+    info.bico_selecionavel = combo_nozzle_dia && combo_nozzle_dia->GetCount() > 1;
+    info.mesa_selecionavel = fl_mesa_tipos && combo_printer_bed && combo_printer_bed->IsEnabled();
+    fl_impressora->definir(info);
+    if (fl_modo) // Simples / Avançado / Especialista: o mesmo modo do Orca (no modo de desenvolvedor não muda)
+        fl_modo->selecionar(wxGetApp().params_panel() ? wxGetApp().params_panel()->filuna_modo() : 0, wxGetApp().get_mode() != comDevelop);
     if (!fl_bobinas)
         return;
     const auto infos = fl_infos();
@@ -1430,15 +1437,15 @@ void Sidebar::priv::fl_atualizar()
         fl_barra_bobina->definir(wxString::Format(wxString::FromUTF8("Entrada %d"), fl_sel + 1), pr ? from_u8(pr->label(false)) : wxString(),
                                  infos[fl_sel].cor, infos.size() > 1);
     }
-    if (fl_barra) { // as mesmas regras dos botões do Orca: sincronizar não durante o fatiamento; misto com 2 filamentos ou mais
+    if (fl_titulo_botoes) { // as mesmas regras dos botões do Orca: sincronizar não durante o fatiamento; misto com 2 filamentos ou mais
         FilunaLateral::Botao sinc{wxString::FromUTF8("Sincronizar"), FilunaLateral::Icone::sincronizar};
         sinc.ativo = !plater->is_background_process_slicing();
         FilunaLateral::Botao misto{wxString::FromUTF8("Misto"), FilunaLateral::Icone::misto};
         misto.ativo = combos_filament.size() >= 2;
-        fl_barra->definir({FilunaLateral::Botao{wxString::FromUTF8("Adicionar"), FilunaLateral::Icone::mais}, sinc, misto});
+        fl_titulo_botoes->definir({sinc, misto});
     }
     if (fl_resumo)
-        fl_resumo->definir(wxString::FromUTF8("Bico ") + bico + wxString::FromUTF8(" · ") + tipo, wxString::FromUTF8("Mesa: ") + mesa, infos);
+        fl_resumo->definir(bico + wxString::FromUTF8(" · ") + tipo + wxString::FromUTF8(" · ") + mesa, infos, fl_sel);
     // os ícones do título e o "Adicionar filamento misto" do Orca viraram os botões com nome
     bool titulo_mudou = false;
     for (wxWindow* w : std::initializer_list<wxWindow*>{m_bpButton_add_filament, m_bpButton_del_filament, m_bpButton_ams_filament, m_btn_add_mixed_filament})
@@ -1470,7 +1477,7 @@ void Sidebar::priv::fl_atualizar()
 void Sidebar::priv::fl_recolher(bool recolher)
 {
     fl_recolhido = recolher;
-    for (wxWindow* w : std::initializer_list<wxWindow*>{m_panel_printer_content, m_panel_filament_title, m_filament_area_wrapper, fl_divisor})
+    for (wxWindow* w : std::initializer_list<wxWindow*>{m_panel_printer_content, m_panel_filament_title, m_filament_area_wrapper})
         if (w)
             w->Show(!recolher);
     for (wxWindow* w : std::initializer_list<wxWindow*>{m_panel_printer_separator, m_panel_filament_separator})
@@ -3282,7 +3289,16 @@ Sidebar::Sidebar(Plater *parent)
         //h_sizer_title->AddStretchSpacer();
         h_sizer_title->Add(p->m_printer_connect , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
         h_sizer_title->Add(p->m_printer_bbl_sync, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
-        // Filuna: recolher impressora e filamentos num resumo (o Processo fica com quase a tela inteira)
+        // Filuna: o modo dos ajustes do Orca (Simples, Avançado, Especialista) à vista no título
+        p->fl_modo = new FilunaLateral::Segmentos(p->m_panel_printer_title, {wxString::FromUTF8("Simples"), wxString::FromUTF8("Avançado"),
+                                                                             wxString::FromUTF8("Especialista")});
+        p->fl_modo->SetToolTip(wxString::FromUTF8("Quantos ajustes aparecem no Processo"));
+        p->fl_modo->ao_escolher = [](int i) {
+            if (ParamsPanel* pp = wxGetApp().params_panel())
+                pp->filuna_modo(i);
+        };
+        h_sizer_title->Add(p->fl_modo, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()));
+        // Filuna: modo foco — recolher impressora e filamentos numa faixa (o Processo fica com quase a tela inteira)
         p->fl_recolher_btn = new FilunaLateral::Botoes(p->m_panel_printer_title, false);
         p->fl_recolher_btn->SetMinSize(wxSize(FromDIP(30), FromDIP(26)));
         p->fl_recolher_btn->SetToolTip(wxString::FromUTF8("Recolher ou abrir impressora e filamentos"));
@@ -3326,10 +3342,6 @@ Sidebar::Sidebar(Plater *parent)
         scrolled_sizer->Add(p->m_panel_printer_separator, 0, wxEXPAND);
         p->fl_resumo               = new FilunaLateral::Resumo(p->scrolled);
         p->fl_resumo->ao_abrir     = [this] { p->fl_recolher(false); };
-        p->fl_resumo->ao_adicionar = [this] {
-            p->fl_recolher(false);
-            p->fl_adicionar();
-        };
         scrolled_sizer->Add(p->fl_resumo, 0, wxEXPAND | wxALL, FromDIP(SidebarProps::ContentMargin()));
         p->fl_resumo->Hide();
 
@@ -3744,6 +3756,16 @@ Sidebar::Sidebar(Plater *parent)
     scrolled_sizer->Add(p->m_panel_filament_separator, 0, wxEXPAND);
 
     bSizer39->AddStretchSpacer(1);
+    // Filuna: Sincronizar e Misto com nome, no título (Adicionar é o "+" no fim das bobinas)
+    p->fl_titulo_botoes = new FilunaLateral::Botoes(p->m_panel_filament_title, false);
+    p->fl_titulo_botoes->SetMinSize(wxSize(FromDIP(184), FromDIP(26)));
+    p->fl_titulo_botoes->ao_clicar = [this](int i, const wxRect&) {
+        if (i == 0)
+            sync_ams_list();
+        else
+            add_mixed_filament();
+    };
+    bSizer39->Add(p->fl_titulo_botoes, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(4));
 
     p->m_purge_mode_btn = new Button(p->m_panel_filament_title, _L("Purge mode"));
     p->m_purge_mode_btn->SetStyle(ButtonStyle::Confirm, ButtonType::Compact);
@@ -3885,17 +3907,6 @@ Sidebar::Sidebar(Plater *parent)
     
     update_filaments_area_height(); // ORCA
 
-    // Filuna: os botões com nome no lugar dos ícones do título
-    p->fl_barra            = new FilunaLateral::Botoes(p->m_filament_area_wrapper, false);
-    p->fl_barra->ao_clicar = [this](int i, const wxRect&) {
-        if (i == 0)
-            p->fl_adicionar();
-        else if (i == 1)
-            sync_ams_list();
-        else
-            add_mixed_filament();
-    };
-    wrapper_sizer->Add(p->fl_barra, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(SidebarProps::ContentMargin()));
     wrapper_sizer->Add(p->m_panel_filament_content, 0, wxEXPAND);
     // Filuna: a bobina selecionada, com Cor, Trocar, Ajustes e Tirar à vista
     p->fl_barra_bobina             = new FilunaLateral::BarraBobina(p->m_filament_area_wrapper);
@@ -4038,16 +4049,6 @@ Sidebar::Sidebar(Plater *parent)
     p->m_filament_area_wrapper->SetSizer(wrapper_sizer);
     p->m_filament_area_wrapper->Layout();
     scrolled_sizer->Add(p->m_filament_area_wrapper, 0, wxEXPAND | wxTOP | wxBOTTOM, FromDIP(SidebarProps::ContentMarginV())); // ORCA use vertical margin on parent otherwise it shows scrollbar even on 1 filament
-    // Filuna: puxar para cima dá mais altura ao Processo (as bobinas rolam); a altura escolhida fica gravada
-    p->fl_divisor              = new FilunaLateral::Divisor(p->scrolled);
-    p->fl_divisor->ao_comecar  = [this] { p->fl_altura_inicio = p->m_panel_filament_content->GetSize().y; };
-    p->fl_divisor->ao_arrastar = [this](int dy) {
-        p->fl_altura = std::max(p->fl_bobinas->altura_linha(), p->fl_altura_inicio + dy);
-        update_filaments_area_height();
-        m_scrolled_sizer->Layout();
-    };
-    p->fl_divisor->ao_soltar = [this] { wxGetApp().app_config->set("filuna_altura_bobinas", std::to_string(p->fl_altura)); };
-    scrolled_sizer->Add(p->fl_divisor, 0, wxEXPAND);
     // ---- End filament area ----
     }
 
@@ -4144,14 +4145,17 @@ Sidebar::Sidebar(Plater *parent)
     sizer->Add(p->scrolled, 1, wxEXPAND);
     SetSizer(sizer);
 
-    // Filuna: como o cliente deixou o menu (recolhido, altura das bobinas)
-    try {
-        p->fl_altura = std::max(0, std::stoi(wxGetApp().app_config->get("filuna_altura_bobinas")));
-    } catch (const std::exception&) {
-        p->fl_altura = 0;
-    }
+    // Filuna: como o cliente deixou o menu
     if (wxGetApp().app_config->get("filuna_lateral_recolhido") == "1")
         CallAfter([this] { p->fl_recolher(true); });
+    // Filuna: modo foco — o clique num ajuste do Processo recolhe impressora e filamentos numa faixa, e o Processo ganha
+    // a altura quase toda; a faixa (ou a seta do título) abre de novo. "filuna_foco_auto" = "0" desliga o automático.
+    if (auto* pp = ((MainFrame*) parent->GetParent())->m_param_panel)
+        pp->Bind(wxEVT_CHILD_FOCUS, [this](wxChildFocusEvent& e) {
+            e.Skip();
+            if (!p->fl_recolhido && wxGetMouseState().LeftIsDown() && wxGetApp().app_config->get("filuna_foco_auto") != "0")
+                CallAfter([this] { p->fl_recolher(true); });
+        });
 }
 
 Sidebar::~Sidebar() {}
@@ -5976,18 +5980,8 @@ void Sidebar::decompose_filament_color(int filament_idx)
 void Sidebar::update_filaments_area_height()
 // ORCA
 {
-    if (p->fl_bobinas) { // Filuna: as bobinas no lugar das listas escondidas; 2 linhas, ou o que a faixa de arrastar pediu
-        const int linha    = p->fl_bobinas->altura_linha();
-        const int conteudo = p->fl_bobinas->GetMinSize().y + FromDIP(12);
-        // sem arraste: as linhas que a preferência do Orca pede ("filamentos na área", 4 por linha)
-        int preferidos = 8;
-        try {
-            preferidos = std::max(1, std::stoi(wxGetApp().app_config->get("filaments_area_preferred_count")));
-        } catch (const std::exception&) {
-            preferidos = 8;
-        }
-        const int alvo = p->fl_altura > 0 ? p->fl_altura : int((preferidos + 3) / 4) * linha + FromDIP(12);
-        const int h        = std::min(conteudo, std::max(alvo, linha));
+    if (p->fl_bobinas) { // Filuna: a fileira de bobinas no lugar das listas escondidas (rola de lado)
+        const int h = p->fl_bobinas->GetMinSize().y + FromDIP(SidebarProps::ContentMargin());
         p->m_panel_filament_content->SetMaxSize(wxSize{-1, h});
         p->m_panel_filament_content->SetMinSize(wxSize{-1, h});
         update_filaments_counter();
