@@ -80,10 +80,12 @@ public:
     void definir_foto_mesa(const wxBitmap& foto);
     void definir(const wxString& bico, bool bico_selecionavel, const wxString& tipo_bico, const wxString& mesa, bool mesa_selecionavel);
     std::function<void(const wxRect& tela)> ao_bico, ao_tipo, ao_mesa; // área do seletor clicado, na tela
+    std::function<void()>                   ao_editar;                  // lápis na foto: editar o perfil da impressora
+    std::function<void(bool sobre, const wxRect& tela)> ao_mesa_sobre;  // o mouse entrou ou saiu da mesa
 
 private:
     void   pintar();
-    wxRect area(int i) const; // 1 = bico, 2 = tipo, 3 = mesa
+    wxRect area(int i) const; // 1 = bico, 2 = tipo, 3 = mesa, 4 = lápis
     wxBitmap m_foto, m_foto_mesa;
     wxString m_bico, m_tipo, m_mesa;
     bool     m_bico_sel{true}, m_mesa_sel{true};
@@ -206,7 +208,14 @@ private:
     wxRect area(int i) const;
     int    sob(const wxPoint& p) const;
     TabCtrl*                         m_abas;
-    std::vector<std::pair<int, wxString>> m_itens; // índice na lista original e o nome
+    struct Item
+    {
+        int      indice;
+        wxString nome;
+        wxColour cor; // a cor do nome na lista original: diferente do cinza = página com ajuste mudado
+        bool     operator==(const Item& o) const { return indice == o.indice && nome == o.nome && cor == o.cor; }
+    };
+    std::vector<Item>                m_itens;
     int                              m_sel{-1}, m_sobre{-1};
     wxTimer                          m_timer;
 };

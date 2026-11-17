@@ -331,23 +331,35 @@ CartaoImpressora::CartaoImpressora(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDef
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     SetMinSize(wxSize(FromDIP(220), FromDIP(116)));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
-    auto ativo = [this](int i) { return i == 1 ? m_bico_sel : i == 3 ? m_mesa_sel : i == 2; };
-    Bind(wxEVT_MOTION, [this, ativo](wxMouseEvent& e) {
+    auto ativo  = [this](int i) { return i == 1 ? m_bico_sel : i == 3 ? m_mesa_sel : true; };
+    auto mudar  = [this](int s) {
+        if (s == m_sobre)
+            return;
+        if ((s == 3) != (m_sobre == 3) && ao_mesa_sobre)
+            ao_mesa_sobre(s == 3, wxRect(ClientToScreen(area(3).GetTopLeft()), area(3).GetSize()));
+        m_sobre = s;
+        cursor_mao(this, s != 0);
+        Refresh();
+    };
+    Bind(wxEVT_MOTION, [this, ativo, mudar](wxMouseEvent& e) {
         int s = 0;
-        for (int i = 1; i <= 3; ++i)
+        for (int i = 1; i <= 4; ++i)
             if (ativo(i) && area(i).Contains(e.GetPosition()))
                 s = i;
-        if (s != m_sobre) {
-            m_sobre = s;
-            cursor_mao(this, s != 0);
-            Refresh();
-        }
+        mudar(s);
     });
-    Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&) { m_sobre = 0; cursor_mao(this, false); Refresh(); });
-    Bind(wxEVT_LEFT_UP, [this, ativo](wxMouseEvent& e) {
+    Bind(wxEVT_LEAVE_WINDOW, [mudar](wxMouseEvent&) { mudar(0); });
+    Bind(wxEVT_LEFT_UP, [this, ativo, mudar](wxMouseEvent& e) {
+        if (area(4).Contains(e.GetPosition())) {
+            if (ao_editar)
+                ao_editar();
+            return;
+        }
         for (int i = 1; i <= 3; ++i) {
             if (!ativo(i) || !area(i).Contains(e.GetPosition()))
                 continue;
+            if (i == 3)
+                mudar(0); // a lista da mesa abre: a imagem grande sai
             const wxRect tela(ClientToScreen(area(i).GetTopLeft()), area(i).GetSize());
             const auto&  cb = i == 1 ? ao_bico : i == 2 ? ao_tipo : ao_mesa;
             if (cb)
@@ -366,7 +378,8 @@ wxRect CartaoImpressora::area(int i) const
     switch (i) {
     case 1: return wxRect(x0, y1, w_bico, h);
     case 2: return wxRect(x0 + w_bico + gap, y1, w - w_bico - gap, h);
-    default: return wxRect(x0, y2, w, h);
+    case 3: return wxRect(x0, y2, w, h);
+    default: return wxRect(pad + foto - FromDIP(26), pad + FromDIP(4), FromDIP(22), FromDIP(22)); // lápis no canto da foto
     }
 }
 
@@ -415,6 +428,12 @@ void CartaoImpressora::pintar()
     seletor(*gc, this, area(1), wxString::FromUTF8("Bico"), m_bico, m_bico_sel, m_sobre == 1, LILAS_BORDA);
     seletor(*gc, this, area(2), wxString::FromUTF8("Tipo de bico"), m_tipo, true, m_sobre == 2, LILAS_BORDA);
     seletor(*gc, this, area(3), wxString::FromUTF8("Mesa"), m_mesa, m_mesa_sel, m_sobre == 3, ROSA_BORDA, ROSA, m_foto_mesa);
+    const wxRect l = area(4);
+    gc->SetPen(wxPen(m_sobre == 4 ? MAGENTA : LILAS_BORDA, FromDIP(1)));
+    gc->SetBrush(wxBrush(BRANCO));
+    gc->DrawEllipse(l.x, l.y, l.width, l.height);
+    desenhar_icone(*gc, this, Icone::lapis, wxRect2DDouble(l.x + FromDIP(4), l.y + FromDIP(4), l.width - FromDIP(8), l.height - FromDIP(8)),
+                   m_sobre == 4 ? MAGENTA : CINZA, false);
 }
 
 // ------------------------------------------------------------------------------------------------ bobinas
@@ -873,7 +892,7 @@ GradeAbas::GradeAbas(wxWindow* pai, TabCtrl* abas)
         const int i = sob(e.GetPosition());
         if (i < 0 || !m_abas)
             return;
-        m_abas->SelectItem(m_itens[i].first);
+        m_abas->SelectItem(m_itens[i].indice);
         conferir();
     });
     // As abas mudam com o modo (simples, avançado) e com a seleção feita por outros caminhos (busca, Ctrl+F).
@@ -886,9 +905,9 @@ void GradeAbas::conferir()
 {
     if (!m_abas || !IsShownOnScreen())
         return;
-    std::vector<std::pair<int, wxString>> itens;
+    std::vector<Item> itens;
     for (int i = m_abas->GetFirstVisibleItem(); i >= 0; i = m_abas->GetNextVisible(i))
-        itens.emplace_back(i, m_abas->GetItemText(i));
+        itens.push_back({i, m_abas->GetItemText(i), m_abas->GetItemTextColour(i)});
     const int sel = m_abas->GetSelection();
     if (itens == m_itens && sel == m_sel)
         return;
@@ -926,12 +945,20 @@ void GradeAbas::pintar()
         return;
     for (int i = 0; i < int(m_itens.size()); ++i) {
         const wxRect r   = area(i);
-        const bool   sel = m_itens[i].first == m_sel, s = i == m_sobre;
+        const Item&  it  = m_itens[i];
+        const bool   sel = it.indice == m_sel, s = i == m_sobre;
+        // o Orca pinta de cinza o nome da página sem mudança (fora de seleção); outra cor = página com ajuste mudado
+        const bool mudada = it.cor.IsOk() && (std::abs(it.cor.Red() - 0x6B) > 8 || std::abs(it.cor.Green() - 0x6B) > 8 || std::abs(it.cor.Blue() - 0x6C) > 8);
         gc->SetPen(s && !sel ? wxPen(MAGENTA, FromDIP(1)) : *wxTRANSPARENT_PEN);
         gc->SetBrush(wxBrush(sel ? MAGENTA : AREIA));
         gc->DrawRoundedRectangle(r.x + 0.5, r.y + 0.5, r.width - 1, r.height - 1, FromDIP(8));
-        texto_centro(*gc, this, m_itens[i].second, fonte(this, 9., true), sel ? BRANCO : TINTA, r.x + r.width / 2., r.y + (r.height - FromDIP(15)) / 2.,
-                     r.width - FromDIP(8));
+        texto_centro(*gc, this, it.nome, fonte(this, 9., true), sel ? BRANCO : mudada ? it.cor : TINTA, r.x + r.width / 2., r.y + (r.height - FromDIP(15)) / 2.,
+                     r.width - FromDIP(12));
+        if (mudada && sel) { // selecionada e mudada: o ponto na cor do Orca
+            gc->SetPen(wxPen(BRANCO, 1));
+            gc->SetBrush(wxBrush(it.cor));
+            gc->DrawEllipse(r.x + FromDIP(6), r.y + r.height / 2. - FromDIP(4), FromDIP(8), FromDIP(8));
+        }
     }
 }
 

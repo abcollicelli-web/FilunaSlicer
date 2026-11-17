@@ -67,6 +67,7 @@ public:
     void AssignImageList(wxImageList* imageList);
 
     void SetItemTextColour(unsigned int item, const StateColor& col);
+    wxColour GetItemTextColour(unsigned int item) const; // a cor do nome fora de seleção
 
     /* fakes */
     int GetFirstVisibleItem() const;

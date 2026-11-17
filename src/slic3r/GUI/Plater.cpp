@@ -936,6 +936,7 @@ struct Sidebar::priv
     int                              fl_sel           = 0;     // bobina selecionada
     int                              fl_altura        = 0;     // altura das bobinas escolhida na faixa de arrastar (0: a padrão)
     int                              fl_altura_inicio = 0;
+    std::string                      fl_mesa_imagem;           // imagem da mesa atual (a grande é "big_" + esta)
     void fl_criar();
     void fl_atualizar();
     bool fl_esconder_originais();
@@ -1216,6 +1217,27 @@ void Sidebar::priv::fl_criar()
     fl_impressora->ao_bico = [this](const wxRect& r) { fl_abrir(combo_nozzle_dia, r); };
     fl_impressora->ao_tipo = [this](const wxRect& r) { fl_tipo_bico(r); };
     fl_impressora->ao_mesa = [this](const wxRect& r) { fl_abrir(combo_printer_bed, r, fl_impressora->FromDIP(180)); };
+    // o lápis da impressora do Orca (aparecia ao passar o mouse): abre a aba do perfil da impressora
+    fl_impressora->ao_editar = [this] {
+        editing_filament = -1;
+        if (combo_printer->switch_to_tab())
+            editing_filament = 0;
+    };
+    // a imagem grande da mesa ao passar o mouse, como no Orca
+    fl_impressora->ao_mesa_sobre = [this](bool sobre, const wxRect& r) {
+        if (!sobre || fl_mesa_imagem.empty()) {
+            if (big_bed_image_popup && big_bed_image_popup->IsShown())
+                big_bed_image_popup->on_hide();
+            return;
+        }
+        if (!big_bed_image_popup)
+            big_bed_image_popup = new ImageDPIFrame();
+        big_bed_image_popup->set_bitmap(create_scaled_bitmap("big_" + fl_mesa_imagem, big_bed_image_popup, big_bed_image_popup->get_image_px()));
+        big_bed_image_popup->set_title(combo_printer_bed->GetString(combo_printer_bed->GetSelection()));
+        big_bed_image_popup->SetCanFocus(false);
+        big_bed_image_popup->SetPosition(wxPoint(r.GetRight() + fl_impressora->FromDIP(12), r.y - fl_impressora->FromDIP(60)));
+        big_bed_image_popup->on_show();
+    };
 
     // Mudanças que vêm de outros caminhos (sincronizar com a impressora, trocar a cor, o perfil…): o visual confere a
     // cada 0,7 s e só se redesenha quando algo mudou.
@@ -1293,6 +1315,7 @@ void Sidebar::priv::foto_impressora(const std::string& caminho)
 void Sidebar::priv::foto_mesa(const std::string& caminho)
 {
     image_printer_bed->SetBitmap(create_scaled_bitmap(caminho, scrolled, PRINTER_THUMBNAIL_SIZE.GetHeight()));
+    fl_mesa_imagem = caminho;
     if (fl_impressora)
         fl_impressora->definir_foto_mesa(create_scaled_bitmap(caminho, scrolled, 26));
 }
@@ -1407,10 +1430,13 @@ void Sidebar::priv::fl_atualizar()
         fl_barra_bobina->definir(wxString::Format(wxString::FromUTF8("Entrada %d"), fl_sel + 1), pr ? from_u8(pr->label(false)) : wxString(),
                                  infos[fl_sel].cor, infos.size() > 1);
     }
-    if (fl_barra)
-        fl_barra->definir({FilunaLateral::Botao{wxString::FromUTF8("Adicionar"), FilunaLateral::Icone::mais},
-                           FilunaLateral::Botao{wxString::FromUTF8("Sincronizar"), FilunaLateral::Icone::sincronizar},
-                           FilunaLateral::Botao{wxString::FromUTF8("Misto"), FilunaLateral::Icone::misto}});
+    if (fl_barra) { // as mesmas regras dos botões do Orca: sincronizar não durante o fatiamento; misto com 2 filamentos ou mais
+        FilunaLateral::Botao sinc{wxString::FromUTF8("Sincronizar"), FilunaLateral::Icone::sincronizar};
+        sinc.ativo = !plater->is_background_process_slicing();
+        FilunaLateral::Botao misto{wxString::FromUTF8("Misto"), FilunaLateral::Icone::misto};
+        misto.ativo = combos_filament.size() >= 2;
+        fl_barra->definir({FilunaLateral::Botao{wxString::FromUTF8("Adicionar"), FilunaLateral::Icone::mais}, sinc, misto});
+    }
     if (fl_resumo)
         fl_resumo->definir(wxString::FromUTF8("Bico ") + bico + wxString::FromUTF8(" · ") + tipo, wxString::FromUTF8("Mesa: ") + mesa, infos);
     // os ícones do título e o "Adicionar filamento misto" do Orca viraram os botões com nome
@@ -5953,7 +5979,14 @@ void Sidebar::update_filaments_area_height()
     if (p->fl_bobinas) { // Filuna: as bobinas no lugar das listas escondidas; 2 linhas, ou o que a faixa de arrastar pediu
         const int linha    = p->fl_bobinas->altura_linha();
         const int conteudo = p->fl_bobinas->GetMinSize().y + FromDIP(12);
-        const int alvo     = p->fl_altura > 0 ? p->fl_altura : 2 * linha + FromDIP(12);
+        // sem arraste: as linhas que a preferência do Orca pede ("filamentos na área", 4 por linha)
+        int preferidos = 8;
+        try {
+            preferidos = std::max(1, std::stoi(wxGetApp().app_config->get("filaments_area_preferred_count")));
+        } catch (const std::exception&) {
+            preferidos = 8;
+        }
+        const int alvo = p->fl_altura > 0 ? p->fl_altura : int((preferidos + 3) / 4) * linha + FromDIP(12);
         const int h        = std::min(conteudo, std::max(alvo, linha));
         p->m_panel_filament_content->SetMaxSize(wxSize{-1, h});
         p->m_panel_filament_content->SetMinSize(wxSize{-1, h});

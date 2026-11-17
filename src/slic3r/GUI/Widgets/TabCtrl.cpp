@@ -237,6 +237,14 @@ void TabCtrl::SetItemTextColour(unsigned int item, const StateColor& col)
     btns[item]->SetTextColor(col);
 }
 
+wxColour TabCtrl::GetItemTextColour(unsigned int item) const
+{
+    if (item >= btns.size())
+        return wxColour();
+    StateColor cor = btns[item]->GetTextColor(); // colorForStates não é const
+    return cor.colorForStates(StateColor::NotChecked);
+}
+
 int TabCtrl::GetFirstVisibleItem() const { return btns.size() == 0 ? -1 : 0; }
 
 int TabCtrl::GetNextVisible(int item) const { return ++item < btns.size() ? item : -1; }
