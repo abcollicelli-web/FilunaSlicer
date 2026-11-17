@@ -327,6 +327,54 @@ private:
     wxCheckBox*            m_nivelar{nullptr};
 };
 
+
+// Tempo, peso, custo, altura da camada e nome da mesa, tirados do fatiamento que está na tela: são os mesmos
+// números do rodapé da Preparação, para a tela de conferir não contar diferente do resto do programa.
+ResumoMesa resumo_da_mesa(const std::string& arquivo)
+{
+    ResumoMesa r;
+    r.arquivo = arquivo;
+
+    Plater*       plater = wxGetApp().plater();
+    PresetBundle* bundle = wxGetApp().preset_bundle;
+    if (plater == nullptr || bundle == nullptr)
+        return r;
+
+    if (const auto* o = bundle->prints.get_edited_preset().config.option<ConfigOptionFloat>("layer_height"))
+        r.altura_camada = o->value;
+    if (const auto* o = bundle->project_config.option<ConfigOptionEnum<BedType>>("curr_bed_type"))
+        r.mesa = bed_type_to_gcode_string(o->value);
+
+    PartPlate* plate = plater->get_partplate_list().get_curr_plate();
+    if (plate == nullptr || !plate->is_slice_result_valid() || plate->get_slice_result() == nullptr)
+        return r;
+
+    const auto& stats = plate->get_slice_result()->print_statistics;
+    std::map<size_t, double> volumes;
+    for (const auto* m : {&stats.model_volumes_per_extruder, &stats.support_volumes_per_extruder, &stats.wipe_tower_volumes_per_extruder})
+        for (const auto& [id, v] : *m)
+            volumes[id] += v;
+    for (const auto& [id, v] : volumes) {
+        if (v <= 0.)
+            continue;
+        double densidade = 1.24, preco_kg = 0.;
+        if (id < bundle->filament_presets.size())
+            if (const Preset* p = bundle->filaments.find_preset(bundle->filament_presets[id])) {
+                if (const auto* o = p->config.option<ConfigOptionFloats>("filament_density"); o && !o->values.empty() && o->values.front() > 0.)
+                    densidade = o->values.front();
+                if (const auto* o = p->config.option<ConfigOptionFloats>("filament_cost"); o && !o->values.empty())
+                    preco_kg = o->values.front();
+            }
+        const double g = v * densidade / 1000.;
+        r.gramas += g;
+        r.custo += g * preco_kg / 1000.;
+    }
+    const float t = stats.modes[static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Normal)].time;
+    if (t > 0.f)
+        r.tempo_s = static_cast<long long>(std::llround(t));
+    return r;
+}
+
 struct Andamento
 {
     std::mutex        m;
@@ -477,12 +525,23 @@ void imprimir(int plate_idx)
         }
     }
 
-    Janela    janela(wxGetApp().mainframe, o->get_dev_name(), nome, fila, es, fixa);
-    const int resposta = janela.ShowModal();
+    // Primeira tela: conferir arquivo, tempo, peso, custo, mesa e para qual entrada vai cada filamento.
+    std::vector<ItemFilamento> itens_fil;
+    for (const Filamento& f : fila)
+        itens_fil.push_back({f.indice, f.tipo, "#" + f.cor, 0.});
+    std::vector<ItemEntrada> itens_ent;
+    for (const Entrada& e : es)
+        itens_ent.push_back({e.global, e.tipo, "#" + e.cor});
+
+    JanelaConfirmar confirmar(wxGetApp().mainframe, wxString::FromUTF8(o->get_dev_name()), resumo_da_mesa(nome), itens_fil, itens_ent,
+                              fixa);
+    const int resposta = confirmar.ShowModal();
     if (resposta != wxID_OK && resposta != wxID_APPLY)
         return;
-    const Escolha esc      = janela.escolha();
-    const bool    so_envio = resposta == wxID_APPLY;
+    Escolha esc;
+    esc.nivelar           = confirmar.nivelar();
+    esc.entrada           = confirmar.entradas_escolhidas();
+    const bool so_envio   = resposta == wxID_APPLY;
     wxGetApp().app_config->set("filuna_imprimir_nivelar", esc.nivelar ? "1" : "0");
 
     // cópia com o nome que a impressora vai mostrar (o arquivo da mesa é temporário e tem nome interno)

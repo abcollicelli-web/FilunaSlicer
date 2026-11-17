@@ -14,7 +14,10 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
+class wxCheckBox;
+class wxChoice;
 class wxTimer;
 class wxTimerEvent;
 
@@ -58,6 +61,51 @@ private:
     Coluna*     m_coluna{nullptr};
     wxTimer*    m_relogio{nullptr};
     bool        m_cancelou{false}, m_projeto_novo{false}, m_terminou{false};
+};
+
+// ---------------------------------------------------------------------------------------------------------
+// Primeira das duas telas: conferir antes de imprimir. Depois dela vem a JanelaEnvio, que acompanha o envio.
+// ---------------------------------------------------------------------------------------------------------
+
+// Um filamento do projeto.
+struct ItemFilamento
+{
+    int         indice{0};       // 0 = primeiro filamento do projeto
+    std::string tipo, cor_hex;   // "PLA", "#E0186B"
+    double      gramas{0.};
+};
+
+// Uma entrada de filamento da impressora (carretel, slot do sistema de cores).
+struct ItemEntrada
+{
+    int         global{0};     // número da entrada na impressora
+    std::string tipo, cor_hex;
+};
+
+// O que a mesa fatiada custa e quanto demora.
+struct ResumoMesa
+{
+    std::string arquivo, mesa;     // nome do arquivo e nome da mesa (chapa) escolhida
+    long long   tempo_s{0};
+    double      gramas{0.}, custo{0.}, altura_camada{0.};
+    std::string moeda{"R$"};
+};
+
+class JanelaConfirmar : public wxDialog
+{
+public:
+    JanelaConfirmar(wxWindow* pai, const wxString& impressora, const ResumoMesa& resumo, const std::vector<ItemFilamento>& filamentos,
+                    const std::vector<ItemEntrada>& entradas, bool entrada_fixa);
+
+    bool             nivelar() const;
+    std::vector<int> entradas_escolhidas() const; // por filamento do projeto: índice em `entradas`
+
+private:
+    class Resumo; // os quatro números, desenhados
+
+    std::vector<ItemEntrada> m_entradas;
+    std::vector<wxChoice*>   m_escolhas;
+    wxCheckBox*              m_nivelar{nullptr};
 };
 
 }} // namespace Slic3r::GUI

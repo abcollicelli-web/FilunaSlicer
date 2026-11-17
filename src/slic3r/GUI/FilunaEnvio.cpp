@@ -6,10 +6,14 @@
 #include "MainFrame.hpp"
 #include "Plater.hpp"
 #include "I18N.hpp"
+#include "libslic3r/AppConfig.hpp"
 
 #include <wx/button.h>
 #include <wx/dcbuffer.h>
 #include <wx/graphics.h>
+#include <wx/sizer.h>
+#include <wx/checkbox.h>
+#include <wx/choice.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/timer.h>
@@ -406,6 +410,241 @@ void JanelaEnvio::montar_fim(bool deu_certo, const wxString& recado)
 
     SetClientSize(FromDIP(LARGURA), FromDIP(ALTURA) + FromDIP(RODAPE) + (deu_certo ? FromDIP(22) : 0));
     Layout();
+}
+
+// ==============================================================================================
+// A tela de conferir antes de imprimir.
+// ==============================================================================================
+
+namespace {
+
+wxColour cor_de(const std::string& hex)
+{
+    if (hex.size() >= 7 && hex[0] == '#') {
+        long r = 0, g = 0, b = 0;
+        wxString(hex.substr(1, 2)).ToLong(&r, 16);
+        wxString(hex.substr(3, 2)).ToLong(&g, 16);
+        wxString(hex.substr(5, 2)).ToLong(&b, 16);
+        return wxColour(uint8_t(r), uint8_t(g), uint8_t(b));
+    }
+    return AREIA_ESCURA;
+}
+
+wxString tempo_curto(long long s)
+{
+    if (s <= 0) return wxString::FromUTF8("—");
+    const long long h = s / 3600, m = (s % 3600 + 30) / 60;
+    return h > 0 ? wxString::Format("%lldh%02lld", h, m) : wxString::Format("%lldmin", m);
+}
+
+// Um quadradinho de cor, como o do estoque do Filuna.
+wxPanel* amostra(wxWindow* pai, const wxColour& c)
+{
+    auto* p = new wxPanel(pai, wxID_ANY, wxDefaultPosition, pai->FromDIP(wxSize(16, 16)));
+    p->SetBackgroundColour(c);
+    return p;
+}
+
+} // namespace
+
+// Os quatro números da mesa, desenhados no estilo Filuna.
+class JanelaConfirmar::Resumo : public wxPanel
+{
+public:
+    Resumo(wxWindow* pai, const ResumoMesa& r) : wxPanel(pai, wxID_ANY), m_r(r)
+    {
+        SetBackgroundStyle(wxBG_STYLE_PAINT);
+        SetMinSize(wxSize(-1, FromDIP(62)));
+        Bind(wxEVT_PAINT, &Resumo::ao_pintar, this);
+    }
+
+private:
+    void ao_pintar(wxPaintEvent&)
+    {
+        wxAutoBufferedPaintDC dc(this);
+        auto                  gcp = comecar(this, dc);
+        if (!gcp) return;
+        wxGraphicsContext& gc = *gcp;
+        const wxSize       s  = GetClientSize();
+
+        struct { wxString titulo, valor; } campos[4] = {
+            {wxString::FromUTF8("Tempo"), tempo_curto(m_r.tempo_s)},
+            {wxString::FromUTF8("Peso"), m_r.gramas > 0. ? wxString::Format("%.1f g", m_r.gramas) : wxString::FromUTF8("—")},
+            {wxString::FromUTF8("Custo"), m_r.custo > 0. ? wxString::FromUTF8(m_r.moeda + " ") + wxString::Format("%.2f", m_r.custo)
+                                                         : wxString::FromUTF8("—")},
+            {wxString::FromUTF8("Camada"), m_r.altura_camada > 0. ? wxString::Format("%.2f mm", m_r.altura_camada)
+                                                                  : wxString::FromUTF8("—")},
+        };
+
+        const double vao = FromDIP(8), larg = (s.x - vao * 3) / 4.;
+        for (int i = 0; i < 4; ++i) {
+            const double x = i * (larg + vao);
+            gc.SetBrush(wxBrush(AREIA));
+            gc.SetPen(wxPen(AREIA_BORDA, 1));
+            gc.DrawRoundedRectangle(x, 0, larg, s.y, FromDIP(10));
+            texto_centro(gc, this, campos[i].titulo, fonte(this, 8, false), CINZA, x + larg / 2., FromDIP(10), int(larg) - FromDIP(8));
+            texto_centro(gc, this, campos[i].valor, fonte(this, 12.5, true), TINTA, x + larg / 2., FromDIP(28), int(larg) - FromDIP(8));
+        }
+    }
+
+    ResumoMesa m_r;
+};
+
+JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, const ResumoMesa& resumo,
+                                 const std::vector<ItemFilamento>& filamentos, const std::vector<ItemEntrada>& entradas,
+                                 bool entrada_fixa)
+    : wxDialog(pai, wxID_ANY, wxString::FromUTF8("Imprimir"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
+    , m_entradas(entradas)
+{
+    SetBackgroundColour(BRANCO);
+    auto* v = new wxBoxSizer(wxVERTICAL);
+
+    // --- faixa magenta
+    auto* faixa = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, FromDIP(56)));
+    faixa->SetBackgroundColour(MAGENTA);
+    {
+        auto* fs = new wxBoxSizer(wxVERTICAL);
+        auto* t1 = new wxStaticText(faixa, wxID_ANY, wxString::FromUTF8("Conferir antes de imprimir"));
+        t1->SetForegroundColour(BRANCO);
+        t1->SetFont(fonte(faixa, 12, true));
+        auto* t2 = new wxStaticText(faixa, wxID_ANY, impressora);
+        t2->SetForegroundColour(wxColour(0xFF, 0xE3, 0xEE));
+        t2->SetFont(fonte(faixa, 9, false));
+        fs->AddStretchSpacer();
+        fs->Add(t1, 0, wxLEFT | wxRIGHT, FromDIP(18));
+        fs->Add(t2, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(2));
+        fs->AddStretchSpacer();
+        faixa->SetSizer(fs);
+    }
+    v->Add(faixa, 0, wxEXPAND);
+
+    auto titulo_secao = [this, v](const char* t) {
+        auto* x = new wxStaticText(this, wxID_ANY, wxString::FromUTF8(t));
+        x->SetFont(fonte(this, 8.5, true));
+        x->SetForegroundColour(CINZA);
+        v->Add(x, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+    };
+
+    // --- o arquivo
+    titulo_secao("ARQUIVO");
+    {
+        auto* a = new wxStaticText(this, wxID_ANY, wxString::FromUTF8(resumo.arquivo));
+        a->SetFont(fonte(this, 10.5, false));
+        v->Add(a, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+    }
+
+    // --- os quatro números
+    v->Add(new Resumo(this, resumo), 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+
+    // --- a mesa
+    titulo_secao("MESA");
+    {
+        auto* l = new wxBoxSizer(wxHORIZONTAL);
+        auto* m = new wxStaticText(this, wxID_ANY, wxString::FromUTF8(resumo.mesa.empty() ? "A que está na impressora" : resumo.mesa));
+        m->SetFont(fonte(this, 10, false));
+        l->Add(m, 0, wxALIGN_CENTER_VERTICAL);
+        l->AddStretchSpacer();
+        m_nivelar = new wxCheckBox(this, wxID_ANY, wxString::FromUTF8("Nivelar a mesa antes"));
+        m_nivelar->SetValue(wxGetApp().app_config->get("filuna_imprimir_nivelar") != "0");
+        l->Add(m_nivelar, 0, wxALIGN_CENTER_VERTICAL);
+        v->Add(l, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+    }
+
+    // --- os filamentos
+    if (!filamentos.empty() && !entradas.empty()) {
+        titulo_secao("FILAMENTO");
+        wxArrayString nomes;
+        for (const ItemEntrada& e : entradas)
+            nomes.Add(wxString::FromUTF8("Entrada " + std::to_string(e.global + 1) + (e.tipo.empty() ? "" : " · " + e.tipo)));
+
+        auto* g = new wxFlexGridSizer(5, FromDIP(8), FromDIP(10));
+        g->AddGrowableCol(2);
+        for (const ItemFilamento& f : filamentos) {
+            g->Add(amostra(this, cor_de(f.cor_hex)), 0, wxALIGN_CENTER_VERTICAL);
+
+            wxString rotulo = wxString::FromUTF8("Filamento " + std::to_string(f.indice + 1) + (f.tipo.empty() ? "" : " · " + f.tipo));
+            if (f.gramas > 0.) rotulo += wxString::Format("  (%.1f g)", f.gramas);
+            auto* nome = new wxStaticText(this, wxID_ANY, rotulo);
+            nome->SetFont(fonte(this, 9.5, false));
+            g->Add(nome, 0, wxALIGN_CENTER_VERTICAL);
+
+            auto* seta = new wxStaticText(this, wxID_ANY, wxString::FromUTF8("→"));
+            seta->SetForegroundColour(AREIA_ESCURA);
+            g->Add(seta, 0, wxALIGN_CENTER_VERTICAL);
+
+            int k = 0;
+            for (std::size_t q = 0; q < entradas.size(); ++q)
+                if (entradas[q].global == f.indice) k = int(q);
+            auto* escolha = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, nomes);
+            escolha->SetSelection(k);
+            if (entrada_fixa) escolha->Disable();
+            g->Add(escolha, 0, wxALIGN_CENTER_VERTICAL);
+            m_escolhas.push_back(escolha);
+
+            auto* destino = amostra(this, cor_de(entradas[k].cor_hex));
+            escolha->Bind(wxEVT_CHOICE, [this, escolha, destino](wxCommandEvent&) {
+                const int s = escolha->GetSelection();
+                if (s >= 0 && s < int(m_entradas.size())) {
+                    destino->SetBackgroundColour(cor_de(m_entradas[s].cor_hex));
+                    destino->Refresh();
+                }
+            });
+            g->Add(destino, 0, wxALIGN_CENTER_VERTICAL);
+        }
+        v->Add(g, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+
+        if (entrada_fixa) {
+            auto* n = new wxStaticText(this, wxID_ANY,
+                                       wxString::FromUTF8("Nesta impressora o filamento 1 do projeto sai da Entrada 1, o 2 da Entrada 2, "
+                                                          "e assim por diante."));
+            n->SetFont(fonte(this, 8.5, false));
+            n->SetForegroundColour(CINZA);
+            v->Add(n, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+        }
+    } else if (entradas.empty()) {
+        titulo_secao("FILAMENTO");
+        auto* n = new wxStaticText(this, wxID_ANY,
+                                   wxString::FromUTF8("A impressora não informou um sistema de cores. Vai sair com o filamento que já "
+                                                      "está carregado nela."));
+        n->SetFont(fonte(this, 9.5, false));
+        n->SetForegroundColour(CINZA);
+        v->Add(n, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+    }
+
+    // --- rodapé
+    auto* rodape = new wxPanel(this, wxID_ANY);
+    rodape->SetBackgroundColour(ROSA_CLARO);
+    {
+        auto* b = new wxBoxSizer(wxHORIZONTAL);
+        b->AddStretchSpacer();
+        auto* cancel = new wxButton(rodape, wxID_CANCEL, wxString::FromUTF8("Cancelar"));
+        auto* so_env = new wxButton(rodape, wxID_APPLY, wxString::FromUTF8("Só enviar o arquivo"));
+        auto* ok     = new wxButton(rodape, wxID_OK, wxString::FromUTF8("Imprimir"));
+        ok->SetDefault();
+        so_env->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { EndModal(wxID_APPLY); });
+        b->Add(cancel, 0, wxRIGHT, FromDIP(8));
+        b->Add(so_env, 0, wxRIGHT, FromDIP(8));
+        b->Add(ok, 0);
+        rodape->SetSizer(b);
+        b->SetMinSize(wxSize(-1, FromDIP(44)));
+    }
+    v->Add(rodape, 0, wxEXPAND | wxTOP, FromDIP(14));
+
+    SetSizerAndFit(v);
+    SetMinSize(wxSize(FromDIP(520), -1));
+    Fit();
+    CentreOnParent();
+    wxGetApp().UpdateDlgDarkUI(this);
+}
+
+bool JanelaConfirmar::nivelar() const { return m_nivelar != nullptr && m_nivelar->GetValue(); }
+
+std::vector<int> JanelaConfirmar::entradas_escolhidas() const
+{
+    std::vector<int> r;
+    r.reserve(m_escolhas.size());
+    for (wxChoice* c : m_escolhas) r.push_back(c->GetSelection());
+    return r;
 }
 
 }} // namespace Slic3r::GUI
