@@ -390,9 +390,10 @@ struct Andamento
 
 bool agente_filuna()
 {
-    PresetBundle* bundle = wxGetApp().preset_bundle;
-    if (bundle == nullptr || bundle->use_bbl_network())
+    if (wxGetApp().preset_bundle == nullptr)
         return false;
+    // Conectou pelo Filuna (agente da marca)? Então imprime pelas telas do Filuna, seja qual for a marca —
+    // inclusive Bambu. Sem isso o cliente via a janela do Orca numa marca e a do Filuna na outra.
     return boost::starts_with(agente_ativo(), "filuna_");
 }
 
