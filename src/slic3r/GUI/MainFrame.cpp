@@ -1,5 +1,6 @@
 #include "MainFrame.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaMakerWorld.hpp"
 #include "FilunaImpressao.hpp"
 #include "FilunaAutoajuda.hpp"
 #include <initializer_list>
@@ -1702,6 +1703,12 @@ void MainFrame::init_tabpanel() {
     m_lazy_pages.push_back(m_filuna_modelos_page);
     m_tabpanel->AddPage(TAB_ID_FILUNA_MODELOS, m_filuna_modelos_page, wxString::FromUTF8("Modelos 3D"), "tab_auxiliary_active");
 
+    // MakerWorld: o site oficial numa aba; o que ele manda abrir num fatiador vem direto para a Preparação
+    m_filuna_makerworld_page = new LazyPage<FilunaMakerWorld>(m_tabpanel, TAB_ID_FILUNA_MAKERWORLD, 26,
+                                                              [](wxWindow* parent) { return new FilunaMakerWorld(parent); });
+    m_lazy_pages.push_back(m_filuna_makerworld_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_MAKERWORLD, m_filuna_makerworld_page, wxString::FromUTF8("MakerWorld"), "tab_auxiliary_active");
+
     m_monitor_page = new LazyPage<MonitorPanel>(m_tabpanel, TAB_ID_MONITOR, 20);
     m_lazy_pages.push_back(m_monitor_page);
     m_tabpanel->AddPage(TAB_ID_MONITOR, m_monitor_page, _L("Printer panel"), "tab_monitor_active");
@@ -1920,8 +1927,9 @@ void MainFrame::fit_tab_labels()
     // Filuna pages (Dispositivo › Painel da impressora, Meu espaço › Minha loja), but get no button here.
     // Paramétricos/Ferramentas e Modelos 3D abrem pelo menu da tela inicial (ordem do dono, 15/11/2026); a Farm também
     // (16/11/2026: com Novo e Salvar na barra, o botão Fatiar ficava escondido)
+    // MakerWorld também abre pelo menu da tela inicial (ordem do dono, 17/11/2026)
     for (const char* id : {TAB_ID_MONITOR, TAB_ID_MONITOR_WEB, TAB_ID_MULTI_DEVICE, TAB_ID_CALIBRATION, TAB_ID_FILUNA_STORE, TAB_ID_FILUNA_PARAM,
-                           TAB_ID_FILUNA_MODELOS, TAB_ID_FILUNA_FARM})
+                           TAB_ID_FILUNA_MODELOS, TAB_ID_FILUNA_FARM, TAB_ID_FILUNA_MAKERWORLD})
         if (const int idx = m_tabpanel->FindPageByName(id); idx != wxNOT_FOUND)
             m_tabpanel->GetBtnsListCtrl()->ShowPageButton(size_t(idx), false);
 

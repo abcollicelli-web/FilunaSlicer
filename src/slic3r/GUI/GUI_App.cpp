@@ -3510,6 +3510,8 @@ bool GUI_App::on_init_inner()
             associate_files(L"stp");
         }
         associate_url(L"orcaslicer"); // Filuna: assume orcaslicer:// (decisão do dono; último a registrar vence)
+        if (app_config->get("filuna_makerworld_navegador") == "1") // MakerWorld pelo navegador do cliente (opção da aba)
+            associate_url(L"bambustudioopen");
 
         if (app_config->get("associate_gcode") == "true")
             associate_files(L"gcode");
@@ -9289,6 +9291,8 @@ void GUI_App::open_preferences(PreferencesTab tab, const std::string& highlight_
                     associate_files(L"stp");
                 }
                 associate_url(L"orcaslicer"); // Filuna: assume orcaslicer:// (decisão do dono; último a registrar vence)
+        if (app_config->get("filuna_makerworld_navegador") == "1") // MakerWorld pelo navegador do cliente (opção da aba)
+            associate_url(L"bambustudioopen");
             }
             else {
                 if (app_config->get("associate_gcode") == "true")
