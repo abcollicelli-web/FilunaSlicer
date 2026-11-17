@@ -1,5 +1,6 @@
 #include "MainFrame.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaMakerWorld.hpp"
 #include "FilunaImpressao.hpp"
 #include "FilunaAutoajuda.hpp"
 #include <initializer_list>
@@ -1701,6 +1702,12 @@ void MainFrame::init_tabpanel() {
                                                       [](wxWindow* parent) { return new FilunaPanel(parent, "modelos-3d.html"); });
     m_lazy_pages.push_back(m_filuna_modelos_page);
     m_tabpanel->AddPage(TAB_ID_FILUNA_MODELOS, m_filuna_modelos_page, wxString::FromUTF8("Modelos 3D"), "tab_auxiliary_active");
+
+    // MakerWorld: o site oficial numa aba; o que ele manda abrir num fatiador vem direto para a Preparação
+    m_filuna_makerworld_page = new LazyPage<FilunaMakerWorld>(m_tabpanel, TAB_ID_FILUNA_MAKERWORLD, 26,
+                                                              [](wxWindow* parent) { return new FilunaMakerWorld(parent); });
+    m_lazy_pages.push_back(m_filuna_makerworld_page);
+    m_tabpanel->AddPage(TAB_ID_FILUNA_MAKERWORLD, m_filuna_makerworld_page, wxString::FromUTF8("MakerWorld"), "tab_auxiliary_active");
 
     m_monitor_page = new LazyPage<MonitorPanel>(m_tabpanel, TAB_ID_MONITOR, 20);
     m_lazy_pages.push_back(m_monitor_page);

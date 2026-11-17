@@ -61,6 +61,7 @@
 #define TAB_ID_FILUNA_FARM   "filuna.farm"
 #define TAB_ID_FILUNA_PARAM  "filuna.parametricos"
 #define TAB_ID_FILUNA_MODELOS "filuna.modelos"
+#define TAB_ID_FILUNA_MAKERWORLD "filuna.makerworld"
 
 #define ENABEL_PRINT_ALL 0
 
@@ -101,6 +102,7 @@ class Input_Shaping_Damp_Test_Dlg;
 class Cornering_Test_Dlg;
 template <class Panel> class LazyPage;
 class FilunaPanel;
+class FilunaMakerWorld;
 class Plater;
 #ifdef SLIC3R_CAD
 class DesignPanel;
@@ -553,6 +555,7 @@ public:
     LazyPage<FilunaPanel>* m_filuna_farm_page { nullptr };
     LazyPage<FilunaPanel>* m_filuna_param_page { nullptr };
     LazyPage<FilunaPanel>* m_filuna_modelos_page { nullptr };
+    LazyPage<FilunaMakerWorld>* m_filuna_makerworld_page { nullptr }; // site oficial do MakerWorld
     LazyPage<PrinterWebView>* m_printer_view_page{nullptr};
     PluginPages           m_plugin_pages;
     wxLogWindow*          m_log_window { nullptr };
