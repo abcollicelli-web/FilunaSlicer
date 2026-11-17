@@ -21,6 +21,7 @@
 #include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "libslic3r/GCode/GCodeStatistics.hpp"
+#include "libslic3r/SLAPrint.hpp"
 #include <ios>
 #include <iomanip>
 #include "libslic3r/Arrange.hpp"
@@ -5404,6 +5405,17 @@ void PartPlate::update_slice_context(BackgroundSlicingProcess & process)
 		}
 		wxQueueEvent(m_plater, event);
 	};
+
+	// Filuna: em impressora de resina quem fatia é o SLAPrint, que mora no Plater; o m_print da placa é só de
+	// filamento. Sem isto o processo de fundo ficava sem fatiador e a resina não fatiava nada.
+	if (this->printer_technology == ptSLA && m_plater != nullptr) {
+		SLAPrint &sla_print = m_plater->sla_print();
+		process.set_sla_print(&sla_print);
+		process.set_current_plate(this);
+		sla_print.set_status_callback(statuscb);
+		process.select_technology(ptSLA);
+		return;
+	}
 
 	process.set_fff_print(m_print);
 	process.set_gcode_result(m_gcode_result);

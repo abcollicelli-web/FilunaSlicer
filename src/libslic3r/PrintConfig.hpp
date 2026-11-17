@@ -2368,6 +2368,15 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                       material_correction_y))
     ((ConfigOptionFloat,                       material_correction_z))
     ((ConfigOptionEnum<SLAMaterialSpeed>,      material_print_speed))
+
+    // Filuna: o que as impressoras de resina LCD pedem e o perfil do PrusaSlicer não tem.
+    ((ConfigOptionInt,                         sla_bottom_layers))
+    ((ConfigOptionInt,                         sla_light_pwm))
+    ((ConfigOptionInt,                         sla_bottom_light_pwm))
+    ((ConfigOptionFloat,                       sla_light_off_delay))
+    ((ConfigOptionFloat,                       sla_bottom_light_off_delay))
+    ((ConfigOptionFloat,                       sla_rest_time_before_lift))
+    ((ConfigOptionFloat,                       sla_rest_time_after_lift))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
@@ -2398,6 +2407,14 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                      max_exposure_time))
     ((ConfigOptionFloat,                      min_initial_exposure_time))
     ((ConfigOptionFloat,                      max_initial_exposure_time))
+
+    // Filuna: formato do arquivo que a impressora lê (SL1 ou CXDLPV4) e o movimento da plataforma.
+    ((ConfigOptionString,                     sla_archive_format))
+    ((ConfigOptionFloat,                      sla_lift_height))
+    ((ConfigOptionFloat,                      sla_lift_speed))
+    ((ConfigOptionFloat,                      sla_bottom_lift_height))
+    ((ConfigOptionFloat,                      sla_bottom_lift_speed))
+    ((ConfigOptionFloat,                      sla_retract_speed))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(

@@ -23369,7 +23369,12 @@ const DynamicPrintConfig * Plater::config() const { return p->config; }
 bool Plater::set_printer_technology(PrinterTechnology printer_technology)
 {
     p->printer_technology = printer_technology;
+    // Filuna: as placas precisam saber a tecnologia para entregar o fatiador certo (resina ou filamento).
+    p->partplate_list.printer_technology = printer_technology;
+    for (int i = 0; i < p->partplate_list.get_plate_count(); ++i)
+        if (PartPlate *placa = p->partplate_list.get_plate(i)) placa->printer_technology = printer_technology;
     bool ret = p->background_process.select_technology(printer_technology);
+    p->partplate_list.update_slice_context_to_current_plate(p->background_process);
     if (ret) {
         // Update the active presets.
     }

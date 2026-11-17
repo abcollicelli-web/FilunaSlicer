@@ -134,6 +134,18 @@ if(ORCA_TOOLS)
     target_compile_definitions(OrcaSlicer_profile_validator PRIVATE -DBOOST_ALL_NO_LIB -DBOOST_USE_WINAPI_VERSION=0x602 -DBOOST_SYSTEM_USE_UTF8)
 endif()
 
+# Filuna: laboratório da resina. Fatia um modelo e grava o arquivo da impressora pela linha de comando, para
+# conferir o .cxdlpv4 sem abrir a janela. Só compila quando se pede o alvo; não entra no pacote do cliente.
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/filuna_lab/laboratorio.cpp)
+    add_executable(filuna_lab_resina EXCLUDE_FROM_ALL filuna_lab/laboratorio.cpp)
+    # Sem LTO a ordem das bibliotecas importa: o TBB entra de novo no fim, para fechar o que o OpenVDB usa.
+    find_library(FILUNA_LAB_TBB NAMES tbb PATHS ${CMAKE_PREFIX_PATH}/lib NO_DEFAULT_PATH)
+    find_library(FILUNA_LAB_TBBMALLOC NAMES tbbmalloc PATHS ${CMAKE_PREFIX_PATH}/lib NO_DEFAULT_PATH)
+    target_link_libraries(filuna_lab_resina libslic3r boost_headeronly nanosvg libcurl OpenSSL::SSL OpenSSL::Crypto
+        -Wl,--start-group ${FILUNA_LAB_TBB} ${FILUNA_LAB_TBBMALLOC} -Wl,--end-group)
+    target_compile_definitions(filuna_lab_resina PRIVATE -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_USE_UTF8)
+endif()
+
 # Create a slic3r executable
 # Process manifests for various platforms.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/dev-utils/platform/msw/OrcaSlicer.rc.in ${CMAKE_CURRENT_BINARY_DIR}/OrcaSlicer.rc @ONLY)

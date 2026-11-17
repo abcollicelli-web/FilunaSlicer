@@ -41,6 +41,7 @@
 #include "libslic3r/Utils.hpp"
 #include "PostProcessor.hpp"
 #include "libslic3r/Format/SL1.hpp"
+#include "libslic3r/Format/CXDLP.hpp"
 #include "libslic3r/Thread.hpp"
 #include "libslic3r/libslic3r.h"
 
@@ -344,17 +345,22 @@ void BackgroundSlicingProcess::process_sla()
 
             const std::string export_path = m_sla_print->print_statistics().finalize_output_path(m_export_path);
 
-            // BBS: add plate id for thumbnail generation
-            ThumbnailsList thumbnails = this->render_thumbnails(
-                ThumbnailsParams{current_print()->full_print_config().option<ConfigOptionPoints>("thumbnails")->values, true, true, true,
-                                 true, 0});
+            if (m_sla_archive.cxdlp()) {
+                // Creality HALOT: um binário só, que o cliente leva no pendrive.
+                m_sla_archive.exportar(export_path, *m_sla_print);
+            } else {
+                // BBS: add plate id for thumbnail generation
+                ThumbnailsList thumbnails = this->render_thumbnails(
+                    ThumbnailsParams{current_print()->full_print_config().option<ConfigOptionPoints>("thumbnails")->values, true, true,
+                                     true, true, 0});
 
-            Zipper zipper(export_path);
-            m_sla_archive.export_print(zipper, *m_sla_print); // true, false, true, true); // renders also supports and pad
-            for (const ThumbnailData& data : thumbnails)
-                if (data.is_valid())
-                    write_thumbnail(zipper, data);
-            zipper.finalize();
+                Zipper zipper(export_path);
+                m_sla_archive.export_print(zipper, *m_sla_print); // true, false, true, true); // renders also supports and pad
+                for (const ThumbnailData& data : thumbnails)
+                    if (data.is_valid())
+                        write_thumbnail(zipper, data);
+                zipper.finalize();
+            }
 
             // m_print->set_status(100, (boost::format(_utf8(L("Masked SLA file exported to %1%"))) % export_path).str());
             m_print->set_status(100, (boost::format(_utf8("Masked SLA file exported to %1%")) % export_path).str());
@@ -1024,15 +1030,20 @@ void BackgroundSlicingProcess::prepare_upload()
         m_upload_job.upload_data.upload_path = m_sla_print->print_statistics().finalize_output_path(
             m_upload_job.upload_data.upload_path.string());
 
-        ThumbnailsList thumbnails = this->render_thumbnails(
-            ThumbnailsParams{current_print()->full_print_config().option<ConfigOptionPoints>("thumbnails")->values, true, true, true, true});
-        // true, false, true, true); // renders also supports and pad
-        Zipper zipper{source_path.string()};
-        m_sla_archive.export_print(zipper, *m_sla_print, m_upload_job.upload_data.upload_path.string());
-        for (const ThumbnailData& data : thumbnails)
-            if (data.is_valid())
-                write_thumbnail(zipper, data);
-        zipper.finalize();
+        if (m_sla_archive.cxdlp()) {
+            m_sla_archive.exportar(source_path.string(), *m_sla_print);
+        } else {
+            ThumbnailsList thumbnails = this->render_thumbnails(
+                ThumbnailsParams{current_print()->full_print_config().option<ConfigOptionPoints>("thumbnails")->values, true, true, true,
+                                 true});
+            // true, false, true, true); // renders also supports and pad
+            Zipper zipper{source_path.string()};
+            m_sla_archive.export_print(zipper, *m_sla_print, m_upload_job.upload_data.upload_path.string());
+            for (const ThumbnailData& data : thumbnails)
+                if (data.is_valid())
+                    write_thumbnail(zipper, data);
+            zipper.finalize();
+        }
     }
 
     m_print->set_status(100, (boost::format(_utf8(L("Scheduling upload to `%1%`. See Window -> Print Host Upload Queue"))) %

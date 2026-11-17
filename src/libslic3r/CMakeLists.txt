@@ -234,6 +234,8 @@ set(lisbslic3r_sources
     Format/ResourcePathUtils.hpp
     Format/objparser.cpp
     Format/objparser.hpp
+    Format/CXDLP.cpp
+    Format/CXDLP.hpp
     Format/SL1.cpp
     Format/SL1.hpp
     Format/STEP.cpp

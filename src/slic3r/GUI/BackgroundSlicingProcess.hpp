@@ -21,6 +21,7 @@
 #include "libslic3r/PrintBase.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Format/SL1.hpp"
+#include "libslic3r/Format/CXDLP.hpp"
 #include "slic3r/Utils/PrintHost.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 
@@ -255,7 +256,8 @@ private:
 	GCodeProcessorResult     *m_gcode_result 		 = nullptr;
 	// Callback function, used to write thumbnails into gcode.
 	ThumbnailsGeneratorCallback m_thumbnail_cb 	     = nullptr;
-	SL1Archive                  m_sla_archive;
+	// Grava o .sl1 do Prusa ou o .cxdlpv4 das Creality HALOT, conforme a impressora escolhida.
+	CXDLPArchive                m_sla_archive;
 		// Temporary G-code, there is one defined for the BackgroundSlicingProcess, differentiated from the other processes by a process ID.
 	std::string 				m_temp_output_path;
 	// Output path provided by the user. The output path may be set even if the slicing is running,

@@ -1708,6 +1708,13 @@ static std::vector<std::string> s_Preset_sla_material_options {
     "material_correction_z",
     "material_vendor",
     "material_print_speed",
+    "sla_bottom_layers",
+    "sla_light_pwm",
+    "sla_bottom_light_pwm",
+    "sla_light_off_delay",
+    "sla_bottom_light_off_delay",
+    "sla_rest_time_before_lift",
+    "sla_rest_time_after_lift",
     "default_sla_material_profile",
     "compatible_prints", "compatible_prints_condition",
     "compatible_printers", "compatible_printers_condition", "inherits"
@@ -1730,6 +1737,10 @@ static std::vector<std::string> s_Preset_sla_printer_options {
     "gamma_correction",
     "min_exposure_time", "max_exposure_time",
     "min_initial_exposure_time", "max_initial_exposure_time",
+    "sla_archive_format",
+    "sla_lift_height", "sla_lift_speed",
+    "sla_bottom_lift_height", "sla_bottom_lift_speed",
+    "sla_retract_speed",
     "inherits"
 };
 
@@ -4571,8 +4582,8 @@ std::string PresetCollection::name() const
     switch (this->type()) {
     case Preset::TYPE_PRINT:        return L(PRESET_PRINT_NAME);
     case Preset::TYPE_FILAMENT:     return L(PRESET_FILAMENT_NAME);
-    //case Preset::TYPE_SLA_PRINT:    return L("SLA print");
-    //case Preset::TYPE_SLA_MATERIAL: return L("SLA material");
+    case Preset::TYPE_SLA_PRINT:    return L("SLA print");
+    case Preset::TYPE_SLA_MATERIAL: return L("SLA material");
     case Preset::TYPE_PRINTER:      return L(PRESET_PRINTER_NAME);
     default:                        return "invalid";
     }
@@ -4584,8 +4595,8 @@ std::string PresetCollection::section_name() const
     switch (this->type()) {
     case Preset::TYPE_PRINT:        return PRESET_PRINT_NAME;
     case Preset::TYPE_FILAMENT:     return PRESET_FILAMENT_NAME;
-    //case Preset::TYPE_SLA_PRINT:    return PRESET_SLA_PRINT_NAME;
-    //case Preset::TYPE_SLA_MATERIAL: return PRESET_SLA_MATERIALS_NAME;
+    case Preset::TYPE_SLA_PRINT:    return PRESET_SLA_PRINT_NAME;
+    case Preset::TYPE_SLA_MATERIAL: return PRESET_SLA_MATERIALS_NAME;
     case Preset::TYPE_PRINTER:      return PRESET_PRINTER_NAME;
     default:                        return "invalid";
     }
