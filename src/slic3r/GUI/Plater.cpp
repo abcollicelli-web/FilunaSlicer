@@ -1,6 +1,7 @@
 #include "Plater.hpp"
 #include "FilunaPanel.hpp"
 #include "FilunaLateral.hpp"
+#include "FilunaFilamento.hpp"
 #include "slic3r/Filuna/FilunaDb.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaImpressao.hpp"
@@ -919,19 +920,33 @@ struct Sidebar::priv
 
     ImageDPIFrame *big_bed_image_popup = nullptr;
 
-    // Filuna: visual fixo da parte de cima do menu (FilunaLateral). Só visual: as listas acima continuam fazendo o
-    // trabalho, escondidas; cada clique no visual abre a lista original no lugar clicado.
-    FilunaLateral::Faixa*            fl_faixa      = nullptr;
-    FilunaLateral::CartaoImpressora* fl_impressora = nullptr;
-    FilunaLateral::CartaoMesa*       fl_mesa       = nullptr;
-    FilunaLateral::Bobinas*          fl_bobinas    = nullptr;
-    wxTimer*                         fl_timer      = nullptr;
-    bool                             fl_mesa_tipos = false; // a impressora tem tipos de mesa para escolher
+    // Filuna: visual fixo do menu (FilunaLateral, proposta 2). As listas e botões do Orca continuam fazendo o trabalho,
+    // escondidos; o visual abre a lista original no lugar clicado ou chama o mesmo código do botão original.
+    FilunaLateral::Faixa*            fl_faixa         = nullptr;
+    FilunaLateral::CartaoImpressora* fl_impressora    = nullptr;
+    FilunaLateral::Bobinas*          fl_bobinas       = nullptr;
+    FilunaLateral::Botoes*           fl_barra         = nullptr; // Adicionar, Sincronizar, Misto
+    FilunaLateral::BarraBobina*      fl_barra_bobina  = nullptr; // Cor, Trocar, Ajustes, Tirar da bobina selecionada
+    FilunaLateral::Resumo*           fl_resumo        = nullptr; // a parte de cima recolhida
+    FilunaLateral::Divisor*          fl_divisor       = nullptr;
+    FilunaLateral::Botoes*           fl_recolher_btn  = nullptr;
+    wxTimer*                         fl_timer         = nullptr;
+    bool                             fl_mesa_tipos    = false; // a impressora tem tipos de mesa para escolher
+    bool                             fl_recolhido     = false;
+    int                              fl_sel           = 0;     // bobina selecionada
+    int                              fl_altura        = 0;     // altura das bobinas escolhida na faixa de arrastar (0: a padrão)
+    int                              fl_altura_inicio = 0;
     void fl_criar();
     void fl_atualizar();
     bool fl_esconder_originais();
     void fl_abrir(ComboBox* combo, const wxRect& tela, int largura_min = 0);
     void fl_tipo_bico(const wxRect& tela);
+    void fl_recolher(bool recolher);
+    void fl_adicionar();
+    void fl_trocar(int entrada);
+    void fl_ajustes(int entrada);
+    void fl_aplicar_filamento(int entrada, const std::string& preset, const wxColour& cor);
+    std::vector<FilunaLateral::InfoBobina> fl_infos() const;
     void foto_impressora(const std::string& caminho);
     void foto_mesa(const std::string& caminho);
     // Printer - sync
@@ -1192,19 +1207,15 @@ void Sidebar::priv::fl_criar()
         return;
     fl_faixa      = new FilunaLateral::Faixa(m_panel_printer_content);
     fl_impressora = new FilunaLateral::CartaoImpressora(m_panel_printer_content);
-    fl_mesa       = new FilunaLateral::CartaoMesa(m_panel_printer_content);
-    auto* linha   = new wxBoxSizer(wxHORIZONTAL);
-    linha->Add(fl_impressora, 1, wxEXPAND);
-    linha->Add(fl_mesa, 0, wxEXPAND | wxLEFT, fl_faixa->FromDIP(8));
-    auto* bloco = new wxBoxSizer(wxVERTICAL);
+    auto* bloco   = new wxBoxSizer(wxVERTICAL);
     bloco->Add(fl_faixa, 0, wxEXPAND);
-    bloco->Add(linha, 0, wxEXPAND | wxTOP, fl_faixa->FromDIP(10));
+    bloco->Add(fl_impressora, 0, wxEXPAND | wxTOP, fl_faixa->FromDIP(8));
     vsizer_printer->Insert(0, bloco, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, fl_faixa->FromDIP(SidebarProps::ContentMargin()));
 
     fl_faixa->ao_clicar = [this] { fl_abrir(combo_printer, wxRect(fl_faixa->GetScreenPosition(), fl_faixa->GetSize())); };
     fl_impressora->ao_bico = [this](const wxRect& r) { fl_abrir(combo_nozzle_dia, r); };
     fl_impressora->ao_tipo = [this](const wxRect& r) { fl_tipo_bico(r); };
-    fl_mesa->ao_clicar     = [this](const wxRect& r) { fl_abrir(combo_printer_bed, r, fl_mesa->FromDIP(180)); };
+    fl_impressora->ao_mesa = [this](const wxRect& r) { fl_abrir(combo_printer_bed, r, fl_impressora->FromDIP(180)); };
 
     // Mudanças que vêm de outros caminhos (sincronizar com a impressora, trocar a cor, o perfil…): o visual confere a
     // cada 0,7 s e só se redesenha quando algo mudou.
@@ -1275,13 +1286,15 @@ void Sidebar::priv::foto_impressora(const std::string& caminho)
     image_printer->SetBitmap(create_scaled_bitmap(caminho, scrolled, PRINTER_THUMBNAIL_SIZE.GetHeight()));
     if (fl_impressora)
         fl_impressora->definir_foto(create_scaled_bitmap(caminho, scrolled, 100));
+    if (fl_resumo)
+        fl_resumo->definir_foto(create_scaled_bitmap(caminho, scrolled, 46));
 }
 
 void Sidebar::priv::foto_mesa(const std::string& caminho)
 {
     image_printer_bed->SetBitmap(create_scaled_bitmap(caminho, scrolled, PRINTER_THUMBNAIL_SIZE.GetHeight()));
-    if (fl_mesa)
-        fl_mesa->definir_foto(create_scaled_bitmap(caminho, scrolled, 56));
+    if (fl_impressora)
+        fl_impressora->definir_foto_mesa(create_scaled_bitmap(caminho, scrolled, 26));
 }
 
 namespace {
@@ -1334,6 +1347,32 @@ wxString estoque_filuna(const std::string& material, const std::string& cor_hex,
 }
 } // namespace
 
+std::vector<FilunaLateral::InfoBobina> Sidebar::priv::fl_infos() const
+{
+    PresetBundle&                          pb = *wxGetApp().preset_bundle;
+    std::vector<FilunaLateral::InfoBobina> v;
+    const auto*                            cores = pb.project_config.option<ConfigOptionStrings>("filament_colour");
+    for (size_t i = 0; i < pb.filament_presets.size(); ++i) {
+        const Preset* pr = pb.filaments.find_preset(pb.filament_presets[i]);
+        std::string   marca, tipo_f;
+        if (pr && pr->config.has("filament_vendor"))
+            marca = pr->config.opt_string("filament_vendor", 0u);
+        if (pr && pr->config.has("filament_type"))
+            tipo_f = pr->config.opt_string("filament_type", 0u);
+        const std::string hex = cores && i < cores->values.size() ? cores->values[i] : std::string("#FFFFFF");
+        FilunaLateral::InfoBobina b;
+        b.numero = wxString::Format("%d", int(i + 1));
+        b.cor    = wxColour(wxString::FromUTF8(hex.substr(0, 7)));
+        if (!b.cor.IsOk())
+            b.cor = *wxWHITE;
+        b.marca   = wxString::FromUTF8(marca == "Generic" ? std::string() : marca);
+        b.tipo    = wxString::FromUTF8(tipo_f.empty() ? std::string("?") : tipo_f);
+        b.estoque = estoque_filuna(tipo_f, hex, marca);
+        v.push_back(b);
+    }
+    return v;
+}
+
 void Sidebar::priv::fl_atualizar()
 {
     if (!fl_impressora)
@@ -1350,48 +1389,153 @@ void Sidebar::priv::fl_atualizar()
     bico.Replace(".", ",");
     if (!bico.empty() && !bico.Contains("mm"))
         bico += " mm";
-    const wxString tipo = label_nozzle_type ? label_nozzle_type->GetLabel() : wxString("-");
-    fl_impressora->definir(bico, combo_nozzle_dia && combo_nozzle_dia->GetCount() > 1, tipo == "-" ? _L("Undefined") : tipo);
-    if (fl_mesa)
-        fl_mesa->definir(fl_mesa_tipos && combo_printer_bed && combo_printer_bed->GetSelection() >= 0 ?
-                             combo_printer_bed->GetString(combo_printer_bed->GetSelection()) : wxString::FromUTF8("Padrão"),
-                         fl_mesa_tipos && combo_printer_bed && combo_printer_bed->IsEnabled());
-    // bobinas: perfil, cor e estoque de cada filamento do projeto
-    if (fl_bobinas) {
-        std::vector<FilunaLateral::InfoBobina> v;
-        const auto* cores = pb.project_config.option<ConfigOptionStrings>("filament_colour");
-        for (size_t i = 0; i < pb.filament_presets.size(); ++i) {
-            const Preset*   pr  = pb.filaments.find_preset(pb.filament_presets[i]);
-            std::string     marca, tipo_f;
-            if (pr && pr->config.has("filament_vendor"))
-                marca = pr->config.opt_string("filament_vendor", 0u);
-            if (pr && pr->config.has("filament_type"))
-                tipo_f = pr->config.opt_string("filament_type", 0u);
-            const std::string hex = cores && i < cores->values.size() ? cores->values[i] : std::string("#FFFFFF");
-            FilunaLateral::InfoBobina b;
-            b.numero  = wxString::Format("%d", int(i + 1));
-            b.cor     = wxColour(wxString::FromUTF8(hex.substr(0, 7)));
-            if (!b.cor.IsOk())
-                b.cor = *wxWHITE;
-            b.marca   = wxString::FromUTF8(marca == "Generic" ? std::string() : marca);
-            b.tipo    = wxString::FromUTF8(tipo_f.empty() ? std::string("?") : tipo_f);
-            b.estoque = estoque_filuna(tipo_f, hex, marca);
-            v.push_back(b);
+    const wxString tipo_lido = label_nozzle_type ? label_nozzle_type->GetLabel() : wxString("-");
+    const wxString tipo      = tipo_lido == "-" ? _L("Undefined") : tipo_lido;
+    const wxString mesa      = fl_mesa_tipos && combo_printer_bed && combo_printer_bed->GetSelection() >= 0 ?
+                                   combo_printer_bed->GetString(combo_printer_bed->GetSelection()) :
+                                   wxString::FromUTF8("Padrão");
+    fl_impressora->definir(bico, combo_nozzle_dia && combo_nozzle_dia->GetCount() > 1, tipo, mesa,
+                           fl_mesa_tipos && combo_printer_bed && combo_printer_bed->IsEnabled());
+    if (!fl_bobinas)
+        return;
+    const auto infos = fl_infos();
+    fl_sel           = std::clamp(fl_sel, 0, std::max(0, int(infos.size()) - 1));
+    const int antes  = fl_bobinas->GetMinSize().y;
+    fl_bobinas->definir(infos, fl_sel);
+    if (fl_barra_bobina && fl_sel < int(infos.size())) {
+        const Preset* pr = pb.filaments.find_preset(pb.filament_presets[fl_sel]);
+        fl_barra_bobina->definir(wxString::Format(wxString::FromUTF8("Entrada %d"), fl_sel + 1), pr ? from_u8(pr->label(false)) : wxString(),
+                                 infos[fl_sel].cor, infos.size() > 1);
+    }
+    if (fl_barra)
+        fl_barra->definir({FilunaLateral::Botao{wxString::FromUTF8("Adicionar"), FilunaLateral::Icone::mais},
+                           FilunaLateral::Botao{wxString::FromUTF8("Sincronizar"), FilunaLateral::Icone::sincronizar},
+                           FilunaLateral::Botao{wxString::FromUTF8("Misto"), FilunaLateral::Icone::misto}});
+    if (fl_resumo)
+        fl_resumo->definir(wxString::FromUTF8("Bico ") + bico + wxString::FromUTF8(" · ") + tipo, wxString::FromUTF8("Mesa: ") + mesa, infos);
+    // os ícones do título e o "Adicionar filamento misto" do Orca viraram os botões com nome
+    bool titulo_mudou = false;
+    for (wxWindow* w : std::initializer_list<wxWindow*>{m_bpButton_add_filament, m_bpButton_del_filament, m_bpButton_ams_filament, m_btn_add_mixed_filament})
+        if (w && w->IsShown()) {
+            w->Hide();
+            titulo_mudou = true;
         }
-        const int antes = fl_bobinas->GetMinSize().y;
-        fl_bobinas->definir(v);
-        // as linhas originais dos filamentos ficam escondidas (continuam criadas e funcionando)
-        const bool alguma_visivel = std::any_of(combos_filament.begin(), combos_filament.end(), [](PlaterPresetComboBox* c) {
-            return c && (c->IsShown() || (c->edit_btn && c->edit_btn->IsShown()));
-        });
-        if (alguma_visivel)
-            sizer_filaments->ShowItems(false);
-        if (alguma_visivel || antes != fl_bobinas->GetMinSize().y) {
-            m_panel_filament_content->Layout();
-            plater->sidebar().update_filaments_area_height();
-            scrolled->Layout();
+    if (titulo_mudou) {
+        m_panel_filament_title->Layout();
+        m_filament_area_wrapper->Layout();
+    }
+    // as linhas originais dos filamentos ficam escondidas (continuam criadas e funcionando)
+    const bool alguma_visivel = std::any_of(combos_filament.begin(), combos_filament.end(), [](PlaterPresetComboBox* c) {
+        return c && (c->IsShown() || (c->edit_btn && c->edit_btn->IsShown()));
+    });
+    if (alguma_visivel)
+        sizer_filaments->ShowItems(false);
+    if (alguma_visivel || titulo_mudou || antes != fl_bobinas->GetMinSize().y) {
+        m_panel_filament_content->Layout();
+        plater->sidebar().update_filaments_area_height();
+        scrolled->Layout();
+    }
+    // recolhido: o Orca pode ter mostrado de novo alguma parte (trocar de impressora refaz o painel)
+    if (fl_recolhido && (m_panel_printer_content->IsShown() || m_filament_area_wrapper->IsShown()))
+        fl_recolher(true);
+}
+
+// Recolhe a impressora e os filamentos num resumo de duas linhas (o Processo fica com quase a tela inteira) ou abre.
+void Sidebar::priv::fl_recolher(bool recolher)
+{
+    fl_recolhido = recolher;
+    for (wxWindow* w : std::initializer_list<wxWindow*>{m_panel_printer_content, m_panel_filament_title, m_filament_area_wrapper, fl_divisor})
+        if (w)
+            w->Show(!recolher);
+    for (wxWindow* w : std::initializer_list<wxWindow*>{m_panel_printer_separator, m_panel_filament_separator})
+        if (w)
+            w->Hide();
+    if (fl_resumo)
+        fl_resumo->Show(recolher);
+    if (fl_recolher_btn)
+        fl_recolher_btn->definir({FilunaLateral::Botao{wxString(), recolher ? FilunaLateral::Icone::seta_baixo : FilunaLateral::Icone::seta_cima}});
+    if (m_text_printer_settings && combo_printer)
+        m_text_printer_settings->SetLabel(recolher ? _L("Printer") + "  |  " + combo_printer->GetValue() : _L("Printer"));
+    wxGetApp().app_config->set("filuna_lateral_recolhido", recolher ? "1" : "0");
+    scrolled->Layout();
+}
+
+void Sidebar::priv::fl_adicionar()
+{
+    const size_t antes = combos_filament.size();
+    plater->sidebar().add_filament();
+    plater->sidebar().update_filaments_counter();
+    if (combos_filament.size() <= antes)
+        return; // o Orca não deixou (limite de filamentos)
+    fl_sel           = int(combos_filament.size()) - 1;
+    const int entrada = fl_sel;
+    fl_atualizar();
+    wxGetApp().CallAfter([this, entrada] { fl_trocar(entrada); }); // a entrada nova já abre a janela, começando pela cor
+}
+
+void Sidebar::priv::fl_trocar(int entrada)
+{
+    if (entrada < 0 || entrada >= int(combos_filament.size()))
+        return;
+    FilunaFilamento::JanelaFilamento janela(wxGetApp().mainframe, entrada);
+    const int                        r = janela.ShowModal();
+    if (r == FilunaFilamento::CADASTRAR_NOVO) {
+        CreateFilamentPresetDialog cadastro(wxGetApp().mainframe);
+        cadastro.ShowModal();
+        return;
+    }
+    if (r != wxID_OK && r != FilunaFilamento::ABRIR_AJUSTES)
+        return;
+    fl_aplicar_filamento(entrada, janela.preset(), janela.cor());
+    if (r == FilunaFilamento::ABRIR_AJUSTES)
+        wxGetApp().CallAfter([this, entrada] { fl_ajustes(entrada); });
+}
+
+void Sidebar::priv::fl_ajustes(int entrada)
+{
+    if (entrada < 0 || entrada >= int(combos_filament.size()) || !combos_filament[entrada])
+        return;
+    FilunaFilamento::JanelaAjustesFilamento janela(wxGetApp().mainframe, entrada);
+    if (janela.ShowModal() == FilunaFilamento::AJUSTES_AVANCADOS) { // a aba completa do Orca, como o lápis do Orca faz
+        editing_filament = -1;
+        if (combos_filament[entrada]->switch_to_tab())
+            editing_filament = entrada;
+    }
+}
+
+// Escolhe o perfil pela própria lista do Orca (o mesmo caminho de quem escolhe nela) e grava a cor como o seletor de
+// cor do Orca grava.
+void Sidebar::priv::fl_aplicar_filamento(int entrada, const std::string& preset, const wxColour& cor)
+{
+    PlaterPresetComboBox* c = entrada < int(combos_filament.size()) ? combos_filament[entrada] : nullptr;
+    if (!c)
+        return;
+    PresetBundle& pb = *wxGetApp().preset_bundle;
+    if (!preset.empty() && preset != pb.filament_presets[entrada]) {
+        for (unsigned j = 0; j < c->GetCount(); ++j) {
+            const wxString    alias = c->GetItemAlias(j);
+            const std::string nome  = alias.empty() ? pb.get_preset_name_by_alias(Preset::TYPE_FILAMENT,
+                                                                                  Preset::remove_suffix_modified(c->GetString(j).ToUTF8().data())) :
+                                                      Preset::remove_suffix_modified(alias.ToUTF8().data());
+            if (nome != preset)
+                continue;
+            c->SetSelection(int(j));
+            wxCommandEvent e(wxEVT_COMBOBOX, c->GetId());
+            e.SetEventObject(c);
+            e.SetInt(int(j));
+            e.SetString(c->GetString(j));
+            c->GetEventHandler()->ProcessEvent(e);
+            break;
         }
     }
+    if (!cor.IsOk())
+        return;
+    const std::string hex = cor.GetAsString(wxC2S_HTML_SYNTAX).ToStdString();
+    wxGetApp().CallAfter([this, entrada, hex] {
+        if (entrada < int(combos_filament.size()) && combos_filament[entrada])
+            combos_filament[entrada]->sync_colour_config({hex}, false);
+        fl_atualizar();
+    });
 }
 
 void Sidebar::priv::flush_printer_sync(bool restart)
@@ -3112,6 +3256,13 @@ Sidebar::Sidebar(Plater *parent)
         //h_sizer_title->AddStretchSpacer();
         h_sizer_title->Add(p->m_printer_connect , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
         h_sizer_title->Add(p->m_printer_bbl_sync, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
+        // Filuna: recolher impressora e filamentos num resumo (o Processo fica com quase a tela inteira)
+        p->fl_recolher_btn = new FilunaLateral::Botoes(p->m_panel_printer_title, false);
+        p->fl_recolher_btn->SetMinSize(wxSize(FromDIP(30), FromDIP(26)));
+        p->fl_recolher_btn->SetToolTip(wxString::FromUTF8("Recolher ou abrir impressora e filamentos"));
+        p->fl_recolher_btn->definir({FilunaLateral::Botao{wxString(), FilunaLateral::Icone::seta_cima}});
+        p->fl_recolher_btn->ao_clicar = [this](int, const wxRect&) { p->fl_recolher(!p->fl_recolhido); };
+        h_sizer_title->Add(p->fl_recolher_btn, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
         h_sizer_title->Add(p->m_printer_setting, 0, wxALIGN_CENTER);
         h_sizer_title->AddSpacer(FromDIP(SidebarProps::TitlebarMargin()));
         h_sizer_title->SetMinSize(-1, 3 * em);
@@ -3137,10 +3288,24 @@ Sidebar::Sidebar(Plater *parent)
         });
         p->m_panel_printer_title->Bind(wxEVT_LEFT_DOWN  , toggle_printer_section);
         p->m_panel_printer_title->Bind(wxEVT_LEFT_DCLICK, toggle_printer_section);
+        // Filuna: recolhido, o clique no título abre tudo (depois do Orca abrir a parte da impressora)
+        p->m_panel_printer_title->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& e) {
+            if (p->fl_recolhido)
+                CallAfter([this] { p->fl_recolher(false); });
+            e.Skip();
+        });
         // ORCA add bottom border for seperation wile sections folded
         p->m_panel_printer_separator = new wxPanel(p->scrolled, wxID_ANY, wxDefaultPosition, wxSize(-1, FromDIP(2))); // ORCA staticline class not works without string
         p->m_panel_printer_separator->SetBackgroundColour("#FFFFFF");
         scrolled_sizer->Add(p->m_panel_printer_separator, 0, wxEXPAND);
+        p->fl_resumo               = new FilunaLateral::Resumo(p->scrolled);
+        p->fl_resumo->ao_abrir     = [this] { p->fl_recolher(false); };
+        p->fl_resumo->ao_adicionar = [this] {
+            p->fl_recolher(false);
+            p->fl_adicionar();
+        };
+        scrolled_sizer->Add(p->fl_resumo, 0, wxEXPAND | wxALL, FromDIP(SidebarProps::ContentMargin()));
+        p->fl_resumo->Hide();
 
         /*************************** 2. add printer content ************************/
 
@@ -3668,13 +3833,11 @@ Sidebar::Sidebar(Plater *parent)
     wxSizer *sizer_filaments2 = new wxBoxSizer(wxVERTICAL);
     // Filuna: as bobinas (4 por linha) no lugar das listas, que ficam escondidas fazendo o trabalho
     p->fl_bobinas = new FilunaLateral::Bobinas(p->m_panel_filament_content);
-    p->fl_bobinas->ao_clicar = [this](int i, const wxRect& r) {
-        if (i < 0 || i >= int(p->combos_filament.size()) || !p->combos_filament[i])
-            return;
-        const int largura = std::max(r.width, p->m_panel_filament_content->GetClientSize().x - FromDIP(8));
-        const wxPoint em_cima = p->m_panel_filament_content->ScreenToClient(r.GetTopLeft());
-        p->fl_abrir(p->combos_filament[i], wxRect(p->m_panel_filament_content->ClientToScreen(wxPoint(FromDIP(4), em_cima.y)), wxSize(largura, r.height)));
+    p->fl_bobinas->ao_clicar    = [this](int i) {
+        p->fl_sel = i;
+        p->fl_atualizar();
     };
+    p->fl_bobinas->ao_adicionar = [this] { p->fl_adicionar(); };
     p->fl_bobinas->ao_menu = [this](int i, const wxPoint& tela) {
         if (i < 0 || i >= int(p->combos_filament.size()) || !p->combos_filament[i])
             return;
@@ -3696,7 +3859,34 @@ Sidebar::Sidebar(Plater *parent)
     
     update_filaments_area_height(); // ORCA
 
+    // Filuna: os botões com nome no lugar dos ícones do título
+    p->fl_barra            = new FilunaLateral::Botoes(p->m_filament_area_wrapper, false);
+    p->fl_barra->ao_clicar = [this](int i, const wxRect&) {
+        if (i == 0)
+            p->fl_adicionar();
+        else if (i == 1)
+            sync_ams_list();
+        else
+            add_mixed_filament();
+    };
+    wrapper_sizer->Add(p->fl_barra, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(SidebarProps::ContentMargin()));
     wrapper_sizer->Add(p->m_panel_filament_content, 0, wxEXPAND);
+    // Filuna: a bobina selecionada, com Cor, Trocar, Ajustes e Tirar à vista
+    p->fl_barra_bobina             = new FilunaLateral::BarraBobina(p->m_filament_area_wrapper);
+    p->fl_barra_bobina->ao_cor     = [this](const wxRect&) {
+        if (p->fl_sel < int(p->combos_filament.size()) && p->combos_filament[p->fl_sel])
+            p->combos_filament[p->fl_sel]->show_default_color_picker();
+    };
+    p->fl_barra_bobina->ao_trocar  = [this] { p->fl_trocar(p->fl_sel); };
+    p->fl_barra_bobina->ao_ajustes = [this] { p->fl_ajustes(p->fl_sel); };
+    p->fl_barra_bobina->ao_tirar   = [this] {
+        if (p->combos_filament.size() < 2)
+            return;
+        delete_filament(size_t(p->fl_sel));
+        update_filaments_counter();
+        p->fl_atualizar();
+    };
+    wrapper_sizer->Add(p->fl_barra_bobina, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(SidebarProps::ContentMargin()));
 
     // ---- Mixed-color filament section ----
     // A mixed filament is a virtual slot realized from 2-3 physical filaments at slicing time.
@@ -3822,6 +4012,16 @@ Sidebar::Sidebar(Plater *parent)
     p->m_filament_area_wrapper->SetSizer(wrapper_sizer);
     p->m_filament_area_wrapper->Layout();
     scrolled_sizer->Add(p->m_filament_area_wrapper, 0, wxEXPAND | wxTOP | wxBOTTOM, FromDIP(SidebarProps::ContentMarginV())); // ORCA use vertical margin on parent otherwise it shows scrollbar even on 1 filament
+    // Filuna: puxar para cima dá mais altura ao Processo (as bobinas rolam); a altura escolhida fica gravada
+    p->fl_divisor              = new FilunaLateral::Divisor(p->scrolled);
+    p->fl_divisor->ao_comecar  = [this] { p->fl_altura_inicio = p->m_panel_filament_content->GetSize().y; };
+    p->fl_divisor->ao_arrastar = [this](int dy) {
+        p->fl_altura = std::max(p->fl_bobinas->altura_linha(), p->fl_altura_inicio + dy);
+        update_filaments_area_height();
+        m_scrolled_sizer->Layout();
+    };
+    p->fl_divisor->ao_soltar = [this] { wxGetApp().app_config->set("filuna_altura_bobinas", std::to_string(p->fl_altura)); };
+    scrolled_sizer->Add(p->fl_divisor, 0, wxEXPAND);
     // ---- End filament area ----
     }
 
@@ -3917,6 +4117,15 @@ Sidebar::Sidebar(Plater *parent)
     auto *sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(p->scrolled, 1, wxEXPAND);
     SetSizer(sizer);
+
+    // Filuna: como o cliente deixou o menu (recolhido, altura das bobinas)
+    try {
+        p->fl_altura = std::max(0, std::stoi(wxGetApp().app_config->get("filuna_altura_bobinas")));
+    } catch (const std::exception&) {
+        p->fl_altura = 0;
+    }
+    if (wxGetApp().app_config->get("filuna_lateral_recolhido") == "1")
+        CallAfter([this] { p->fl_recolher(true); });
 }
 
 Sidebar::~Sidebar() {}
@@ -5741,11 +5950,13 @@ void Sidebar::decompose_filament_color(int filament_idx)
 void Sidebar::update_filaments_area_height()
 // ORCA
 {
-    if (p->fl_bobinas) { // Filuna: as bobinas (126 px por linha de 4) no lugar das listas escondidas
-        const int preferidas = std::max(4, std::stoi(wxGetApp().app_config->get("filaments_area_preferred_count")));
-        const int maximo     = int(std::ceil(preferidas / 4.)) * FromDIP(132) + FromDIP(12);
-        p->m_panel_filament_content->SetMaxSize(wxSize{-1, maximo});
-        p->m_panel_filament_content->SetMinSize({-1, std::min(maximo, p->fl_bobinas->GetMinSize().y + FromDIP(12))});
+    if (p->fl_bobinas) { // Filuna: as bobinas no lugar das listas escondidas; 2 linhas, ou o que a faixa de arrastar pediu
+        const int linha    = p->fl_bobinas->altura_linha();
+        const int conteudo = p->fl_bobinas->GetMinSize().y + FromDIP(12);
+        const int alvo     = p->fl_altura > 0 ? p->fl_altura : 2 * linha + FromDIP(12);
+        const int h        = std::min(conteudo, std::max(alvo, linha));
+        p->m_panel_filament_content->SetMaxSize(wxSize{-1, h});
+        p->m_panel_filament_content->SetMinSize(wxSize{-1, h});
         update_filaments_counter();
         return;
     }
@@ -8373,8 +8584,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                                          .Movable(false)
                                          .Dockable(false)
                                          .Resizable(false)
-                                         .MinSize(wxSize(-1, q->FromDIP(68)))
-                                         .BestSize(wxSize(-1, q->FromDIP(68))));
+                                         .MinSize(wxSize(-1, q->FromDIP(44)))
+                                         .BestSize(wxSize(-1, q->FromDIP(44))));
 
     // The UV editor pane is added by make_uv_editor().
     // Closing the pane with its own X has to reach the gizmo, or its next update would simply show the pane again.

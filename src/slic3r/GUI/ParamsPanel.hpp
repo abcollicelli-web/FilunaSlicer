@@ -66,6 +66,8 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////
 /// Class ParamsPanel
 ///////////////////////////////////////////////////////////////////////////////
+namespace FilunaLateral { class Botoes; }
+
 class ParamsPanel : public wxPanel
 {
 #if __WXOSX__
@@ -117,6 +119,8 @@ class ParamsPanel : public wxPanel
         wxBoxSizer* m_page_sizer { nullptr };
 
         ScalableButton*		m_setting_btn { nullptr };
+        FilunaLateral::Botoes* m_filuna_ferramentas { nullptr }; // Filuna: Visibilidade, Avançado, Por objeto, Comparar
+        void filuna_ferramentas_atualizar();
         ScalableButton*		m_search_btn { nullptr };
         ScalableButton*		m_compare_btn { nullptr };
 

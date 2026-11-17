@@ -527,6 +527,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/FilunaPanel.hpp
     GUI/FilunaLateral.cpp
     GUI/FilunaLateral.hpp
+    GUI/FilunaFilamento.cpp
+    GUI/FilunaFilamento.hpp
     GUI/ProjectDirtyStateManager.cpp
     GUI/ProjectDirtyStateManager.hpp
     GUI/Project.hpp

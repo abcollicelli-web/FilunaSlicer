@@ -6,11 +6,13 @@
 <style>
 /* Barra inferior da Preparação (referência 01-preparacao.png): sugestão de venda, peso, custo, tempo, aviso, IA Filuna e Autoajuda. */
 html,body{background:#fff;overflow:hidden;height:100%}
-.r{height:100%;display:flex;align-items:center;gap:28px;padding:0 24px;border-top:1px solid var(--line)}
-.bl span{display:block;font-size:12.5px;color:var(--ink2)}.bl b{display:block;font-size:17px;font-weight:800;margin-top:2px;white-space:nowrap}
-.venda{cursor:pointer;min-width:150px}.venda b{color:var(--magenta-deep)}
-.num{min-width:78px}
-.div{width:1px;align-self:stretch;margin:12px 0;background:var(--line)}
+/* Uma linha só (44 px): rótulo e valor lado a lado, para sobrar altura para o Processo. */
+.r{height:100%;display:flex;align-items:center;gap:22px;padding:0 18px;border-top:1px solid var(--line)}
+.bl{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.bl span{font-size:12px;color:var(--ink2)}.bl b{font-size:14px;font-weight:800}
+.venda{cursor:pointer;min-width:0}.venda b{color:var(--magenta-deep)}
+.num{min-width:0}
+.div{width:1px;align-self:stretch;margin:10px 0;background:var(--line)}
 #dica{flex:1;min-width:0;font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #dica b{color:var(--ink)}
 .dir{display:flex;align-items:center;gap:22px;flex:none}

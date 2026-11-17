@@ -37,6 +37,7 @@
 #include <cstddef>
 #include <boost/log/trivial.hpp>
 #include <wx/wupdlock.h>
+#include "FilunaLateral.hpp"
 #include <vector>
 
 
@@ -317,6 +318,26 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
         m_setting_btn->SetToolTip(_L("View all object's settings"));
         m_setting_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent &) { wxGetApp().plater()->PopupObjectTable(-1, -1, {0, 0}); });
 
+        // Filuna: as mesmas 4 ferramentas, maiores e com nome (os ícones pequenos do Orca ficam escondidos)
+        m_filuna_ferramentas = new FilunaLateral::Botoes(m_top_panel, true);
+        m_filuna_ferramentas->ao_clicar = [this](int i, const wxRect &) {
+            switch (i) {
+            case 0: // Visibilidade: o mesmo que o ícone do Orca (simples → avançado → especialista)
+                if (wxGetApp().get_mode() != comDevelop && m_mode_view)
+                    m_mode_view->SelectAndNotify((m_mode_view->GetSelection() + 1) % 3);
+                break;
+            case 1: // Avançado: liga e desliga
+                if (wxGetApp().get_mode() != comDevelop && m_mode_view)
+                    m_mode_view->SelectAndNotify(m_mode_view->GetSelection() == 0 ? 1 : 0);
+                break;
+            case 2: wxGetApp().plater()->PopupObjectTable(-1, -1, {0, 0}); break;
+            default: DiffPresetDialog::ensure()->show(); break;
+            }
+            filuna_ferramentas_atualizar();
+        };
+        m_filuna_ferramentas->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent &) { filuna_ferramentas_atualizar(); });
+        filuna_ferramentas_atualizar();
+
         m_highlighter.set_timer_owner(this, 0);
         this->Bind(wxEVT_TIMER, [this](wxTimerEvent &)
         {
@@ -422,6 +443,22 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
     //m_import_from_file->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { wxGetApp().mainframe->load_config_file(); });
 }
 
+void ParamsPanel::filuna_ferramentas_atualizar()
+{
+    if (!m_filuna_ferramentas)
+        return;
+    using FilunaLateral::Botao;
+    using FilunaLateral::Icone;
+    const int  sel = m_mode_view ? m_mode_view->GetSelection() : 0;
+    const bool dev = wxGetApp().get_mode() == comDevelop;
+    Botao      vis{wxString::FromUTF8("Visibilidade"), Icone::atomo};
+    vis.ativo = !dev;
+    Botao avancado{wxString::FromUTF8("Avançado"), Icone::chave};
+    avancado.ligado = sel > 0;
+    avancado.ativo  = !dev;
+    m_filuna_ferramentas->definir({vis, avancado, Botao{wxString::FromUTF8("Por objeto"), Icone::tabela}, Botao{wxString::FromUTF8("Comparar"), Icone::comparar}});
+}
+
 void ParamsPanel::create_layout()
 {
 #ifdef __WINDOWS__
@@ -441,14 +478,15 @@ void ParamsPanel::create_layout()
         m_mode_sizer->Add(m_tips_arrow  , 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::ElementSpacing()));
         m_mode_sizer->AddSpacer(FromDIP(SidebarProps::IconSpacing())); // ensure there is spacing after control when sidebar has less width
         m_mode_sizer->AddStretchSpacer();
-        m_mode_sizer->Add(m_mode_icon   , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()));
-        m_mode_sizer->Add(m_mode_view   , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
-        m_mode_sizer->Add(m_setting_btn , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
-        m_mode_sizer->Add(m_compare_btn , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::TitlebarMargin()));
-        //m_mode_sizer->Add( m_search_btn, 0, wxALIGN_CENTER );
-        //m_mode_sizer->AddSpacer(16);
-        m_mode_sizer->SetMinSize(-1, FromDIP(30));
-        m_top_panel->SetSizer(m_mode_sizer);
+        // Filuna: os ícones do Orca dão lugar à linha de ferramentas com nome, embaixo do título
+        for (wxWindow *w : std::initializer_list<wxWindow *>{m_mode_icon, m_mode_view, m_setting_btn, m_compare_btn})
+            w->Hide();
+        m_mode_sizer->AddSpacer(FromDIP(SidebarProps::TitlebarMargin()));
+        m_mode_sizer->SetMinSize(-1, FromDIP(36));
+        auto *topo = new wxBoxSizer(wxVERTICAL);
+        topo->Add(m_mode_sizer, 0, wxEXPAND);
+        topo->Add(m_filuna_ferramentas, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(8));
+        m_top_panel->SetSizer(topo);
         //m_left_sizer->Add( m_top_panel, 0, wxEXPAND );
     }
 

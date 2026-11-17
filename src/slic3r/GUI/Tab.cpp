@@ -123,6 +123,7 @@
 #include <cstdlib>
 #include <unordered_set>
 #include "slic3r/GUI/GUI_Utils.hpp"
+#include "FilunaLateral.hpp"
 
 namespace Slic3r {
 
@@ -556,6 +557,13 @@ void Tab::create_preset_tab()
     m_tabctrl->Bind(wxEVT_KEY_DOWN, &Tab::OnKeyDown, this);
 
     m_main_sizer->Add(m_tabctrl, 0, wxEXPAND | wxALL, 0 );
+    // Filuna: nas abas do Processo, os nomes em grade de 3 colunas, todos à vista; a lista original fica escondida e é ela
+    // que continua trocando a página
+    if (m_type == Preset::TYPE_PRINT || m_type == Preset::TYPE_MODEL || m_type == Preset::TYPE_PLATE) {
+        auto *grade = new FilunaLateral::GradeAbas(panel, m_tabctrl);
+        m_main_sizer->Add(grade, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(8));
+        m_tabctrl->Hide();
+    }
 
     if (dynamic_cast<TabPrinter *>(this) || dynamic_cast<TabPrint *>(this)) {
         m_extruder_switch = new MultiSwitchButton(panel);
