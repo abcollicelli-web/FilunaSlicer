@@ -980,6 +980,30 @@ json esquecer(const std::string& dev_id)
     return {{"ok", true}, {"esquecida", dev_id}};
 }
 
+bool temperaturas(const std::string& dev_id, double& bico, double& bico_alvo, double& mesa, double& mesa_alvo)
+{
+    bico = bico_alvo = mesa = mesa_alvo = 0.;
+    DeviceManager* dev = wxGetApp().getDeviceManager();
+    if (dev == nullptr || dev_id.empty())
+        return false;
+    MachineObject* o = dev->get_local_machine(dev_id);
+    if (o == nullptr)
+        o = dev->get_my_machine(dev_id);
+    if (o == nullptr)
+        return false;
+    bool achou = false;
+    if (DevExtderSystem* ext = o->GetExtderSystem()) {
+        bico     = ext->GetNozzleTempCurrent(0);
+        bico_alvo = ext->GetNozzleTempTarget(0);
+        achou    = true;
+    }
+    if (DevBed* bed = o->GetBed()) {
+        mesa  = bed->GetBedTemp();
+        achou = true;
+    }
+    return achou;
+}
+
 json selecionar(const std::string& dev_id)
 {
     DeviceManager* dev = wxGetApp().getDeviceManager();

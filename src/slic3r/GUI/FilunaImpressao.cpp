@@ -7,6 +7,7 @@
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
 #include "MsgDialog.hpp"
+#include "FilunaEnvio.hpp"
 #include "PartPlate.hpp"
 #include "Plater.hpp"
 #include "libslic3r/Model.hpp"
@@ -560,24 +561,34 @@ void imprimir(int plate_idx)
         and_->fim = true;
     });
 
+    // A janela do Filuna: os passos à esquerda, a impressora desenhada à direita com o bico e a mesa esquentando.
+    auto* jenvio = new JanelaEnvio(wxGetApp().mainframe, o->get_dev_id(), wxString::FromUTF8(o->get_dev_name()),
+                                   wxString::FromUTF8(nome));
+    jenvio->Show();
+    jenvio->passo(JanelaEnvio::Passo::PREPARANDO);
     {
-        wxProgressDialog barra(wxString::FromUTF8("Imprimir em " + o->get_dev_name()), wxString::FromUTF8("Preparando o envio…"), 100,
-                               wxGetApp().mainframe, wxPD_APP_MODAL | wxPD_CAN_ABORT | wxPD_SMOOTH);
+        int ultimo = -2;
         while (!and_->fim) {
-            wxMilliSleep(80);
+            wxMilliSleep(60);
+            wxYield(); // a janela precisa continuar desenhando e respondendo ao cliente
             int etapa, pct;
             {
                 std::lock_guard<std::mutex> l(and_->m);
                 etapa = and_->etapa, pct = and_->pct;
             }
-            wxString texto = etapa == PrintingStageUpload ? wxString::FromUTF8("Enviando o arquivo… ") + wxString::Format("%d%%", pct) :
-                             etapa == PrintingStageSending ? wxString::FromUTF8("Pedindo o início da impressão…") :
-                                                             wxString::FromUTF8("Preparando o envio…");
-            if (!barra.Update(std::max(0, std::min(pct, 99)), texto))
+            if (etapa == PrintingStageUpload)
+                jenvio->passo(JanelaEnvio::Passo::ENVIANDO, std::max(0, std::min(pct, 99)));
+            else if (etapa == PrintingStageSending && ultimo != etapa)
+                jenvio->passo(JanelaEnvio::Passo::FALANDO);
+            else if (ultimo != etapa)
+                jenvio->passo(JanelaEnvio::Passo::PREPARANDO);
+            ultimo = etapa;
+            if (jenvio->cancelou())
                 and_->cancelar = true;
         }
     }
     tarefa.join();
+    jenvio->passo(JanelaEnvio::Passo::CONFERINDO);
     fs::remove(envio, ec);
 
     int         rc;
@@ -595,20 +606,20 @@ void imprimir(int plate_idx)
 #endif
         BOOST_LOG_TRIVIAL(info) << "FilunaImpressao: " << (so_envio ? "arquivo enviado" : "impressão pedida") << " agente=" << agente
                                 << " arquivo=" << nome << " mapa=" << p.ams_mapping;
-        avisar(wxString::FromUTF8(so_envio ? "Arquivo enviado para " + o->get_dev_name() + "." :
-                                             "Enviado. A impressão começa em " + o->get_dev_name() + ".\nAcompanhe na aba Dispositivo."));
+        jenvio->passo(so_envio ? JanelaEnvio::Passo::CONFERINDO : JanelaEnvio::Passo::AQUECENDO);
+        jenvio->concluir(true, wxString::FromUTF8(so_envio ? "O arquivo está na impressora." : std::string()));
         return;
     }
     if (and_->cancelar) {
-        avisar(wxString::FromUTF8("Envio cancelado."));
+        jenvio->concluir(false, wxString::FromUTF8("Envio cancelado por você."));
         return;
     }
     FilunaManutencao::diagnostico("impressao", msg.empty() ? "falha ao enviar/imprimir (código " + std::to_string(rc) + ")" : msg,
                                   json{{"agente", agente}, {"codigo", rc}, {"so_envio", so_envio}, {"arquivo", nome},
                                        {"mapa", p.ams_mapping}, {"ip", p.dev_ip}});
-    avisar(wxString::FromUTF8("Não foi possível " + std::string(so_envio ? "enviar o arquivo" : "iniciar a impressão") + ".\n\n" +
-                              (msg.empty() ? "Código " + std::to_string(rc) : msg) + "\n\nO erro foi enviado ao suporte da Filuna."),
-           wxOK | wxICON_ERROR);
+    jenvio->concluir(false, wxString::FromUTF8("Não foi possível " + std::string(so_envio ? "enviar o arquivo" : "iniciar a impressão") +
+                                               ". " + (msg.empty() ? "Código " + std::to_string(rc) : msg) +
+                                               "\nO erro foi enviado ao suporte da Filuna."));
 }
 
 // ============================================================================================================
