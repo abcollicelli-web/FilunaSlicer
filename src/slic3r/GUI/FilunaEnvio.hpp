@@ -43,6 +43,8 @@ public:
     void passo(Passo p, int porcento = -1);        // em que pé está o envio
     void concluir(bool deu_certo, const wxString& recado = {}); // fim: mostra o resultado e os botões
     bool cancelou() const { return m_cancelou; }   // o cliente pediu para parar
+    // Mostra temperaturas dadas por quem chama (a prévia usa; no envio de verdade elas vêm da impressora).
+    void mostrar_temperaturas(double bico, double bico_alvo, double mesa, double mesa_alvo);
 
     // true quando o cliente escolheu começar um projeto novo ao fechar.
     bool quer_projeto_novo() const { return m_projeto_novo; }
@@ -107,5 +109,8 @@ private:
     std::vector<wxChoice*>   m_escolhas;
     wxCheckBox*              m_nivelar{nullptr};
 };
+
+// Abre as duas telas com dados de exemplo, sem impressora e sem enviar nada (FILUNA_PREVIA_IMPRIMIR=1).
+void previa_telas_de_impressao(wxWindow* pai);
 
 }} // namespace Slic3r::GUI

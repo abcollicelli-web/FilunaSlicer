@@ -17,6 +17,7 @@
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/timer.h>
+#include <wx/weakref.h>
 
 #include <algorithm>
 #include <cmath>
@@ -645,6 +646,88 @@ std::vector<int> JanelaConfirmar::entradas_escolhidas() const
     r.reserve(m_escolhas.size());
     for (wxChoice* c : m_escolhas) r.push_back(c->GetSelection());
     return r;
+}
+
+
+// ==============================================================================================
+// Prévia das duas telas de impressão, para aprovar o visual sem impressora e sem enviar nada.
+// Só roda com a variável de ambiente FILUNA_PREVIA_IMPRIMIR=1 (nenhum cliente tem).
+// ==============================================================================================
+
+void JanelaEnvio::mostrar_temperaturas(double bico, double bico_alvo, double mesa, double mesa_alvo)
+{
+    if (m_desenho != nullptr)
+        m_desenho->temperaturas(bico, bico_alvo, mesa, mesa_alvo);
+}
+
+namespace {
+
+// Relógio próprio da prévia, fora da janela, para não se misturar com a animação dela.
+class RelogioPrevia : public wxEvtHandler
+{
+public:
+    explicit RelogioPrevia(JanelaEnvio* j) : m_j(j), m_t(this)
+    {
+        Bind(wxEVT_TIMER, &RelogioPrevia::tique, this);
+        m_t.Start(250);
+    }
+
+private:
+    void tique(wxTimerEvent&)
+    {
+        JanelaEnvio* e = m_j.get();
+        if (e == nullptr) { // fecharam a janela no meio
+            m_t.Stop();
+            wxTheApp->CallAfter([this] { delete this; });
+            return;
+        }
+        const int t = ++m_n;
+        if (t <= 20)
+            e->passo(JanelaEnvio::Passo::ENVIANDO, t * 5);
+        else if (t <= 26)
+            e->passo(JanelaEnvio::Passo::CONFERINDO);
+        else if (t <= 32)
+            e->passo(JanelaEnvio::Passo::FALANDO);
+        else if (t <= 80) {
+            e->passo(JanelaEnvio::Passo::AQUECENDO);
+            const double u = (t - 32) / 48.;
+            e->mostrar_temperaturas(24 + u * (220 - 24), 220, 24 + u * (60 - 24), 60);
+        } else {
+            m_t.Stop();
+            e->mostrar_temperaturas(220, 220, 60, 60);
+            e->passo(JanelaEnvio::Passo::IMPRIMINDO);
+            e->concluir(true);
+            wxTheApp->CallAfter([this] { delete this; });
+        }
+    }
+
+    wxWeakRef<JanelaEnvio> m_j;
+    wxTimer                m_t;
+    int                    m_n{0};
+};
+
+} // namespace
+
+void previa_telas_de_impressao(wxWindow* pai)
+{
+    ResumoMesa r;
+    r.arquivo       = "suporte_notebook_ondulado.gcode";
+    r.mesa          = "Placa PEI texturizada";
+    r.tempo_s       = 3780;
+    r.gramas        = 35.9;
+    r.custo         = 3.42;
+    r.altura_camada = 0.20;
+    const std::vector<ItemFilamento> fs = {{0, "PLA", "#C8102E", 22.4}, {1, "PETG", "#00C1AE", 13.5}};
+    const std::vector<ItemEntrada>   es = {{0, "PLA", "#C8102E"}, {1, "PETG", "#00C1AE"}, {2, "PLA", "#F4F4F4"}, {3, "PLA", "#222222"}};
+
+    JanelaConfirmar confirmar(pai, wxString::FromUTF8("A1-ASHLEY"), r, fs, es, false);
+    const int resposta = confirmar.ShowModal();
+    if (resposta != wxID_OK && resposta != wxID_APPLY)
+        return;
+
+    auto* envio = new JanelaEnvio(pai, std::string(), wxString::FromUTF8("A1-ASHLEY"), wxString::FromUTF8(r.arquivo));
+    envio->Show();
+    new RelogioPrevia(envio); // apaga-se sozinho no fim
 }
 
 }} // namespace Slic3r::GUI

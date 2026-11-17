@@ -200,6 +200,7 @@
 #include "GUI_Utils.hpp"
 #include "3DScene.hpp"
 #include "MainFrame.hpp"
+#include "FilunaEnvio.hpp"
 #include "Plater.hpp"
 #include "GLCanvas3D.hpp"
 #include "EncodedFilament.hpp"
@@ -1156,6 +1157,9 @@ void GUI_App::post_init()
             this->check_new_version_sf();
             FilunaManutencao::iniciar();
             FilunaImpressao::farm_iniciar();
+            // Filuna: previa das duas telas de imprimir (so com FILUNA_PREVIA_IMPRIMIR=1), para aprovar o visual.
+            if (wxGetEnv("FILUNA_PREVIA_IMPRIMIR", nullptr))
+                CallAfter([this] { previa_telas_de_impressao(mainframe); });
             FilunaAtualizacao::instancia().iniciar((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(),
                                                    app_config->get("filuna_token"));
             if (!cw_showed)
