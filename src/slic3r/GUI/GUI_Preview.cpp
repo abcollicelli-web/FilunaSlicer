@@ -352,6 +352,8 @@ void Preview::load_print(bool keep_z_range, bool only_gcode)
     PrinterTechnology tech = m_process->current_printer_technology();
     if (tech == ptFFF)
         load_print_as_fff(keep_z_range, only_gcode);
+    else if (tech == ptSLA)
+        load_print_as_sla();
 
     Layout();
 }
@@ -640,6 +642,31 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
 }
 
 //BBS: add only gcode mode
+// Filuna: as camadas de resina na Visualização. O desenho em si já existia no canvas; o que faltava era
+// montar a régua de alturas e mandar carregar.
+void Preview::load_print_as_sla()
+{
+    if (m_process == nullptr || m_process->current_printer_technology() != ptSLA)
+        return;
+    const SLAPrint* print = m_process->sla_print();
+    if (print == nullptr || m_canvas == nullptr)
+        return;
+
+    std::vector<double> alturas;
+    alturas.reserve(print->print_layers().size());
+    for (const SLAPrint::PrintLayer& camada : print->print_layers())
+        alturas.push_back(unscaled<double>(camada.level()));
+    sort_remove_duplicates(alturas);
+
+    m_canvas->reset_clipping_planes_cache();
+    m_canvas->set_use_clipping_planes(!alturas.empty());
+    m_canvas->load_sla_preview();
+    if (!alturas.empty())
+        update_layers_slider(alturas, false);
+    if (m_canvas_widget != nullptr)
+        m_canvas_widget->Refresh();
+}
+
 void Preview::load_print_as_fff(bool keep_z_range, bool only_gcode)
 {
     if (wxGetApp().mainframe == nullptr || wxGetApp().is_recreating_gui())

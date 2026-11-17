@@ -182,6 +182,8 @@ private:
     void update_layers_slider_mode();
     //BBS: add only gcode mode
     void load_print_as_fff(bool keep_z_range = false, bool only_gcode = false);
+    // Filuna: a mesma Visualização, mostrando as camadas de resina.
+    void load_print_as_sla();
 };
 
 
