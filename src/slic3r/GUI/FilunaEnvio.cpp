@@ -1,6 +1,8 @@
 #include "FilunaEnvio.hpp"
 
 #include "FilunaLateral.hpp"
+#include "Widgets/Button.hpp"
+#include "Widgets/StateColor.hpp"
 #include "FilunaDispositivos.hpp"
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
@@ -20,6 +22,7 @@
 #include <wx/weakref.h>
 
 #include <algorithm>
+#include <vector>
 #include <cmath>
 
 namespace Slic3r { namespace GUI {
@@ -42,7 +45,7 @@ wxColour cor_quente(double t)
                     uint8_t(a.Blue() + u * (b.Blue() - a.Blue())));
 }
 
-wxString graus(double v) { return wxString::Format("%d°", int(std::lround(v))); }
+wxString graus(double v) { return wxString::Format("%d", int(std::lround(v))) + wxString::FromUTF8("\xC2\xB0"); }
 
 } // namespace
 
@@ -195,18 +198,47 @@ private:
             gc.StrokePath(p);
         }
 
-        const double tx = x + raio * 2 + FromDIP(12);
-        gc.SetFont(fonte(this, 11, true), TINTA);
-        gc.DrawText(caber(this, m_titulo, fonte(this, 11, true), int(s.x - tx)), tx, cy - FromDIP(10));
+        const double tx = x + raio * 2 + FromDIP(12), largura = s.x - tx - FromDIP(4);
+        const wxFont ft = fonte(this, 11, true);
+        gc.SetFont(ft, TINTA);
+
+        // O título quebra em até duas linhas; só a segunda é cortada se ainda não couber.
+        std::vector<wxString> linhas;
+        {
+            wxString atual;
+            for (const wxString& palavra : wxSplit(m_titulo, ' ')) {
+                const wxString tenta = atual.empty() ? palavra : atual + " " + palavra;
+                double w = 0, h = 0;
+                gc.GetTextExtent(tenta, &w, &h);
+                if (w <= largura || atual.empty())
+                    atual = tenta;
+                else {
+                    linhas.push_back(atual);
+                    atual = palavra;
+                }
+            }
+            if (!atual.empty()) linhas.push_back(atual);
+            if (linhas.size() > 2) {
+                wxString resto;
+                for (size_t i = 1; i < linhas.size(); ++i) resto += (i > 1 ? " " : "") + linhas[i];
+                linhas.resize(2);
+                linhas[1] = resto;
+            }
+            if (linhas.size() == 2) linhas[1] = caber(this, linhas[1], ft, int(largura));
+        }
+        const double alt_linha = FromDIP(20);
+        for (size_t i = 0; i < linhas.size(); ++i)
+            gc.DrawText(linhas[i], tx, cy - FromDIP(10) + alt_linha * double(i));
+        const double extra = alt_linha * double(std::max<size_t>(1, linhas.size()) - 1);
 
         if (!m_detalhe.empty()) {
             gc.SetFont(fonte(this, 9, false), CINZA);
-            gc.DrawText(caber(this, m_detalhe, fonte(this, 9, false), int(s.x - tx)), tx, cy + FromDIP(8));
+            gc.DrawText(caber(this, m_detalhe, fonte(this, 9, false), int(largura)), tx, cy + FromDIP(8) + extra);
         }
 
         // a barrinha do envio, só quando há porcentagem
         if (m_porcento >= 0) {
-            const double by = cy + FromDIP(34), bl = s.x - tx - FromDIP(4);
+            const double by = cy + FromDIP(34) + extra, bl = largura;
             gc.SetBrush(wxBrush(AREIA));
             gc.SetPen(*wxTRANSPARENT_PEN);
             gc.DrawRoundedRectangle(tx, by, bl, FromDIP(6), FromDIP(3));
@@ -247,7 +279,8 @@ JanelaEnvio::JanelaEnvio(wxWindow* pai, const std::string& dev_id, const wxStrin
         t2->SetFont(fonte(faixa, 9, false));
         fs->AddStretchSpacer();
         fs->Add(t1, 0, wxLEFT | wxRIGHT, FromDIP(18));
-        fs->Add(t2, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(2));
+        fs->AddSpacer(FromDIP(2));
+        fs->Add(t2, 0, wxLEFT | wxRIGHT, FromDIP(18));
         fs->AddStretchSpacer();
         faixa->SetSizer(fs);
     }
@@ -513,7 +546,8 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
         t2->SetFont(fonte(faixa, 9, false));
         fs->AddStretchSpacer();
         fs->Add(t1, 0, wxLEFT | wxRIGHT, FromDIP(18));
-        fs->Add(t2, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(2));
+        fs->AddSpacer(FromDIP(2));
+        fs->Add(t2, 0, wxLEFT | wxRIGHT, FromDIP(18));
         fs->AddStretchSpacer();
         faixa->SetSizer(fs);
     }
@@ -620,8 +654,17 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
         b->AddStretchSpacer();
         auto* cancel = new wxButton(rodape, wxID_CANCEL, wxString::FromUTF8("Cancelar"));
         auto* so_env = new wxButton(rodape, wxID_APPLY, wxString::FromUTF8("Só enviar o arquivo"));
-        auto* ok     = new wxButton(rodape, wxID_OK, wxString::FromUTF8("Imprimir"));
-        ok->SetDefault();
+        // O botão principal no magenta do Filuna.
+        auto* ok = new Button(rodape, wxString::FromUTF8("Imprimir"), "", 0, 0, wxID_OK);
+        ok->SetBackgroundColor(StateColor(std::pair<wxColour, int>(MAGENTA_ESCURO, StateColor::Hovered),
+                                          std::pair<wxColour, int>(MAGENTA, StateColor::Normal)));
+        ok->SetBorderColor(StateColor(std::pair<wxColour, int>(MAGENTA_ESCURO, StateColor::Hovered),
+                                      std::pair<wxColour, int>(MAGENTA, StateColor::Normal)));
+        ok->SetTextColor(StateColor(std::pair<wxColour, int>(BRANCO, StateColor::Normal)));
+        ok->SetFont(fonte(rodape, 9.5, true));
+        ok->SetCornerRadius(ok->FromDIP(6));
+        ok->SetMinSize(wxSize(ok->FromDIP(96), so_env->GetBestSize().y));
+        ok->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { EndModal(wxID_OK); });
         so_env->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { EndModal(wxID_APPLY); });
         b->Add(cancel, 0, wxRIGHT, FromDIP(8));
         b->Add(so_env, 0, wxRIGHT, FromDIP(8));
