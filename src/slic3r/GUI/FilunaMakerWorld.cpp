@@ -5,12 +5,14 @@
 #include "MainFrame.hpp"
 #include "Plater.hpp"
 #include "Widgets/WebView.hpp"
+#include "libslic3r/AppConfig.hpp"
 #include "libslic3r/Utils.hpp"
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 
+#include <wx/msgdlg.h>
 #include <wx/sizer.h>
 #include <wx/utils.h>
 #include <wx/webview.h>
@@ -30,8 +32,11 @@ const char* INICIO = "https://makerworld.com/";
 bool do_site(const wxString& url)
 {
     const wxString u = url.Lower();
+    // o MakerWorld e o login da Bambu, inclusive "Entrar com Google/Apple/Facebook", que abrem em janela própria: tudo
+    // fica na aba, para o login terminar aqui dentro (no navegador de fora a conta ficaria lá, não no Filuna)
     for (const char* h : {"https://makerworld.com", "https://www.makerworld.com", "https://bambulab.com", "https://www.bambulab.com",
-                          "https://api.bambulab.com", "https://passport.bambulab.com", "https://makerworld.bblmw.com"})
+                          "https://api.bambulab.com", "https://passport.bambulab.com", "https://makerworld.bblmw.com",
+                          "https://accounts.google.com", "https://appleid.apple.com", "https://www.facebook.com", "https://m.facebook.com"})
         if (u.StartsWith(h))
             return true;
     return false;
@@ -125,10 +130,21 @@ FilunaMakerWorld::FilunaMakerWorld(wxWindow* parent) : wxPanel(parent, wxID_ANY)
     SetBackgroundColour(*wxWHITE);
     auto* topo = new FilunaLateral::Botoes(this, false);
     topo->SetMinSize(wxSize(-1, FromDIP(30)));
-    topo->definir({FilunaLateral::Botao{wxString::FromUTF8("‹ Voltar")}, FilunaLateral::Botao{wxString::FromUTF8("Avançar ›")},
-                   FilunaLateral::Botao{wxString::FromUTF8("Início do MakerWorld")}, FilunaLateral::Botao{wxString::FromUTF8("Recarregar")}});
+    auto botoes = [] {
+        const bool navegador = wxGetApp().app_config->get("filuna_makerworld_navegador") == "1";
+        return std::vector<FilunaLateral::Botao>{FilunaLateral::Botao{wxString::FromUTF8("‹ Voltar")}, FilunaLateral::Botao{wxString::FromUTF8("Avançar ›")},
+                                                 FilunaLateral::Botao{wxString::FromUTF8("Início do MakerWorld")},
+                                                 FilunaLateral::Botao{wxString::FromUTF8("Recarregar")},
+                                                 FilunaLateral::Botao{wxString::FromUTF8(navegador ? "Navegador: ligado" : "Usar meu navegador")}};
+    };
+    topo->definir(botoes());
     m_browser = WebView::CreateWebView(this, wxString::FromUTF8(INICIO));
-    topo->ao_clicar = [this](int i, const wxRect&) {
+    topo->ao_clicar = [this, topo, botoes](int i, const wxRect&) {
+        if (i == 4) {
+            usar_navegador();
+            topo->definir(botoes());
+            return;
+        }
         if (!m_browser)
             return;
         if (i == 0 && m_browser->CanGoBack())
@@ -153,6 +169,33 @@ FilunaMakerWorld::FilunaMakerWorld(wxWindow* parent) : wxPanel(parent, wxID_ANY)
         });
     }
     SetSizer(s);
+}
+
+// Para quando o Google não aceita o login dentro da aba: o cliente usa o MakerWorld no navegador dele (onde o login com
+// Google funciona) e o botão "Abrir no Bambu Studio" do site passa a abrir no Filuna. Troca qual programa atende esse
+// botão no Windows, por isso só com a confirmação do cliente; dá para devolver ao Bambu Studio pelo mesmo botão.
+void FilunaMakerWorld::usar_navegador()
+{
+    AppConfig* cfg     = wxGetApp().app_config;
+    const bool ligado  = cfg->get("filuna_makerworld_navegador") == "1";
+    if (ligado) {
+        if (wxMessageBox(wxString::FromUTF8("O botão \"Abrir no Bambu Studio\" do MakerWorld no seu navegador está abrindo no Filuna.\n\n"
+                                            "Devolver esse botão ao Bambu Studio? (o Bambu Studio volta a atendê-lo quando for aberto)"),
+                         wxString::FromUTF8("MakerWorld no navegador"), wxYES_NO | wxICON_QUESTION, this) != wxYES)
+            return;
+        wxGetApp().disassociate_url(L"bambustudioopen");
+        cfg->set("filuna_makerworld_navegador", "0");
+        return;
+    }
+    if (wxMessageBox(wxString::FromUTF8("Para entrar com Google, Apple ou Facebook pelo seu navegador:\n\n"
+                                        "1. O MakerWorld abre no seu navegador; entre na sua conta lá.\n"
+                                        "2. No modelo, clique em \"Open in Bambu Studio\": o modelo abre aqui, na Preparação.\n\n"
+                                        "Isso faz o botão \"Abrir no Bambu Studio\" abrir no Filuna em vez do Bambu Studio. Continuar?"),
+                     wxString::FromUTF8("MakerWorld no navegador"), wxYES_NO | wxICON_QUESTION, this) != wxYES)
+        return;
+    wxGetApp().associate_url(L"bambustudioopen");
+    cfg->set("filuna_makerworld_navegador", "1");
+    wxLaunchDefaultBrowser(wxString::FromUTF8(INICIO));
 }
 
 void FilunaMakerWorld::abrir_link(const wxString& url)

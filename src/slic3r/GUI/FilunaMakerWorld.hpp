@@ -27,6 +27,7 @@ private:
     void on_new_window(wxWebViewEvent& e);
     void instalar_downloads(); // pega os downloads do navegador embutido (WebView2), quando ele estiver pronto
     void abrir_link(const wxString& url);
+    void usar_navegador(); // login pelo navegador do cliente: o "Abrir no Bambu Studio" de lá passa a abrir no Filuna
     void abrir_arquivo(const std::string& caminho);
 
     wxWebView* m_browser{nullptr};
