@@ -125,39 +125,155 @@ bool filuna_link_de_modelo(const wxString& url)
     return u.StartsWith("bambustudioopen://") || u.StartsWith("bambustudio://open") || u.StartsWith("orcaslicer://open");
 }
 
+namespace {
+// Barra fina da aba, no estilo Filuna: Voltar, Avançar, Recarregar e Início em ícones redondos, o nome do site e, à
+// direita, a opção de usar o navegador do cliente.
+class BarraNavegador : public wxPanel
+{
+public:
+    enum { VOLTAR, AVANCAR, RECARREGAR, INICIO_MW, NAVEGADOR, NADA };
+    std::function<void(int)> ao_clicar;
+
+    explicit BarraNavegador(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE)
+    {
+        SetBackgroundStyle(wxBG_STYLE_PAINT);
+        SetBackgroundColour(*wxWHITE);
+        SetMinSize(wxSize(-1, FromDIP(44)));
+        Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
+        Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
+        Bind(wxEVT_MOTION, [this](wxMouseEvent& e) {
+            const int s = sob(e.GetPosition());
+            if (s != m_sobre) {
+                m_sobre = s;
+                SetCursor(s == NADA ? wxNullCursor : wxCursor(wxCURSOR_HAND));
+                Refresh();
+            }
+        });
+        Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&) { m_sobre = NADA; Refresh(); });
+        Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& e) {
+            const int s = sob(e.GetPosition());
+            if (s != NADA && ao_clicar)
+                ao_clicar(s);
+        });
+    }
+    void definir_navegador(bool ligado)
+    {
+        m_navegador = ligado;
+        Refresh();
+    }
+
+private:
+    wxRect area(int i) const
+    {
+        const int l = FromDIP(30), y = (GetClientSize().y - l) / 2;
+        if (i <= INICIO_MW)
+            return wxRect(FromDIP(10) + i * (l + FromDIP(4)), y, l, l);
+        const int w = FromDIP(m_navegador ? 150 : 160);
+        return wxRect(GetClientSize().x - w - FromDIP(12), y, w, l);
+    }
+    int sob(const wxPoint& p) const
+    {
+        for (int i = VOLTAR; i <= NAVEGADOR; ++i)
+            if (area(i).Contains(p))
+                return i;
+        return NADA;
+    }
+    void pintar()
+    {
+        using namespace FilunaLateral::pintura;
+        wxAutoBufferedPaintDC dc(this);
+        dc.SetBackground(*wxWHITE_BRUSH);
+        dc.Clear();
+        std::unique_ptr<wxGraphicsContext> gc(wxGraphicsContext::Create(dc));
+        if (!gc)
+            return;
+        const wxSize s = GetClientSize();
+        gc->SetPen(wxPen(AREIA_BORDA, 1));
+        gc->StrokeLine(0, s.y - 1, s.x, s.y - 1);
+        for (int i = VOLTAR; i <= INICIO_MW; ++i) {
+            const wxRect r     = area(i);
+            const bool   sobre = i == m_sobre;
+            gc->SetPen(wxPen(sobre ? MAGENTA : AREIA_BORDA, FromDIP(1)));
+            gc->SetBrush(wxBrush(sobre ? ROSA_CLARO : BRANCO));
+            gc->DrawEllipse(r.x + 0.5, r.y + 0.5, r.width - 1, r.height - 1);
+            const wxColour cor = sobre ? MAGENTA : CINZA;
+            const double   cx = r.x + r.width / 2., cy = r.y + r.height / 2., t = FromDIP(5);
+            gc->SetPen(wxPen(cor, FromDIP(2)));
+            gc->SetBrush(*wxTRANSPARENT_BRUSH);
+            wxGraphicsPath p = gc->CreatePath();
+            if (i == VOLTAR || i == AVANCAR) {
+                const double d = i == VOLTAR ? 1. : -1.;
+                p.MoveToPoint(cx + d * t * 0.5, cy - t);
+                p.AddLineToPoint(cx - d * t * 0.5, cy);
+                p.AddLineToPoint(cx + d * t * 0.5, cy + t);
+                gc->StrokePath(p);
+            } else if (i == RECARREGAR) {
+                desenhar_icone(*gc, this, FilunaLateral::Icone::sincronizar, wxRect2DDouble(cx - t * 1.4, cy - t * 1.4, t * 2.8, t * 2.8), cor, false);
+            } else { // casinha
+                p.MoveToPoint(cx - t, cy);
+                p.AddLineToPoint(cx, cy - t);
+                p.AddLineToPoint(cx + t, cy);
+                p.MoveToPoint(cx - t * 0.7, cy - t * 0.2);
+                p.AddLineToPoint(cx - t * 0.7, cy + t);
+                p.AddLineToPoint(cx + t * 0.7, cy + t);
+                p.AddLineToPoint(cx + t * 0.7, cy - t * 0.2);
+                gc->StrokePath(p);
+            }
+        }
+        // nome do site
+        const int x = area(INICIO_MW).GetRight() + FromDIP(14);
+        gc->SetFont(fonte(this, 10., true), TINTA);
+        double tw = 0, th = 0;
+        gc->GetTextExtent(wxString::FromUTF8("MakerWorld"), &tw, &th);
+        gc->DrawText(wxString::FromUTF8("MakerWorld"), x, (s.y - th) / 2.);
+        gc->SetFont(fonte(this, 8., false), CINZA);
+        const int x2 = x + int(tw) + FromDIP(10), livre = area(NAVEGADOR).x - x2 - FromDIP(10);
+        gc->DrawText(caber(this, wxString::FromUTF8("site oficial · entre com a sua conta Bambu · \"Open in Bambu Studio\" abre aqui na Preparação"),
+                           fonte(this, 8., false), livre),
+                     x2, (s.y - FromDIP(14)) / 2.);
+        FilunaLateral::Botao b{wxString::FromUTF8(m_navegador ? "Navegador: ligado" : "Usar meu navegador")};
+        b.destaque = m_navegador;
+        desenhar_botao(*gc, this, area(NAVEGADOR), b, m_sobre == NAVEGADOR, false);
+    }
+
+    int  m_sobre{NADA};
+    bool m_navegador{false};
+};
+
+// Navegador comum (Edge), sem a marca "BBL-Slicer" que o Orca põe: com ela o MakerWorld acha que está dentro do Bambu
+// Studio, esconde o próprio cabeçalho (fica a faixa em branco) e manda o "Abrir" por um canal interno do Bambu Studio.
+// O Filuna não se passa pelo cliente oficial.
+const char* NAVEGADOR_COMUM = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 "
+                              "Safari/537.36 Edg/142.0.0.0";
+} // namespace
+
 FilunaMakerWorld::FilunaMakerWorld(wxWindow* parent) : wxPanel(parent, wxID_ANY)
 {
     SetBackgroundColour(*wxWHITE);
-    auto* topo = new FilunaLateral::Botoes(this, false);
-    topo->SetMinSize(wxSize(-1, FromDIP(30)));
-    auto botoes = [] {
-        const bool navegador = wxGetApp().app_config->get("filuna_makerworld_navegador") == "1";
-        return std::vector<FilunaLateral::Botao>{FilunaLateral::Botao{wxString::FromUTF8("‹ Voltar")}, FilunaLateral::Botao{wxString::FromUTF8("Avançar ›")},
-                                                 FilunaLateral::Botao{wxString::FromUTF8("Início do MakerWorld")},
-                                                 FilunaLateral::Botao{wxString::FromUTF8("Recarregar")},
-                                                 FilunaLateral::Botao{wxString::FromUTF8(navegador ? "Navegador: ligado" : "Usar meu navegador")}};
-    };
-    topo->definir(botoes());
+    auto* topo = new BarraNavegador(this);
+    topo->definir_navegador(wxGetApp().app_config->get("filuna_makerworld_navegador") == "1");
     m_browser = WebView::CreateWebView(this, wxString::FromUTF8(INICIO));
-    topo->ao_clicar = [this, topo, botoes](int i, const wxRect&) {
-        if (i == 4) {
+    if (m_browser)
+        m_browser->SetUserAgent(wxString::FromUTF8(NAVEGADOR_COMUM));
+    topo->ao_clicar = [this, topo](int i) {
+        if (i == BarraNavegador::NAVEGADOR) {
             usar_navegador();
-            topo->definir(botoes());
+            topo->definir_navegador(wxGetApp().app_config->get("filuna_makerworld_navegador") == "1");
             return;
         }
         if (!m_browser)
             return;
-        if (i == 0 && m_browser->CanGoBack())
+        if (i == BarraNavegador::VOLTAR && m_browser->CanGoBack())
             m_browser->GoBack();
-        else if (i == 1 && m_browser->CanGoForward())
+        else if (i == BarraNavegador::AVANCAR && m_browser->CanGoForward())
             m_browser->GoForward();
-        else if (i == 2)
+        else if (i == BarraNavegador::INICIO_MW)
             m_browser->LoadURL(wxString::FromUTF8(INICIO));
-        else if (i == 3)
+        else if (i == BarraNavegador::RECARREGAR)
             m_browser->Reload();
     };
     auto* s = new wxBoxSizer(wxVERTICAL);
-    s->Add(topo, 0, wxEXPAND | wxALL, FromDIP(6));
+    s->Add(topo, 0, wxEXPAND);
     if (m_browser) {
         s->Add(m_browser, 1, wxEXPAND);
         m_browser->Bind(wxEVT_WEBVIEW_NAVIGATING, &FilunaMakerWorld::on_navigating, this);
