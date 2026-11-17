@@ -3754,7 +3754,18 @@ void GLCanvas3D::reload_scene(bool refresh_immediately, bool force_full_scene_re
     if (m_canvas_type != ECanvasType::CanvasAssembleView) {
         _update_slice_error_status();
         // checks for geometry outside the print volume to render it accordingly
-        if (!m_volumes.empty()) {
+        // Filuna: em resina não há torre de limpeza, bico, extrusor nem filamento; as checagens de filamento abaixo
+        // leem opções que a impressora de resina não tem. Em resina só confere se a peça cabe na mesa.
+        if (!m_volumes.empty() && current_printer_technology() == ptSLA) {
+            ModelInstanceEPrintVolumeState estado;
+            ObjectFilamentResults          resultados;
+            const bool cabe_algo  = m_volumes.check_outside_state(m_bed.build_volume(), &estado, &resultados);
+            const bool parte_fora = estado == ModelInstanceEPrintVolumeState::ModelInstancePVS_Partly_Outside;
+            const bool cabe       = cabe_algo && !m_model->objects.empty() && !parte_fora;
+            post_event(Event<bool>(EVT_GLCANVAS_ENABLE_ACTION_BUTTONS, cabe));
+            wxGetApp().plater()->get_partplate_list().get_curr_plate()->update_slice_ready_status(cabe);
+        }
+        else if (!m_volumes.empty()) {
             ModelInstanceEPrintVolumeState state;
             ObjectFilamentResults object_results;
             const bool contained_min_one = m_volumes.check_outside_state(m_bed.build_volume(), &state, &object_results);

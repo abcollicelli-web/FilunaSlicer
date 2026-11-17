@@ -702,7 +702,7 @@ static const FileWildcards file_wildcards_by_type[FT_SIZE] = {
     /* FT_INI */     { L("INI files"),       { ".ini"sv } },
     /* FT_SVG */     { L("SVG files"),       { ".svg"sv } },
     /* FT_TEX */     { L("Texture"),         { ".png"sv, ".svg"sv } },
-    /* FT_SL1 */     { L("Masked SLA files"), { ".sl1"sv, ".sl1s"sv } },
+    /* FT_SL1 */     { L("Masked SLA files"), { ".sl1"sv, ".sl1s"sv, ".cxdlpv4"sv } }, // Filuna: .cxdlpv4 das Creality HALOT
     /* FT_DRC */     { L("Draco files"),     { ".drc"sv } },
 };
 

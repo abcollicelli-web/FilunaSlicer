@@ -1152,6 +1152,25 @@ void Sidebar::priv::layout_printer(bool isBBL, bool isDual)
     // ORCA show plate type combo box only when its supported
     PresetBundle &preset_bundle = *wxGetApp().preset_bundle;
     const auto& cfg = preset_bundle.printers.get_edited_preset().config;
+
+    // Filuna: impressora de resina não tem bico, extrusor nem troca de chapa; os campos que o resto desta
+    // função lê nem existem na configuração dela. Esconde essas partes e segue para o cartão do Filuna.
+    if (preset_bundle.printers.get_edited_preset().printer_technology() == ptSLA) {
+        fl_mesa_tipos = false;
+        panel_printer_bed->Show(false);
+        panel_nozzle_dia->Show(false);
+        extruder_dual_sizer->Show(false);
+        extruder_single_sizer->Show(false);
+        if (m_panel_printer_content && !m_panel_printer_content->IsShown()) {
+            if (m_text_printer_settings)
+                m_text_printer_settings->SetLabel(_L("Printer"));
+            m_panel_printer_content->Show();
+        }
+        fl_criar();
+        fl_esconder_originais();
+        fl_atualizar();
+        return;
+    }
     // Orca: we use preset_bundle.is_bbl_vendor() instead of isBBL to determine if the plate type combo box should be shown
     // ref: https://github.com/OrcaSlicer/OrcaSlicer/pull/11610#discussion_r2607411847
     fl_mesa_tipos = preset_bundle.is_bbl_vendor() || cfg.opt_bool("support_multi_bed_types");

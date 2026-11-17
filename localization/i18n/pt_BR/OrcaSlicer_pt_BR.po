@@ -2086,7 +2086,7 @@ msgid "Texture"
 msgstr "Textura"
 
 msgid "Masked SLA files"
-msgstr "Arquivos SLA Mascarados"
+msgstr "Arquivos de resina"
 
 msgid "Draco files"
 msgstr "Arquivos Draco"
@@ -9834,7 +9834,7 @@ msgid "Save G-code file as:"
 msgstr "Salvar arquivo de G-code como:"
 
 msgid "Save SLA file as:"
-msgstr "Salvar arquivo SLA como:"
+msgstr "Salvar o arquivo da resina como:"
 
 msgid "The provided file name is not valid."
 msgstr "O nome de arquivo fornecido não é válido."
