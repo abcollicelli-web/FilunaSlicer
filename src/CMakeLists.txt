@@ -154,6 +154,11 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/filuna_lab/laboratorio.cpp)
     target_link_libraries(filuna_lab_naodestruiu libslic3r boost_headeronly nanosvg libcurl OpenSSL::SSL OpenSSL::Crypto
         -Wl,--start-group ${FILUNA_LAB_TBB} ${FILUNA_LAB_TBBMALLOC} -Wl,--end-group)
     target_compile_definitions(filuna_lab_naodestruiu PRIVATE -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_USE_UTF8)
+
+    add_executable(filuna_lab_abertura EXCLUDE_FROM_ALL filuna_lab/abertura.cpp)
+    target_link_libraries(filuna_lab_abertura libslic3r boost_headeronly nanosvg libcurl OpenSSL::SSL OpenSSL::Crypto
+        -Wl,--start-group ${FILUNA_LAB_TBB} ${FILUNA_LAB_TBBMALLOC} -Wl,--end-group)
+    target_compile_definitions(filuna_lab_abertura PRIVATE -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_USE_UTF8)
 endif()
 
 # Create a slic3r executable

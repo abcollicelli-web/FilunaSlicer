@@ -4056,8 +4056,9 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
     this->load_installed_sla_materials(config);
 
     // Parse the initial print / filament / printer profile names.
-    // std::string initial_sla_print_profile_name    = remove_ini_suffix(config.get("presets", PRESET_SLA_PRINT_NAME));
-    // std::string initial_sla_material_profile_name = remove_ini_suffix(config.get("presets", PRESET_SLA_MATERIALS_NAME));
+    // Filuna: o processo de resina e a resina escolhidos voltam a ser lidos (estavam desligados desde o fork).
+    std::string initial_sla_print_profile_name    = remove_ini_suffix(config.get("presets", PRESET_SLA_PRINT_NAME));
+    std::string initial_sla_material_profile_name = remove_ini_suffix(config.get("presets", PRESET_SLA_MATERIALS_NAME));
 	std::string initial_printer_profile_name      = remove_ini_suffix(config.get("presets", PRESET_PRINTER_NAME));
 
     // Activate print / filament / printer profiles from either the config,
@@ -4108,8 +4109,9 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
     // Selects the profile, leaves it to -1 if the initial profile name is empty or if it was not found.
     prints.select_preset_by_name_strict(initial_print_profile_name);
     filaments.select_preset_by_name_strict(initial_filament_profile_name);
-	// sla_prints.select_preset_by_name_strict(initial_sla_print_profile_name);
-    // sla_materials.select_preset_by_name_strict(initial_sla_material_profile_name);
+    // Filuna: sem nome gravado, fica o padrão; update_compatible logo abaixo troca pelo primeiro compatível.
+    sla_prints.select_preset_by_name_strict(initial_sla_print_profile_name);
+    sla_materials.select_preset_by_name_strict(initial_sla_material_profile_name);
 
     // Load the names of the other filament profiles selected for a multi-material printer.
     // Load it even if the current printer technology is SLA.
@@ -4222,7 +4224,10 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
     const Preset& current_printer = printers.get_selected_preset();
     const Preset* base_printer = printers.get_preset_base(current_printer);
     bool use_default_nozzle_volume_type = true;
-    if (base_printer) {
+    // Filuna: impressora de resina não tem bico; as opções abaixo nem existem na configuração dela.
+    const bool tem_bico = current_printer.printer_technology() == ptFFF &&
+                          current_printer.config.option<ConfigOptionEnumsGeneric>("default_nozzle_volume_type") != nullptr;
+    if (tem_bico && base_printer) {
         std::string prev_nozzle_volume_type = config.get_nozzle_volume_types_from_config(base_printer->name);
         if (!prev_nozzle_volume_type.empty()) {
             ConfigOptionEnumsGeneric* nozzle_volume_type_option = project_config.option<ConfigOptionEnumsGeneric>("nozzle_volume_type");
@@ -4232,7 +4237,9 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
         }
     }
 
-    if (use_default_nozzle_volume_type) {
+    if (!tem_bico) {
+        // resina: nada a fazer com bico
+    } else if (use_default_nozzle_volume_type) {
         project_config.option<ConfigOptionEnumsGeneric>("nozzle_volume_type")->values = current_printer.config.option<ConfigOptionEnumsGeneric>("default_nozzle_volume_type")->values;
     } else {
         // Orca: make sure `nozzle_volume_type` not shorter than `default_nozzle_volume_type`, otherwise we got array out of bound access
