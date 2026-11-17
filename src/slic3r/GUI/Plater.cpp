@@ -23368,11 +23368,15 @@ const DynamicPrintConfig * Plater::config() const { return p->config; }
 
 bool Plater::set_printer_technology(PrinterTechnology printer_technology)
 {
+    // Filuna: o que a resina acrescentou aqui só roda quando a tecnologia muda de verdade (filamento <-> resina).
+    // Esta função é chamada também na abertura e a cada troca entre impressoras de filamento.
+    const bool mudou = p->printer_technology != printer_technology;
     p->printer_technology = printer_technology;
-    // Filuna: as placas precisam saber a tecnologia para entregar o fatiador certo (resina ou filamento).
-    p->partplate_list.definir_tecnologia(printer_technology);
+    if (mudou)
+        p->partplate_list.definir_tecnologia(printer_technology); // as placas entregam o fatiador certo
     bool ret = p->background_process.select_technology(printer_technology);
-    p->partplate_list.update_slice_context_to_current_plate(p->background_process);
+    if (mudou)
+        p->partplate_list.update_slice_context_to_current_plate(p->background_process);
     if (ret) {
         // Update the active presets.
     }
@@ -23393,7 +23397,7 @@ bool Plater::set_printer_technology(PrinterTechnology printer_technology)
 
     p->sidebar->get_searcher().set_printer_technology(printer_technology);
     // Filuna: a aba Preparar é uma só; aqui ela troca os ajustes de filamento pelos de resina (e vice-versa).
-    if (wxGetApp().mainframe != nullptr && wxGetApp().mainframe->m_param_panel != nullptr)
+    if (mudou && wxGetApp().mainframe != nullptr && wxGetApp().mainframe->m_param_panel != nullptr)
         wxGetApp().mainframe->m_param_panel->rebuild_panels();
 
     p->notification_manager->set_fff(printer_technology == ptFFF);

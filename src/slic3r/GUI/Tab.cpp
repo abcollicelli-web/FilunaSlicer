@@ -5470,8 +5470,13 @@ void TabPrinter::build()
     // Options for the Searcher is added in the moment of pages creation.
     // So, build first of all printer pages for non-selected printer technology...
     //std::string def_preset_name = "- default " + std::string(m_printer_technology == ptSLA ? "FFF" : "SLA") + " -";
-    std::string def_preset_name = "Default Printer";
-    m_config = &m_presets->find_preset(def_preset_name)->config;
+    // Filuna: cada tecnologia é montada com o padrão DELA. A de resina com "- default SLA -", que tem os campos
+    // de tela, arquivo e plataforma; montá-la com o padrão de filamento lia opções que não existem ali.
+    std::string   def_preset_name = m_printer_technology == ptSLA ? "Default Printer" : "- default SLA -";
+    Preset*       def_preset      = m_presets->find_preset(def_preset_name);
+    if (def_preset == nullptr)
+        def_preset = m_presets->find_preset("Default Printer");
+    m_config = &def_preset->config;
     m_printer_technology == ptSLA ? build_fff() : build_sla();
     if (m_printer_technology == ptSLA)
         m_extruders_count_old = 0;// revert this value
@@ -5866,8 +5871,6 @@ void TabPrinter::build_sla()
         optgroup->append_single_option_line("max_exposure_time");
         optgroup->append_single_option_line("min_initial_exposure_time");
         optgroup->append_single_option_line("max_initial_exposure_time");
-
-    build_unregular_pages(true);
 }
 
 void TabPrinter::extruders_count_changed(size_t extruders_count)
