@@ -24,6 +24,7 @@
 #include <wx/msw/registry.h>
 #include <windows.h>
 #include <shellapi.h>
+#include <tlhelp32.h>
 #endif
 
 #include <atomic>
@@ -277,8 +278,43 @@ bool pasta_gravavel(const fs::path& p)
 }
 
 // Script que espera o programa fechar, copia os arquivos novos por cima, apaga os removidos e abre de novo.
+// Outras janelas do Filuna abertas a partir desta mesma pasta (o executável é o mesmo arquivo): enquanto existirem, os
+// arquivos do programa ficam travados e a atualização não consegue trocá-los.
+int outras_janelas_do_programa()
+{
+    wchar_t meu[MAX_PATH] = {};
+    if (::GetModuleFileNameW(nullptr, meu, MAX_PATH) == 0)
+        return 0;
+    const DWORD eu   = ::GetCurrentProcessId();
+    HANDLE      foto = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (foto == INVALID_HANDLE_VALUE)
+        return 0;
+    int            n = 0;
+    PROCESSENTRY32W p{};
+    p.dwSize = sizeof(p);
+    for (BOOL ok = ::Process32FirstW(foto, &p); ok; ok = ::Process32NextW(foto, &p)) {
+        if (p.th32ProcessID == eu || _wcsicmp(p.szExeFile, fs::path(meu).filename().wstring().c_str()) != 0)
+            continue;
+        HANDLE h = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, p.th32ProcessID);
+        if (h == nullptr)
+            continue;
+        wchar_t caminho[MAX_PATH] = {};
+        DWORD   tam               = MAX_PATH;
+        if (::QueryFullProcessImageNameW(h, 0, caminho, &tam) && _wcsicmp(caminho, meu) == 0)
+            ++n;
+        ::CloseHandle(h);
+    }
+    ::CloseHandle(foto);
+    return n;
+}
+
 bool lancar_aplicacao(const fs::path& arquivos, const json& remover, std::string& erro)
 {
+    if (const int outras = outras_janelas_do_programa(); outras > 0) {
+        erro = outras == 1 ? "há outra janela do Filuna Slicer aberta: feche-a e clique de novo em Atualizar" :
+                             "há outras janelas do Filuna Slicer abertas: feche-as e clique de novo em Atualizar";
+        return false;
+    }
     const fs::path destino = pasta_do_programa();
     const fs::path exe     = fs::path(wxStandardPaths::Get().GetExecutablePath().ToUTF8().data());
     const fs::path script  = pasta_espera() / "aplicar.cmd";
@@ -287,8 +323,14 @@ bool lancar_aplicacao(const fs::path& arquivos, const json& remover, std::string
     s << "@echo off\r\nchcp 65001 >nul\r\nset /a N=0\r\n:espera\r\n"
       << "tasklist /FI \"PID eq " << ::GetCurrentProcessId() << "\" 2>nul | find \"" << ::GetCurrentProcessId() << "\" >nul\r\n"
       << "if not errorlevel 1 (\r\n  set /a N+=1\r\n  if %N% GEQ 900 goto desistiu\r\n  ping -n 2 127.0.0.1 >nul\r\n  goto espera\r\n)\r\n"
-      << "robocopy \"" << arquivos.string() << "\" \"" << destino.string() << "\" /E /R:8 /W:1 /NFL /NDL /NJH /NJS /NP >nul\r\n"
-      << "if errorlevel 8 goto falhou\r\n";
+      << "set /a T=0\r\n:copia\r\n"
+      << "robocopy \"" << arquivos.string() << "\" \"" << destino.string() << "\" /E /R:3 /W:1 /XF filuna-build.json /NFL /NDL /NJH /NJS /NP >nul\r\n"
+      << "if not errorlevel 8 goto copiou\r\n"
+      << "set /a T+=1\r\nif %T% GEQ 200 goto falhou\r\nping -n 3 127.0.0.1 >nul\r\ngoto copia\r\n"
+      << ":copiou\r\n"
+      // a versão nova só é marcada depois que todos os arquivos dela estão no lugar
+      << "if exist \"" << (arquivos / "filuna-build.json").string() << "\" copy /y \"" << (arquivos / "filuna-build.json").string() << "\" \""
+      << (destino / "filuna-build.json").string() << "\" >nul\r\n";
     for (const auto& r : remover)
         if (r.is_string() && r.get<std::string>().find("..") == std::string::npos) {
             std::string rel = r.get<std::string>();
