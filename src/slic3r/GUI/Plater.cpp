@@ -23370,9 +23370,7 @@ bool Plater::set_printer_technology(PrinterTechnology printer_technology)
 {
     p->printer_technology = printer_technology;
     // Filuna: as placas precisam saber a tecnologia para entregar o fatiador certo (resina ou filamento).
-    p->partplate_list.printer_technology = printer_technology;
-    for (int i = 0; i < p->partplate_list.get_plate_count(); ++i)
-        if (PartPlate *placa = p->partplate_list.get_plate(i)) placa->printer_technology = printer_technology;
+    p->partplate_list.definir_tecnologia(printer_technology);
     bool ret = p->background_process.select_technology(printer_technology);
     p->partplate_list.update_slice_context_to_current_plate(p->background_process);
     if (ret) {
@@ -23394,6 +23392,9 @@ bool Plater::set_printer_technology(PrinterTechnology printer_technology)
         wxGetApp().mainframe->update_menubar();
 
     p->sidebar->get_searcher().set_printer_technology(printer_technology);
+    // Filuna: a aba Preparar é uma só; aqui ela troca os ajustes de filamento pelos de resina (e vice-versa).
+    if (wxGetApp().mainframe != nullptr && wxGetApp().mainframe->m_param_panel != nullptr)
+        wxGetApp().mainframe->m_param_panel->rebuild_panels();
 
     p->notification_manager->set_fff(printer_technology == ptFFF);
     p->notification_manager->set_slicing_progress_hidden();

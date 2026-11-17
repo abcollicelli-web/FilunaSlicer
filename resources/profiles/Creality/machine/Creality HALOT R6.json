@@ -1,0 +1,12 @@
+{
+    "type": "machine_model",
+    "name": "Creality HALOT R6",
+    "model_id": "Creality-HALOT-R6",
+    "nozzle_diameter": "default",
+    "machine_tech": "SLA",
+    "family": "Creality",
+    "bed_model": "",
+    "bed_texture": "",
+    "hotend_model": "",
+    "default_materials": "Creality Resina Padrao Cinza @HALOT R6"
+}

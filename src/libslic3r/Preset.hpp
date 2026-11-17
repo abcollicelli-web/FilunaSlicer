@@ -63,6 +63,9 @@
 #define BBL_JSON_KEY_SUB_PATH       "sub_path"
 #define BBL_JSON_KEY_FILAMENT_LIST  "filament_list"
 #define BBL_JSON_KEY_MACHINE_LIST   "machine_list"
+// Filuna: perfis de resina do fabricante (impressoras SLA/LCD)
+#define BBL_JSON_KEY_SLA_PROCESS_LIST  "sla_process_list"
+#define BBL_JSON_KEY_SLA_MATERIAL_LIST "sla_material_list"
 #define BBL_JSON_KEY_TYPE           "type"
 #define BBL_JSON_KEY_FROM           "from"
 #define BBL_JSON_KEY_SETTING_ID     "setting_id"

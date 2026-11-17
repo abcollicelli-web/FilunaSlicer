@@ -8070,6 +8070,14 @@ void PartPlateList::update_logo_texture_filename(const std::string &texture_file
 
 /*slice related functions*/
 //update current slice context into backgroud slicing process
+void PartPlateList::definir_tecnologia(PrinterTechnology tech)
+{
+	this->printer_technology = tech;
+	for (PartPlate* placa : m_plate_list)
+		if (placa != nullptr)
+			placa->printer_technology = tech;
+}
+
 void PartPlateList::update_slice_context_to_current_plate(BackgroundSlicingProcess& process)
 {
 	PartPlate* current_plate;

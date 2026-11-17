@@ -8144,6 +8144,9 @@ size_t PresetBundle::install_vendor(const std::string& path, const std::string& 
         m_filament_id_maps = std::move(filaments.filament_id_maps);
     }
     install_collection(entries.machine_entries, parsed ? &parsed->machine_entries : nullptr, &this->printers, false);
+    // Filuna: perfis de resina do fabricante
+    install_collection(entries.sla_process_entries, parsed ? &parsed->sla_process_entries : nullptr, &this->sla_prints, false);
+    install_collection(entries.sla_material_entries, parsed ? &parsed->sla_material_entries : nullptr, &this->sla_materials, false);
     return count;
 }
 
@@ -8194,6 +8197,8 @@ PresetBundle::VendorRead PresetBundle::read_vendor(const std::string& dir, const
             if (filament_only) {
                 read.data.process_entries.clear();
                 read.data.machine_entries.clear();
+                read.data.sla_process_entries.clear();
+                read.data.sla_material_entries.clear();
                 // The stamp counts errors across the whole vendor.
                 read.data.parse_errors = 0;
             }
@@ -8221,6 +8226,9 @@ void PresetBundle::parse_vendor_json(VendorRead& read)
     std::vector<std::pair<std::string, std::string>> process_subfiles;
     std::vector<std::pair<std::string, std::string>> filament_subfiles;
     std::vector<std::pair<std::string, std::string>> machine_subfiles;
+    // Filuna: perfis de resina do fabricante
+    std::vector<std::pair<std::string, std::string>> sla_process_subfiles;
+    std::vector<std::pair<std::string, std::string>> sla_material_subfiles;
     auto get_name_and_subpath = [this](json::iterator& it, std::vector<std::pair<std::string, std::string>>& subfile_map) {
         if (it.value().is_array()) {
             size_t index = 0;
@@ -8302,6 +8310,13 @@ void PresetBundle::parse_vendor_json(VendorRead& read)
                 //get machine list
                 get_name_and_subpath(it, machine_subfiles);
             }
+            // Filuna: perfis de resina do fabricante
+            else if (boost::iequals(it.key(), BBL_JSON_KEY_SLA_PROCESS_LIST)) {
+                get_name_and_subpath(it, sla_process_subfiles);
+            }
+            else if (boost::iequals(it.key(), BBL_JSON_KEY_SLA_MATERIAL_LIST)) {
+                get_name_and_subpath(it, sla_material_subfiles);
+            }
         }
     }
     catch(nlohmann::detail::parse_error &err) {
@@ -8315,6 +8330,8 @@ void PresetBundle::parse_vendor_json(VendorRead& read)
         machine_model_subfiles.clear();
         machine_subfiles.clear();
         process_subfiles.clear();
+        sla_process_subfiles.clear();
+        sla_material_subfiles.clear();
     }
 
     //2) paste the machine model
@@ -8556,8 +8573,11 @@ void PresetBundle::parse_vendor_json(VendorRead& read)
     // nothing to set.
     CNumericLocalesSetter locales_setter;
     if (parse_subfiles(process_subfiles, read.data.process_entries, read.parsed.process_entries, "process") &&
-        parse_subfiles(filament_subfiles, read.data.filament_entries, read.parsed.filament_entries, "filament"))
-        parse_subfiles(machine_subfiles, read.data.machine_entries, read.parsed.machine_entries, "printer");
+        parse_subfiles(filament_subfiles, read.data.filament_entries, read.parsed.filament_entries, "filament") &&
+        parse_subfiles(machine_subfiles, read.data.machine_entries, read.parsed.machine_entries, "printer") &&
+        // Filuna: perfis de resina do fabricante
+        parse_subfiles(sla_process_subfiles, read.data.sla_process_entries, read.parsed.sla_process_entries, "sla process"))
+        parse_subfiles(sla_material_subfiles, read.data.sla_material_entries, read.parsed.sla_material_entries, "sla material");
 }
 
 std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::install_vendor_read(VendorRead&& read, const PresetBundle* base_bundle)

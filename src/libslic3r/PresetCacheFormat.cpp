@@ -330,7 +330,7 @@ constexpr uint32_t CACHE_MAGIC   = 0x4F52435A; // "ORCZ"
 // save_entries below), or a change to the cache's own layout or the
 // meaning of its stamps. Option-schema drift is NOT such a change — the
 // dictionary handles it, which is why this no longer moves every release.
-constexpr uint32_t CACHE_VERSION = 2;
+constexpr uint32_t CACHE_VERSION = 3; // 3: Filuna, perfis de resina do fabricante
 
 // A stamp-string read that refuses an absurd length before allocating anything.
 // The stamps are read from files named from the outside (peek_version is
@@ -508,7 +508,8 @@ bool VendorCacheFile::save(const std::string& path, const std::string& vendor_na
         // Collected before anything is written: the dictionary sits ahead of the
         // entries so a reader resolves it once and then indexes.
         CacheDictionary dict;
-        for (const std::vector<CachedPreset>* entries : { &data.process_entries, &data.filament_entries, &data.machine_entries })
+        for (const std::vector<CachedPreset>* entries : { &data.process_entries, &data.filament_entries, &data.machine_entries,
+                                                          &data.sla_process_entries, &data.sla_material_entries })
             for (const CachedPreset& e : *entries)
                 dict.collect(e.config_src);
 
@@ -522,6 +523,8 @@ bool VendorCacheFile::save(const std::string& path, const std::string& vendor_na
             save_entries(ar, data.process_entries, dict);
             save_entries(ar, data.filament_entries, dict);
             save_entries(ar, data.machine_entries, dict);
+            save_entries(ar, data.sla_process_entries, dict);
+            save_entries(ar, data.sla_material_entries, dict);
             ar(data.parse_errors);
         }
         return write_cache_blob(path, body.str());
@@ -570,6 +573,8 @@ bool VendorCacheFile::load(const std::string& path, const std::string& expected_
             load_entries(ar, data.process_entries, dict);
             load_entries(ar, data.filament_entries, dict);
             load_entries(ar, data.machine_entries, dict);
+            load_entries(ar, data.sla_process_entries, dict);
+            load_entries(ar, data.sla_material_entries, dict);
             ar(data.parse_errors);
         });
 }
