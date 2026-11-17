@@ -1927,8 +1927,9 @@ void MainFrame::fit_tab_labels()
     // Filuna pages (Dispositivo › Painel da impressora, Meu espaço › Minha loja), but get no button here.
     // Paramétricos/Ferramentas e Modelos 3D abrem pelo menu da tela inicial (ordem do dono, 15/11/2026); a Farm também
     // (16/11/2026: com Novo e Salvar na barra, o botão Fatiar ficava escondido)
+    // MakerWorld também abre pelo menu da tela inicial (ordem do dono, 17/11/2026)
     for (const char* id : {TAB_ID_MONITOR, TAB_ID_MONITOR_WEB, TAB_ID_MULTI_DEVICE, TAB_ID_CALIBRATION, TAB_ID_FILUNA_STORE, TAB_ID_FILUNA_PARAM,
-                           TAB_ID_FILUNA_MODELOS, TAB_ID_FILUNA_FARM})
+                           TAB_ID_FILUNA_MODELOS, TAB_ID_FILUNA_FARM, TAB_ID_FILUNA_MAKERWORLD})
         if (const int idx = m_tabpanel->FindPageByName(id); idx != wxNOT_FOUND)
             m_tabpanel->GetBtnsListCtrl()->ShowPageButton(size_t(idx), false);
 
