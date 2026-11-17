@@ -3286,6 +3286,8 @@ Sidebar::Sidebar(Plater *parent)
         h_sizer_title->Add(p->m_printer_icon, 0, wxALIGN_CENTRE | wxLEFT, FromDIP(SidebarProps::TitlebarMargin()));
         h_sizer_title->AddSpacer(FromDIP(SidebarProps::ElementSpacing()));
         h_sizer_title->Add(p->m_text_printer_settings, 1, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
+        p->m_text_printer_settings->Hide(); // Filuna: o título fica só com o ícone; a faixa magenta diz "Selecionar impressora"
+        h_sizer_title->AddStretchSpacer(1);
         //h_sizer_title->AddStretchSpacer();
         h_sizer_title->Add(p->m_printer_connect , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
         h_sizer_title->Add(p->m_printer_bbl_sync, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
@@ -3758,7 +3760,7 @@ Sidebar::Sidebar(Plater *parent)
     bSizer39->AddStretchSpacer(1);
     // Filuna: Sincronizar e Misto com nome, no título (Adicionar é o "+" no fim das bobinas)
     p->fl_titulo_botoes = new FilunaLateral::Botoes(p->m_panel_filament_title, false);
-    p->fl_titulo_botoes->SetMinSize(wxSize(FromDIP(184), FromDIP(26)));
+    p->fl_titulo_botoes->SetMinSize(wxSize(FromDIP(168), FromDIP(26)));
     p->fl_titulo_botoes->ao_clicar = [this](int i, const wxRect&) {
         if (i == 0)
             sync_ams_list();
@@ -3788,7 +3790,8 @@ Sidebar::Sidebar(Plater *parent)
     // BBS
     // add wiping dialog
     //wiping_dialog_button->SetFont(wxGetApp().normal_font());
-    p->m_flushing_volume_btn = new Button(p->m_panel_filament_title, _L("Flushing volumes"));
+    p->m_flushing_volume_btn = new Button(p->m_panel_filament_title, wxString::FromUTF8("Purga")); // Filuna: curto, para caber no título
+    p->m_flushing_volume_btn->SetToolTip(_L("Flushing volumes"));
     p->m_flushing_volume_btn->SetStyle(ButtonStyle::Confirm, ButtonType::Compact);
     p->m_flushing_volume_btn->SetId(wxID_RESET);
     auto has_modify = is_flush_config_modified();

@@ -892,8 +892,9 @@ void GradeAbas::conferir()
     if (mudou_qtd) {
         const int linhas = std::max(1, int(m_itens.size() + 2) / 3);
         SetMinSize(wxSize(-1, linhas * FromDIP(28)));
-        if (GetParent())
-            GetParent()->Layout();
+        // a altura nova tem de chegar ao painel lateral inteiro, não só à aba que contém a grade
+        for (wxWindow* w = GetParent(); w && !w->IsTopLevel(); w = w->GetParent())
+            w->Layout();
     }
     Refresh();
 }
