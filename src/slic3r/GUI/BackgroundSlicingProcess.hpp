@@ -103,7 +103,16 @@ public:
 	~BackgroundSlicingProcess();
 
 	void set_fff_print(Print *print) { m_fff_print = print; }
-    void set_sla_print(SLAPrint *print) { m_sla_print = print; m_sla_print->set_printer(&m_sla_archive); }
+    // Filuna: SLAPrint::set_printer invalida a rasterização e cancela um fatiamento em andamento. A placa entrega o
+    // fatiador de novo a cada troca de vista; só quando ele muda é que o arquivo da impressora é ligado de novo.
+    void set_sla_print(SLAPrint *print)
+    {
+        if (print == m_sla_print && m_sla_arquivo_ligado)
+            return;
+        m_sla_print = print;
+        m_sla_print->set_printer(&m_sla_archive);
+        m_sla_arquivo_ligado = true;
+    }
 	void set_thumbnail_cb(ThumbnailsGeneratorCallback cb) { m_thumbnail_cb = cb; }
 	void set_gcode_result(GCodeProcessorResult* result) { m_gcode_result = result; }
 
@@ -258,6 +267,7 @@ private:
 	ThumbnailsGeneratorCallback m_thumbnail_cb 	     = nullptr;
 	// Grava o .sl1 do Prusa ou o .cxdlpv4 das Creality HALOT, conforme a impressora escolhida.
 	CXDLPArchive                m_sla_archive;
+	bool m_sla_arquivo_ligado{false}; // Filuna: set_printer já foi chamado neste fatiador
 		// Temporary G-code, there is one defined for the BackgroundSlicingProcess, differentiated from the other processes by a process ID.
 	std::string 				m_temp_output_path;
 	// Output path provided by the user. The output path may be set even if the slicing is running,

@@ -150,6 +150,16 @@ int main(int argc, char** argv)
                 boost::nowide::cout << "     conferencia: " << erro << "\n";
             print.process();
             boost::nowide::cout << "     camadas: " << print.print_layers().size() << "\n";
+            {
+                // a janela confere a configuração de novo a cada troca de vista; se isso desfaz etapas, o
+                // fatiamento em andamento é cancelado
+                int cancelou = 0;
+                print.set_cancel_callback([&cancelou]() { ++cancelou; });
+                const auto st = print.apply(model, full);
+                boost::nowide::cout << "     aplicar de novo: status " << int(st) << ", cancelou " << cancelou
+                                    << ", suportes prontos " << print.objects().front()->is_step_done(slaposSupportTree)
+                                    << "\n";
+            }
             const std::string saida = recursos + "/../dados-teste-abertura/cubo.cxdlpv4";
             arquivo.exportar(saida, print);
             boost::nowide::cout << "     gravado: " << saida << "\n";
