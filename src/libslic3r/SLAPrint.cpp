@@ -1,4 +1,5 @@
 #include "SLAPrint.hpp"
+#include "Format/CXDLP.hpp"
 #include "PrintConfig.hpp"
 #include "SLA/SupportTree.hpp"
 #include "SLA/Pad.hpp"
@@ -636,7 +637,9 @@ void SLAPrint::finalize()
 std::string SLAPrint::output_filename(const std::string &filename_base) const
 {
     DynamicConfig config = this->finished() ? this->print_statistics().config() : this->print_statistics().placeholders();
-    return this->PrintBase::output_filename(m_print_config.filename_format.value, ".sl1", filename_base, &config);
+    // Filuna: a extensão vem do formato que a impressora lê (.sl1 do Prusa ou .cxdlpv4 das Creality HALOT).
+    return this->PrintBase::output_filename(m_print_config.filename_format.value, CXDLPArchive::extensao(m_printer_config),
+                                            filename_base, &config);
 }
 
 StringObjectException SLAPrint::validate(std::vector<StringObjectException> *warnings, Polygons *collison_polygons, std::vector<std::pair<Polygon, float>> *height_polygons) const

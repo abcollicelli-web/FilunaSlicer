@@ -9393,6 +9393,97 @@ void PrintConfigDef::init_sla_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(150));
 
+    // Filuna: formato do arquivo que a impressora de resina lê. SL1 é o zip do Prusa; CXDLPV4 é o binário das
+    // Creality HALOT, que vai no pendrive.
+    def = this->add("sla_archive_format", coString);
+    def->label = L("Format of the output file");
+    def->tooltip = L("SL1 or CXDLPV4");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionString("SL1"));
+
+    def = this->add("sla_lift_height", coFloat);
+    def->label = L("Lift height");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(6));
+
+    def = this->add("sla_lift_speed", coFloat);
+    def->label = L("Lift speed");
+    def->sidetext = L("mm/min");
+    def->min = 1;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(80));
+
+    def = this->add("sla_bottom_lift_height", coFloat);
+    def->label = L("Bottom lift height");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(7));
+
+    def = this->add("sla_bottom_lift_speed", coFloat);
+    def->label = L("Bottom lift speed");
+    def->sidetext = L("mm/min");
+    def->min = 1;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(80));
+
+    def = this->add("sla_retract_speed", coFloat);
+    def->label = L("Retract speed");
+    def->sidetext = L("mm/min");
+    def->min = 1;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(150));
+
+    def = this->add("sla_bottom_layers", coInt);
+    def->label = L("Bottom layers");
+    def->min = 0;
+    def->mode = comSimple;
+    def->set_default_value(new ConfigOptionInt(5));
+
+    def = this->add("sla_light_pwm", coInt);
+    def->label = L("Light power");
+    def->min = 0;
+    def->max = 255;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(255));
+
+    def = this->add("sla_bottom_light_pwm", coInt);
+    def->label = L("Bottom light power");
+    def->min = 0;
+    def->max = 255;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(255));
+
+    def = this->add("sla_light_off_delay", coFloat);
+    def->label = L("Light off delay");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("sla_bottom_light_off_delay", coFloat);
+    def->label = L("Bottom light off delay");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("sla_rest_time_before_lift", coFloat);
+    def->label = L("Rest time before lift");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("sla_rest_time_after_lift", coFloat);
+    def->label = L("Rest time after lift");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
     def = this->add("initial_exposure_time", coFloat);
     //def->label = L("");
     //def->tooltip = L("");

@@ -51,6 +51,10 @@ json controle(const std::string& dev_id, const nlohmann::json& dados);
 // o cliente respondeu a pergunta do estoque sobre as entradas com filamento trocado
 json troca_vista(const std::string& dev_id);
 void monitor_iniciar();
+
+// Temperaturas de verdade do bico e da mesa de uma impressora conectada (a janela de envio desenha com elas).
+// false quando a impressora não está conectada ou não informa.
+bool temperaturas(const std::string& dev_id, double& bico, double& bico_alvo, double& mesa, double& mesa_alvo);
 // Envia o estado resumido para a conta (servidor → app Android). Pouco tráfego: chamar a cada ~30 s.
 void sincronizar_estado(const json& estado, const std::string& token);
 

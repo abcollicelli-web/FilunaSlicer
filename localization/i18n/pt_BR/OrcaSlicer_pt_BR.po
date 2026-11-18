@@ -2086,7 +2086,7 @@ msgid "Texture"
 msgstr "Textura"
 
 msgid "Masked SLA files"
-msgstr "Arquivos SLA Mascarados"
+msgstr "Arquivos de resina"
 
 msgid "Draco files"
 msgstr "Arquivos Draco"
@@ -9834,7 +9834,7 @@ msgid "Save G-code file as:"
 msgstr "Salvar arquivo de G-code como:"
 
 msgid "Save SLA file as:"
-msgstr "Salvar arquivo SLA como:"
+msgstr "Salvar o arquivo da resina como:"
 
 msgid "The provided file name is not valid."
 msgstr "O nome de arquivo fornecido não é válido."
@@ -36643,3 +36643,155 @@ msgstr "Localizar arquivo"
 # AI Translated
 msgid "This file is different from the original one. Use it anyway?"
 msgstr "Este arquivo é diferente do original. Usar mesmo assim?"
+
+# Filuna: frases que o cliente vê e que ainda não estavam no catálogo.
+
+msgid "SLA print"
+msgstr "Processo (resina)"
+
+msgid "Bottle"
+msgstr "Frasco"
+
+msgid "Exposure"
+msgstr "Exposição"
+
+msgid "Light"
+msgstr "Luz"
+
+msgid "Rest time"
+msgstr "Tempo de espera"
+
+msgid "Lift"
+msgstr "Subida da plataforma"
+
+msgid "Tilt"
+msgstr "Inclinação"
+
+msgid "Corrections"
+msgstr "Correções"
+
+msgid "Exposure limits"
+msgstr "Limites de exposição"
+
+msgid "Hollowing"
+msgstr "Peça oca"
+
+msgid "Pad"
+msgstr "Base"
+
+msgid "Pad around object"
+msgstr "Base em volta da peça"
+
+msgid "Supports"
+msgstr "Suportes"
+
+msgid "Support head"
+msgstr "Cabeça do suporte"
+
+msgid "Support pillar"
+msgstr "Pilar do suporte"
+
+msgid "Support base"
+msgstr "Pé do suporte"
+
+msgid "Automatic generation"
+msgstr "Geração automática"
+
+msgid "Output file"
+msgstr "Arquivo de saída"
+
+msgid "Lift height"
+msgstr "Altura da subida"
+
+msgid "Lift speed"
+msgstr "Velocidade da subida"
+
+msgid "Bottom lift height"
+msgstr "Altura da subida nas camadas de base"
+
+msgid "Bottom lift speed"
+msgstr "Velocidade da subida nas camadas de base"
+
+msgid "Retract speed"
+msgstr "Velocidade da descida"
+
+msgid "Bottom layers"
+msgstr "Camadas de base"
+
+msgid "Light power"
+msgstr "Potência da luz"
+
+msgid "Bottom light power"
+msgstr "Potência da luz nas camadas de base"
+
+msgid "Light off delay"
+msgstr "Pausa com a luz apagada"
+
+msgid "Bottom light off delay"
+msgstr "Pausa com a luz apagada nas camadas de base"
+
+msgid "Rest time before lift"
+msgstr "Espera antes de subir"
+
+msgid "Rest time after lift"
+msgstr "Espera depois de subir"
+
+msgid "Format of the output file"
+msgstr "Formato do arquivo que a impressora lê"
+
+msgid "SL1 or CXDLPV4"
+msgstr "SL1 (zip do Prusa) ou CXDLPV4 (binário das Creality HALOT, pelo pendrive)"
+
+msgid "Hollowing model"
+msgstr "Deixando a peça oca"
+
+msgid "Mesh to be hollowed is not suitable for hollowing (does not bound a volume)."
+msgstr "Esta peça não pode ficar oca: a malha dela não fecha um volume."
+
+msgid "No pad can be generated for this model with the current configuration"
+msgstr "Não dá para criar a base desta peça com os ajustes de agora."
+
+msgid "Pad brim size is too small for the current configuration."
+msgstr "A borda da base está pequena demais para os ajustes de agora."
+
+msgid "Exposition time is out of printer profile bounds."
+msgstr "O tempo de exposição está fora do que esta impressora aceita."
+
+msgid "Initial exposition time is out of printer profile bounds."
+msgstr "O tempo de exposição da primeira camada está fora do que esta impressora aceita."
+
+msgid "Masked SLA file exported to %1%"
+msgstr "Arquivo de resina gravado em %1%"
+
+msgid "The following SLA printer models have no materials selected:"
+msgstr "Estas impressoras de resina estão sem resina escolhida:"
+
+msgid "Do you want to select default SLA materials for these printer models?"
+msgstr "Quer que o Filuna escolha a resina padrão para elas?"
+
+msgid "Some SLA materials were uninstalled."
+msgstr "Algumas resinas foram removidas."
+
+msgid "Export SLA"
+msgstr "Exportar resina"
+
+msgid "Slice the model and export SLA printing layers as PNG."
+msgstr "Fatia a peça e grava as camadas de resina como imagens PNG."
+
+msgid "The 3MF file has no project settings that OrcaSlicer can import."
+msgstr "Este 3MF não traz ajustes de projeto que o Filuna consiga aproveitar. A peça foi aberta."
+
+msgid "The selected 3MF contains FDM supports painted object using a newer version of OrcaSlicer and is not compatible."
+msgstr "Este 3MF tem suportes pintados por uma versão mais nova do que a sua. Atualize o Filuna para abrir a pintura."
+
+msgid "The selected 3MF contains seam painted object using a newer version of OrcaSlicer and is not compatible."
+msgstr "Este 3MF tem a costura pintada por uma versão mais nova do que a sua. Atualize o Filuna para abrir a pintura."
+
+msgid "The selected 3MF contains multi-material painted object using a newer version of OrcaSlicer and is not compatible."
+msgstr "Este 3MF tem cores pintadas por uma versão mais nova do que a sua. Atualize o Filuna para abrir a pintura."
+
+msgid "import SVG failed: could not open SVG."
+msgstr "Não deu para abrir o SVG."
+
+msgid "import SVG failed: could not parse imported SVG data."
+msgstr "Não deu para entender o conteúdo deste SVG."

@@ -2057,9 +2057,10 @@ void MainFrame::create_preset_tabs()
     add_created_tab(new TabPrintPart(m_param_panel), "cog");
     add_created_tab(new TabPrintLayer(m_param_panel), "cog");
     add_created_tab(new TabFilament(m_param_dialog->panel()), "spool");
-    /* BBS work around to avoid appearance bug */
-    //add_created_tab(new TabSLAPrint(m_param_panel));
-    //add_created_tab(new TabSLAMaterial(m_param_panel));
+    // Filuna: resina na MESMA aba Preparar. O processo fica onde fica o de filamento e a resina onde fica o
+    // filamento; o ParamsPanel escolhe um ou outro pela tecnologia da impressora.
+    add_created_tab(new TabSLAPrint(m_param_panel), "cog");
+    add_created_tab(new TabSLAMaterial(m_param_dialog->panel()), "spool");
     add_created_tab(new TabPrinter(m_param_dialog->panel()), "printer");
 
     m_param_panel->rebuild_panels();

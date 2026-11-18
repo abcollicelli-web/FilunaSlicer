@@ -549,20 +549,33 @@ PresetBundle::PresetBundle()
     this->sla_prints.default_preset().compatible_printers_condition();
     this->sla_prints.default_preset().inherits();
 
-    //this->printers.add_default_preset(Preset::sla_printer_options(), static_cast<const SLAMaterialConfig &>(SLAFullPrintConfig::defaults()), "- default SLA -");
-    //this->printers.preset(1).printer_technology_ref() = ptSLA;
-    for (size_t i = 0; i < 1; ++i) {
+    // Filuna: o padrão de impressora de resina voltou. Ele é o default_preset(1), que
+    // PrinterPresetCollection::default_preset_for procura sempre que um perfil diz printer_technology = SLA.
+    this->printers.add_default_preset(Preset::sla_printer_options(),
+                                      static_cast<const SLAMaterialConfig &>(SLAFullPrintConfig::defaults()), "- default SLA -");
+    this->printers.preset(1).printer_technology_ref() = ptSLA;
+    // Filuna: a impressora de resina leva também os campos da impressora de filamento, com os valores padrão (um
+    // bico, mesa comum, sem 3MF, sem pellets, sem envio por rede). A janela do Orca lê vários deles direto da
+    // impressora escolhida, sem olhar a tecnologia; numa de resina o campo não existia e o programa caía ao abrir.
+    // O fatiamento de resina não usa nenhum deles. Os perfis de resina dos fabricantes nascem deste padrão.
+    {
+        const DynamicPrintConfig &filamento = this->printers.default_preset(0).config;
+        DynamicPrintConfig       &resina    = this->printers.default_preset(1).config;
+        for (const std::string &chave : filamento.keys())
+            if (!resina.has(chave))
+                resina.set_key_value(chave, filamento.option(chave)->clone());
+    }
+    for (size_t i = 0; i < 2; ++i) {
         // The following ugly switch is to avoid printers.preset(0) to return the edited instance, as the 0th default is the current one.
         Preset &preset = this->printers.default_preset(i);
         for (const char *key : {"printer_settings_id", "printer_model", "printer_variant", "thumbnails"}) preset.config.optptr(key, true);
-        //if (i == 0) {
+        if (i == 0) {
             preset.config.optptr("default_print_profile", true);
             preset.config.option<ConfigOptionStrings>("default_filament_profile", true);
-        //} else {
-        //    preset.config.optptr("default_sla_print_profile", true);
-        //    preset.config.optptr("default_sla_material_profile", true);
-        //}
-        // default_sla_material_profile
+        } else {
+            preset.config.optptr("default_sla_print_profile", true);
+            preset.config.optptr("default_sla_material_profile", true);
+        }
         preset.inherits();
     }
 
@@ -4054,8 +4067,9 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
     this->load_installed_sla_materials(config);
 
     // Parse the initial print / filament / printer profile names.
-    // std::string initial_sla_print_profile_name    = remove_ini_suffix(config.get("presets", PRESET_SLA_PRINT_NAME));
-    // std::string initial_sla_material_profile_name = remove_ini_suffix(config.get("presets", PRESET_SLA_MATERIALS_NAME));
+    // Filuna: o processo de resina e a resina escolhidos voltam a ser lidos (estavam desligados desde o fork).
+    std::string initial_sla_print_profile_name    = remove_ini_suffix(config.get("presets", PRESET_SLA_PRINT_NAME));
+    std::string initial_sla_material_profile_name = remove_ini_suffix(config.get("presets", PRESET_SLA_MATERIALS_NAME));
 	std::string initial_printer_profile_name      = remove_ini_suffix(config.get("presets", PRESET_PRINTER_NAME));
 
     // Activate print / filament / printer profiles from either the config,
@@ -4106,8 +4120,9 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
     // Selects the profile, leaves it to -1 if the initial profile name is empty or if it was not found.
     prints.select_preset_by_name_strict(initial_print_profile_name);
     filaments.select_preset_by_name_strict(initial_filament_profile_name);
-	// sla_prints.select_preset_by_name_strict(initial_sla_print_profile_name);
-    // sla_materials.select_preset_by_name_strict(initial_sla_material_profile_name);
+    // Filuna: sem nome gravado, fica o padrão; update_compatible logo abaixo troca pelo primeiro compatível.
+    sla_prints.select_preset_by_name_strict(initial_sla_print_profile_name);
+    sla_materials.select_preset_by_name_strict(initial_sla_material_profile_name);
 
     // Load the names of the other filament profiles selected for a multi-material printer.
     // Load it even if the current printer technology is SLA.
@@ -4220,7 +4235,10 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
     const Preset& current_printer = printers.get_selected_preset();
     const Preset* base_printer = printers.get_preset_base(current_printer);
     bool use_default_nozzle_volume_type = true;
-    if (base_printer) {
+    // Filuna: impressora de resina não tem bico; as opções abaixo nem existem na configuração dela.
+    const bool tem_bico = current_printer.printer_technology() == ptFFF &&
+                          current_printer.config.option<ConfigOptionEnumsGeneric>("default_nozzle_volume_type") != nullptr;
+    if (tem_bico && base_printer) {
         std::string prev_nozzle_volume_type = config.get_nozzle_volume_types_from_config(base_printer->name);
         if (!prev_nozzle_volume_type.empty()) {
             ConfigOptionEnumsGeneric* nozzle_volume_type_option = project_config.option<ConfigOptionEnumsGeneric>("nozzle_volume_type");
@@ -4230,7 +4248,9 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
         }
     }
 
-    if (use_default_nozzle_volume_type) {
+    if (!tem_bico) {
+        // resina: nada a fazer com bico
+    } else if (use_default_nozzle_volume_type) {
         project_config.option<ConfigOptionEnumsGeneric>("nozzle_volume_type")->values = current_printer.config.option<ConfigOptionEnumsGeneric>("default_nozzle_volume_type")->values;
     } else {
         // Orca: make sure `nozzle_volume_type` not shorter than `default_nozzle_volume_type`, otherwise we got array out of bound access
@@ -5917,6 +5937,19 @@ DynamicPrintConfig PresetBundle::full_sla_config() const
     add_if_some_non_empty(std::move(compatible_prints_condition),   "compatible_process_expression_group");
     add_if_some_non_empty(std::move(inherits),                      "inherits_group");
 
+    // Filuna: a janela do Orca lê da configuração completa vários campos de processo e de filamento sem olhar a
+    // tecnologia (posição da torre de limpeza, cores, volumes de troca). Na resina eles não existiam e o programa caía.
+    // Os que faltam entram com o valor padrão, e a torre de limpeza fica desligada. O fatiamento de resina não lê nenhum.
+    {
+        DynamicPrintConfig filamento;
+        filamento.apply(FullPrintConfig::defaults());
+        filamento.apply(this->project_config);
+        for (const std::string &chave : filamento.keys())
+            if (!out.has(chave))
+                out.set_key_value(chave, filamento.option(chave)->clone());
+        if (auto *torre = out.option<ConfigOptionBool>("enable_prime_tower"))
+            torre->value = false;
+    }
 	out.option<ConfigOptionEnumGeneric>("printer_technology", true)->value = ptSLA;
 	return out;
 }
@@ -8142,6 +8175,9 @@ size_t PresetBundle::install_vendor(const std::string& path, const std::string& 
         m_filament_id_maps = std::move(filaments.filament_id_maps);
     }
     install_collection(entries.machine_entries, parsed ? &parsed->machine_entries : nullptr, &this->printers, false);
+    // Filuna: perfis de resina do fabricante
+    install_collection(entries.sla_process_entries, parsed ? &parsed->sla_process_entries : nullptr, &this->sla_prints, false);
+    install_collection(entries.sla_material_entries, parsed ? &parsed->sla_material_entries : nullptr, &this->sla_materials, false);
     return count;
 }
 
@@ -8192,6 +8228,8 @@ PresetBundle::VendorRead PresetBundle::read_vendor(const std::string& dir, const
             if (filament_only) {
                 read.data.process_entries.clear();
                 read.data.machine_entries.clear();
+                read.data.sla_process_entries.clear();
+                read.data.sla_material_entries.clear();
                 // The stamp counts errors across the whole vendor.
                 read.data.parse_errors = 0;
             }
@@ -8219,6 +8257,9 @@ void PresetBundle::parse_vendor_json(VendorRead& read)
     std::vector<std::pair<std::string, std::string>> process_subfiles;
     std::vector<std::pair<std::string, std::string>> filament_subfiles;
     std::vector<std::pair<std::string, std::string>> machine_subfiles;
+    // Filuna: perfis de resina do fabricante
+    std::vector<std::pair<std::string, std::string>> sla_process_subfiles;
+    std::vector<std::pair<std::string, std::string>> sla_material_subfiles;
     auto get_name_and_subpath = [this](json::iterator& it, std::vector<std::pair<std::string, std::string>>& subfile_map) {
         if (it.value().is_array()) {
             size_t index = 0;
@@ -8300,6 +8341,13 @@ void PresetBundle::parse_vendor_json(VendorRead& read)
                 //get machine list
                 get_name_and_subpath(it, machine_subfiles);
             }
+            // Filuna: perfis de resina do fabricante
+            else if (boost::iequals(it.key(), BBL_JSON_KEY_SLA_PROCESS_LIST)) {
+                get_name_and_subpath(it, sla_process_subfiles);
+            }
+            else if (boost::iequals(it.key(), BBL_JSON_KEY_SLA_MATERIAL_LIST)) {
+                get_name_and_subpath(it, sla_material_subfiles);
+            }
         }
     }
     catch(nlohmann::detail::parse_error &err) {
@@ -8313,6 +8361,8 @@ void PresetBundle::parse_vendor_json(VendorRead& read)
         machine_model_subfiles.clear();
         machine_subfiles.clear();
         process_subfiles.clear();
+        sla_process_subfiles.clear();
+        sla_material_subfiles.clear();
     }
 
     //2) paste the machine model
@@ -8554,8 +8604,11 @@ void PresetBundle::parse_vendor_json(VendorRead& read)
     // nothing to set.
     CNumericLocalesSetter locales_setter;
     if (parse_subfiles(process_subfiles, read.data.process_entries, read.parsed.process_entries, "process") &&
-        parse_subfiles(filament_subfiles, read.data.filament_entries, read.parsed.filament_entries, "filament"))
-        parse_subfiles(machine_subfiles, read.data.machine_entries, read.parsed.machine_entries, "printer");
+        parse_subfiles(filament_subfiles, read.data.filament_entries, read.parsed.filament_entries, "filament") &&
+        parse_subfiles(machine_subfiles, read.data.machine_entries, read.parsed.machine_entries, "printer") &&
+        // Filuna: perfis de resina do fabricante
+        parse_subfiles(sla_process_subfiles, read.data.sla_process_entries, read.parsed.sla_process_entries, "sla process"))
+        parse_subfiles(sla_material_subfiles, read.data.sla_material_entries, read.parsed.sla_material_entries, "sla material");
 }
 
 std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::install_vendor_read(VendorRead&& read, const PresetBundle* base_bundle)

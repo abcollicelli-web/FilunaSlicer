@@ -7,6 +7,7 @@
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
 #include "MsgDialog.hpp"
+#include "FilunaEnvio.hpp"
 #include "PartPlate.hpp"
 #include "Plater.hpp"
 #include "libslic3r/Model.hpp"
@@ -326,6 +327,54 @@ private:
     wxCheckBox*            m_nivelar{nullptr};
 };
 
+
+// Tempo, peso, custo, altura da camada e nome da mesa, tirados do fatiamento que está na tela: são os mesmos
+// números do rodapé da Preparação, para a tela de conferir não contar diferente do resto do programa.
+ResumoMesa resumo_da_mesa(const std::string& arquivo)
+{
+    ResumoMesa r;
+    r.arquivo = arquivo;
+
+    Plater*       plater = wxGetApp().plater();
+    PresetBundle* bundle = wxGetApp().preset_bundle;
+    if (plater == nullptr || bundle == nullptr)
+        return r;
+
+    if (const auto* o = bundle->prints.get_edited_preset().config.option<ConfigOptionFloat>("layer_height"))
+        r.altura_camada = o->value;
+    if (const auto* o = bundle->project_config.option<ConfigOptionEnum<BedType>>("curr_bed_type"))
+        r.mesa = bed_type_to_gcode_string(o->value);
+
+    PartPlate* plate = plater->get_partplate_list().get_curr_plate();
+    if (plate == nullptr || !plate->is_slice_result_valid() || plate->get_slice_result() == nullptr)
+        return r;
+
+    const auto& stats = plate->get_slice_result()->print_statistics;
+    std::map<size_t, double> volumes;
+    for (const auto* m : {&stats.model_volumes_per_extruder, &stats.support_volumes_per_extruder, &stats.wipe_tower_volumes_per_extruder})
+        for (const auto& [id, v] : *m)
+            volumes[id] += v;
+    for (const auto& [id, v] : volumes) {
+        if (v <= 0.)
+            continue;
+        double densidade = 1.24, preco_kg = 0.;
+        if (id < bundle->filament_presets.size())
+            if (const Preset* p = bundle->filaments.find_preset(bundle->filament_presets[id])) {
+                if (const auto* o = p->config.option<ConfigOptionFloats>("filament_density"); o && !o->values.empty() && o->values.front() > 0.)
+                    densidade = o->values.front();
+                if (const auto* o = p->config.option<ConfigOptionFloats>("filament_cost"); o && !o->values.empty())
+                    preco_kg = o->values.front();
+            }
+        const double g = v * densidade / 1000.;
+        r.gramas += g;
+        r.custo += g * preco_kg / 1000.;
+    }
+    const float t = stats.modes[static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Normal)].time;
+    if (t > 0.f)
+        r.tempo_s = static_cast<long long>(std::llround(t));
+    return r;
+}
+
 struct Andamento
 {
     std::mutex        m;
@@ -341,9 +390,10 @@ struct Andamento
 
 bool agente_filuna()
 {
-    PresetBundle* bundle = wxGetApp().preset_bundle;
-    if (bundle == nullptr || bundle->use_bbl_network())
+    if (wxGetApp().preset_bundle == nullptr)
         return false;
+    // Conectou pelo Filuna (agente da marca)? Então imprime pelas telas do Filuna, seja qual for a marca —
+    // inclusive Bambu. Sem isso o cliente via a janela do Orca numa marca e a do Filuna na outra.
     return boost::starts_with(agente_ativo(), "filuna_");
 }
 
@@ -476,12 +526,23 @@ void imprimir(int plate_idx)
         }
     }
 
-    Janela    janela(wxGetApp().mainframe, o->get_dev_name(), nome, fila, es, fixa);
-    const int resposta = janela.ShowModal();
+    // Primeira tela: conferir arquivo, tempo, peso, custo, mesa e para qual entrada vai cada filamento.
+    std::vector<ItemFilamento> itens_fil;
+    for (const Filamento& f : fila)
+        itens_fil.push_back({f.indice, f.tipo, "#" + f.cor, 0.});
+    std::vector<ItemEntrada> itens_ent;
+    for (const Entrada& e : es)
+        itens_ent.push_back({e.global, e.tipo, "#" + e.cor});
+
+    JanelaConfirmar confirmar(wxGetApp().mainframe, wxString::FromUTF8(o->get_dev_name()), resumo_da_mesa(nome), itens_fil, itens_ent,
+                              fixa);
+    const int resposta = confirmar.ShowModal();
     if (resposta != wxID_OK && resposta != wxID_APPLY)
         return;
-    const Escolha esc      = janela.escolha();
-    const bool    so_envio = resposta == wxID_APPLY;
+    Escolha esc;
+    esc.nivelar           = confirmar.nivelar();
+    esc.entrada           = confirmar.entradas_escolhidas();
+    const bool so_envio   = resposta == wxID_APPLY;
     wxGetApp().app_config->set("filuna_imprimir_nivelar", esc.nivelar ? "1" : "0");
 
     // cópia com o nome que a impressora vai mostrar (o arquivo da mesa é temporário e tem nome interno)
@@ -560,24 +621,34 @@ void imprimir(int plate_idx)
         and_->fim = true;
     });
 
+    // A janela do Filuna: os passos à esquerda, a impressora desenhada à direita com o bico e a mesa esquentando.
+    auto* jenvio = new JanelaEnvio(wxGetApp().mainframe, o->get_dev_id(), wxString::FromUTF8(o->get_dev_name()),
+                                   wxString::FromUTF8(nome));
+    jenvio->Show();
+    jenvio->passo(JanelaEnvio::Passo::PREPARANDO);
     {
-        wxProgressDialog barra(wxString::FromUTF8("Imprimir em " + o->get_dev_name()), wxString::FromUTF8("Preparando o envio…"), 100,
-                               wxGetApp().mainframe, wxPD_APP_MODAL | wxPD_CAN_ABORT | wxPD_SMOOTH);
+        int ultimo = -2;
         while (!and_->fim) {
-            wxMilliSleep(80);
+            wxMilliSleep(60);
+            wxYield(); // a janela precisa continuar desenhando e respondendo ao cliente
             int etapa, pct;
             {
                 std::lock_guard<std::mutex> l(and_->m);
                 etapa = and_->etapa, pct = and_->pct;
             }
-            wxString texto = etapa == PrintingStageUpload ? wxString::FromUTF8("Enviando o arquivo… ") + wxString::Format("%d%%", pct) :
-                             etapa == PrintingStageSending ? wxString::FromUTF8("Pedindo o início da impressão…") :
-                                                             wxString::FromUTF8("Preparando o envio…");
-            if (!barra.Update(std::max(0, std::min(pct, 99)), texto))
+            if (etapa == PrintingStageUpload)
+                jenvio->passo(JanelaEnvio::Passo::ENVIANDO, std::max(0, std::min(pct, 99)));
+            else if (etapa == PrintingStageSending && ultimo != etapa)
+                jenvio->passo(JanelaEnvio::Passo::FALANDO);
+            else if (ultimo != etapa)
+                jenvio->passo(JanelaEnvio::Passo::PREPARANDO);
+            ultimo = etapa;
+            if (jenvio->cancelou())
                 and_->cancelar = true;
         }
     }
     tarefa.join();
+    jenvio->passo(JanelaEnvio::Passo::CONFERINDO);
     fs::remove(envio, ec);
 
     int         rc;
@@ -595,20 +666,20 @@ void imprimir(int plate_idx)
 #endif
         BOOST_LOG_TRIVIAL(info) << "FilunaImpressao: " << (so_envio ? "arquivo enviado" : "impressão pedida") << " agente=" << agente
                                 << " arquivo=" << nome << " mapa=" << p.ams_mapping;
-        avisar(wxString::FromUTF8(so_envio ? "Arquivo enviado para " + o->get_dev_name() + "." :
-                                             "Enviado. A impressão começa em " + o->get_dev_name() + ".\nAcompanhe na aba Dispositivo."));
+        jenvio->passo(so_envio ? JanelaEnvio::Passo::CONFERINDO : JanelaEnvio::Passo::AQUECENDO);
+        jenvio->concluir(true, wxString::FromUTF8(so_envio ? "O arquivo está na impressora." : std::string()));
         return;
     }
     if (and_->cancelar) {
-        avisar(wxString::FromUTF8("Envio cancelado."));
+        jenvio->concluir(false, wxString::FromUTF8("Envio cancelado por você."));
         return;
     }
     FilunaManutencao::diagnostico("impressao", msg.empty() ? "falha ao enviar/imprimir (código " + std::to_string(rc) + ")" : msg,
                                   json{{"agente", agente}, {"codigo", rc}, {"so_envio", so_envio}, {"arquivo", nome},
                                        {"mapa", p.ams_mapping}, {"ip", p.dev_ip}});
-    avisar(wxString::FromUTF8("Não foi possível " + std::string(so_envio ? "enviar o arquivo" : "iniciar a impressão") + ".\n\n" +
-                              (msg.empty() ? "Código " + std::to_string(rc) : msg) + "\n\nO erro foi enviado ao suporte da Filuna."),
-           wxOK | wxICON_ERROR);
+    jenvio->concluir(false, wxString::FromUTF8("Não foi possível " + std::string(so_envio ? "enviar o arquivo" : "iniciar a impressão") +
+                                               ". " + (msg.empty() ? "Código " + std::to_string(rc) : msg) +
+                                               "\nO erro foi enviado ao suporte da Filuna."));
 }
 
 // ============================================================================================================

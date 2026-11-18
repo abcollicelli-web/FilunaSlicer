@@ -200,6 +200,7 @@
 #include "GUI_Utils.hpp"
 #include "3DScene.hpp"
 #include "MainFrame.hpp"
+#include "FilunaEnvio.hpp"
 #include "Plater.hpp"
 #include "GLCanvas3D.hpp"
 #include "EncodedFilament.hpp"
@@ -701,7 +702,7 @@ static const FileWildcards file_wildcards_by_type[FT_SIZE] = {
     /* FT_INI */     { L("INI files"),       { ".ini"sv } },
     /* FT_SVG */     { L("SVG files"),       { ".svg"sv } },
     /* FT_TEX */     { L("Texture"),         { ".png"sv, ".svg"sv } },
-    /* FT_SL1 */     { L("Masked SLA files"), { ".sl1"sv, ".sl1s"sv } },
+    /* FT_SL1 */     { L("Masked SLA files"), { ".sl1"sv, ".sl1s"sv, ".cxdlpv4"sv } }, // Filuna: .cxdlpv4 das Creality HALOT
     /* FT_DRC */     { L("Draco files"),     { ".drc"sv } },
 };
 
@@ -1156,6 +1157,9 @@ void GUI_App::post_init()
             this->check_new_version_sf();
             FilunaManutencao::iniciar();
             FilunaImpressao::farm_iniciar();
+            // Filuna: previa das duas telas de imprimir (so com FILUNA_PREVIA_IMPRIMIR=1), para aprovar o visual.
+            if (wxGetEnv("FILUNA_PREVIA_IMPRIMIR", nullptr))
+                CallAfter([this] { previa_telas_de_impressao(mainframe); });
             FilunaAtualizacao::instancia().iniciar((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(),
                                                    app_config->get("filuna_token"));
             if (!cw_showed)

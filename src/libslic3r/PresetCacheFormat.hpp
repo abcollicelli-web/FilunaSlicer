@@ -152,6 +152,9 @@ struct VendorCacheData
     std::vector<CachedPreset> process_entries;
     std::vector<CachedPreset> filament_entries;
     std::vector<CachedPreset> machine_entries;
+    // Filuna: perfis de resina do fabricante
+    std::vector<CachedPreset> sla_process_entries;
+    std::vector<CachedPreset> sla_material_entries;
     uint64_t                  parse_errors = 0;
 };
 

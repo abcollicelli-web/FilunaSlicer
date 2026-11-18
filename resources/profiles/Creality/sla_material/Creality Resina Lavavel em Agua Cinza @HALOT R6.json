@@ -1,0 +1,32 @@
+{
+    "type": "sla_material",
+    "name": "Creality Resina Lavavel em Agua Cinza @HALOT R6",
+    "from": "system",
+    "instantiation": "true",
+    "compatible_printers": [
+        "Creality HALOT R6"
+    ],
+    "material_type": "Water washable",
+    "material_colour": "#8E8A90",
+    "material_vendor": "Creality",
+    "material_density": "1.08",
+    "bottle_volume": "1000",
+    "bottle_weight": "1.1",
+    "bottle_cost": "179",
+    "initial_layer_height": "0.05",
+    "exposure_time": "2.2",
+    "initial_exposure_time": "28",
+    "sla_bottom_layers": "4",
+    "sla_light_pwm": "255",
+    "sla_bottom_light_pwm": "255",
+    "sla_light_off_delay": "0.5",
+    "sla_bottom_light_off_delay": "0.5",
+    "sla_rest_time_before_lift": "0",
+    "sla_rest_time_after_lift": "0",
+    "material_print_speed": "slow",
+    "material_correction": [
+        "1",
+        "1",
+        "1"
+    ]
+}

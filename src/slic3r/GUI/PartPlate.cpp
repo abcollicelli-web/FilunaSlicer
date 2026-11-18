@@ -21,6 +21,7 @@
 #include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "libslic3r/GCode/GCodeStatistics.hpp"
+#include "libslic3r/SLAPrint.hpp"
 #include <ios>
 #include <iomanip>
 #include "libslic3r/Arrange.hpp"
@@ -4310,7 +4311,9 @@ void PartPlate::set_plate_name(const std::string& name)
 //get the print's object, result and index
 void PartPlate::get_print(PrintBase** print, GCodeResult** result, int* index)
 {
-	if (print && (printer_technology == PrinterTechnology::ptFFF))
+	// Filuna: entrega sempre o fatiador de filamento da placa. Na resina ele existe e fica parado; antes, quem
+	// pedia ficava com o ponteiro sem valor e o botão Fatiar lia memória solta ("vector too long").
+	if (print)
 		*print = m_print;
 
 	if (result)
@@ -5405,6 +5408,17 @@ void PartPlate::update_slice_context(BackgroundSlicingProcess & process)
 		wxQueueEvent(m_plater, event);
 	};
 
+	// Filuna: em impressora de resina quem fatia é o SLAPrint, que mora no Plater; o m_print da placa é só de
+	// filamento. Sem isto o processo de fundo ficava sem fatiador e a resina não fatiava nada.
+	if (this->printer_technology == ptSLA && m_plater != nullptr) {
+		SLAPrint &sla_print = m_plater->sla_print();
+		process.set_sla_print(&sla_print);
+		process.set_current_plate(this);
+		sla_print.set_status_callback(statuscb);
+		process.select_technology(ptSLA);
+		return;
+	}
+
 	process.set_fff_print(m_print);
 	process.set_gcode_result(m_gcode_result);
 	process.select_technology(this->printer_technology);
@@ -6270,6 +6284,9 @@ void PartPlateList::set_default_wipe_tower_pos_for_plate(int plate_idx, bool ini
     ConfigOptionFloats *wipe_tower_y = proj_cfg.opt<ConfigOptionFloats>("wipe_tower_y");
     wipe_tower_x->values.resize(m_plate_list.size(), wipe_tower_x->values.front());
     wipe_tower_y->values.resize(m_plate_list.size(), wipe_tower_y->values.front());
+    // Filuna: resina não tem torre de limpeza; o cálculo abaixo é todo de filamento.
+    if (wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA)
+        return;
 
     auto printer_structure_opt = wxGetApp().preset_bundle->printers.get_edited_preset().config.option<ConfigOptionEnum<PrinterStructure>>("printer_structure");
     // set the default position, the same with print config(left top)
@@ -8058,6 +8075,14 @@ void PartPlateList::update_logo_texture_filename(const std::string &texture_file
 
 /*slice related functions*/
 //update current slice context into backgroud slicing process
+void PartPlateList::definir_tecnologia(PrinterTechnology tech)
+{
+	this->printer_technology = tech;
+	for (PartPlate* placa : m_plate_list)
+		if (placa != nullptr)
+			placa->printer_technology = tech;
+}
+
 void PartPlateList::update_slice_context_to_current_plate(BackgroundSlicingProcess& process)
 {
 	PartPlate* current_plate;

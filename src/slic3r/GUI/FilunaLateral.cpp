@@ -297,6 +297,52 @@ wxBitmap bobina(const wxColour& cor, int largura)
     return wxBitmap(img);
 }
 
+// ------------------------------------------------------------------------------------------------ frasco
+wxBitmap frasco(const wxColour& cor, int largura)
+{
+    const int W = std::max(16, largura), H = int(W * 0.84);
+    wxImage   img(W, H);
+    img.InitAlpha();
+    std::fill(img.GetAlpha(), img.GetAlpha() + W * H, 0);
+    {
+        std::unique_ptr<wxGraphicsContext> gc(wxGraphicsContext::Create(img));
+        if (!gc)
+            return wxBitmap(img);
+        gc->SetAntialiasMode(wxANTIALIAS_DEFAULT);
+        const double bw = W * 0.46, bx = (W - bw) / 2., base = H * 0.93, ombro = H * 0.30, gargalo = H * 0.17;
+        // sombra no chão
+        gc->SetPen(*wxTRANSPARENT_PEN);
+        gc->SetBrush(gc->CreateRadialGradientBrush(W * 0.5, base, W * 0.5, base, W * 0.36, wxColour(0, 0, 0, 70), wxColour(0, 0, 0, 0)));
+        gc->DrawEllipse(W * 0.16, base - H * 0.06, W * 0.68, H * 0.12);
+        // tampa escura
+        gc->SetBrush(gc->CreateLinearGradientBrush(0, H * 0.02, 0, gargalo, wxColour(110, 103, 115), wxColour(70, 64, 74)));
+        gc->DrawRoundedRectangle(W / 2. - bw * 0.22, H * 0.02, bw * 0.44, gargalo - H * 0.02, 2);
+        // vidro: gargalo, ombro e corpo
+        wxGraphicsPath vidro = gc->CreatePath();
+        vidro.MoveToPoint(W / 2. - bw * 0.20, gargalo);
+        vidro.AddLineToPoint(W / 2. + bw * 0.20, gargalo);
+        vidro.AddLineToPoint(bx + bw, ombro);
+        vidro.AddLineToPoint(bx + bw, base - 3);
+        vidro.AddQuadCurveToPoint(bx + bw, base, bx + bw - 3, base);
+        vidro.AddLineToPoint(bx + 3, base);
+        vidro.AddQuadCurveToPoint(bx, base, bx, base - 3);
+        vidro.AddLineToPoint(bx, ombro);
+        vidro.CloseSubpath();
+        gc->SetBrush(wxBrush(wxColour(236, 231, 224)));
+        gc->SetPen(wxPen(wxColour(0, 0, 0, 40), 1));
+        gc->DrawPath(vidro);
+        // a resina dentro, com a luz à esquerda
+        const double nivel = ombro + (base - ombro) * 0.30;
+        gc->SetPen(*wxTRANSPARENT_PEN);
+        gc->SetBrush(gc->CreateLinearGradientBrush(bx, 0, bx + bw, 0, tom(cor, 0.20), tom(cor, -0.28)));
+        gc->DrawRoundedRectangle(bx + 1, nivel, bw - 2, base - nivel - 1, 2);
+        // reflexo do vidro
+        gc->SetBrush(wxBrush(wxColour(255, 255, 255, 80)));
+        gc->DrawRectangle(bx + bw * 0.16, ombro + H * 0.04, bw * 0.10, base - ombro - H * 0.10);
+    }
+    return wxBitmap(img);
+}
+
 // ------------------------------------------------------------------------------------------------ cartão da impressora
 CartaoImpressora::CartaoImpressora(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE)
 {
@@ -305,7 +351,7 @@ CartaoImpressora::CartaoImpressora(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDef
     SetToolTip(wxString::FromUTF8("Selecionar impressora"));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
     Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
-    auto ativo = [this](int i) { return i == BICO ? m_bico_sel && m_mostrar_bico : i == MESA ? m_mesa_sel : true; };
+    auto ativo = [this](int i) { return i == BICO ? m_bico_sel && m_mostrar_bico : i == MESA ? m_mesa_sel : i == TIPO ? m_info.tipo_selecionavel : true; };
     auto mudar = [this](int s) {
         if (s == m_sobre)
             return;
@@ -441,10 +487,12 @@ void CartaoImpressora::pintar()
     desenhar_icone(*gc, this, Icone::lapis, wxRect2DDouble(l.x + FromDIP(3), l.y + FromDIP(3), l.width - FromDIP(6), l.height - FromDIP(6)),
                    m_sobre == LAPIS ? MAGENTA : CINZA, false);
     // bico, tipo de bico e mesa
+    auto rotulo = [](const wxString& r, const char* padrao) { return r.empty() ? wxString::FromUTF8(padrao) : r; };
     if (m_mostrar_bico)
-        pilula(*gc, this, area(BICO), wxString::FromUTF8("Bico"), m_info.bico, m_bico_sel, m_sobre == BICO, LILAS_BORDA, BRANCO, wxBitmap());
-    pilula(*gc, this, area(TIPO), wxString::FromUTF8("Tipo de bico"), m_info.tipo, true, m_sobre == TIPO, LILAS_BORDA, BRANCO, wxBitmap());
-    pilula(*gc, this, area(MESA), wxString::FromUTF8("Mesa"), m_info.mesa, m_mesa_sel, m_sobre == MESA, ROSA_BORDA, ROSA, m_foto_mesa);
+        pilula(*gc, this, area(BICO), rotulo(m_info.rotulo_bico, "Bico"), m_info.bico, m_bico_sel, m_sobre == BICO, LILAS_BORDA, BRANCO, wxBitmap());
+    pilula(*gc, this, area(TIPO), rotulo(m_info.rotulo_tipo, "Tipo de bico"), m_info.tipo, m_info.tipo_selecionavel, m_sobre == TIPO, LILAS_BORDA, BRANCO,
+           wxBitmap());
+    pilula(*gc, this, area(MESA), rotulo(m_info.rotulo_mesa, "Mesa"), m_info.mesa, m_mesa_sel, m_sobre == MESA, ROSA_BORDA, ROSA, m_foto_mesa);
 }
 
 // ------------------------------------------------------------------------------------------------ bobinas
@@ -488,7 +536,16 @@ Bobinas::Bobinas(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDe
 
 int Bobinas::passo() const { return FromDIP(LARGURA) + FromDIP(6); }
 
-int Bobinas::largura_total() const { return int(m_bobinas.size()) * passo() + FromDIP(34); }
+int Bobinas::largura_total() const { return int(m_bobinas.size()) * passo() + (m_mais ? FromDIP(34) : 0); }
+
+void Bobinas::mostrar_mais(bool sim)
+{
+    if (sim == m_mais)
+        return;
+    m_mais = sim;
+    rolar(0);
+    Refresh();
+}
 
 void Bobinas::rolar(int dx)
 {
@@ -504,12 +561,14 @@ void Bobinas::definir(const std::vector<InfoBobina>& bobinas, int selecionada)
 {
     const bool igual = selecionada == m_sel && bobinas.size() == m_bobinas.size() &&
                        std::equal(bobinas.begin(), bobinas.end(), m_bobinas.begin(), [](const InfoBobina& a, const InfoBobina& b) {
-                           return a.numero == b.numero && a.cor == b.cor && a.marca == b.marca && a.tipo == b.tipo && a.estoque == b.estoque;
+                           return a.numero == b.numero && a.cor == b.cor && a.marca == b.marca && a.tipo == b.tipo && a.estoque == b.estoque &&
+                                  a.frasco == b.frasco;
                        });
     if (igual)
         return;
     if (bobinas.size() != m_bobinas.size() ||
-        !std::equal(bobinas.begin(), bobinas.end(), m_bobinas.begin(), [](const InfoBobina& a, const InfoBobina& b) { return a.cor == b.cor; }))
+        !std::equal(bobinas.begin(), bobinas.end(), m_bobinas.begin(),
+                    [](const InfoBobina& a, const InfoBobina& b) { return a.cor == b.cor && a.frasco == b.frasco; }))
         m_desenhos.clear();
     const bool nova_sel = selecionada != m_sel;
     m_bobinas           = bobinas;
@@ -538,7 +597,7 @@ int Bobinas::sob(const wxPoint& p) const
         return SETA_ESQ;
     if (!cabe && m_desloc < largura_total() - GetClientSize().x && p.x > GetClientSize().x - FromDIP(18))
         return SETA_DIR;
-    for (int i = 0; i <= int(m_bobinas.size()); ++i)
+    for (int i = 0; i < int(m_bobinas.size()) + (m_mais ? 1 : 0); ++i)
         if (cartao(i).Contains(p))
             return i;
     return -1;
@@ -554,7 +613,7 @@ void Bobinas::pintar()
     if (m_desenhos.size() != m_bobinas.size()) {
         m_desenhos.clear();
         for (const InfoBobina& b : m_bobinas)
-            m_desenhos.push_back(bobina(b.cor, larg_bobina));
+            m_desenhos.push_back(b.frasco ? frasco(b.cor, larg_bobina) : bobina(b.cor, larg_bobina));
     }
     const wxFont f_marca = fonte(this, 6.5, true), f_tipo = fonte(this, 8., true), f_estoque = fonte(this, 6.5, false), f_num = fonte(this, 6.5, true);
     for (int i = 0; i < int(m_bobinas.size()); ++i) {
@@ -587,13 +646,15 @@ void Bobinas::pintar()
         texto_centro(*gc, this, b.estoque, f_estoque, TEXTO_APAGADO, cx, y, lt);
     }
     // "+" tracejado no fim da fileira
-    const wxRect r = cartao(int(m_bobinas.size()));
-    const bool   s = m_sobre == int(m_bobinas.size());
-    gc->SetPen(wxPen(s ? MAGENTA : AREIA_ESCURA, FromDIP(1), wxPENSTYLE_SHORT_DASH));
-    gc->SetBrush(*wxTRANSPARENT_BRUSH);
-    gc->DrawRoundedRectangle(r.x + 1, r.y + 1, r.width - 2, r.height - 2, FromDIP(10));
-    const double li = FromDIP(18);
-    desenhar_icone(*gc, this, Icone::mais, wxRect2DDouble(r.x + (r.width - li) / 2., r.y + (r.height - li) / 2., li, li), MAGENTA, false);
+    if (m_mais) {
+        const wxRect r = cartao(int(m_bobinas.size()));
+        const bool   s = m_sobre == int(m_bobinas.size());
+        gc->SetPen(wxPen(s ? MAGENTA : AREIA_ESCURA, FromDIP(1), wxPENSTYLE_SHORT_DASH));
+        gc->SetBrush(*wxTRANSPARENT_BRUSH);
+        gc->DrawRoundedRectangle(r.x + 1, r.y + 1, r.width - 2, r.height - 2, FromDIP(10));
+        const double li = FromDIP(18);
+        desenhar_icone(*gc, this, Icone::mais, wxRect2DDouble(r.x + (r.width - li) / 2., r.y + (r.height - li) / 2., li, li), MAGENTA, false);
+    }
     // setas nas pontas quando a fileira não cabe
     auto ponta = [&](bool esquerda) {
         const double cx = esquerda ? FromDIP(10) : GetClientSize().x - FromDIP(10), cy = FromDIP(ALTURA) / 2.;
@@ -709,7 +770,8 @@ BarraBobina::BarraBobina(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPositi
 std::vector<Botao> BarraBobina::botoes() const
 {
     Botao cor{wxString::FromUTF8("Cor")};
-    cor.cor = m_cor.IsOk() ? m_cor : *wxWHITE;
+    cor.cor   = m_cor.IsOk() ? m_cor : *wxWHITE;
+    cor.ativo = m_pode_cor;
     Botao tirar{wxString(), Icone::lixeira};
     tirar.ativo = m_pode_tirar;
     return {cor, Botao{wxString::FromUTF8("Trocar")}, Botao{wxString(), Icone::lapis}, tirar};
@@ -731,14 +793,15 @@ wxRect BarraBobina::area(int i) const
     return wxRect();
 }
 
-void BarraBobina::definir(const wxString& entrada, const wxString& nome, const wxColour& cor, bool pode_tirar)
+void BarraBobina::definir(const wxString& entrada, const wxString& nome, const wxColour& cor, bool pode_tirar, bool pode_cor)
 {
-    if (entrada == m_entrada && nome == m_nome && cor == m_cor && pode_tirar == m_pode_tirar)
+    if (entrada == m_entrada && nome == m_nome && cor == m_cor && pode_tirar == m_pode_tirar && pode_cor == m_pode_cor)
         return;
     m_entrada    = entrada;
     m_nome       = nome;
     m_cor        = cor;
     m_pode_tirar = pode_tirar;
+    m_pode_cor   = pode_cor;
     Refresh();
 }
 

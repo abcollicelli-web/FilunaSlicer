@@ -769,6 +769,9 @@ private:
         std::vector<EntryParse> process_entries;
         std::vector<EntryParse> filament_entries;
         std::vector<EntryParse> machine_entries;
+        // Filuna: perfis de resina do fabricante
+        std::vector<EntryParse> sla_process_entries;
+        std::vector<EntryParse> sla_material_entries;
     };
 
     // One vendor read from its cache or its JSONs by read_vendor, for

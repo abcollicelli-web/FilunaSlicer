@@ -1102,6 +1102,8 @@ public:
     /*slice related functions*/
     //update current slice context into backgroud slicing process
     void update_slice_context_to_current_plate(BackgroundSlicingProcess& process);
+    // Filuna: filamento ou resina, para a placa saber qual fatiador entregar ao processo de fundo.
+    void definir_tecnologia(PrinterTechnology tech);
     //return the current fff print object
     Print& get_current_fff_print() const;
     //return the slice result

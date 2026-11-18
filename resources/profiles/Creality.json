@@ -1,6 +1,6 @@
 {
 	"name": "Creality",
-	"version": "02.03.02.88",
+	"version": "02.03.02.89",
 	"force_update": "0",
 	"description": "Creality configurations",
 	"machine_model_list": [
@@ -231,6 +231,10 @@
 		{
 			"name": "Creality Sermoon V1 Pro",
 			"sub_path": "machine/Creality Sermoon V1 Pro.json"
+		},
+		{
+			"name": "Creality HALOT R6",
+			"sub_path": "machine/Creality HALOT R6.json"
 		}
 	],
 	"process_list": [
@@ -5477,6 +5481,30 @@
 		{
 			"name": "Creality Sermoon V1 Pro 0.4 nozzle",
 			"sub_path": "machine/Creality Sermoon V1 Pro 0.4 nozzle.json"
+		},
+		{
+			"name": "Creality HALOT R6",
+			"sub_path": "machine/Creality HALOT R6 default.json"
+		}
+	],
+	"sla_process_list": [
+		{
+			"name": "0.05mm Normal @HALOT R6",
+			"sub_path": "sla_print/0.05mm Normal @HALOT R6.json"
+		},
+		{
+			"name": "0.10mm Rapido @HALOT R6",
+			"sub_path": "sla_print/0.10mm Rapido @HALOT R6.json"
+		}
+	],
+	"sla_material_list": [
+		{
+			"name": "Creality Resina Padrao Cinza @HALOT R6",
+			"sub_path": "sla_material/Creality Resina Padrao Cinza @HALOT R6.json"
+		},
+		{
+			"name": "Creality Resina Lavavel em Agua Cinza @HALOT R6",
+			"sub_path": "sla_material/Creality Resina Lavavel em Agua Cinza @HALOT R6.json"
 		}
 	]
 }

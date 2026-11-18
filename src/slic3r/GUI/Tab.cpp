@@ -5470,8 +5470,13 @@ void TabPrinter::build()
     // Options for the Searcher is added in the moment of pages creation.
     // So, build first of all printer pages for non-selected printer technology...
     //std::string def_preset_name = "- default " + std::string(m_printer_technology == ptSLA ? "FFF" : "SLA") + " -";
-    std::string def_preset_name = "Default Printer";
-    m_config = &m_presets->find_preset(def_preset_name)->config;
+    // Filuna: cada tecnologia é montada com o padrão DELA. A de resina com "- default SLA -", que tem os campos
+    // de tela, arquivo e plataforma; montá-la com o padrão de filamento lia opções que não existem ali.
+    std::string   def_preset_name = m_printer_technology == ptSLA ? "Default Printer" : "- default SLA -";
+    Preset*       def_preset      = m_presets->find_preset(def_preset_name);
+    if (def_preset == nullptr)
+        def_preset = m_presets->find_preset("Default Printer");
+    m_config = &def_preset->config;
     m_printer_technology == ptSLA ? build_fff() : build_sla();
     if (m_printer_technology == ptSLA)
         m_extruders_count_old = 0;// revert this value
@@ -5815,61 +5820,57 @@ void TabPrinter::build_fff()
 
 void TabPrinter::build_sla()
 {
-    //if (!m_pages.empty())
-    //    m_pages.resize(0);
-    //auto page = add_options_page(L("General"), "printer");
-    //auto optgroup = page->new_optgroup(L("Size and coordinates"));
+    if (!m_pages.empty())
+        m_pages.resize(0);
 
-    //create_line_with_widget(optgroup.get(), "printable_area", "custom-svg-and-png-bed-textures_124612", [this](wxWindow* parent) {
-    //    return 	create_bed_shape_widget(parent);
-    //});
-    //optgroup->append_single_option_line("printable_height");
+    auto page = add_options_page(L("Basic information"), "printer");
+        auto optgroup = page->new_optgroup(L("Size and coordinates"), L"param_printable_space");
+        create_line_with_widget(optgroup.get(), "printable_area", "", [this](wxWindow* parent) {
+            return create_bed_shape_widget(parent);
+        });
+        optgroup->append_single_option_line("printable_height");
 
-    //optgroup = page->new_optgroup(L("Display"));
-    //optgroup->append_single_option_line("display_width");
-    //optgroup->append_single_option_line("display_height");
+        optgroup = page->new_optgroup(L("Display"), L"param_printable_space");
+        optgroup->append_single_option_line("display_width");
+        optgroup->append_single_option_line("display_height");
+        optgroup->append_single_option_line("display_pixels_x");
+        optgroup->append_single_option_line("display_pixels_y");
+        optgroup->append_single_option_line("display_orientation");
+        optgroup->append_single_option_line("display_mirror_x");
+        optgroup->append_single_option_line("display_mirror_y");
 
-    //auto option = optgroup->get_option("display_pixels_x");
-    //Line line = { option.opt.full_label, "" };
-    //line.append_option(option);
-    //line.append_option(optgroup->get_option("display_pixels_y"));
-    //optgroup->append_line(line);
-    //optgroup->append_single_option_line("display_orientation");
+    // Filuna: o que a impressora LCD precisa e o perfil do PrusaSlicer não trazia.
+    page = add_options_page(L("Machine"), "cog");
+        optgroup = page->new_optgroup(L("Output file"), L"param_advanced");
+        optgroup->append_single_option_line("sla_archive_format");
 
-    //// FIXME: This should be on one line in the UI
-    //optgroup->append_single_option_line("display_mirror_x");
-    //optgroup->append_single_option_line("display_mirror_y");
+        optgroup = page->new_optgroup(L("Lift"), L"param_speed");
+        optgroup->append_single_option_line("sla_lift_height");
+        optgroup->append_single_option_line("sla_lift_speed");
+        optgroup->append_single_option_line("sla_bottom_lift_height");
+        optgroup->append_single_option_line("sla_bottom_lift_speed");
+        optgroup->append_single_option_line("sla_retract_speed");
 
-    //optgroup = page->new_optgroup(L("Tilt"));
-    //line = { L("Tilt time"), "" };
-    //line.append_option(optgroup->get_option("fast_tilt_time"));
-    //line.append_option(optgroup->get_option("slow_tilt_time"));
-    //optgroup->append_line(line);
-    //optgroup->append_single_option_line("area_fill");
+        optgroup = page->new_optgroup(L("Tilt"), L"param_speed");
+        optgroup->append_single_option_line("fast_tilt_time");
+        optgroup->append_single_option_line("slow_tilt_time");
+        optgroup->append_single_option_line("area_fill");
 
-    //optgroup = page->new_optgroup(L("Corrections"));
-    //line = Line{ m_config->def()->get("relative_correction")->full_label, "" };
-    //for (auto& axis : { "X", "Y", "Z" }) {
-    //    auto opt = optgroup->get_option(std::string("relative_correction_") + char(std::tolower(axis[0])));
-    //    opt.opt.label = axis;
-    //    line.append_option(opt);
-    //}
-    //optgroup->append_line(line);
-    //optgroup->append_single_option_line("absolute_correction");
-    //optgroup->append_single_option_line("elefant_foot_compensation");
-    //optgroup->append_single_option_line("elefant_foot_min_width");
-    //optgroup->append_single_option_line("gamma_correction");
-    //
-    //optgroup = page->new_optgroup(L("Exposure"));
-    //optgroup->append_single_option_line("min_exposure_time");
-    //optgroup->append_single_option_line("max_exposure_time");
-    //optgroup->append_single_option_line("min_initial_exposure_time");
-    //optgroup->append_single_option_line("max_initial_exposure_time");
+    page = add_options_page(L("Corrections"), "param_advanced");
+        optgroup = page->new_optgroup(L("Corrections"), L"param_advanced");
+        optgroup->append_single_option_line("relative_correction_x");
+        optgroup->append_single_option_line("relative_correction_y");
+        optgroup->append_single_option_line("relative_correction_z");
+        optgroup->append_single_option_line("absolute_correction");
+        optgroup->append_single_option_line("elefant_foot_compensation");
+        optgroup->append_single_option_line("elefant_foot_min_width");
+        optgroup->append_single_option_line("gamma_correction");
 
-    //page = add_options_page(L("Dependencies"), "wrench.png");
-    //optgroup = page->new_optgroup(L("Profile dependencies"));
-
-    //build_preset_description_line(optgroup.get());
+        optgroup = page->new_optgroup(L("Exposure limits"), L"param_temperature");
+        optgroup->append_single_option_line("min_exposure_time");
+        optgroup->append_single_option_line("max_exposure_time");
+        optgroup->append_single_option_line("min_initial_exposure_time");
+        optgroup->append_single_option_line("max_initial_exposure_time");
 }
 
 void TabPrinter::extruders_count_changed(size_t extruders_count)
@@ -9787,89 +9788,41 @@ void TabSLAMaterial::build()
     m_presets = &m_preset_bundle->sla_materials;
     load_initial_data();
 
-    //auto page = add_options_page(L("Material"), "");
+    auto page = add_options_page(L("Material"), "spool");
+        auto optgroup = page->new_optgroup(L("Material"), L"param_filament");
+        optgroup->append_single_option_line("material_type");
+        optgroup->append_single_option_line("material_colour");
+        optgroup->append_single_option_line("material_vendor");
+        optgroup->append_single_option_line("material_density");
 
-    //auto optgroup = page->new_optgroup(L("Material"));
-    //optgroup->append_single_option_line("material_colour");
-    //optgroup->append_single_option_line("bottle_cost");
-    //optgroup->append_single_option_line("bottle_volume");
-    //optgroup->append_single_option_line("bottle_weight");
-    //optgroup->append_single_option_line("material_density");
+        optgroup = page->new_optgroup(L("Bottle"), L"param_filament");
+        optgroup->append_single_option_line("bottle_volume");
+        optgroup->append_single_option_line("bottle_weight");
+        optgroup->append_single_option_line("bottle_cost");
 
-    //optgroup->m_on_change = [this, optgroup](t_config_option_key opt_key, boost::any value)
-    //{
-    //    if (opt_key == "material_colour") {
-    //        update_dirty();
-    //        on_value_change(opt_key, value);
-    //        return;
-    //    }
+    page = add_options_page(L("Exposure"), "param_temperature");
+        optgroup = page->new_optgroup(L("Exposure"), L"param_temperature");
+        optgroup->append_single_option_line("initial_layer_height");
+        optgroup->append_single_option_line("exposure_time");
+        optgroup->append_single_option_line("initial_exposure_time");
+        optgroup->append_single_option_line("sla_bottom_layers");
+        optgroup->append_single_option_line("material_print_speed");
 
-    //    DynamicPrintConfig new_conf = *m_config;
+        optgroup = page->new_optgroup(L("Light"), L"param_temperature");
+        optgroup->append_single_option_line("sla_light_pwm");
+        optgroup->append_single_option_line("sla_bottom_light_pwm");
+        optgroup->append_single_option_line("sla_light_off_delay");
+        optgroup->append_single_option_line("sla_bottom_light_off_delay");
 
-    //    if (opt_key == "bottle_volume") {
-    //        double new_bottle_weight =  boost::any_cast<double>(value)*(new_conf.option("material_density")->getFloat() / 1000);
-    //        new_conf.set_key_value("bottle_weight", new ConfigOptionFloat(new_bottle_weight));
-    //    }
-    //    if (opt_key == "bottle_weight") {
-    //        double new_bottle_volume =  boost::any_cast<double>(value)/new_conf.option("material_density")->getFloat() * 1000;
-    //        new_conf.set_key_value("bottle_volume", new ConfigOptionFloat(new_bottle_volume));
-    //    }
-    //    if (opt_key == "material_density") {
-    //        double new_bottle_volume = new_conf.option("bottle_weight")->getFloat() / boost::any_cast<double>(value) * 1000;
-    //        new_conf.set_key_value("bottle_volume", new ConfigOptionFloat(new_bottle_volume));
-    //    }
+        optgroup = page->new_optgroup(L("Rest time"), L"param_temperature");
+        optgroup->append_single_option_line("sla_rest_time_before_lift");
+        optgroup->append_single_option_line("sla_rest_time_after_lift");
 
-    //    load_config(new_conf);
+    page = add_options_page(L("Others"), "advanced");
+        optgroup = page->new_optgroup(L("Corrections"), L"param_advanced");
+        optgroup->append_single_option_line("material_correction");
 
-    //    update_dirty();
-
-    //    // BBS
-    //    // Change of any from those options influences for an update of "Sliced Info"
-    //    //wxGetApp().sidebar().Layout();
-    //};
-
-    //optgroup = page->new_optgroup(L("Layers"));
-    //optgroup->append_single_option_line("initial_layer_height");
-
-    //optgroup = page->new_optgroup(L("Exposure"));
-    //optgroup->append_single_option_line("exposure_time");
-    //optgroup->append_single_option_line("initial_exposure_time");
-
-    //optgroup = page->new_optgroup(L("Corrections"));
-    //auto line = Line{ m_config->def()->get("material_correction")->full_label, "" };
-    //for (auto& axis : { "X", "Y", "Z" }) {
-    //    auto opt = optgroup->get_option(std::string("material_correction_") + char(std::tolower(axis[0])));
-    //    opt.opt.label = axis;
-    //    line.append_option(opt);
-    //}
-
-    //optgroup->append_line(line);
-
-    //page = add_options_page(L("Dependencies"), "wrench.png");
-    //optgroup = page->new_optgroup(L("Profile dependencies"));
-
-    //create_line_with_widget(optgroup.get(), "compatible_printers", "", [this](wxWindow* parent) {
-    //    return compatible_widget_create(parent, m_compatible_printers);
-    //});
-    //
-    //Option option = optgroup->get_option("compatible_printers_condition");
-    //option.opt.full_width = true;
-    //optgroup->append_single_option_line(option);
-
-    //create_line_with_widget(optgroup.get(), "compatible_prints", "", [this](wxWindow* parent) {
-    //    return compatible_widget_create(parent, m_compatible_prints);
-    //});
-
-    //option = optgroup->get_option("compatible_prints_condition");
-    //option.opt.full_width = true;
-    //optgroup->append_single_option_line(option);
-
-    //build_preset_description_line(optgroup.get());
-
-    //page = add_options_page(L("Material printing profile"), "printer.png");
-    //optgroup = page->new_optgroup(L("Material printing profile"));
-    //option = optgroup->get_option("material_print_speed");
-    //optgroup->append_single_option_line(option);
+        build_preset_description_line(optgroup.get());
 }
 
 // Reload current config (aka presets->edited_preset->config) into the UI fields.
@@ -9909,101 +9862,73 @@ void TabSLAPrint::build()
     m_presets = &m_preset_bundle->sla_prints;
     load_initial_data();
 
-//    auto page = add_options_page(L("Layers and perimeters"), "layers");
-//
-//    auto optgroup = page->new_optgroup(L("Layers"));
-//    optgroup->append_single_option_line("layer_height");
-//    optgroup->append_single_option_line("faded_layers");
-//
-//    page = add_options_page(L("Supports"), "support"/*"sla_supports"*/);
-//    optgroup = page->new_optgroup(L("Supports"));
-//    optgroup->append_single_option_line("supports_enable");
-//
-//    optgroup = page->new_optgroup(L("Support head"));
-//    optgroup->append_single_option_line("support_head_front_diameter");
-//    optgroup->append_single_option_line("support_head_penetration");
-//    optgroup->append_single_option_line("support_head_width");
-//
-//    optgroup = page->new_optgroup(L("Support pillar"));
-//    optgroup->append_single_option_line("support_pillar_diameter");
-//    optgroup->append_single_option_line("support_small_pillar_diameter_percent");
-//    optgroup->append_single_option_line("support_max_bridges_on_pillar");
-//
-//    optgroup->append_single_option_line("support_pillar_connection_mode");
-//    optgroup->append_single_option_line("support_buildplate_only");
-//    // TODO: This parameter is not used at the moment.
-//    // optgroup->append_single_option_line("support_pillar_widening_factor");
-//    optgroup->append_single_option_line("support_base_diameter");
-//    optgroup->append_single_option_line("support_base_height");
-//    optgroup->append_single_option_line("support_base_safety_distance");
-//
-//    // Mirrored parameter from Pad page for toggling elevation on the same page
-//    optgroup->append_single_option_line("support_object_elevation");
-//
-//    Line line{ "", "" };
-//    line.full_width = 1;
-//    line.widget = [this](wxWindow* parent) {
-//        return description_line_widget(parent, &m_support_object_elevation_description_line);
-//    };
-//    optgroup->append_line(line);
-//
-//    optgroup = page->new_optgroup(L("Connection of the support sticks and junctions"));
-//    optgroup->append_single_option_line("support_critical_angle");
-//    optgroup->append_single_option_line("support_max_bridge_length");
-//    optgroup->append_single_option_line("support_max_pillar_link_distance");
-//
-//    optgroup = page->new_optgroup(L("Automatic generation"));
-//    optgroup->append_single_option_line("support_points_density_relative");
-//    optgroup->append_single_option_line("support_points_minimal_distance");
-//
-//    page = add_options_page(L("Pad"), "");
-//    optgroup = page->new_optgroup(L("Pad"));
-//    optgroup->append_single_option_line("pad_enable");
-//    optgroup->append_single_option_line("pad_wall_thickness");
-//    optgroup->append_single_option_line("pad_wall_height");
-//    optgroup->append_single_option_line("pad_brim_size");
-//    optgroup->append_single_option_line("pad_max_merge_distance");
-//    // TODO: Disabling this parameter for the beta release
-////    optgroup->append_single_option_line("pad_edge_radius");
-//    optgroup->append_single_option_line("pad_wall_slope");
-//
-//    optgroup->append_single_option_line("pad_around_object");
-//    optgroup->append_single_option_line("pad_around_object_everywhere");
-//    optgroup->append_single_option_line("pad_object_gap");
-//    optgroup->append_single_option_line("pad_object_connector_stride");
-//    optgroup->append_single_option_line("pad_object_connector_width");
-//    optgroup->append_single_option_line("pad_object_connector_penetration");
-//
-//    page = add_options_page(L("Hollowing"), "hollowing");
-//    optgroup = page->new_optgroup(L("Hollowing"));
-//    optgroup->append_single_option_line("hollowing_enable");
-//    optgroup->append_single_option_line("hollowing_min_thickness");
-//    optgroup->append_single_option_line("hollowing_quality");
-//    optgroup->append_single_option_line("hollowing_closing_distance");
-//
-//    page = add_options_page(L("Advanced"), "advanced");
-//    optgroup = page->new_optgroup(L("Slicing"));
-//    optgroup->append_single_option_line("slice_closing_radius");
-//    optgroup->append_single_option_line("slicing_mode");
-//
-//    page = add_options_page(L("Output options"), "output+page_white");
-//    optgroup = page->new_optgroup(L("Output file"));
-//    Option option = optgroup->get_option("filename_format");
-//    option.opt.full_width = true;
-//    optgroup->append_single_option_line(option);
-//
-//    page = add_options_page(L("Dependencies"), "advanced");
-//    optgroup = page->new_optgroup(L("Profile dependencies"));
-//
-//    create_line_with_widget(optgroup.get(), "compatible_printers", "", [this](wxWindow* parent) {
-//        return compatible_widget_create(parent, m_compatible_printers);
-//    });
-//
-//    option = optgroup->get_option("compatible_printers_condition");
-//    option.opt.full_width = true;
-//    optgroup->append_single_option_line(option);
-//
-//    build_preset_description_line(optgroup.get());
+    auto page = add_options_page(L("Quality"), "custom-gcode_quality");
+        auto optgroup = page->new_optgroup(L("Layers"), L"param_layer_height");
+        optgroup->append_single_option_line("layer_height");
+        optgroup->append_single_option_line("faded_layers");
+
+        optgroup = page->new_optgroup(L("Slicing"), L"param_advanced");
+        optgroup->append_single_option_line("slice_closing_radius");
+
+    page = add_options_page(L("Supports"), "support");
+        optgroup = page->new_optgroup(L("Supports"), L"param_support");
+        optgroup->append_single_option_line("supports_enable");
+        optgroup->append_single_option_line("support_object_elevation");
+        optgroup->append_single_option_line("support_buildplate_only");
+
+        optgroup = page->new_optgroup(L("Support head"), L"param_support");
+        optgroup->append_single_option_line("support_head_front_diameter");
+        optgroup->append_single_option_line("support_head_penetration");
+        optgroup->append_single_option_line("support_head_width");
+
+        optgroup = page->new_optgroup(L("Support pillar"), L"param_support");
+        optgroup->append_single_option_line("support_pillar_diameter");
+        optgroup->append_single_option_line("support_small_pillar_diameter_percent");
+        optgroup->append_single_option_line("support_pillar_widening_factor");
+        optgroup->append_single_option_line("support_pillar_connection_mode");
+        optgroup->append_single_option_line("support_max_bridges_on_pillar");
+        optgroup->append_single_option_line("support_max_bridge_length");
+        optgroup->append_single_option_line("support_max_pillar_link_distance");
+
+        optgroup = page->new_optgroup(L("Support base"), L"param_support");
+        optgroup->append_single_option_line("support_base_diameter");
+        optgroup->append_single_option_line("support_base_height");
+        optgroup->append_single_option_line("support_base_safety_distance");
+
+        optgroup = page->new_optgroup(L("Automatic generation"), L"param_support");
+        optgroup->append_single_option_line("support_points_density_relative");
+        optgroup->append_single_option_line("support_points_minimal_distance");
+        optgroup->append_single_option_line("support_critical_angle");
+
+    page = add_options_page(L("Pad"), "support");
+        optgroup = page->new_optgroup(L("Pad"), L"param_support");
+        optgroup->append_single_option_line("pad_enable");
+        optgroup->append_single_option_line("pad_wall_thickness");
+        optgroup->append_single_option_line("pad_wall_height");
+        optgroup->append_single_option_line("pad_brim_size");
+        optgroup->append_single_option_line("pad_max_merge_distance");
+        optgroup->append_single_option_line("pad_wall_slope");
+
+        optgroup = page->new_optgroup(L("Pad around object"), L"param_support");
+        optgroup->append_single_option_line("pad_around_object");
+        optgroup->append_single_option_line("pad_around_object_everywhere");
+        optgroup->append_single_option_line("pad_object_gap");
+        optgroup->append_single_option_line("pad_object_connector_stride");
+        optgroup->append_single_option_line("pad_object_connector_width");
+        optgroup->append_single_option_line("pad_object_connector_penetration");
+
+    page = add_options_page(L("Hollowing"), "param_advanced");
+        optgroup = page->new_optgroup(L("Hollowing"), L"param_advanced");
+        optgroup->append_single_option_line("hollowing_enable");
+        optgroup->append_single_option_line("hollowing_min_thickness");
+        optgroup->append_single_option_line("hollowing_quality");
+        optgroup->append_single_option_line("hollowing_closing_distance");
+
+    page = add_options_page(L("Others"), "advanced");
+        optgroup = page->new_optgroup(L("Output file"), L"param_advanced");
+        optgroup->append_single_option_line("filename_format");
+
+        build_preset_description_line(optgroup.get());
 }
 
 // Reload current config (aka presets->edited_preset->config) into the UI fields.

@@ -945,6 +945,14 @@ struct Sidebar::priv
     void fl_ajustes(int entrada);
     void fl_aplicar_filamento(int entrada, const std::string& preset, const wxColour& cor);
     std::vector<FilunaLateral::InfoBobina> fl_infos() const;
+    // resina: os frascos no lugar das bobinas, a resina da cuba no lugar da entrada selecionada
+    bool                                   fl_resina() const;
+    std::vector<std::string>               fl_lista_resinas() const;
+    void                                   fl_atualizar_resina();
+    void                                   fl_escolher_resina(int indice);
+    void                                   fl_trocar_resina();
+    void                                   fl_aba_resina();
+    void                                   fl_arrumar_listas(int altura_antes);
     void foto_impressora(const std::string& caminho);
     void foto_mesa(const std::string& caminho);
     // Printer - sync
@@ -1152,6 +1160,25 @@ void Sidebar::priv::layout_printer(bool isBBL, bool isDual)
     // ORCA show plate type combo box only when its supported
     PresetBundle &preset_bundle = *wxGetApp().preset_bundle;
     const auto& cfg = preset_bundle.printers.get_edited_preset().config;
+
+    // Filuna: impressora de resina não tem bico, extrusor nem troca de chapa; os campos que o resto desta
+    // função lê nem existem na configuração dela. Esconde essas partes e segue para o cartão do Filuna.
+    if (preset_bundle.printers.get_edited_preset().printer_technology() == ptSLA) {
+        fl_mesa_tipos = false;
+        panel_printer_bed->Show(false);
+        panel_nozzle_dia->Show(false);
+        extruder_dual_sizer->Show(false);
+        extruder_single_sizer->Show(false);
+        if (m_panel_printer_content && !m_panel_printer_content->IsShown()) {
+            if (m_text_printer_settings)
+                m_text_printer_settings->SetLabel(_L("Printer"));
+            m_panel_printer_content->Show();
+        }
+        fl_criar();
+        fl_esconder_originais();
+        fl_atualizar();
+        return;
+    }
     // Orca: we use preset_bundle.is_bbl_vendor() instead of isBBL to determine if the plate type combo box should be shown
     // ref: https://github.com/OrcaSlicer/OrcaSlicer/pull/11610#discussion_r2607411847
     fl_mesa_tipos = preset_bundle.is_bbl_vendor() || cfg.opt_bool("support_multi_bed_types");
@@ -1399,6 +1426,10 @@ void Sidebar::priv::fl_atualizar()
         return;
     if (fl_esconder_originais())
         m_panel_printer_content->Layout();
+    if (fl_resina()) {
+        fl_atualizar_resina();
+        return;
+    }
     PresetBundle& pb = *wxGetApp().preset_bundle;
     // bico: a variante escolhida ("0.4" → "0,4 mm")
     wxString bico = combo_nozzle_dia && combo_nozzle_dia->GetSelection() >= 0 ? combo_nozzle_dia->GetString(combo_nozzle_dia->GetSelection()) : wxString();
@@ -1428,6 +1459,11 @@ void Sidebar::priv::fl_atualizar()
         fl_modo->selecionar(wxGetApp().params_panel() ? wxGetApp().params_panel()->filuna_modo() : 0, wxGetApp().get_mode() != comDevelop);
     if (!fl_bobinas)
         return;
+    fl_bobinas->mostrar_mais(true); // voltou de uma impressora de resina
+    if (fl_titulo_botoes && !fl_titulo_botoes->IsShown()) {
+        fl_titulo_botoes->Show();
+        m_panel_filament_title->Layout();
+    }
     const auto infos = fl_infos();
     fl_sel           = std::clamp(fl_sel, 0, std::max(0, int(infos.size()) - 1));
     const int antes  = fl_bobinas->GetMinSize().y;
@@ -1435,7 +1471,7 @@ void Sidebar::priv::fl_atualizar()
     if (fl_barra_bobina && fl_sel < int(infos.size())) {
         const Preset* pr = pb.filaments.find_preset(pb.filament_presets[fl_sel]);
         fl_barra_bobina->definir(wxString::Format(wxString::FromUTF8("Entrada %d"), fl_sel + 1), pr ? from_u8(pr->label(false)) : wxString(),
-                                 infos[fl_sel].cor, infos.size() > 1);
+                                 infos[fl_sel].cor, infos.size() > 1, true);
     }
     if (fl_titulo_botoes) { // as mesmas regras dos botões do Orca: sincronizar não durante o fatiamento; misto com 2 filamentos ou mais
         FilunaLateral::Botao sinc{wxString::FromUTF8("Sincronizar"), FilunaLateral::Icone::sincronizar};
@@ -1446,6 +1482,197 @@ void Sidebar::priv::fl_atualizar()
     }
     if (fl_resumo)
         fl_resumo->definir(bico + wxString::FromUTF8(" · ") + tipo + wxString::FromUTF8(" · ") + mesa, infos, fl_sel);
+    fl_arrumar_listas(antes);
+}
+
+namespace {
+std::string minusculas(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+    return s;
+}
+
+// "2560 × 1620" vira "2K"; tela sem resolução conhecida fica "—".
+wxString tela_resina(const DynamicPrintConfig& cfg)
+{
+    const auto* x = cfg.option<ConfigOptionInt>("display_pixels_x");
+    const auto* y = cfg.option<ConfigOptionInt>("display_pixels_y");
+    if (!x || !y || x->value <= 0 || y->value <= 0)
+        return wxString::FromUTF8("—");
+    const int lado = std::max(x->value, y->value);
+    for (const auto& [minimo, nome] : std::initializer_list<std::pair<int, const char*>>{{7600, "8K"}, {5700, "6K"}, {3800, "4K"}, {2500, "2K"}})
+        if (lado >= minimo)
+            return wxString::FromUTF8(nome);
+    return wxString::Format("%d x %d", x->value, y->value);
+}
+
+wxString arquivo_resina(const DynamicPrintConfig& cfg)
+{
+    const auto* f = cfg.option("sla_archive_format");
+    const std::string formato = f ? minusculas(f->serialize()) : std::string();
+    return formato.empty() ? wxString::FromUTF8("—") : wxString::FromUTF8("." + formato);
+}
+
+// HALOT e as outras sem envio por rede: o arquivo vai no pendrive.
+wxString envio_resina(const DynamicPrintConfig& cfg)
+{
+    const auto* host = cfg.option<ConfigOptionString>("print_host");
+    return wxString::FromUTF8(host && !host->value.empty() ? "Rede" : "Pendrive");
+}
+
+// O nome do perfil diz o tipo (Padrão, Lavável…); sem pista no nome, vale o tipo do perfil.
+wxString tipo_resina(const Preset& pr)
+{
+    const std::string n = minusculas(pr.name);
+    auto tem = [&n](std::initializer_list<const char*> chaves) {
+        return std::any_of(chaves.begin(), chaves.end(), [&n](const char* c) { return n.find(c) != std::string::npos; });
+    };
+    if (tem({"lavavel", "lavável", "water"}))
+        return wxString::FromUTF8("Lavável");
+    if (tem({"abs"}))
+        return wxString::FromUTF8("Tipo ABS");
+    if (tem({"flex"}))
+        return wxString::FromUTF8("Flexível");
+    if (tem({"8k", "alta def"}))
+        return wxString::FromUTF8("Alta def.");
+    if (tem({"padrao", "padrão", "standard"}))
+        return wxString::FromUTF8("Padrão");
+    const auto* t = pr.config.option<ConfigOptionString>("material_type");
+    return t && !t->value.empty() ? wxString::FromUTF8(t->value) : wxString::FromUTF8("Resina");
+}
+} // namespace
+
+bool Sidebar::priv::fl_resina() const
+{
+    return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA;
+}
+
+// As resinas que servem na impressora escolhida, na ordem do catálogo.
+std::vector<std::string> Sidebar::priv::fl_lista_resinas() const
+{
+    std::vector<std::string> v;
+    for (const Preset& pr : wxGetApp().preset_bundle->sla_materials)
+        if (pr.is_visible && pr.is_compatible && !pr.is_default)
+            v.push_back(pr.name);
+    return v;
+}
+
+// Resina: o cartão mostra a tela, o arquivo e o envio; a fileira mostra os frascos e a barra, a resina da cuba.
+void Sidebar::priv::fl_atualizar_resina()
+{
+    PresetBundle&             pb  = *wxGetApp().preset_bundle;
+    const DynamicPrintConfig& cfg = pb.printers.get_edited_preset().config;
+    FilunaLateral::CartaoImpressora::Info info;
+    info.rotulo_bico       = wxString::FromUTF8("Tela");
+    info.rotulo_tipo       = wxString::FromUTF8("Arquivo");
+    info.rotulo_mesa       = wxString::FromUTF8("Envio");
+    info.bico              = tela_resina(cfg);
+    info.tipo              = arquivo_resina(cfg);
+    info.mesa              = envio_resina(cfg);
+    info.bico_selecionavel = false;
+    info.tipo_selecionavel = false;
+    info.mesa_selecionavel = false;
+    fl_impressora->definir(info);
+    if (fl_modo)
+        fl_modo->selecionar(wxGetApp().params_panel() ? wxGetApp().params_panel()->filuna_modo() : 0, wxGetApp().get_mode() != comDevelop);
+    if (!fl_bobinas)
+        return;
+    if (fl_titulo_botoes && fl_titulo_botoes->IsShown()) { // Sincronizar e Misto são de filamento
+        fl_titulo_botoes->Hide();
+        m_panel_filament_title->Layout();
+    }
+    for (wxWindow* w : std::initializer_list<wxWindow*>{m_flushing_volume_btn, m_purge_mode_btn}) // purga é troca de filamento
+        if (w && w->IsShown()) {
+            w->Hide();
+            m_panel_filament_title->Layout();
+        }
+    fl_bobinas->mostrar_mais(false);
+    const std::vector<std::string> nomes = fl_lista_resinas();
+    const std::string&             cuba  = pb.sla_materials.get_selected_preset_name();
+    std::vector<FilunaLateral::InfoBobina> infos;
+    fl_sel = 0;
+    for (size_t i = 0; i < nomes.size(); ++i) {
+        const Preset* pr = pb.sla_materials.find_preset(nomes[i]);
+        if (!pr)
+            continue;
+        FilunaLateral::InfoBobina b;
+        b.frasco = true;
+        b.numero = wxString::Format("%d", int(infos.size() + 1));
+        const auto* cor = pr->config.option<ConfigOptionString>("material_colour");
+        b.cor           = wxColour(wxString::FromUTF8(cor && cor->value.size() >= 7 ? cor->value.substr(0, 7) : std::string("#8E8A90")));
+        if (!b.cor.IsOk())
+            b.cor = wxColour(142, 138, 144);
+        const auto* marca = pr->config.option<ConfigOptionString>("material_vendor");
+        b.marca           = marca ? wxString::FromUTF8(marca->value) : wxString();
+        b.tipo            = tipo_resina(*pr);
+        if (nomes[i] == cuba) {
+            b.estoque = wxString::FromUTF8("na cuba");
+            fl_sel    = int(infos.size());
+        }
+        infos.push_back(b);
+    }
+    const int antes = fl_bobinas->GetMinSize().y;
+    fl_bobinas->definir(infos, infos.empty() ? -1 : fl_sel);
+    if (fl_barra_bobina) {
+        const Preset& sel = pb.sla_materials.get_selected_preset();
+        fl_barra_bobina->definir(wxString::FromUTF8("Na cuba"), from_u8(sel.label(false)), infos.empty() ? wxColour(142, 138, 144) : infos[fl_sel].cor,
+                                 false, false);
+    }
+    if (fl_resumo)
+        fl_resumo->definir(info.bico + wxString::FromUTF8(" · ") + info.tipo + wxString::FromUTF8(" · ") + info.mesa, infos, fl_sel);
+    fl_arrumar_listas(antes);
+}
+
+void Sidebar::priv::fl_escolher_resina(int indice)
+{
+    const std::vector<std::string> nomes = fl_lista_resinas();
+    if (indice < 0 || indice >= int(nomes.size()))
+        return;
+    if (nomes[indice] != wxGetApp().preset_bundle->sla_materials.get_selected_preset_name())
+        if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_SLA_MATERIAL))
+            tab->select_preset(nomes[indice]);
+    fl_atualizar();
+}
+
+// Trocar: as resinas desta impressora numa lista; a da cuba vem marcada.
+void Sidebar::priv::fl_trocar_resina()
+{
+    if (!fl_barra_bobina)
+        return;
+    PresetBundle&                  pb    = *wxGetApp().preset_bundle;
+    const std::vector<std::string> nomes = fl_lista_resinas();
+    wxMenu                         menu;
+    for (size_t i = 0; i < nomes.size(); ++i) {
+        const Preset* pr = pb.sla_materials.find_preset(nomes[i]);
+        wxMenuItem*   it = menu.AppendRadioItem(wxID_ANY, pr ? from_u8(pr->label(false)) : from_u8(nomes[i]));
+        it->Check(nomes[i] == pb.sla_materials.get_selected_preset_name());
+        const int indice = int(i);
+        menu.Bind(wxEVT_MENU, [this, indice](wxCommandEvent&) { fl_escolher_resina(indice); }, it->GetId());
+    }
+    menu.AppendSeparator();
+    wxMenuItem* ajustes = menu.Append(wxID_ANY, wxString::FromUTF8("Ajustes da resina…"));
+    menu.Bind(wxEVT_MENU, [this](wxCommandEvent&) { fl_aba_resina(); }, ajustes->GetId());
+    fl_barra_bobina->PopupMenu(&menu);
+}
+
+// A aba da resina, pelo mesmo caminho que o lápis do filamento usa.
+void Sidebar::priv::fl_aba_resina()
+{
+    Tab* tab = wxGetApp().get_tab(Preset::TYPE_SLA_MATERIAL);
+    if (!tab)
+        return;
+    if (tab->GetParent() == wxGetApp().params_panel())
+        wxGetApp().mainframe->select_tab(TAB_ID_PREPARE);
+    else {
+        wxGetApp().params_dialog()->Popup();
+        tab->OnActivate();
+    }
+    tab->restore_last_select_item();
+}
+
+// As listas originais do Orca ficam escondidas fazendo o trabalho; o painel só se refaz quando algo mudou.
+void Sidebar::priv::fl_arrumar_listas(int altura_antes)
+{
     // os ícones do título e o "Adicionar filamento misto" do Orca viraram os botões com nome
     bool titulo_mudou = false;
     for (wxWindow* w : std::initializer_list<wxWindow*>{m_bpButton_add_filament, m_bpButton_del_filament, m_bpButton_ams_filament, m_btn_add_mixed_filament})
@@ -1463,7 +1690,7 @@ void Sidebar::priv::fl_atualizar()
     });
     if (alguma_visivel)
         sizer_filaments->ShowItems(false);
-    if (alguma_visivel || titulo_mudou || antes != fl_bobinas->GetMinSize().y) {
+    if (alguma_visivel || titulo_mudou || altura_antes != fl_bobinas->GetMinSize().y) {
         m_panel_filament_content->Layout();
         plater->sidebar().update_filaments_area_height();
         scrolled->Layout();
@@ -3885,11 +4112,19 @@ Sidebar::Sidebar(Plater *parent)
     // Filuna: as bobinas (4 por linha) no lugar das listas, que ficam escondidas fazendo o trabalho
     p->fl_bobinas = new FilunaLateral::Bobinas(p->m_panel_filament_content);
     p->fl_bobinas->ao_clicar    = [this](int i) {
+        if (p->fl_resina()) { // resina: o frasco clicado vai para a cuba
+            p->fl_escolher_resina(i);
+            return;
+        }
         p->fl_sel = i;
         p->fl_atualizar();
     };
     p->fl_bobinas->ao_adicionar = [this] { p->fl_adicionar(); };
     p->fl_bobinas->ao_menu = [this](int i, const wxPoint& tela) {
+        if (p->fl_resina()) {
+            p->fl_aba_resina();
+            return;
+        }
         if (i < 0 || i >= int(p->combos_filament.size()) || !p->combos_filament[i])
             return;
         if (should_show_SEMM_buttons() && p->combos_filament.size() > 1) { // o mesmo menu do botão do filamento
@@ -3914,13 +4149,25 @@ Sidebar::Sidebar(Plater *parent)
     // Filuna: a bobina selecionada, com Cor, Trocar, Ajustes e Tirar à vista
     p->fl_barra_bobina             = new FilunaLateral::BarraBobina(p->m_filament_area_wrapper);
     p->fl_barra_bobina->ao_cor     = [this](const wxRect&) {
+        if (p->fl_resina()) // a cor da resina vem do perfil dela
+            return;
         if (p->fl_sel < int(p->combos_filament.size()) && p->combos_filament[p->fl_sel])
             p->combos_filament[p->fl_sel]->show_default_color_picker();
     };
-    p->fl_barra_bobina->ao_trocar  = [this] { p->fl_trocar(p->fl_sel); };
-    p->fl_barra_bobina->ao_ajustes = [this] { p->fl_ajustes(p->fl_sel); };
+    p->fl_barra_bobina->ao_trocar  = [this] {
+        if (p->fl_resina())
+            p->fl_trocar_resina();
+        else
+            p->fl_trocar(p->fl_sel);
+    };
+    p->fl_barra_bobina->ao_ajustes = [this] {
+        if (p->fl_resina())
+            p->fl_aba_resina();
+        else
+            p->fl_ajustes(p->fl_sel);
+    };
     p->fl_barra_bobina->ao_tirar   = [this] {
-        if (p->combos_filament.size() < 2)
+        if (p->fl_resina() || p->combos_filament.size() < 2)
             return;
         delete_filament(size_t(p->fl_sel));
         update_filaments_counter();
@@ -4379,7 +4626,10 @@ void Sidebar::update_all_preset_comboboxes(bool update_filament_combos)
 
     }
 
-    if (cfg.opt_bool("pellet_modded_printer")) {
+    if (print_tech == ptSLA) { // Filuna: na resina a seção é a da resina
+        p->m_staticText_filament_settings->SetLabel(wxString::FromUTF8("Resina"));
+        p->m_filament_icon->SetBitmap_("filament");
+    } else if (cfg.opt_bool("pellet_modded_printer")) {
 		p->m_staticText_filament_settings->SetLabel(_L("Pellets"));
         p->m_filament_icon->SetBitmap_("pellets");
     } else {
@@ -23373,8 +23623,15 @@ const DynamicPrintConfig * Plater::config() const { return p->config; }
 
 bool Plater::set_printer_technology(PrinterTechnology printer_technology)
 {
+    // Filuna: o que a resina acrescentou aqui só roda quando a tecnologia muda de verdade (filamento <-> resina).
+    // Esta função é chamada também na abertura e a cada troca entre impressoras de filamento.
+    const bool mudou = p->printer_technology != printer_technology;
     p->printer_technology = printer_technology;
+    if (mudou)
+        p->partplate_list.definir_tecnologia(printer_technology); // as placas entregam o fatiador certo
     bool ret = p->background_process.select_technology(printer_technology);
+    if (mudou)
+        p->partplate_list.update_slice_context_to_current_plate(p->background_process);
     if (ret) {
         // Update the active presets.
     }
@@ -23394,6 +23651,9 @@ bool Plater::set_printer_technology(PrinterTechnology printer_technology)
         wxGetApp().mainframe->update_menubar();
 
     p->sidebar->get_searcher().set_printer_technology(printer_technology);
+    // Filuna: a aba Preparar é uma só; aqui ela troca os ajustes de filamento pelos de resina (e vice-versa).
+    if (mudou && wxGetApp().mainframe != nullptr && wxGetApp().mainframe->m_param_panel != nullptr)
+        wxGetApp().mainframe->m_param_panel->rebuild_panels();
 
     p->notification_manager->set_fff(printer_technology == ptFFF);
     p->notification_manager->set_slicing_progress_hidden();
