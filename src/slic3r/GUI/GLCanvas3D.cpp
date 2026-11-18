@@ -2018,6 +2018,11 @@ ModelInstanceEPrintVolumeState GLCanvas3D::check_volumes_outside_state(ObjectFil
     //assert(m_initialized);
 
     ModelInstanceEPrintVolumeState state;
+    // Filuna: a resina pede só o estado (sem a lista dos filamentos); a lista era lida assim mesmo e o programa
+    // caía ao mostrar o resultado do fatiamento.
+    ObjectFilamentResults sem_lista;
+    if (object_results == nullptr)
+        object_results = &sem_lista;
     m_volumes.check_outside_state(m_bed.build_volume(), &state, object_results);
 
     construct_error_string(*object_results, get_object_clashed_text());
