@@ -5937,6 +5937,19 @@ DynamicPrintConfig PresetBundle::full_sla_config() const
     add_if_some_non_empty(std::move(compatible_prints_condition),   "compatible_process_expression_group");
     add_if_some_non_empty(std::move(inherits),                      "inherits_group");
 
+    // Filuna: a janela do Orca lê da configuração completa vários campos de processo e de filamento sem olhar a
+    // tecnologia (posição da torre de limpeza, cores, volumes de troca). Na resina eles não existiam e o programa caía.
+    // Os que faltam entram com o valor padrão, e a torre de limpeza fica desligada. O fatiamento de resina não lê nenhum.
+    {
+        DynamicPrintConfig filamento;
+        filamento.apply(FullPrintConfig::defaults());
+        filamento.apply(this->project_config);
+        for (const std::string &chave : filamento.keys())
+            if (!out.has(chave))
+                out.set_key_value(chave, filamento.option(chave)->clone());
+        if (auto *torre = out.option<ConfigOptionBool>("enable_prime_tower"))
+            torre->value = false;
+    }
 	out.option<ConfigOptionEnumGeneric>("printer_technology", true)->value = ptSLA;
 	return out;
 }

@@ -14,6 +14,7 @@
 
 #include "libslic3r/AppConfig.hpp"
 #include "libslic3r/Format/CXDLP.hpp"
+#include "libslic3r/GCode/WipeTowerEstimate.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/TriangleMesh.hpp"
@@ -108,6 +109,16 @@ int main(int argc, char** argv)
         passo("full_config (a configuracao que o fatiamento usa)");
         DynamicPrintConfig full = bundle.full_config();
         boost::nowide::cout << "     opcoes na configuracao completa: " << full.keys().size() << "\n";
+        for (const char* k : {"flush_volumes_matrix", "filament_colour", "wipe_tower_x", "enable_prime_tower", "nozzle_diameter"})
+            boost::nowide::cout << "     completa " << k << (full.has(k) ? ": tem" : ": FALTA") << "\n";
+        if (const auto* torre = full.option<ConfigOptionBool>("enable_prime_tower"))
+            boost::nowide::cout << "     torre de limpeza: " << (torre->value ? "LIGADA" : "desligada") << "\n";
+
+        passo("estimar a torre de limpeza (o que a janela faz ao montar a mesa)");
+        {
+            const WipeTowerFootprint f = estimate_wipe_tower_footprint(full, WipeTowerType::Type2, {0u, 1u}, 0.2, 10.);
+            boost::nowide::cout << "     profundidade estimada: " << f.depth << "\n";
+        }
 
         if (p.printer_technology() == ptSLA) {
             passo("fatiar um cubo com a configuracao completa dos perfis");

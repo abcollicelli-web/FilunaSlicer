@@ -6282,6 +6282,9 @@ void PartPlateList::set_default_wipe_tower_pos_for_plate(int plate_idx, bool ini
     ConfigOptionFloats *wipe_tower_y = proj_cfg.opt<ConfigOptionFloats>("wipe_tower_y");
     wipe_tower_x->values.resize(m_plate_list.size(), wipe_tower_x->values.front());
     wipe_tower_y->values.resize(m_plate_list.size(), wipe_tower_y->values.front());
+    // Filuna: resina não tem torre de limpeza; o cálculo abaixo é todo de filamento.
+    if (wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA)
+        return;
 
     auto printer_structure_opt = wxGetApp().preset_bundle->printers.get_edited_preset().config.option<ConfigOptionEnum<PrinterStructure>>("printer_structure");
     // set the default position, the same with print config(left top)
