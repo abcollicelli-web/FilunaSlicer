@@ -4311,7 +4311,9 @@ void PartPlate::set_plate_name(const std::string& name)
 //get the print's object, result and index
 void PartPlate::get_print(PrintBase** print, GCodeResult** result, int* index)
 {
-	if (print && (printer_technology == PrinterTechnology::ptFFF))
+	// Filuna: entrega sempre o fatiador de filamento da placa. Na resina ele existe e fica parado; antes, quem
+	// pedia ficava com o ponteiro sem valor e o botão Fatiar lia memória solta ("vector too long").
+	if (print)
 		*print = m_print;
 
 	if (result)

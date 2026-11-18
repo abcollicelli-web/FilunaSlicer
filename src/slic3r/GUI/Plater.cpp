@@ -1581,6 +1581,11 @@ void Sidebar::priv::fl_atualizar_resina()
         fl_titulo_botoes->Hide();
         m_panel_filament_title->Layout();
     }
+    for (wxWindow* w : std::initializer_list<wxWindow*>{m_flushing_volume_btn, m_purge_mode_btn}) // purga é troca de filamento
+        if (w && w->IsShown()) {
+            w->Hide();
+            m_panel_filament_title->Layout();
+        }
     fl_bobinas->mostrar_mais(false);
     const std::vector<std::string> nomes = fl_lista_resinas();
     const std::string&             cuba  = pb.sla_materials.get_selected_preset_name();

@@ -114,6 +114,16 @@ int main(int argc, char** argv)
         if (const auto* torre = full.option<ConfigOptionBool>("enable_prime_tower"))
             boost::nowide::cout << "     torre de limpeza: " << (torre->value ? "LIGADA" : "desligada") << "\n";
 
+        passo("botao Fatiar: parametros dos extrusores e tabela de velocidades");
+        {
+            boost::nowide::cout << "     filamentos escolhidos: " << bundle.filament_presets.size() << "\n";
+            Model::setExtruderParams(full, int(bundle.filament_presets.size()));
+            PrintConfig pc;
+            pc.apply(full, true);
+            Model::setPrintSpeedTable(full, pc);
+            boost::nowide::cout << "     passou\n";
+        }
+
         passo("estimar a torre de limpeza (o que a janela faz ao montar a mesa)");
         {
             const WipeTowerFootprint f = estimate_wipe_tower_footprint(full, WipeTowerType::Type2, {0u, 1u}, 0.2, 10.);
