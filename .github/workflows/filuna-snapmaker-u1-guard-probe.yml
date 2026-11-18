@@ -13,7 +13,7 @@ permissions:
   contents: read
 concurrency:
   group: filuna-snapmaker-vector-guard-probe
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   diagnostic:
     name: Official unchanged control and one-field diagnostic COPY A/B
