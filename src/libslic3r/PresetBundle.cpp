@@ -554,6 +554,17 @@ PresetBundle::PresetBundle()
     this->printers.add_default_preset(Preset::sla_printer_options(),
                                       static_cast<const SLAMaterialConfig &>(SLAFullPrintConfig::defaults()), "- default SLA -");
     this->printers.preset(1).printer_technology_ref() = ptSLA;
+    // Filuna: a impressora de resina leva também os campos da impressora de filamento, com os valores padrão (um
+    // bico, mesa comum, sem 3MF, sem pellets, sem envio por rede). A janela do Orca lê vários deles direto da
+    // impressora escolhida, sem olhar a tecnologia; numa de resina o campo não existia e o programa caía ao abrir.
+    // O fatiamento de resina não usa nenhum deles. Os perfis de resina dos fabricantes nascem deste padrão.
+    {
+        const DynamicPrintConfig &filamento = this->printers.default_preset(0).config;
+        DynamicPrintConfig       &resina    = this->printers.default_preset(1).config;
+        for (const std::string &chave : filamento.keys())
+            if (!resina.has(chave))
+                resina.set_key_value(chave, filamento.option(chave)->clone());
+    }
     for (size_t i = 0; i < 2; ++i) {
         // The following ugly switch is to avoid printers.preset(0) to return the edited instance, as the 0th default is the current one.
         Preset &preset = this->printers.default_preset(i);

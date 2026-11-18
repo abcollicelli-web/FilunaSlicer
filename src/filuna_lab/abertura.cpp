@@ -13,6 +13,10 @@
 #include "nanosvg/nanosvgrast.h"
 
 #include "libslic3r/AppConfig.hpp"
+#include "libslic3r/Format/CXDLP.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/SLAPrint.hpp"
+#include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/Preset.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/Utils.hpp"
@@ -87,9 +91,48 @@ int main(int argc, char** argv)
             boost::nowide::cout << "     processo de resina: " << bundle.sla_prints.get_selected_preset_name() << "\n"
                                 << "     resina: " << bundle.sla_materials.get_selected_preset_name() << "\n";
 
+        passo("campos de impressora de filamento (a janela le varios direto da impressora)");
+        {
+            const DynamicPrintConfig& ed = bundle.printers.get_edited_preset().config;
+            int faltam = 0;
+            for (const std::string& k : Preset::printer_options())
+                if (!ed.has(k)) {
+                    if (++faltam <= 8)
+                        boost::nowide::cout << "     falta: " << k << "\n";
+                }
+            boost::nowide::cout << "     campos de impressora de filamento que faltam: " << faltam << "\n";
+            for (const char* k : {"use_3mf", "pellet_modded_printer", "support_multi_bed_types", "host_type", "nozzle_diameter"})
+                boost::nowide::cout << "     " << k << (ed.has(k) ? ": tem" : ": FALTA") << "\n";
+        }
+
         passo("full_config (a configuracao que o fatiamento usa)");
         DynamicPrintConfig full = bundle.full_config();
         boost::nowide::cout << "     opcoes na configuracao completa: " << full.keys().size() << "\n";
+
+        if (p.printer_technology() == ptSLA) {
+            passo("fatiar um cubo com a configuracao completa dos perfis");
+            Model        model;
+            ModelObject* o = model.add_object();
+            o->add_volume(TriangleMesh(its_make_cube(10., 10., 10.)));
+            o->add_instance();
+            o->center_around_origin(false);
+            o->ensure_on_bed(false);
+            const BoundingBoxf mesa(full.opt<ConfigOptionPoints>("printable_area")->values);
+            for (ModelInstance* i : o->instances)
+                i->set_offset(Vec3d(mesa.center().x(), mesa.center().y(), i->get_offset().z()));
+            SLAPrint     print;
+            CXDLPArchive arquivo;
+            print.set_printer(&arquivo);
+            print.apply(model, full);
+            const std::string erro = print.validate().string;
+            if (!erro.empty())
+                boost::nowide::cout << "     conferencia: " << erro << "\n";
+            print.process();
+            boost::nowide::cout << "     camadas: " << print.print_layers().size() << "\n";
+            const std::string saida = recursos + "/../dados-teste-abertura/cubo.cxdlpv4";
+            arquivo.exportar(saida, print);
+            boost::nowide::cout << "     gravado: " << saida << "\n";
+        }
 
         passo("export_selections (gravar as escolhas, como ao fechar)");
         bundle.export_selections(cfg);

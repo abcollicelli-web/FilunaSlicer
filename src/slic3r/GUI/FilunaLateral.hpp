@@ -28,6 +28,8 @@ namespace Slic3r { namespace GUI { namespace FilunaLateral {
 // Bobina de filamento deitada, vista de frente e de lado (face com o furo à esquerda, corpo indo para trás), com luz
 // de cima à esquerda: o desenho aprovado. `largura` em pixels físicos; altura = 0,84 da largura.
 wxBitmap bobina(const wxColour& cor, int largura);
+// Frasco de resina em pé (tampa, vidro e a resina dentro), do mesmo tamanho da bobina, para a fileira da resina.
+wxBitmap frasco(const wxColour& cor, int largura);
 
 enum class Icone { nenhum, mais, sincronizar, misto, lapis, lixeira, atomo, chave, tabela, comparar, seta_cima, seta_baixo };
 
@@ -70,11 +72,13 @@ public:
     struct Info
     {
         wxString bico, tipo, mesa;
-        bool     mostrar_bico{true}, bico_selecionavel{true}, mesa_selecionavel{true};
+        wxString rotulo_bico, rotulo_tipo, rotulo_mesa; // vazio: Bico, Tipo de bico, Mesa (resina: Tela, Arquivo, Envio)
+        bool     mostrar_bico{true}, bico_selecionavel{true}, tipo_selecionavel{true}, mesa_selecionavel{true};
         bool     operator==(const Info& o) const
         {
-            return bico == o.bico && tipo == o.tipo && mesa == o.mesa && mostrar_bico == o.mostrar_bico && bico_selecionavel == o.bico_selecionavel &&
-                   mesa_selecionavel == o.mesa_selecionavel;
+            return bico == o.bico && tipo == o.tipo && mesa == o.mesa && rotulo_bico == o.rotulo_bico && rotulo_tipo == o.rotulo_tipo &&
+                   rotulo_mesa == o.rotulo_mesa && mostrar_bico == o.mostrar_bico && bico_selecionavel == o.bico_selecionavel &&
+                   tipo_selecionavel == o.tipo_selecionavel && mesa_selecionavel == o.mesa_selecionavel;
         }
     };
     explicit CartaoImpressora(wxWindow* pai);
@@ -100,6 +104,7 @@ struct InfoBobina
     wxString marca;   // "eSun", "Polymaker"… (vazio: "Genérico")
     wxString tipo;    // "PLA+", "PETG"…
     wxString estoque; // "750 g", "sem estoque", "—"
+    bool     frasco{false}; // resina: desenha o frasco no lugar da bobina
 };
 
 // Bobinas dos filamentos numa fileira que rola de lado (roda do mouse ou as setas das pontas), com um "+" no fim. A
@@ -111,6 +116,7 @@ public:
     explicit Bobinas(wxWindow* pai);
     // Só redesenha quando algo mudou; a selecionada nova é trazida para a vista.
     void definir(const std::vector<InfoBobina>& bobinas, int selecionada);
+    void mostrar_mais(bool sim); // o "+" do fim da fileira (a resina não tem)
     std::function<void(int indice)>                      ao_clicar;
     std::function<void()>                                ao_adicionar;
     std::function<void(int indice, const wxPoint& tela)> ao_menu; // botão direito: menu do filamento do Orca
@@ -125,6 +131,7 @@ private:
     std::vector<InfoBobina> m_bobinas;
     std::vector<wxBitmap>   m_desenhos;
     int                     m_sel{0}, m_sobre{-1}, m_desloc{0};
+    bool                    m_mais{true};
 };
 
 // Fileira de botões com ícone e nome. `coluna`: ícone em cima do nome, todos da mesma largura (ferramentas do Processo);
@@ -150,7 +157,7 @@ class BarraBobina : public wxPanel
 {
 public:
     explicit BarraBobina(wxWindow* pai);
-    void definir(const wxString& entrada, const wxString& nome, const wxColour& cor, bool pode_tirar);
+    void definir(const wxString& entrada, const wxString& nome, const wxColour& cor, bool pode_tirar, bool pode_cor = true);
     std::function<void(const wxRect& tela)> ao_cor;
     std::function<void()>                   ao_trocar, ao_ajustes, ao_tirar;
 
@@ -160,7 +167,7 @@ private:
     std::vector<Botao> botoes() const;
     wxString m_entrada, m_nome;
     wxColour m_cor;
-    bool     m_pode_tirar{true};
+    bool     m_pode_tirar{true}, m_pode_cor{true};
     int      m_sobre{-1};
 };
 

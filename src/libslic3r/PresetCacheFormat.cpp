@@ -330,7 +330,7 @@ constexpr uint32_t CACHE_MAGIC   = 0x4F52435A; // "ORCZ"
 // save_entries below), or a change to the cache's own layout or the
 // meaning of its stamps. Option-schema drift is NOT such a change — the
 // dictionary handles it, which is why this no longer moves every release.
-constexpr uint32_t CACHE_VERSION = 3; // 3: Filuna, perfis de resina do fabricante
+constexpr uint32_t CACHE_VERSION = 4; // 3: Filuna, perfis de resina do fabricante; 4: impressora de resina com os campos de filamento
 
 // A stamp-string read that refuses an absurd length before allocating anything.
 // The stamps are read from files named from the outside (peek_version is
