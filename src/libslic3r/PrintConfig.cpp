@@ -9157,14 +9157,16 @@ void PrintConfigDef::init_sla_params()
     // SLA Printer settings
 
     def = this->add("display_width", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Display width");
+    def->tooltip = L("Width of the LCD display area.");
+    def->sidetext = L("mm");
     def->min = 1;
     def->set_default_value(new ConfigOptionFloat(120.));
 
     def = this->add("display_height", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Display height");
+    def->tooltip = L("Height of the LCD display area.");
+    def->sidetext = L("mm");
     def->min = 1;
     def->set_default_value(new ConfigOptionFloat(68.));
 
@@ -9183,52 +9185,48 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionInt(1440));
 
     def = this->add("display_mirror_x", coBool);
-    //def->full_label = L("");
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Mirror horizontally");
+    def->tooltip = L("Mirror the layer image along the X axis.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("display_mirror_y", coBool);
-    //def->full_label = L("");
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Mirror vertically");
+    def->tooltip = L("Mirror the layer image along the Y axis.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("display_orientation", coEnum);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Display orientation");
+    def->tooltip = L("Orientation of the image on the LCD display.");
     def->enum_keys_map = &ConfigOptionEnum<SLADisplayOrientation>::get_enum_values();
     def->enum_values.push_back("landscape");
     def->enum_values.push_back("portrait");
-    def->enum_labels.push_back(" ");
-    def->enum_labels.push_back(" ");
+    def->enum_labels.push_back(L("Landscape"));
+    def->enum_labels.push_back(L("Portrait"));
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SLADisplayOrientation>(sladoPortrait));
 
     def = this->add("fast_tilt_time", coFloat);
-    //def->label = L("");
-    //def->full_label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Fast tilt");
+    def->tooltip = L("Time of the fast tilt of the vat.");
+    def->sidetext = L("s");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(5.));
 
     def = this->add("slow_tilt_time", coFloat);
-    //def->label = L("");
-    //def->full_label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Slow tilt");
+    def->tooltip = L("Time of the slow tilt of the vat.");
+    def->sidetext = L("s");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(8.));
 
     def = this->add("area_fill", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Area fill");
+    def->tooltip = L("Above this percentage of the display area the printer uses the slow tilt.");
+    def->sidetext = L("%");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(50.));
@@ -9242,49 +9240,44 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionFloats( { 1., 1.} ));
 
     def = this->add("relative_correction_x", coFloat);
-    //def->label = L("");
-    //def->full_label = L("");
-    //def->tooltip = L("");
+    def->label = L("Scaling correction X");
+    def->tooltip = L("Scale factor applied to the print along X to compensate the resin shrinkage.");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1.));
 
     def = this->add("relative_correction_y", coFloat);
-    //def->label = L("");
-    //def->full_label = L("");
-    //def->tooltip = L("");
+    def->label = L("Scaling correction Y");
+    def->tooltip = L("Scale factor applied to the print along Y to compensate the resin shrinkage.");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1.));
 
     def = this->add("relative_correction_z", coFloat);
-    //def->label = L("");
-    //def->full_label = L("");
-    //def->tooltip = L("");
+    def->label = L("Scaling correction Z");
+    def->tooltip = L("Scale factor applied to the print along Z to compensate the resin shrinkage.");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1.));
 
     def = this->add("absolute_correction", coFloat);
-    //def->label = L("");
-    //def->full_label = L("");
-    //def->tooltip = L("");
+    def->label = L("Absolute correction");
+    def->tooltip = L("Grows (positive) or shrinks (negative) the slices in XY to compensate the light bleeding.");
+    def->sidetext = L("mm");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.0));
 
     def = this->add("elefant_foot_min_width", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Elephant foot minimum width");
+    def->tooltip = L("Minimum width of features to keep when compensating the elephant foot.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.2));
 
     def = this->add("gamma_correction", coFloat);
-    //def->label = L("");
-    //def->full_label = L("");
-    //def->tooltip = L("");
+    def->label = L("Gamma correction");
+    def->tooltip = L("Gamma of the edge antialiasing. 1 is linear, 0 turns it off.");
     def->min = 0;
     def->max = 1;
     def->mode = comAdvanced;
@@ -9294,14 +9287,12 @@ void PrintConfigDef::init_sla_params()
     // SLA Material settings.
 
     def = this->add("material_colour", coString);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Resin color");
     def->gui_type = ConfigOptionDef::GUIType::color;
     def->set_default_value(new ConfigOptionString("#29B2B2"));
 
     def = this->add("material_type", coString);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Resin type");
     def->gui_type = ConfigOptionDef::GUIType::f_enum_open;   // TODO: ???
     def->gui_flags = "show_value";
     def->enum_values.push_back("Tough");
@@ -9312,83 +9303,74 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionString("Tough"));
 
     def = this->add("initial_layer_height", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("First layer height");
+    def->sidetext = L("mm");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(0.3));
 
     def = this->add("bottle_volume", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Bottle volume");
+    def->sidetext = L("ml");
     def->min = 50;
     def->set_default_value(new ConfigOptionFloat(1000.0));
 
     def = this->add("bottle_weight", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Bottle weight");
+    def->sidetext = L("kg");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(1.0));
 
     def = this->add("material_density", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Resin density");
+    def->sidetext = L("g/ml");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(1.0));
 
     def = this->add("bottle_cost", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Bottle cost");
+    def->sidetext = L("money/bottle");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(0.0));
 
     def = this->add("faded_layers", coInt);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Faded layers");
+    def->tooltip = L("Number of layers in which the exposure goes down from the initial to the normal time.");
     def->min = 3;
     def->max = 20;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(10));
 
     def = this->add("min_exposure_time", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Minimum exposure time");
+    def->sidetext = L("s");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("max_exposure_time", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Maximum exposure time");
+    def->sidetext = L("s");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(100));
 
     def = this->add("exposure_time", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Exposure time");
+    def->tooltip = L("Time the light cures each normal layer.");
+    def->sidetext = L("s");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(10));
 
     def = this->add("min_initial_exposure_time", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Minimum initial exposure time");
+    def->sidetext = L("s");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("max_initial_exposure_time", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Maximum initial exposure time");
+    def->sidetext = L("s");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(150));
@@ -9485,15 +9467,15 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("initial_exposure_time", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Initial exposure time");
+    def->tooltip = L("Time the light cures each bottom layer.");
+    def->sidetext = L("s");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(15));
 
     def = this->add("material_correction", coFloats);
-    //def->full_label = L("");
-    //def->tooltip = L("");
+    def->label = L("Correction for expansion");
+    def->tooltip = L("Scale factors in X, Y and Z for this resin.");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats( { 1., 1., 1. } ));
@@ -9520,8 +9502,7 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionFloat(1.));
 
     def = this->add("material_vendor", coString);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Resin vendor");
     def->set_default_value(new ConfigOptionString());
     def->cli = ConfigOptionDef::nocli;
 
@@ -9550,317 +9531,283 @@ void PrintConfigDef::init_sla_params()
     def->cli = ConfigOptionDef::nocli;
 
     def = this->add("supports_enable", coBool);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Generate supports");
+    def->tooltip = L("Generate supports for the models.");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("support_head_front_diameter", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pinhead front diameter");
+    def->tooltip = L("Diameter of the tip that touches the model.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.4));
 
     def = this->add("support_head_penetration", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Head penetration");
+    def->tooltip = L("How much the tip goes into the model surface.");
+    def->sidetext = L("mm");
     def->mode = comAdvanced;
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(0.2));
 
     def = this->add("support_head_width", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pinhead width");
+    def->tooltip = L("Length of the tip, from the pillar to the model.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 20;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1.0));
 
     def = this->add("support_pillar_diameter", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pillar diameter");
+    def->tooltip = L("Diameter of the support pillars.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 15;
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionFloat(1.0));
 
     def = this->add("support_small_pillar_diameter_percent", coPercent);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Small pillar diameter");
+    def->tooltip = L("Size of the small pillars used where a normal pillar does not fit.");
+    def->sidetext = L("%");
     def->min = 1;
     def->max = 100;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionPercent(50));
 
     def = this->add("support_max_bridges_on_pillar", coInt);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Max bridges on a pillar");
+    def->tooltip = L("Maximum number of bridges that can be placed on one pillar.");
     def->min = 0;
     def->max = 50;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(3));
 
     def = this->add("support_pillar_connection_mode", coEnum);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Pillar connection mode");
+    def->tooltip = L("How neighbouring pillars are joined.");
     def->enum_keys_map = &ConfigOptionEnum<SLAPillarConnectionMode>::get_enum_values();
     def->enum_values.push_back("zigzag");
     def->enum_values.push_back("cross");
     def->enum_values.push_back("dynamic");
-    def->enum_labels.push_back(" ");
-    def->enum_labels.push_back(" ");
-    def->enum_labels.push_back(" ");
+    def->enum_labels.push_back(L("Zig-Zag"));
+    def->enum_labels.push_back(L("Cross"));
+    def->enum_labels.push_back(L("Dynamic"));
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SLAPillarConnectionMode>(slapcmDynamic));
 
     def = this->add("support_buildplate_only", coBool);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Supports on build plate only");
+    def->tooltip = L("Supports start only on the build plate, never on the model.");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("support_pillar_widening_factor", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Pillar widening factor");
+    def->tooltip = L("How much a pillar grows when bridges and pillars merge into it (0 to 1).");
     def->min = 0;
     def->max = 1;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.0));
 
     def = this->add("support_base_diameter", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Support base diameter");
+    def->tooltip = L("Diameter of the pillar foot.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 30;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(4.0));
 
     def = this->add("support_base_height", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Support base height");
+    def->tooltip = L("Height of the pillar foot.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1.0));
 
     def = this->add("support_base_safety_distance", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Support base safety distance");
+    def->tooltip = L("Minimum distance between the pillar foot and the model.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 10;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1));
 
     def = this->add("support_critical_angle", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Critical angle");
+    def->tooltip = L("Default angle of the connecting sticks and junctions.");
+    def->sidetext = L("°");
     def->min = 0;
     def->max = 90;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(45));
 
     def = this->add("support_max_bridge_length", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Max bridge length");
+    def->tooltip = L("Maximum length of a bridge.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(15.0));
 
     def = this->add("support_max_pillar_link_distance", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Max pillar linking distance");
+    def->tooltip = L("Pillars farther apart than this are not linked. 0 turns linking off.");
+    def->sidetext = L("mm");
     def->min = 0;   // 0 means no linking
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(10.0));
 
     def = this->add("support_object_elevation", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Object elevation");
+    def->tooltip = L("How high the model is lifted above the build plate by the supports.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 150; // This is the max height of print on SL1
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(5.0));
 
     def = this->add("support_points_density_relative", coInt);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Support points density");
+    def->tooltip = L("Density of the automatic support points.");
+    def->sidetext = L("%");
     def->min = 0;
     def->set_default_value(new ConfigOptionInt(100));
 
     def = this->add("support_points_minimal_distance", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Minimal distance of support points");
     def->sidetext = L("mm");	// millimeters, CIS languages need translation
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(1.));
 
     def = this->add("pad_enable", coBool);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Use pad");
+    def->tooltip = L("Print a pad under the model and supports.");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("pad_wall_thickness", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pad wall thickness");
+    def->tooltip = L("Thickness of the pad.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 30;
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionFloat(2.0));
 
     def = this->add("pad_wall_height", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->category = L("");
-    //def->sidetext = "";
+    def->label = L("Pad wall height");
+    def->tooltip = L("Height of the pad wall. 0 means a flat pad.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 30;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.));
 
     def = this->add("pad_brim_size", coFloat);
-    //def->label = L("");
-    //def->tooltip = L("");
-    //def->category = L("");
-    //def->sidetext = "";
+    def->label = L("Pad brim size");
+    def->tooltip = L("How far the pad goes beyond the supports.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 30;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1.6));
 
     def = this->add("pad_max_merge_distance", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Max merge distance");
+    def->tooltip = L("Pads of nearby parts closer than this are joined.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(50.0));
 
     def = this->add("pad_wall_slope", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pad wall slope");
+    def->tooltip = L("Slope of the pad wall relative to the bed. 90 is a vertical wall.");
+    def->sidetext = L("°");
     def->min = 45;
     def->max = 90;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(90.0));
 
     def = this->add("pad_around_object", coBool);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Pad around object");
+    def->tooltip = L("Put the model on the pad, without supports below it.");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("pad_around_object_everywhere", coBool);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Pad around object everywhere");
+    def->tooltip = L("Make the pad follow the whole model outline.");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("pad_object_gap", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pad object gap");
+    def->tooltip = L("Gap between the bottom of the model and the pad.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 10;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1));
 
     def = this->add("pad_object_connector_stride", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pad object connector stride");
+    def->tooltip = L("Distance between the sticks joining the model to the pad.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(10));
 
     def = this->add("pad_object_connector_width", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pad object connector width");
+    def->tooltip = L("Width of the sticks joining the model to the pad.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.5));
 
     def = this->add("pad_object_connector_penetration", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Pad object connector penetration");
+    def->tooltip = L("How much the sticks go into the model.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.3));
 
     def = this->add("hollowing_enable", coBool);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Hollow the model");
+    def->tooltip = L("Hollow out the model to save resin. Drill drain holes so the resin can flow out.");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("hollowing_min_thickness", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
-    //def->sidetext = "";
+    def->label = L("Hollow wall thickness");
+    def->tooltip = L("Minimum wall thickness of a hollowed model.");
+    def->sidetext = L("mm");
     def->min = 1;
     def->max = 10;
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionFloat(3.));
 
     def = this->add("hollowing_quality", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Hollowing accuracy");
+    def->tooltip = L("Higher is more accurate and slower (0 to 1).");
     def->min = 0;
     def->max = 1;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.5));
 
     def = this->add("hollowing_closing_distance", coFloat);
-    //def->label = L("");
-    //def->category = L("");
-    //def->tooltip = L("");
+    def->label = L("Hollowing closing distance");
+    def->tooltip = L("Small cavities closer than this are closed.");
     def->sidetext = L("mm");	// millimeters, CIS languages need translation
     def->min = 0;
     def->max = 10;
@@ -9868,13 +9815,13 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionFloat(2.0));
 
     def = this->add("material_print_speed", coEnum);
-    //def->label = L("");
-    //def->tooltip = L("");
+    def->label = L("Tilt speed");
+    def->tooltip = L("Speed of the vat tilt with this resin.");
     def->enum_keys_map = &ConfigOptionEnum<SLAMaterialSpeed>::get_enum_values();
     def->enum_values.push_back("slow");
     def->enum_values.push_back("fast");
-    def->enum_labels.push_back(" ");
-    def->enum_labels.push_back(" ");
+    def->enum_labels.push_back(L("Slow"));
+    def->enum_labels.push_back(L("Fast"));
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SLAMaterialSpeed>(slamsFast));
 }
