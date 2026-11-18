@@ -12335,6 +12335,11 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
     // This is intentionally scoped to a selected registered A1 AND an A1
     // print preset. Leave non-Bambu jobs and customized nondefault values alone.
     auto filuna_config_for_selected_device = [&](DynamicPrintConfig cfg) {
+        // Filuna: arquivo que já vem fatiado (.gcode.3mf) ou só G-code fica como veio. A limpeza do bico abaixo
+        // mudava a saia de um arquivo fatiado sem saia, o fatiamento via a configuração diferente, jogava fora o
+        // G-code do arquivo e a Visualização abria vazia.
+        if (q->only_gcode_mode() || q->using_exported_file())
+            return cfg;
         if (auto* device_manager = wxGetApp().getDeviceManager()) {
             if (auto* device = device_manager->get_selected_machine()) {
                 const auto* model = preset_bundle->printers.get_selected_preset().config
