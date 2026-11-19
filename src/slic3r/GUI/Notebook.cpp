@@ -187,8 +187,8 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
     int em = em_unit(this);
     if (m_filuna_navbar) {
         // Text-only tab sized to its label, like the approved screens.
-        btn->SetFont(m_filuna_densidade >= 2 ? Label::Body_13 : Label::Body_15);
-        btn->SetPaddingSize(FromDIP(wxSize(m_filuna_densidade <= 0 ? 16 : m_filuna_densidade == 1 ? 9 : 6, 8)));
+        btn->SetFont(m_filuna_densidade >= 3 ? Label::Body_12 : m_filuna_densidade == 2 ? Label::Body_13 : Label::Body_15);
+        btn->SetPaddingSize(FromDIP(wxSize(m_filuna_densidade <= 0 ? 16 : m_filuna_densidade == 1 ? 9 : m_filuna_densidade == 2 ? 6 : 4, 8)));
         btn->SetMinSize({-1, FromDIP(38)});
     } else {
         //BBS set size for button
@@ -288,14 +288,18 @@ void ButtonsListCtrl::SetCompact(size_t n, bool compact)
     btn->SetLabel(compact ? "" : m_pageLabels[n]);
 }
 
+// Filuna: letra e margem lateral das abas em cada densidade (0 = desenho aprovado, 3 = a mais apertada).
+static const wxFont& filuna_letra_da_aba(int nivel) { return nivel >= 3 ? Label::Body_12 : nivel == 2 ? Label::Body_13 : Label::Body_15; }
+static int filuna_margem_da_aba(int nivel) { return nivel <= 0 ? 16 : nivel == 1 ? 9 : nivel == 2 ? 6 : 4; }
+
 void ButtonsListCtrl::SetFilunaDensidade(int nivel)
 {
     if (!m_filuna_navbar)
         return;
     m_filuna_densidade = nivel;
     for (Button* btn : m_pageButtons) {
-        btn->SetFont(nivel >= 2 ? Label::Body_13 : Label::Body_15);
-        btn->SetPaddingSize(FromDIP(wxSize(nivel <= 0 ? 16 : nivel == 1 ? 9 : 6, 8)));
+        btn->SetFont(filuna_letra_da_aba(nivel));
+        btn->SetPaddingSize(FromDIP(wxSize(filuna_margem_da_aba(nivel), 8)));
     }
     m_sizer->Layout();
 }

@@ -584,6 +584,7 @@ public:
     SideButton* m_salvar_btn{ nullptr }; // Filuna: Salvar projeto (pasta Filuna do cliente)
     wxWindow*   m_filuna_ajuda_btn{ nullptr }; // Filuna: "?" da barra e o risco ao lado, escondidos quando a barra não cabe
     wxWindow*   m_filuna_divisor{ nullptr };
+    wxWindow*   m_filuna_engrenagem{ nullptr }; // Filuna: Preferências na barra; sai em janela estreita (continua no menu do logo)
 
     SidePopup*  m_slice_option_pop_up{ nullptr };
 
