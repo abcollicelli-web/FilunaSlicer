@@ -17,12 +17,12 @@
 .m{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;cursor:pointer;text-align:left;font-family:inherit;padding:0;color:var(--ink);transition:border-color .15s,box-shadow .15s,transform .15s}
 .m:hover{border-color:#F6C6D8;box-shadow:0 14px 30px rgba(60,50,40,.12);transform:translateY(-2px)}
 .m:focus-visible{outline:3px solid #F6C6D8;outline-offset:2px}
-/* foto do card: palco escuro das ferramentas, sempre 3:2, a foto preenche a área */
-.thumb{position:relative;width:100%;aspect-ratio:3/2;display:flex;align-items:center;justify-content:center;color:#5A5560;background:#17161A;overflow:hidden}
+/* capa do card: foto de estúdio em fundo claro, como as capas dos Modelos 3D; sempre 3:2 */
+.thumb{position:relative;width:100%;aspect-ratio:3/2;display:flex;align-items:center;justify-content:center;color:#B9A9A0;background:#EFEBE5;overflow:hidden}
 .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .25s,transform .35s}
 .thumb img.ok{opacity:1}
 .m:hover .thumb img{transform:scale(1.04)}
-.sp{position:absolute;top:10px;right:10px;font-size:11.5px;font-weight:700;color:#fff;background:#C2185B;border-radius:999px;padding:4px 10px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.sp{position:absolute;top:10px;right:10px;font-size:11.5px;font-weight:700;color:#fff;background:#C2185B;border-radius:999px;padding:4px 10px;white-space:nowrap;box-shadow:0 2px 8px rgba(60,50,40,.18)}
 .sp.bloq{color:#2C2A28;background:#F1EEE9}
 .b{padding:13px 16px 15px;border-top:1px solid var(--line);flex:1}
 .n{font-size:15.5px;font-weight:700;line-height:1.25}
