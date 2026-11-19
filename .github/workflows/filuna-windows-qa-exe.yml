@@ -14,6 +14,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: write # apagar do cache as árvores de compilação antigas
 concurrency:
   group: filuna-qa-windows-exe-${{ github.ref }}
   cancel-in-progress: false
@@ -142,4 +143,19 @@ jobs:
             !build/*.exe
             !build/_CPack_Packages
           key: filuna-win-arvore-v1-${{ github.sha }}
-
+      # Cada árvore tem ~3,6 GB e o cache do repositório tem 10 GB: duas ou três árvores expulsam as dependências
+      # (aconteceu em 18/11/2026 e a compilação rápida parou). Fica só a árvore que acabou de ser guardada.
+      - name: Manter só a árvore mais nova no cache
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FILUNA_ARVORE: filuna-win-arvore-v1-${{ github.sha }}
+        run: |
+          $caches = @(gh api "repos/${{ github.repository }}/actions/caches?key=filuna-win-arvore-v1-&per_page=100" --jq '.actions_caches[] | [.id, .key] | @tsv')
+          if (-not ($caches | Where-Object { $_ -like "*`t$env:FILUNA_ARVORE" })) { Write-Host "a arvore nova nao foi guardada: nao apago as antigas"; exit 0 }
+          foreach ($c in $caches) {
+            $id, $chave = $c -split "`t", 2
+            if ($chave -ne $env:FILUNA_ARVORE) { gh api -X DELETE "repos/${{ github.repository }}/actions/caches/$id" | Out-Null; Write-Host "arvore antiga removida do cache: $chave" }
+          }
