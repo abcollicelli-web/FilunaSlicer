@@ -2842,6 +2842,10 @@ void GUI_App::init_app_config()
 #endif
 
     BOOST_LOG_TRIVIAL(info) << boost::format("gui mode, Current OrcaSlicer Version %1% build %2%") % SoftFever_VERSION % build_commit_label;
+    // Filuna: o lançador avisa quando o programa roda com uma correção de código vinda do servidor
+    // (FilunaCorrecao.hpp); o registro guarda qual, para o suporte saber o que o cliente está rodando.
+    if (wxString correcao; wxGetEnv("FILUNA_CORRECAO_EM_USO", &correcao) && !correcao.empty())
+        BOOST_LOG_TRIVIAL(info) << "Filuna: programa rodando com a correção de código " << correcao.ToStdString() << " do servidor";
 
     //BBS: remove GCodeViewer as seperate APP logic
 	if (!app_config)
