@@ -31,6 +31,8 @@ extern "C"
 #include <string>
 #include <vector>
 
+#include "FilunaCorrecao.hpp"
+
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
@@ -296,7 +298,17 @@ int wmain(int argc, wchar_t **argv)
     wcscpy(path_to_slic3r, path_to_exe);
     wcscat(path_to_slic3r, L"OrcaSlicer.dll");
 //	printf("Loading Slic3r library: %S\n", path_to_slic3r);
-    HINSTANCE hInstance_Slic3r = LoadLibraryExW(path_to_slic3r, nullptr, 0);
+    // Filuna: correção do programa vinda do servidor. O FilunaCorrecao.hpp confere assinatura, compilação,
+    // validade, SHA-256 e a trava de quedas; em qualquer dúvida, ou se a DLL corrigida não carregar, vale a do pacote.
+    HINSTANCE          hInstance_Slic3r = nullptr;
+    const std::wstring dll_corrigida    = filuna_correcao::escolher(path_to_exe);
+    if (!dll_corrigida.empty()) {
+        hInstance_Slic3r = LoadLibraryExW(dll_corrigida.c_str(), nullptr, 0);
+        if (hInstance_Slic3r == nullptr)
+            SetEnvironmentVariableA("FILUNA_CORRECAO_EM_USO", nullptr);
+    }
+    if (hInstance_Slic3r == nullptr)
+        hInstance_Slic3r = LoadLibraryExW(path_to_slic3r, nullptr, 0);
     if (hInstance_Slic3r == nullptr) {
         printf("OrcaSlicer.dll was not loaded, error=%lu\n", GetLastError());
         return -1;
