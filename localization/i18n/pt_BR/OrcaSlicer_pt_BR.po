@@ -36795,3 +36795,375 @@ msgstr "Não deu para abrir o SVG."
 
 msgid "import SVG failed: could not parse imported SVG data."
 msgstr "Não deu para entender o conteúdo deste SVG."
+
+msgid "Display width"
+msgstr "Largura da tela"
+
+msgid "Width of the LCD display area."
+msgstr "Largura da área útil da tela LCD."
+
+msgid "Display height"
+msgstr "Altura da tela"
+
+msgid "Height of the LCD display area."
+msgstr "Altura da área útil da tela LCD."
+
+msgid "Display orientation"
+msgstr "Orientação da tela"
+
+msgid "Orientation of the image on the LCD display."
+msgstr "Como a imagem fica deitada na tela LCD."
+
+msgid "Landscape"
+msgstr "Paisagem"
+
+msgid "Portrait"
+msgstr "Retrato"
+
+msgid "Mirror the layer image along the X axis."
+msgstr "Espelha a imagem da camada no eixo X."
+
+msgid "Mirror the layer image along the Y axis."
+msgstr "Espelha a imagem da camada no eixo Y."
+
+msgid "Fast tilt"
+msgstr "Inclinação rápida"
+
+msgid "Time of the fast tilt of the vat."
+msgstr "Tempo da inclinação rápida da cuba."
+
+msgid "Slow tilt"
+msgstr "Inclinação lenta"
+
+msgid "Time of the slow tilt of the vat."
+msgstr "Tempo da inclinação lenta da cuba."
+
+msgid "Area fill"
+msgstr "Área ocupada"
+
+msgid "Above this percentage of the display area the printer uses the slow tilt."
+msgstr "Acima desta porcentagem da tela ocupada pela camada, a impressora usa a inclinação lenta."
+
+msgid "Scaling correction X"
+msgstr "Correção de escala X"
+
+msgid "Scale factor applied to the print along X to compensate the resin shrinkage."
+msgstr "Fator de escala no eixo X para compensar a contração da resina."
+
+msgid "Scaling correction Y"
+msgstr "Correção de escala Y"
+
+msgid "Scale factor applied to the print along Y to compensate the resin shrinkage."
+msgstr "Fator de escala no eixo Y para compensar a contração da resina."
+
+msgid "Scaling correction Z"
+msgstr "Correção de escala Z"
+
+msgid "Scale factor applied to the print along Z to compensate the resin shrinkage."
+msgstr "Fator de escala no eixo Z para compensar a contração da resina."
+
+msgid "Absolute correction"
+msgstr "Correção absoluta"
+
+msgid "Grows (positive) or shrinks (negative) the slices in XY to compensate the light bleeding."
+msgstr "Aumenta (positivo) ou diminui (negativo) as camadas em XY para compensar o vazamento de luz."
+
+msgid "Elephant foot minimum width"
+msgstr "Largura mínima do pé de elefante"
+
+msgid "Minimum width of features to keep when compensating the elephant foot."
+msgstr "Largura mínima dos detalhes que ficam ao compensar o pé de elefante."
+
+msgid "Gamma correction"
+msgstr "Correção gama"
+
+msgid "Gamma of the edge antialiasing. 1 is linear, 0 turns it off."
+msgstr "Gama da suavização das bordas. 1 é linear; 0 desliga."
+
+msgid "Minimum exposure time"
+msgstr "Tempo mínimo de exposição"
+
+msgid "Maximum exposure time"
+msgstr "Tempo máximo de exposição"
+
+msgid "Minimum initial exposure time"
+msgstr "Tempo mínimo de exposição inicial"
+
+msgid "Maximum initial exposure time"
+msgstr "Tempo máximo de exposição inicial"
+
+msgid "Resin color"
+msgstr "Cor da resina"
+
+msgid "Resin type"
+msgstr "Tipo de resina"
+
+msgid "Resin vendor"
+msgstr "Fabricante da resina"
+
+msgid "Resin density"
+msgstr "Densidade da resina"
+
+msgid "g/ml"
+msgstr "g/ml"
+
+msgid "Bottle volume"
+msgstr "Volume do frasco"
+
+msgid "ml"
+msgstr "ml"
+
+msgid "Bottle weight"
+msgstr "Peso do frasco"
+
+msgid "kg"
+msgstr "kg"
+
+msgid "Bottle cost"
+msgstr "Preço do frasco"
+
+msgid "money/bottle"
+msgstr "dinheiro/frasco"
+
+msgid "Exposure time"
+msgstr "Tempo de exposição"
+
+msgid "Time the light cures each normal layer."
+msgstr "Tempo de luz em cada camada normal."
+
+msgid "Initial exposure time"
+msgstr "Tempo de exposição inicial"
+
+msgid "Time the light cures each bottom layer."
+msgstr "Tempo de luz em cada camada do fundo."
+
+msgid "Tilt speed"
+msgstr "Velocidade da inclinação"
+
+msgid "Speed of the vat tilt with this resin."
+msgstr "Velocidade da inclinação da cuba com esta resina."
+
+msgid "Slow"
+msgstr "Lenta"
+
+msgid "Correction for expansion"
+msgstr "Correção da expansão"
+
+msgid "Scale factors in X, Y and Z for this resin."
+msgstr "Fatores de escala em X, Y e Z para esta resina."
+
+msgid "Faded layers"
+msgstr "Camadas de transição"
+
+msgid "Number of layers in which the exposure goes down from the initial to the normal time."
+msgstr "Número de camadas em que a exposição desce aos poucos da inicial até a normal."
+
+msgid "Generate supports"
+msgstr "Gerar suportes"
+
+msgid "Generate supports for the models."
+msgstr "Gera os suportes das peças."
+
+msgid "Pinhead front diameter"
+msgstr "Diâmetro da ponta"
+
+msgid "Diameter of the tip that touches the model."
+msgstr "Diâmetro da ponta que toca a peça."
+
+msgid "Head penetration"
+msgstr "Entrada da ponta"
+
+msgid "How much the tip goes into the model surface."
+msgstr "Quanto a ponta entra na superfície da peça."
+
+msgid "Pinhead width"
+msgstr "Comprimento da ponta"
+
+msgid "Length of the tip, from the pillar to the model."
+msgstr "Comprimento da ponta, do pilar até a peça."
+
+msgid "Pillar diameter"
+msgstr "Diâmetro do pilar"
+
+msgid "Diameter of the support pillars."
+msgstr "Diâmetro dos pilares de suporte."
+
+msgid "Small pillar diameter"
+msgstr "Diâmetro dos pilares pequenos"
+
+msgid "Size of the small pillars used where a normal pillar does not fit."
+msgstr "Tamanho dos pilares pequenos, usados onde um normal não cabe."
+
+msgid "Max bridges on a pillar"
+msgstr "Máximo de pontes por pilar"
+
+msgid "Maximum number of bridges that can be placed on one pillar."
+msgstr "Quantas pontes no máximo podem sair de um pilar."
+
+msgid "Pillar connection mode"
+msgstr "Ligação entre pilares"
+
+msgid "How neighbouring pillars are joined."
+msgstr "Como os pilares vizinhos são ligados."
+
+msgid "Zig-Zag"
+msgstr "Ziguezague"
+
+msgid "Cross"
+msgstr "Cruzada"
+
+msgid "Dynamic"
+msgstr "Dinâmica"
+
+msgid "Supports on build plate only"
+msgstr "Suportes só na mesa"
+
+msgid "Supports start only on the build plate, never on the model."
+msgstr "Os suportes só saem da mesa, nunca de cima da peça."
+
+msgid "Pillar widening factor"
+msgstr "Alargamento dos pilares"
+
+msgid "How much a pillar grows when bridges and pillars merge into it (0 to 1)."
+msgstr "Quanto o pilar engrossa quando pontes e pilares se juntam nele (0 a 1)."
+
+msgid "Support base diameter"
+msgstr "Diâmetro do pé do suporte"
+
+msgid "Diameter of the pillar foot."
+msgstr "Diâmetro do pé do pilar."
+
+msgid "Support base height"
+msgstr "Altura do pé do suporte"
+
+msgid "Height of the pillar foot."
+msgstr "Altura do pé do pilar."
+
+msgid "Support base safety distance"
+msgstr "Folga do pé do suporte"
+
+msgid "Minimum distance between the pillar foot and the model."
+msgstr "Distância mínima entre o pé do pilar e a peça."
+
+msgid "Critical angle"
+msgstr "Ângulo crítico"
+
+msgid "Default angle of the connecting sticks and junctions."
+msgstr "Ângulo das ligações entre pilares e pontes."
+
+msgid "Maximum length of a bridge."
+msgstr "Comprimento máximo de uma ponte."
+
+msgid "Max pillar linking distance"
+msgstr "Distância máxima para ligar pilares"
+
+msgid "Pillars farther apart than this are not linked. 0 turns linking off."
+msgstr "Pilares mais longe que isto não são ligados. 0 desliga."
+
+msgid "Object elevation"
+msgstr "Elevação da peça"
+
+msgid "How high the model is lifted above the build plate by the supports."
+msgstr "Quanto os suportes levantam a peça acima da mesa."
+
+msgid "Support points density"
+msgstr "Densidade dos pontos de suporte"
+
+msgid "Density of the automatic support points."
+msgstr "Quantidade de pontos de suporte automáticos."
+
+msgid "Minimal distance of support points"
+msgstr "Distância mínima entre pontos de suporte"
+
+msgid "Use pad"
+msgstr "Usar base"
+
+msgid "Print a pad under the model and supports."
+msgstr "Imprime uma base embaixo da peça e dos suportes."
+
+msgid "Pad wall thickness"
+msgstr "Espessura da base"
+
+msgid "Thickness of the pad."
+msgstr "Espessura da base."
+
+msgid "Pad wall height"
+msgstr "Altura da parede da base"
+
+msgid "Height of the pad wall. 0 means a flat pad."
+msgstr "Altura da borda da base. 0 deixa a base lisa."
+
+msgid "Pad brim size"
+msgstr "Aba da base"
+
+msgid "How far the pad goes beyond the supports."
+msgstr "Quanto a base passa dos suportes."
+
+msgid "Max merge distance"
+msgstr "Distância máxima para juntar"
+
+msgid "Pads of nearby parts closer than this are joined."
+msgstr "Bases de peças mais perto que isto viram uma só."
+
+msgid "Pad wall slope"
+msgstr "Inclinação da parede da base"
+
+msgid "Slope of the pad wall relative to the bed. 90 is a vertical wall."
+msgstr "Inclinação da borda da base em relação à mesa. 90 é borda reta."
+
+msgid "Put the model on the pad, without supports below it."
+msgstr "Põe a peça direto na base, sem suportes embaixo."
+
+msgid "Pad around object everywhere"
+msgstr "Base em volta da peça inteira"
+
+msgid "Make the pad follow the whole model outline."
+msgstr "A base segue o contorno da peça inteira."
+
+msgid "Pad object gap"
+msgstr "Folga entre base e peça"
+
+msgid "Gap between the bottom of the model and the pad."
+msgstr "Folga entre o fundo da peça e a base."
+
+msgid "Pad object connector stride"
+msgstr "Espaço entre conectores"
+
+msgid "Distance between the sticks joining the model to the pad."
+msgstr "Distância entre as hastes que prendem a peça na base."
+
+msgid "Pad object connector width"
+msgstr "Largura dos conectores"
+
+msgid "Width of the sticks joining the model to the pad."
+msgstr "Largura das hastes que prendem a peça na base."
+
+msgid "Pad object connector penetration"
+msgstr "Entrada dos conectores"
+
+msgid "How much the sticks go into the model."
+msgstr "Quanto as hastes entram na peça."
+
+msgid "Hollow the model"
+msgstr "Deixar a peça oca"
+
+msgid "Hollow out the model to save resin. Drill drain holes so the resin can flow out."
+msgstr "Deixa a peça oca para gastar menos resina. Faça furos para a resina escorrer."
+
+msgid "Hollow wall thickness"
+msgstr "Espessura da parede oca"
+
+msgid "Minimum wall thickness of a hollowed model."
+msgstr "Espessura mínima da parede da peça oca."
+
+msgid "Hollowing accuracy"
+msgstr "Precisão do oco"
+
+msgid "Higher is more accurate and slower (0 to 1)."
+msgstr "Maior é mais preciso e mais lento (0 a 1)."
+
+msgid "Hollowing closing distance"
+msgstr "Fechamento do oco"
+
+msgid "Small cavities closer than this are closed."
+msgstr "Cavidades menores que isto são fechadas."

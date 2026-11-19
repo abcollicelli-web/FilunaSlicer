@@ -38,6 +38,7 @@
 #include "libslic3r/calib.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/PresetBundle.hpp"
+#include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/Utils.hpp"
@@ -152,6 +153,30 @@ json filament_info()
     return r;
 }
 
+// Resina: o fatiamento fica no SLAPrint do Plater (a mesa só guarda o do filamento). Volumes em mm³, como os do
+// filamento, para a conta de preço do servidor ser a mesma; o tempo é o mesmo que vai no .cxdlpv4.
+json resin_slice_summary(json r)
+{
+    const SLAPrint& sla = wxGetApp().plater()->sla_print();
+    if (!sla.finished())
+        return r;
+    const SLAPrintStatistics& stats = sla.print_statistics();
+    const double peca = stats.objects_used_material, suporte = stats.support_used_material;
+    if (peca + suporte <= 0.)
+        return r;
+    const DynamicPrintConfig& resina = wxGetApp().preset_bundle->sla_materials.get_edited_preset().config;
+    const auto* dens = resina.option<ConfigOptionFloat>("material_density");
+    const double densidade = dens != nullptr && dens->value > 0 ? dens->value : 1.1; // g/ml
+    r["fatiado"]  = true;
+    r["tempo_s"]  = std::isfinite(stats.estimated_print_time) ? stats.estimated_print_time : 0.;
+    r["camadas"]  = sla.print_layers().size();
+    r["volumes"]  = {{"peca", peca}, {"suporte", suporte}, {"torre", 0.}, {"purga", 0.}};
+    r["material"] = "RESINA";
+    r["gramas_estimadas"] = (peca + suporte) * densidade / 1000.;
+    r["trocas_filamento"] = 0;
+    return r;
+}
+
 json slice_summary()
 {
     json r = {{"fatiado", false}, {"objetos", 0}};
@@ -159,6 +184,8 @@ json slice_summary()
     if (plater == nullptr)
         return r;
     r["objetos"] = plater->model().objects.size();
+    if (wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA)
+        return resin_slice_summary(r);
     PartPlate* plate = plater->get_partplate_list().get_curr_plate();
     if (plate == nullptr || !plate->is_slice_result_valid() || plate->get_slice_result() == nullptr)
         return r;
