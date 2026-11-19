@@ -395,6 +395,33 @@ var Filuna = (function () {
 	if (/rodape\.html$/.test(location.pathname)) setTimeout(supCiclo, 20000);
 	ouvir("suporte.agora", function () { supCiclo(); });
 
+	// ---- Peças geradas pelo assistente (Claude ou ChatGPT ligados à conta Filuna) ----
+	// O cliente pede ao assistente, o site gera a peça (ex.: Chaveiro com logo) e guarda. Este programa pergunta se
+	// há algo esperando e abre na Preparação pelo mesmo caminho dos modelos do catálogo: baixa com a chave do
+	// aparelho e abre travado para salvar e exportar. O site entrega cada peça uma vez só.
+	var iaAbrindo = "";
+	function iaEstado(id, estado) { return rede("POST", "/modelos3d/envios/" + id, { estado: estado }).catch(function () {}); }
+	function iaCiclo() {
+		if (!token) { setTimeout(iaCiclo, 60000); return; }
+		rede("GET", "/ia/envios").then(function (r) {
+			var fila = (r && r.envios) || [], cadeia = Promise.resolve();
+			fila.forEach(function (e) {
+				cadeia = cadeia.then(function () {
+					iaAbrindo = e.id;
+					return nativo("modelo3d.abrir", { id: e.id, titulo: e.titulo || "Peça do assistente" }).catch(function () { iaAbrindo = ""; return iaEstado(e.id, "falhou"); });
+				});
+			});
+			cadeia.then(function () { setTimeout(iaCiclo, 10000); });
+		}, function (e) { setTimeout(iaCiclo, e && e.status == 404 ? 600000 : 60000); });   // 404: o site está com os assistentes desligados
+	}
+	ouvir("modelo3d.aberto", function () { iaAbrindo = ""; });
+	ouvir("modelo3d.erro", function (d) {
+		if (!iaAbrindo) return;
+		iaEstado(iaAbrindo, d && d.erro == "abertura cancelada" ? "cancelado" : "falhou");
+		iaAbrindo = "";
+	});
+	if (/rodape\.html$/.test(location.pathname)) setTimeout(iaCiclo, 12000);
+
 	return { nativo: nativo, api: api, enviarArquivo: enviarArquivo, imagem: imagem, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
 		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
 		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, telaLogin: telaLogin };
