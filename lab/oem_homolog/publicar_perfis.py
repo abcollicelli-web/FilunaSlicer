@@ -121,9 +121,17 @@ def main() -> int:
     pasta.mkdir(parents=True, exist_ok=True)
     pacote = pasta / f"{fab}.zip"
     if not pacote.is_file():  # promoção de beta para todos reaproveita o mesmo pacote (mesmo SHA-256)
+        # O programa só cria uma pasta quando o zip traz a entrada dela (extract_archive_confined): sem as entradas
+        # "Fabricante/", "Fabricante/machine/"… a extração para no primeiro arquivo de dentro da pasta.
+        pastas = {nome[:i + 1] for nome in arquivos for i, letra in enumerate(nome) if letra == "/"}
         with zipfile.ZipFile(pacote, "w", zipfile.ZIP_DEFLATED) as z:
-            for nome in sorted(arquivos):  # data fixa: o mesmo commit dá sempre o mesmo pacote
-                z.writestr(zipfile.ZipInfo(nome, date_time=(2026, 1, 1, 0, 0, 0)), arquivos[nome], zipfile.ZIP_DEFLATED)
+            for nome in sorted(pastas | set(arquivos)):  # data fixa: o mesmo commit dá sempre o mesmo pacote
+                entrada = zipfile.ZipInfo(nome, date_time=(2026, 1, 1, 0, 0, 0))
+                if nome in pastas:
+                    entrada.external_attr = (0o40755 << 16) | 0x10
+                    z.writestr(entrada, b"")
+                else:
+                    z.writestr(entrada, arquivos[nome], zipfile.ZIP_DEFLATED)
     dados = pacote.read_bytes()
     doc = {"tipo": "perfis", "fabricante": fab, "versao": ns.versao, "sha256": hashlib.sha256(dados).hexdigest(),
            "bytes": len(dados), "url": f"/api/slicer/v1/perfis/{fab}/{ns.versao}/{fab}.zip", "notas": ns.notas,
