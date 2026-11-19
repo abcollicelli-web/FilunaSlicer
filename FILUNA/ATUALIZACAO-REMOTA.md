@@ -27,6 +27,23 @@ o resto.
 
 Nas camadas 1 a 3 o pacote assinado pela Microsoft não é alterado: o que chega fica numa pasta do usuário.
 
+## Dois exemplos do proprietário (19/11/2026)
+
+**"O cliente não consegue imprimir."** Não vai pela Microsoft: é defeito, e esperar horas é inaceitável.
+Primeiro descobrir onde está o erro, porque isso decide a camada:
+
+| Onde está o erro | Camada | Do diagnóstico ao cliente |
+|---|---|---|
+| No perfil (temperatura, G-code de início, limite da máquina) | 1. Perfis | Minutos |
+| Na tela (botão de enviar não responde, campo errado) | 2. Telas | Minutos |
+| No código (queda, envio que falha, cálculo errado) | 3. Correção de código | O tempo de compilar, mais minutos |
+
+Na camada 3 o que demora é a compilação, não a loja. Manter a compilação rápida faz parte desta regra.
+
+**"Ferramenta nova, recurso novo."** Vai pela Microsoft, sempre: é função nova (10.2.2) e a página da loja tem de
+descrever (10.1.1). Sai com divulgação: banner na home do site e aviso na tela Início do programa. O banner da
+tela Início pode ser ligado pela camada 2 no dia em que a versão for publicada, sem outra passagem pela loja.
+
 ## Pode ir pelo servidor Filuna
 
 - Corrigir um valor de perfil que imprime errado (temperatura, velocidade, retração, G-code de início e fim).
