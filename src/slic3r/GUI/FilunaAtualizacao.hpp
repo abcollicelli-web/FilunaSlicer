@@ -33,6 +33,8 @@ public:
     void avisar(const std::string& token);
     void parar();
     Estado estado() const;
+    // Token da conta em uso ("" sem conta). A consulta de correção de perfis manda junto para o canal de teste.
+    std::string conta() const;
 
     // Catálogo assinado mais recente (texto já verificado; vazio antes da primeira consulta ou sem
     // conta) e os ids visíveis para esta conta. Usado pela tela de Dispositivos.

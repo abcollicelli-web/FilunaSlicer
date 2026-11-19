@@ -51,6 +51,10 @@
 #include "slic3r/GUI/Plater.hpp"
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/NotificationManager.hpp"
+#include <optional>
+#include "slic3r/GUI/FilunaAtualizacao.hpp"
+#include "slic3r/Filuna/FilunaCalculos.hpp"
+#include "slic3r/Filuna/FilunaRecursos.hpp"
 #include "slic3r/Utils/Http.hpp"
 #include "slic3r/Utils/bambu_networking.hpp"
 #include "slic3r/Config/Version.hpp"
@@ -74,6 +78,46 @@ namespace Slic3r {
 
 static const char *INDEX_FILENAME = "index.idx";
 static const char *TMP_EXTENSION = ".data";
+
+// Filuna: correção de perfis só vale com a assinatura da Filuna. O servidor devolve o documento da correção
+// (fabricante, versão, SHA-256 e caminho do pacote) e a assinatura Ed25519 dele; a chave pública vem fixa no
+// programa (a mesma do catálogo de módulos) e o pacote só sai de filuna3d.com. O programa assinado pela loja não
+// muda: o que chega é dado, conferido antes de entrar.
+static const char *const FILUNA_SITE          = "https://filuna3d.com";
+static const char *const FILUNA_CHAVE_PERFIS = "54e050b44876dfb8738a9913aa323f89b4df4cc20813ba8d7aa8e223706a43b1";
+
+struct CorrecaoPerfis
+{
+    Semver      versao;
+    std::string sha256, url, notas;
+};
+
+// Devolve a correção quando o documento está assinado e é deste fabricante; vazio (com o motivo no registro) se não.
+static std::optional<CorrecaoPerfis> correcao_assinada(const std::string &vendor_id, const std::string &documento,
+                                                        const std::string &assinatura)
+{
+    if (documento.empty())
+        return std::nullopt;
+    auto recusar = [&vendor_id](const char *motivo) {
+        BOOST_LOG_TRIVIAL(warning) << "Filuna: correção de perfis de " << vendor_id << " recusada: " << motivo;
+        return std::nullopt;
+    };
+    if (!Filuna::Recursos::verificar_ed25519(documento, assinatura, FILUNA_CHAVE_PERFIS))
+        return recusar("assinatura inválida");
+    const json doc = json::parse(documento, nullptr, false);
+    if (!doc.is_object() || doc.value("tipo", std::string()) != "perfis" || doc.value("fabricante", std::string()) != vendor_id)
+        return recusar("documento de outro tipo ou de outro fabricante");
+    const auto versao = Semver::parse(doc.value("versao", std::string()));
+    CorrecaoPerfis c;
+    c.sha256 = doc.value("sha256", std::string());
+    c.url    = doc.value("url", std::string());
+    c.notas  = doc.value("notas", std::string());
+    if (!versao || c.sha256.size() != 64 || c.url.size() < 2 || c.url.front() != '/' || c.url.find("..") != std::string::npos)
+        return recusar("versão, SHA-256 ou caminho inválidos");
+    c.versao = *versao;
+    c.url    = FILUNA_SITE + c.url;
+    return c;
+}
 
 
 void copy_file_fix(const fs::path &source, const fs::path &target)
@@ -652,14 +696,14 @@ void PresetUpdater::priv::sync_vendor_config(const std::string& vendor_id)
         + "?vendor=" + Http::url_encode(vendor_id)
         + "&orca_version=" + Http::url_encode(SoftFever_VERSION);
 
-    std::string online_version_str; // this represents the PROFILE VERSION, not ORCA VERSION
-    std::string download_url_str;
-    std::string changelog;
+    std::string documento, assinatura;
 
     BOOST_LOG_TRIVIAL(info) << "[Orca Updater] fetching vendor update status from " << url;
 
-    Http::get(url)
-        .timeout_connect(5)
+    Http consulta = Http::get(url);
+    if (const std::string conta = GUI::FilunaAtualizacao::instancia().conta(); !conta.empty())
+        consulta.header("Authorization", "Bearer " + conta);
+    consulta.timeout_connect(5)
         .on_progress(check_cancel)
         .on_error([&vendor_id](std::string body, std::string error, unsigned http_status) {
             BOOST_LOG_TRIVIAL(warning) << "[Orca Updater] vendor check HTTP error for "
@@ -667,26 +711,23 @@ void PresetUpdater::priv::sync_vendor_config(const std::string& vendor_id)
         })
         .on_complete([&](std::string body, unsigned http_status) {
             if (http_status != 200) return;
-            try {
-                json j = json::parse(body);
-                BOOST_LOG_TRIVIAL(info) << "[Orca Updater] url: " << url << " returned:" << body;
-
-                if (j.contains("vendor_version") && j.contains("download_url")) {
-                    online_version_str = j["vendor_version"].get<std::string>();
-                    download_url_str = j["download_url"].get<std::string>();
-                    changelog        = j.value("changelog", std::string());
-                }
-            } catch (const std::exception& e) {
-                BOOST_LOG_TRIVIAL(warning) << "[Orca Updater] vendor check JSON parse failed: " << e.what();
+            const json j = json::parse(body, nullptr, false);
+            if (j.is_object()) {
+                documento  = j.value("documento", std::string());
+                assinatura = j.value("assinatura", std::string());
             }
         })
         .perform_sync();
 
     if (cancel || vendor_check_cancel) return;
-    if (online_version_str.empty() || download_url_str.empty()) {
+    const auto correcao = correcao_assinada(vendor_id, documento, assinatura);
+    if (!correcao || !(installed_vendor_version(vendor_id) < correcao->versao)) {
         BOOST_LOG_TRIVIAL(info) << "[Orca Updater] no update available for vendor " << vendor_id;
         return;
     }
+    const std::string online_version_str = correcao->versao.to_string(); // versão dos PERFIS, não do programa
+    const std::string download_url_str   = correcao->url;
+    std::string       changelog          = correcao->notas;
 
     if (cancel || vendor_check_cancel) return;
 
@@ -726,6 +767,11 @@ void PresetUpdater::priv::sync_vendor_config(const std::string& vendor_id)
         .perform_sync();
 
     if (!download_ok || cancel || vendor_check_cancel) return;
+    if (Filuna::sha256_de_arquivo(download_file.string()) != correcao->sha256) {
+        BOOST_LOG_TRIVIAL(warning) << "Filuna: correção de perfis de " << vendor_id << " recusada: o pacote não é o assinado";
+        fs::remove(download_file, ec);
+        return;
+    }
 
     // Extract vendor profile bundles under ota/profiles. The downloaded zip contains
     // either the vendor json/folder or the vendor cache at its root.
@@ -1485,22 +1531,24 @@ void PresetUpdater::priv::check_new_vendors(const std::set<std::string>& system_
             Semver      version;
             std::string download_url;
             std::string changelog;
+            std::string sha256;
         };
         std::vector<NewVendorCandidate> candidates;
         for (auto it = response_json.begin(); it != response_json.end(); ++it) {
             const json& entry = it.value();
             if (!entry.is_object())
                 continue;
-            std::string download_url_str = entry.value("download_url", std::string());
-            if (download_url_str.empty())
+            const auto correcao = correcao_assinada(it.key(), entry.value("documento", std::string()),
+                                                    entry.value("assinatura", std::string()));
+            if (!correcao)
                 continue;
 
             NewVendorCandidate candidate;
             candidate.vendor_id     = it.key();
-            auto parsed_ver         = Semver::parse(entry.value("version", std::string()));
-            candidate.version       = parsed_ver ? *parsed_ver : Semver();
-            candidate.download_url  = std::move(download_url_str);
-            candidate.changelog     = entry.value("changelog", std::string());
+            candidate.version       = correcao->versao;
+            candidate.download_url  = correcao->url;
+            candidate.changelog     = correcao->notas;
+            candidate.sha256        = correcao->sha256;
             candidates.push_back(std::move(candidate));
         }
 
@@ -1605,6 +1653,12 @@ void PresetUpdater::priv::check_new_vendors(const std::set<std::string>& system_
                     if (!download_ok || cancel || vendor_check_cancel) {
                         if (!download_ok)
                             failed_vendor_ids.push_back(vendor_id);
+                        continue;
+                    }
+                    if (Filuna::sha256_de_arquivo(download_file.string()) != candidate.sha256) {
+                        BOOST_LOG_TRIVIAL(warning) << "Filuna: perfis novos de " << vendor_id << " recusados: o pacote não é o assinado";
+                        fs::remove(download_file, ec);
+                        failed_vendor_ids.push_back(vendor_id);
                         continue;
                     }
 

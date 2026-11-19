@@ -307,6 +307,14 @@ json FilunaAtualizacao::catalogo() const
     return json::object();
 }
 
+std::string FilunaAtualizacao::conta() const
+{
+    if (!m)
+        return {};
+    std::lock_guard<std::mutex> g(m->trava);
+    return m->token;
+}
+
 std::vector<std::string> FilunaAtualizacao::visiveis() const
 {
     if (!m)
