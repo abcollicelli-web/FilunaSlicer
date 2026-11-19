@@ -306,6 +306,11 @@ body, button, input
    fica por cima do menu; o resultado de "Procurar atualização" quebra em linhas. */
 #FlRodape { position: fixed; left: 0; bottom: 0; z-index: 900; box-sizing: border-box; width: 389px; padding: 8px 14px 10px;
 	display: flex; flex-direction: column; align-items: flex-start; gap: 8px; background: var(--bg-color-sidebar, #FFFDFB); }
+/* A coluna rola quando o menu não cabe na altura da janela e reserva embaixo a altura do rodapé (medida em
+   filuna-home.js); antes os últimos itens do menu ficavam cortados e sem como alcançar. */
+#LeftBoard { overflow-y: auto; scrollbar-width: thin; padding-bottom: var(--fl-rodape-h, 48px); }
+/* A área da direita encolhe com a janela em vez de empurrar a página para fora (rolagem horizontal e texto cortado). */
+#RightBoard { min-width: 0; }
 #FlUpdAviso { display: flex; align-items: center; gap: 8px; padding: 9px 14px; max-width: 100%; box-sizing: border-box;
 	background: var(--filuna-framboesa); color: #fff; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: var(--filuna-sombra); }
 #FlUpdAviso b { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: FlPulso 1.4s infinite; }
@@ -337,7 +342,7 @@ body, button, input
 #FlUpdBarra i { display: block; height: 100%; width: 0; background: var(--filuna-framboesa); transition: width .3s; }
 
 /*---- Suporte remoto (autorização do cliente) ----*/
-#FlSupLink { position: fixed; left: 14px; bottom: 76px; z-index: 898; font-size: 12px; color: var(--fg-color-label); cursor: pointer; text-decoration: underline; }
+#FlSupLink { font-size: 12px; color: var(--fg-color-label); cursor: pointer; text-decoration: underline; }
 #FlSupLink.on { color: var(--filuna-framboesa); font-weight: 600; text-decoration: none; }
 .FlJan p.ok { color: #1B7F4B; font-size: 14px; }
 .FlSupOp { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
