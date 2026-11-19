@@ -152,6 +152,13 @@ struct Coleta
 json aparelho(const std::string& chave, const std::string& tipo, const std::string& nome, const std::string& marca,
               const std::string& modelo, const std::string& ip, const std::string& via, json fatos = json::array())
 {
+    // {{"Sistema", "x"}, {"Precisa", "y"}} vira objeto no nlohmann::json; a tela espera a lista de pares [rótulo, valor]
+    if (fatos.is_object()) {
+        json pares = json::array();
+        for (const auto& [rotulo, valor] : fatos.items())
+            pares.push_back(json::array({rotulo, valor}));
+        fatos = std::move(pares);
+    }
     std::string estado = "configurar";
     if (tipo == "tv_samsung" || tipo == "voz_google" || tipo == "tv_outra")
         estado = "incompativel";
@@ -654,11 +661,13 @@ json checar_rede(const json& wifi, int respostas_multicast, int impressoras)
         ch.push_back({"aviso", "Computador ligado no cabo", "O Filuna lê o Wi-Fi pelo computador. Ligue o Wi-Fi do computador uma vez para conferir as redes."});
     } else {
         const std::string ssid = wifi.value("ssid", std::string());
-        bool              tem24 = false, tem5 = false, outra24 = false;
+        bool              tem24 = false, tem5 = false, outra24 = false, vizinhas = false;
         int               canal24 = 0, sinal24 = -200;
         for (const auto& r : wifi["redes"]) {
             const bool        e24  = r.value("ghz", 0.0) < 3;
             const std::string nome = r.value("ssid", std::string());
+            if (nome != ssid)
+                vizinhas = true;
             if (nome == ssid) {
                 (e24 ? tem24 : tem5) = true;
                 if (e24 && r.value("sinal", -200) > sinal24) {
@@ -670,12 +679,18 @@ json checar_rede(const json& wifi, int respostas_multicast, int impressoras)
         }
         if (tem24 || outra24)
             ch.push_back({"ok", "Rede de 2,4 GHz disponível", "As impressoras só usam 2,4 GHz."});
+        else if (!vizinhas)
+            // O Windows 11 só entrega a lista de redes com a Localização ligada; sem ela vem só a rede conectada.
+            ch.push_back({"aviso", "Rede de 2,4 GHz disponível",
+                          "O Windows não mostrou as outras redes Wi-Fi, então não deu para conferir a de 2,4 GHz. Ligue Configurações › Privacidade e segurança › "
+                          "Localização (e \"Permitir que aplicativos da área de trabalho acessem sua localização\") e toque em Verificar de novo, ou confira no roteador."});
         else
             ch.push_back({"ruim", "Rede de 2,4 GHz disponível", "Não achamos a rede de 2,4 GHz. As impressoras só usam 2,4 GHz: ligue essa rede no roteador."});
+        // sem a lista de redes não dá para saber se o nome se repete nas duas bandas
         if (tem24 && tem5)
             ch.push_back({"ruim", "Nome separado para a rede de 2,4 GHz",
                           "A rede \"" + ssid + "\" usa o mesmo nome em 2,4 e 5 GHz. Crie uma rede só 2,4 GHz (ex.: " + ssid + "_2G) e ligue as impressoras nela."});
-        else
+        else if (vizinhas || tem24)
             ch.push_back({"ok", "Nome separado para a rede de 2,4 GHz", "Cada banda tem o seu nome."});
         if (tem24 && tem5)
             ch.push_back({"aviso", "Direcionamento de banda (band steering)", "Com o mesmo nome nas duas bandas, desligue o direcionamento de banda no roteador ou deixe as impressoras na rede só 2,4 GHz."});
