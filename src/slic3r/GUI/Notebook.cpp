@@ -187,8 +187,8 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
     int em = em_unit(this);
     if (m_filuna_navbar) {
         // Text-only tab sized to its label, like the approved screens.
-        btn->SetFont(Label::Body_15);
-        btn->SetPaddingSize(FromDIP(wxSize(16, 8)));
+        btn->SetFont(m_filuna_densidade >= 2 ? Label::Body_13 : Label::Body_15);
+        btn->SetPaddingSize(FromDIP(wxSize(m_filuna_densidade <= 0 ? 16 : m_filuna_densidade == 1 ? 9 : 6, 8)));
         btn->SetMinSize({-1, FromDIP(38)});
     } else {
         //BBS set size for button
@@ -286,6 +286,18 @@ void ButtonsListCtrl::SetCompact(size_t n, bool compact)
     Button* btn = m_pageButtons[n];
     btn->SetMinSize({(compact ? 40 : 136) * em / 10, 36 * em / 10});
     btn->SetLabel(compact ? "" : m_pageLabels[n]);
+}
+
+void ButtonsListCtrl::SetFilunaDensidade(int nivel)
+{
+    if (!m_filuna_navbar)
+        return;
+    m_filuna_densidade = nivel;
+    for (Button* btn : m_pageButtons) {
+        btn->SetFont(nivel >= 2 ? Label::Body_13 : Label::Body_15);
+        btn->SetPaddingSize(FromDIP(wxSize(nivel <= 0 ? 16 : nivel == 1 ? 9 : 6, 8)));
+    }
+    m_sizer->Layout();
 }
 
 wxString ButtonsListCtrl::GetPageText(size_t n) const

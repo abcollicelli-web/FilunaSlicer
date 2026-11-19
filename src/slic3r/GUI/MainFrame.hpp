@@ -582,6 +582,8 @@ public:
     SideButton* m_print_option_btn{ nullptr };
     SideButton* m_novo_btn{ nullptr };   // Filuna: Novo trabalho
     SideButton* m_salvar_btn{ nullptr }; // Filuna: Salvar projeto (pasta Filuna do cliente)
+    wxWindow*   m_filuna_ajuda_btn{ nullptr }; // Filuna: "?" da barra e o risco ao lado, escondidos quando a barra não cabe
+    wxWindow*   m_filuna_divisor{ nullptr };
 
     SidePopup*  m_slice_option_pop_up{ nullptr };
 

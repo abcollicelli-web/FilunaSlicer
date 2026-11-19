@@ -49,6 +49,10 @@ public:
     // Filuna: main navigation bar of the approved Direção Visual C — text-only tabs, rose pill on the selected one,
     // no compact (icon-only) mode. Call before the pages are added.
     void SetFilunaNavbar(bool on) { m_filuna_navbar = on; }
+    bool IsFilunaNavbar() const { return m_filuna_navbar; }
+    // Filuna: aperta as abas quando a barra não cabe na janela.
+    // 0 = desenho aprovado, 1 = menos margem entre as abas, 2 = margem mínima e letra um pouco menor.
+    void SetFilunaDensidade(int nivel);
     wxString GetPageText(size_t n) const;
     // ORCA: the full page label, unaffected by SetCompact() blanking the button text.
     wxString GetPageLabel(size_t n) const;
@@ -77,6 +81,7 @@ private:
     wxWindow*                       m_overflow_button{nullptr}; // ORCA
     wxWindow*                       m_owner{nullptr};  // Filuna: the Notebook, also after the bar moves into the title bar
     bool                            m_filuna_navbar{false};
+    int                             m_filuna_densidade{0};
 };
 
 class Notebook : public wxBookCtrlBase

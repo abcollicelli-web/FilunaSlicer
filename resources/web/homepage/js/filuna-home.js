@@ -212,14 +212,14 @@ function FlUpdDesenhar() {
 	// busca manual (botão "Procurar atualização"): mostra o resultado em vez de esperar a busca automática
 	var $b = $("#FlUpdBuscar"), $r = $("#FlVersaoAtual .r");
 	// instalado pela Microsoft Store: quem atualiza o programa é a Store, então aqui não há o que procurar
-	if (s == "loja") { $b.hide(); $r.text(" · atualizado pela Microsoft Store"); return; }
+	if (s == "loja") { $b.hide(); $r.text("atualizado pela Microsoft Store"); return; }
 	$b.text(s == "verificando" ? "Procurando…" : "Procurar atualização").toggleClass("off", s == "verificando" || s == "baixando" || s == "aplicando");
 	if (m_FlBusca && s == "verificando") m_FlViuVerif = true;
 	// a resposta imediata ao clique ainda traz o estado de antes: só conclui depois de ver "procurando" ou após 3 s
 	if (m_FlBusca && s != "verificando" && (m_FlViuVerif || Date.now() - m_FlBuscaEm > 3000)) {
 		var res = s == "atual" ? "Você já está na versão mais nova." : s == "ocioso" ? "Não deu para procurar agora: confira a internet e a conta Filuna." : "";
 		if (s == "disponivel" || s == "pronto" || s == "baixando") { m_FlBusca = false; $("#FlUpdJanela").show(); }
-		else if (res) { m_FlBusca = false; $r.text(" · " + res); clearTimeout(m_FlBuscaT); m_FlBuscaT = setTimeout(function () { $r.text(""); }, 10000); }
+		else if (res) { m_FlBusca = false; $r.text(res); clearTimeout(m_FlBuscaT); m_FlBuscaT = setTimeout(function () { $r.text(""); }, 10000); }
 	}
 	if (!$("#FlUpdJanela").is(":visible")) return;
 	$("#FlUpdTitulo").text("Filuna Slicer " + (e.nova_versao || ""));
@@ -260,8 +260,8 @@ function FlManutencao(m) {
 
 $(function () {
 	$("body").append(
-		'<div id="FlUpdAviso" style="display:none"><b></b><span class="t">Atualização disponível</span></div>' +
-		'<div id="FlVersaoAtual"><span class="v"></span><a href="#" id="FlUpdBuscar">Procurar atualização</a><span class="r"></span></div>' +
+		'<div id="FlRodape"><div id="FlUpdAviso" style="display:none"><b></b><span class="t">Atualização disponível</span></div>' +
+		'<div id="FlVersaoAtual"><span class="v"></span><a href="#" id="FlUpdBuscar">Procurar atualização</a><span class="r"></span></div></div>' +
 		'<div id="FlUpdJanela" class="FlJan" style="display:none"><div class="cx">' +
 		'<small>Atualização do Filuna Slicer</small><h2 id="FlUpdTitulo"></h2>' +
 		'<h4>Novidades</h4><ul id="FlUpdNotas"></ul><div id="FlUpdInternos"></div>' +
