@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <tlhelp32.h>
+#include "FilunaCorrecao.hpp"
 #endif
 
 #include <atomic>
@@ -636,6 +637,123 @@ void gravar_preferencias(const json& d)
 
 } // namespace
 
+#ifdef _WIN32
+// ---------- Correção de código na versão da loja (FilunaCorrecao.hpp, FILUNA/ATUALIZACAO-REMOTA.md) ----------
+// O pacote da loja não muda. Uma correção de defeito chega como uma OrcaSlicer.dll corrigida, com documento assinado
+// pela Filuna; quem decide carregar é o lançador. Aqui o programa só busca, confere e deixa na pasta.
+static std::wstring pasta_do_programa_w() { return pasta_do_programa().wstring() + L"\\"; }
+
+static void correcao_da_loja_verificar()
+{
+    static int         instalada = -1; // conferir a DLL instalada lê o arquivo inteiro: uma vez por sessão
+    const std::wstring prog      = pasta_do_programa_w();
+    const std::string  build     = filuna_correcao::build_do_pacote(prog);
+    if (build.empty())
+        return;
+    if (instalada < 0)
+        instalada = filuna_correcao::versao_instalada(prog);
+    const std::string token = token_atual();
+    std::string       corpo;
+    unsigned          status = 0;
+    Http http = Http::get(std::string(SITE) + "/api/slicer/v1/app/correcao?build=" + Http::url_encode(build));
+    http.tls_verify(true);
+    http.timeout_connect(10);
+    http.timeout_max(60);
+    if (!token.empty())
+        http.header("Authorization", "Bearer " + token);
+    http.on_complete([&](std::string b, unsigned s) { corpo = std::move(b), status = s; })
+        .on_error([&](std::string, std::string, unsigned s) { status = s; })
+        .perform_sync();
+    const json r = json::parse(corpo, nullptr, false);
+    if (status != 200 || !r.is_object())
+        return; // sem rede: fica como está
+    const std::string texto = r.value("documento", std::string()), assinatura = r.value("assinatura", std::string()),
+                      url = r.value("url", std::string());
+    if (texto.empty()) {
+        // o servidor não tem (ou retirou) correção para esta compilação
+        if (instalada > 0) {
+            filuna_correcao::retirar(prog);
+            instalada = 0;
+            BOOST_LOG_TRIVIAL(info) << "Filuna: correção do programa retirada pelo servidor; na próxima abertura vale a versão da loja";
+        }
+        return;
+    }
+    filuna_correcao::Documento d;
+    if (!filuna_correcao::assinatura_confere(texto, assinatura) || !filuna_correcao::ler_documento(texto, d) || d.build != build ||
+        url.rfind("/api/slicer/v1/app/correcao/", 0) != 0 || url.find("..") != std::string::npos) {
+        diagnostico("correcao.verificar", "documento de correção recusado (assinatura, compilação ou endereço)");
+        return;
+    }
+    if (d.versao == instalada || d.versao == filuna_correcao::recusada(prog))
+        return;
+    // baixa e extrai numa pasta de espera; quem confere a DLL e troca os arquivos é o FilunaCorrecao
+    const fs::path base = pasta_espera() / "correcao", zip = base / "pacote.zip", arquivos = base / "arquivos";
+    boost::system::error_code ec;
+    fs::remove_all(base, ec);
+    fs::create_directories(arquivos, ec);
+    std::string pacote;
+    status = 0;
+    Http baixar = Http::get(std::string(SITE) + url);
+    baixar.tls_verify(true);
+    baixar.timeout_connect(15);
+    baixar.timeout_max(3600);
+    if (!token.empty())
+        baixar.header("Authorization", "Bearer " + token);
+    baixar.on_complete([&](std::string b, unsigned s) { pacote = std::move(b), status = s; })
+        .on_error([&](std::string, std::string, unsigned s) { status = s; })
+        .perform_sync();
+    if (status != 200 || pacote.empty())
+        return;
+    {
+        fs::ofstream f(zip, std::ios::binary | std::ios::trunc);
+        f.write(pacote.data(), static_cast<std::streamsize>(pacote.size()));
+    }
+    pacote.clear();
+    pacote.shrink_to_fit();
+    std::string motivo;
+    if (!extract_archive_confined(zip.string(), arquivos.string()))
+        motivo = "não extraiu o pacote";
+    else if (filuna_correcao::instalar(prog, texto, assinatura, (arquivos / "OrcaSlicer.dll").wstring(), motivo)) {
+        instalada = d.versao;
+        BOOST_LOG_TRIVIAL(info) << "Filuna: correção " << d.versao << " do programa instalada; vale na próxima abertura";
+    }
+    fs::remove_all(base, ec);
+    if (!motivo.empty())
+        diagnostico("correcao.instalar", "correção " + std::to_string(d.versao) + " não instalada: " + motivo);
+}
+
+static void correcao_da_loja_iniciar()
+{
+    std::thread([] {
+        std::this_thread::sleep_for(std::chrono::seconds(25));
+        const std::wstring prog  = pasta_do_programa_w();
+        const std::string  build = filuna_correcao::build_do_pacote(prog);
+        if (!build.empty()) {
+            const std::wstring pasta = filuna_correcao::pasta_da_correcao(build);
+            if (wxGetEnv("FILUNA_CORRECAO_EM_USO", nullptr)) {
+                filuna_correcao::abriu_bem(prog); // a correção em uso abriu e ficou de pé
+                BOOST_LOG_TRIVIAL(info) << "Filuna: programa rodando com a correção de código do servidor";
+            } else if (filuna_correcao::tentativas(pasta) >= 2) {
+                // o lançador voltou para a DLL da loja: a correção derrubou o programa (ou o Windows não deixou carregar)
+                filuna_correcao::Documento d;
+                std::string                motivo;
+                const int versao = filuna_correcao::correcao_valida(pasta, build, d, motivo) ? d.versao : 0;
+                filuna_correcao::retirar(prog);
+                if (versao > 0)
+                    filuna_correcao::marcar_recusada(prog, versao);
+                diagnostico("correcao.queda", "a correção " + std::to_string(versao) + " não ficou de pé em duas aberturas e foi retirada");
+            }
+        }
+        for (;;) {
+            try {
+                correcao_da_loja_verificar();
+            } catch (const std::exception&) {}
+            std::this_thread::sleep_for(std::chrono::minutes(20));
+        }
+    }).detach();
+}
+#endif
+
 std::string build_local() { return identidade().value("build", std::string()); }
 
 void diagnostico(const std::string& etapa, const std::string& mensagem, const json& contexto)
@@ -693,6 +811,9 @@ void iniciar()
     }
     if (via_microsoft_store()) {
         situacao("loja");
+#ifdef _WIN32
+        correcao_da_loja_iniciar();
+#endif
         return;
     }
     // atualização anterior que não conseguiu copiar: avisa o servidor
