@@ -80,8 +80,10 @@ jobs:
             $argv = @(ConvertFrom-Json ($line.Substring(13)))
             $exe = [string]$argv[0]
             $cliArgs = @($argv | Select-Object -Skip 1)
-            $command = 'sxe -c ".echo FIRST_CHANCE_ACCESS_VIOLATION; r; kv 24; lm; q" av; g'
-            $raw = & $cdb -o -G -g -c $command $exe @cliArgs 2>&1 | Out-String
+            # Do not skip the initial debugger break: arm AV before the target resumes.
+            # After g stops on the first-chance AV, CDB executes the remaining commands.
+            $command = 'sxe av; g; .echo FIRST_CHANCE_ACCESS_VIOLATION; r; kv 24; lm; q'
+            $raw = & $cdb -o -G -c $command $exe @cliArgs 2>&1 | Out-String
             $raw = $raw -replace '(?i)[A-Z]:\\[^\s,;]+', '[REDACTED_PATH]'
             $raw = $raw -replace '(?i)(token|password|secret|authorization|access[_-]?key)\s*[:=]\s*[^\s,;]+', '$1=[REDACTED]'
             $raw | Set-Content $report -Encoding utf8
