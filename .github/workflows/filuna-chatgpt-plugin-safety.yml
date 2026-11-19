@@ -1,0 +1,48 @@
+name: Filuna ChatGPT Plugin — testes isolados
+
+on:
+  push:
+    branches:
+      - "filuna/chatgpt-plugin-library-only-20261119"
+    paths:
+      - "FILUNA/chatgpt_plugin/**"
+      - ".github/workflows/filuna-chatgpt-plugin-safety.yml"
+  pull_request:
+    paths:
+      - "FILUNA/chatgpt_plugin/**"
+      - ".github/workflows/filuna-chatgpt-plugin-safety.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar SDK MCP
+        run: pip install -r FILUNA/chatgpt_plugin/requirements.txt
+      - name: Importar servidor MCP
+        run: python -c "from FILUNA.chatgpt_plugin.server import make_server; print(make_server().name)"
+      - name: Compilar e validar contratos
+        run: python -m compileall -q FILUNA/chatgpt_plugin
+      - name: Testes de segurança
+        run: python -m unittest discover -s FILUNA/chatgpt_plugin/tests -v
+      - name: Validar manifests
+        run: |
+          python -m json.tool FILUNA/chatgpt_plugin/package/plugin.json >/dev/null
+          python -m json.tool FILUNA/chatgpt_plugin/package/mcp.json >/dev/null
+      - name: Verificar escopo de arquivos alterados
+        if: github.event_name == 'pull_request'
+        env:
+          GH_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --depth=1 origin "$GH_BASE_SHA"
+          python -c "import os, subprocess, sys; files=subprocess.check_output(['git','diff','--name-only',os.environ['GH_BASE_SHA'],'HEAD'],text=True).splitlines(); bad=[p for p in files if not (p.startswith('FILUNA/chatgpt_plugin/') or p=='.github/workflows/filuna-chatgpt-plugin-safety.yml')]; print('Fora do escopo:',bad); sys.exit(bool(bad))"

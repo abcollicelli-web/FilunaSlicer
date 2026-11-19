@@ -1,0 +1,132 @@
+[
+  {
+    "titulo": "Minha conta",
+    "prompt": "Qual é meu plano Filuna e quando vence minha próxima fatura?",
+    "ferramenta": "filuna_assinatura_consultar"
+  },
+  {
+    "titulo": "Faturas",
+    "prompt": "Quais são minhas faturas e quais estão pendentes?",
+    "ferramenta": "filuna_faturas_listar"
+  },
+  {
+    "titulo": "Arquivos",
+    "prompt": "Quantos modelos, paramétricos e projetos estão na minha biblioteca?",
+    "ferramenta": "filuna_arquivos_estatisticas"
+  },
+  {
+    "titulo": "Armazenamento",
+    "prompt": "Quanto espaço usei e quanto resta?",
+    "ferramenta": "filuna_armazenamento_consultar"
+  },
+  {
+    "titulo": "Impressoras",
+    "prompt": "Quais impressoras estão conectadas e qual está imprimindo?",
+    "ferramenta": "filuna_impressoras_listar"
+  },
+  {
+    "titulo": "Erros",
+    "prompt": "Minha impressora tem erros? Explique e recomende como resolver.",
+    "ferramenta": "filuna_impressora_erros"
+  },
+  {
+    "titulo": "Estoque",
+    "prompt": "Quais bobinas tenho e quantos gramas restam em cada uma?",
+    "ferramenta": "filuna_estoque_listar"
+  },
+  {
+    "titulo": "Nota fiscal",
+    "prompt": "Analise esta nota salva na Filuna antes de gravar as bobinas.",
+    "ferramenta": "filuna_nota_fiscal_analisar"
+  },
+  {
+    "titulo": "Paramétrico",
+    "prompt": "Gere o paramétrico com minhas medidas e salve na biblioteca.",
+    "ferramenta": "filuna_parametrico_gerar"
+  },
+  {
+    "titulo": "Ferramentas",
+    "prompt": "Aplique esta ferramenta ao meu modelo salvo na biblioteca.",
+    "ferramenta": "filuna_ferramenta_executar"
+  },
+  {
+    "titulo": "Reparo de modelo",
+    "prompt": "Corrija furos e faces, preservando a versão original na biblioteca.",
+    "ferramenta": "filuna_modelo_corrigir"
+  },
+  {
+    "titulo": "Preparar impressão",
+    "prompt": "Prepare este modelo para minha impressora; não comece antes de eu confirmar.",
+    "ferramenta": "filuna_impressao_preparar"
+  },
+  {
+    "titulo": "Produção",
+    "prompt": "Mostre quantos trabalhos estão imprimindo, em fila e concluídos.",
+    "ferramenta": "filuna_producao_resumo"
+  },
+  {
+    "titulo": "Pedidos",
+    "prompt": "Quais são os pedidos pendentes do meu Ateliê?",
+    "ferramenta": "filuna_pedidos_listar"
+  },
+  {
+    "titulo": "Ofertas",
+    "prompt": "Mostre ofertas de filamento PLA, PETG ou ABS.",
+    "ferramenta": "filuna_ofertas_listar"
+  },
+  {
+    "titulo": "Suporte",
+    "prompt": "Quais chamados de suporte tenho abertos?",
+    "ferramenta": "filuna_suporte_chamados"
+  },
+  {
+    "titulo": "Ajuda Filuna",
+    "prompt": "Como faço para configurar minha primeira impressora no Filuna Slicer?",
+    "ferramenta": "filuna_ajuda_pesquisar"
+  },
+  {
+    "titulo": "Diagnóstico guiado",
+    "prompt": "Minha impressora não conecta. Analise o problema e me ensine a resolver.",
+    "ferramenta": "filuna_diagnostico_guiado"
+  },
+  {
+    "titulo": "Acompanhar atendimento",
+    "prompt": "Quero consultar a resposta mais recente do meu chamado Filuna.",
+    "ferramenta": "filuna_suporte_chamado_consultar"
+  },
+  {
+    "titulo": "Suporte humano",
+    "prompt": "Não consegui resolver; solicite que um atendente Filuna me ajude.",
+    "ferramenta": "filuna_suporte_humano_solicitar"
+  },
+  {
+    "titulo": "Recursos disponíveis",
+    "prompt": "O que posso fazer na minha versão atual do Filuna?",
+    "ferramenta": "filuna_ajuda_capacidades"
+  },
+  {
+    "titulo": "Anexar STL",
+    "prompt": "Quero imprimir o arquivo STL que anexei. Importe no meu Filuna e consulte a impressora.",
+    "ferramenta": "filuna_arquivo_importar"
+  },
+  {
+    "titulo": "Anexar 3MF",
+    "prompt": "Tenho um projeto 3MF com várias placas; preserve sua configuração e prepare no Filuna.",
+    "ferramenta": "filuna_arquivo_importar"
+  },
+  {
+    "titulo": "Melhor fatiamento",
+    "prompt": "Recomende a melhor configuração segura para este modelo e minha impressora.",
+    "ferramenta": "filuna_fatiamento_recomendar"
+  },
+  {
+    "titulo": "Fatiar modelo",
+    "prompt": "Fatie o projeto preparado no Filuna e apresente os resultados sem enviar G-code.",
+    "ferramenta": "filuna_fatiamento_executar"
+  },
+  {
+    "titulo": "Conferir antes de imprimir",
+    "prompt": "Veja o tempo, peso e alertas deste fatiamento e abra a confirmação para imprimir.",
+    "ferramenta": "filuna_fatiamento_resultado"
+  }
+]
