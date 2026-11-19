@@ -80,10 +80,10 @@ jobs:
             $argv = @(ConvertFrom-Json ($line.Substring(13)))
             $exe = [string]$argv[0]
             $cliArgs = @($argv | Select-Object -Skip 1)
-            # Do not skip the initial debugger break: arm AV before the target resumes.
+            # Debug only the OEM parent; -o attaches crashpad_handler children and may consume g at their initial breakpoint.
             # After g stops on the first-chance AV, CDB executes the remaining commands.
             $command = 'sxe av; g; .echo FIRST_CHANCE_ACCESS_VIOLATION; r; kv 24; lm; q'
-            $raw = & $cdb -o -G -c $command $exe @cliArgs 2>&1 | Out-String
+            $raw = & $cdb -G -c $command $exe @cliArgs 2>&1 | Out-String
             $raw = $raw -replace '(?i)[A-Z]:\\[^\s,;]+', '[REDACTED_PATH]'
             $raw = $raw -replace '(?i)(token|password|secret|authorization|access[_-]?key)\s*[:=]\s*[^\s,;]+', '$1=[REDACTED]'
             $raw | Set-Content $report -Encoding utf8
