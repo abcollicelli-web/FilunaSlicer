@@ -55,6 +55,39 @@ jobs:
             Get-Content qa-snapmaker-u1-guard-probe/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
           }
           exit $code
+      - name: Capture first-chance OEM access violation with Windows debugger (original A only)
+        if: always()
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:GITHUB_WORKSPACE 'qa-snapmaker-u1-guard-probe'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          $report = Join-Path $root 'first-chance-debugger.txt'
+          $kits = @(
+            "${env:ProgramFiles(x86)}\\Windows Kits\\10\\Debuggers\\x64\\cdb.exe",
+            "${env:ProgramFiles}\\Windows Kits\\10\\Debuggers\\x64\\cdb.exe"
+          )
+          $cdb = $kits | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          $log = Join-Path $root 'baseline-original-effective-A.log'
+          if (-not $cdb) {
+            'DEBUGGER_UNAVAILABLE: cdb.exe not installed on runner; no stack captured' | Set-Content $report
+            Write-Host 'DEBUGGER_UNAVAILABLE'
+          } elseif (-not (Test-Path $log)) {
+            'DEBUGGER_INPUT_MISSING: original A command log unavailable' | Set-Content $report
+            Write-Host 'DEBUGGER_INPUT_MISSING'
+          } else {
+            $line = Get-Content $log -TotalCount 1
+            if (-not $line.StartsWith('COMMAND_JSON=')) { throw 'DEBUGGER_COMMAND_PROVENANCE_MISSING' }
+            $argv = @(ConvertFrom-Json ($line.Substring(13)))
+            $exe = [string]$argv[0]
+            $cliArgs = @($argv | Select-Object -Skip 1)
+            $command = 'sxe -c ".echo FIRST_CHANCE_ACCESS_VIOLATION; .ecxr; kv 24; lm; q" av; g'
+            $raw = & $cdb -o -G -g -c $command $exe @cliArgs 2>&1 | Out-String
+            $raw = $raw -replace '(?i)[A-Z]:\\[^\s,;]+', '[REDACTED_PATH]'
+            $raw = $raw -replace '(?i)(token|password|secret|authorization|access[_-]?key)\s*[:=]\s*[^\s,;]+', '$1=[REDACTED]'
+            $raw | Set-Content $report -Encoding utf8
+            if ($raw -match 'FIRST_CHANCE_ACCESS_VIOLATION') { Write-Host 'DEBUGGER_FIRST_CHANCE_CAPTURED' }
+            else { Write-Host 'DEBUGGER_NO_FIRST_CHANCE_STACK' }
+          }
       - name: Inventory WER dumps after bounded capture wait
         if: always()
         shell: pwsh
