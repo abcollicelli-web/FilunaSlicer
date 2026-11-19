@@ -1,0 +1,67 @@
+name: Filuna Anycubic three-model 20x official OEM CLI stress
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/anycubic_kobra_models_official_qa.py"
+      - "lab/anycubic_original_gcode_strict.py"
+      - "lab/test_anycubic_original_gcode_strict.py"
+      - ".github/workflows/filuna-anycubic-three-20x-stress.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-anycubic-three-model-stress-20x
+  cancel-in-progress: true
+jobs:
+  original-cli-three-models:
+    name: SHA-pinned Anycubic 2.0.0.6 original Debian extracted, Kobra S1, Kobra 3 V2 and Kobra 4 each 20x
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Eight strict positive/negative original G-code comparator unit tests
+        env:
+          PYTHONPATH: lab
+        run: python -m unittest -v lab/test_anycubic_original_gcode_strict.py
+      - name: Runtime-only dependencies for uninstalled original CLI
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb libgl1 libegl1 libglib2.0-0t64 libgtk-3-0t64 libwebkit2gtk-4.1-0 \
+            libgstreamer-plugins-base1.0-0 libgstreamer1.0-0 libfuse2t64
+      - name: Syntax preflight - no OEM compilation
+        run: python -m py_compile lab/anycubic_kobra_models_official_qa.py
+      - name: Restore exact Anycubic original .deb by checksum
+        id: cached
+        uses: actions/cache/restore@v4
+        with:
+          path: .anycubic-vendor-cache
+          key: anycubic-vendor-2.0.06-153422098-20261107
+      - name: Slice three models with original CLI in independent directories
+        run: |
+          python lab/anycubic_kobra_models_official_qa.py \
+            --cache .anycubic-vendor-cache --out qa-anycubic-kobra-official --timeout 240 --stress-count 20
+          code=$?
+          if test -s qa-anycubic-kobra-official/RESUMO.md; then
+            cat qa-anycubic-kobra-official/RESUMO.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$code"
+      - name: Save original package cache for next test if absent
+        if: always() && steps.cached.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .anycubic-vendor-cache
+          key: anycubic-vendor-2.0.06-153422098-20261107
+      - name: Preserve all logs, profile SHA, gcode outputs and failure details
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-anycubic-three-model-20x-original-cli-stress
+          path: qa-anycubic-kobra-official/
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.bigtabs{display:flex;gap:8px;padding:16px 22px 0}
+.bt{padding:13px 0;width:210px;text-align:center;border:1px solid var(--line);border-bottom:none;border-radius:12px 12px 0 0;font-size:16px;color:var(--ink2);font-weight:500;background:#FCFAF7}
+.bt.on{background:var(--magenta-deep);color:#fff;font-weight:700;border-color:var(--magenta-deep)}
+.filters{display:flex;gap:12px;padding:16px 22px;border-top:1px solid var(--line)}
+.flt{display:flex;align-items:center;gap:10px;height:46px;padding:0 16px;border:1px solid var(--line);border-radius:11px;font-size:14.5px;font-weight:500}
+.flt .ic{color:var(--magenta-deep)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:4px 22px 22px}
+.m{border:1px solid var(--line);border-radius:14px;padding:8px 8px 14px;background:#fff}
+.m .thumb{height:170px;background:linear-gradient(145deg,#FBE9EF,#F4D3DE);color:#C9476E}
+.m .h{display:flex;align-items:center;gap:8px;margin:12px 8px 0;font-size:15.5px;font-weight:700}.m .h .hash{color:var(--magenta-deep)}.m .h .star{margin-left:auto;color:var(--magenta-deep)}
+.m .d{margin:8px 8px 0;font-size:13px;color:var(--ink2);line-height:1.5;height:40px}
+.meta{display:flex;margin:12px 8px 0;font-size:13px;gap:14px}.meta>div{flex:1}.meta .r{display:flex;align-items:center;gap:8px;margin-top:6px}
+.meta .ic{width:17px;height:17px;color:var(--magenta-deep)}.meta .dotm{width:13px;height:13px;border-radius:50%;background:var(--magenta);flex:none}
+.meta .vs{width:1px;background:var(--line);flex:none}
+</style></head><body><div class="page"><div class="app">
+<div class="top"><div class="logo"><span class="f">Filuna</span><span class="d">3D</span></div><div class="spacer"></div>
+  <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7"/></svg><div class="sep"></div>
+  <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></div>
+<div class="bigtabs"><div class="bt on">Modelos 3D</div><div class="bt">Preparação</div><div class="bt">Dispositivo</div><div class="bt">Impressão</div></div>
+<div class="filters">
+  <div class="flt"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16l-6 8v6l-4-2v-4z"/></svg>Todos os tipos</div>
+  <div class="flt"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="8" cy="8" r="1.3"/></svg>Todas as categorias</div>
+  <div class="flt"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-3-5.4 3 1.1-6L3.2 9.4l6.1-.8z"/></svg>Todas as dificuldades</div>
+  <div class="flt" style="flex:1;color:var(--muted)"><svg class="ic" viewBox="0 0 24 24" style="color:var(--ink2)"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>Buscar modelo...</div>
+  <div class="flt"><svg class="ic" viewBox="0 0 24 24" style="color:var(--ink2)"><path d="M7 4v16m0 0l-3-3m3 3l3-3M17 20V4m0 0l-3 3m3-3l3 3"/></svg>Mais recentes <span style="color:var(--muted);margin-left:14px">▾</span></div>
+</div>
+<div class="grid" id="g"></div>
+</div></div>
+<script>
+var M=[["OS-01","Suporte Orbital Leve","Suporte orbital leve para fixação em estruturas curvas. Compacto e de fácil impressão.","Iniciante","PETG","1h 20min"],
+["OS-02","Suporte com Braço Curvo","Braço curvo para aplicação em órbitas assimétricas. Maior alcance e rigidez.","Intermediário","PETG","2h 15min"],
+["OS-03","Suporte Reforçado","Versão reforçada para cargas maiores e ambientes de maior exigência.","Avançado","ABS","3h 10min"],
+["OS-04","Suporte Compacto","Modelo compacto para espaços reduzidos. Ideal para projetos com limitação de volume.","Iniciante","PLA","1h 05min"],
+["OS-05","Suporte Ajustável","Suporte com ajuste de ângulo para maior flexibilidade de posicionamento.","Intermediário","PETG","2h 40min"],
+["OS-06","Suporte para Dupla Fixação","Suporte com pontos de fixação duplos para maior estabilidade.","Avançado","ABS","3h 45min"],
+["OS-07","Suporte Minimalista","Design minimalista e leve para aplicações simples e funcionais.","Iniciante","PLA","50min"],
+["OS-08","Suporte com Patins","Suporte com patins integrados para fixação sobre superfícies planas.","Intermediário","PETG","1h 50min"]];
+var S=['<path d="M4 16c3-8 9-8 12-4l4-2v6l-4 2c-4 2-8 2-12-2z"/><circle cx="8" cy="15" r="2"/>','<path d="M3 18l6-10h9l3 3-4 2-6 0-3 6z"/><circle cx="7" cy="16" r="1.2"/><circle cx="12" cy="11" r="1.2"/>','<path d="M7 5h10v3l3 9H4l3-9z"/><path d="M4 17v2h16v-2"/>','<path d="M3 17c2-8 16-8 18 0z"/><path d="M3 17v2h18v-2M8 12v5M12 11v6M16 12v5"/>','<path d="M4 17l5-8h8l3 4v4z"/><path d="M4 17v2h16v-2"/><circle cx="9" cy="9" r="1.5"/>','<path d="M5 8v8h14V8M3 16h18v3H3z"/><circle cx="7" cy="9" r="2"/><circle cx="17" cy="9" r="2"/>','<path d="M9 4h3c0 9 3 12 8 13"/><ellipse cx="14" cy="19" rx="7" ry="2"/>','<path d="M4 17c1-8 14-9 16-1"/><path d="M3 17h7v3H3zM14 17h7v3h-7z"/>'];
+var g=document.getElementById('g');
+M.forEach(function(m,i){g.insertAdjacentHTML('beforeend','<div class="m"><div class="thumb"><svg width="110" height="110" viewBox="0 0 24 24" style="stroke-width:1.1">'+S[i]+'</svg></div><div class="h"><span class="hash">#</span>'+m[0]+' - '+m[1]+'<svg class="ic star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-3-5.4 3 1.1-6L3.2 9.4l6.1-.8z"/></svg></div><div class="d">'+m[2]+'</div><div class="meta"><div><div class="r"><span class="dotm"></span><span>Dificuldade:<br><b>'+m[3]+'</b></span></div></div><div class="vs"></div><div><div class="r"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg><span>Material: <b>'+m[4]+'</b></span></div><div class="r"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Tempo: <b>'+m[5]+'</b></span></div></div></div></div>');});
+</script></body></html>

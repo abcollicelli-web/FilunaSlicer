@@ -1,0 +1,27 @@
+name: Filuna manufacturer module pinned-source verify (NO build, NO print, NO network to printers)
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - "FILUNA/fabricantes/*/module.json"
+      - "FILUNA/fabricantes/tools/fetch_oem_source.py"
+      - ".github/workflows/filuna-module-source-verify.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Clone pinned OEM source and verify commit, tree hashes and component inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          for m in FILUNA/fabricantes/*/module.json; do
+            echo "== $m"
+            python3 FILUNA/fabricantes/tools/fetch_oem_source.py "$m" --dest "$RUNNER_TEMP/$(basename "$(dirname "$m")")-oem-src" | tee -a "$GITHUB_STEP_SUMMARY"
+          done

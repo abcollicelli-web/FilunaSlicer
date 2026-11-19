@@ -27,6 +27,7 @@
 
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "FillCornerSmoothing.hpp"
@@ -2786,10 +2787,20 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
     BoundingBox bounding_box_src = poly_with_offset.bounding_box_src();
     BoundingBox bounding_box     = bounding_box_src;
     if (this->has_consistent_pattern()) {
-        // Orca: The polygons are rotated about the origin, so follow the box center to where it was rotated.
-        const Point c = this->bounding_box.center();
-        bounding_box  = this->extended_object_bounding_box();
-        bounding_box.translate(c.rotated(- rotate_vector.first) - c);
+        bounding_box = this->extended_object_bounding_box();
+
+        // OEM reference: FlashForge/Orca-Flashforge 1.7.9
+        // FillRectilinear::fill_surface_by_lines, source 59c69a9d3210.
+        // That engine uses the unshifted extended bounding box. Current
+        // Orca aligns to the rotated object-center instead. Keep Orca as
+        // the default and use the OEM behavior ONLY via an explicit,
+        // validated per-profile flag; never branch on a printer name.
+        const bool use_legacy_oem_anchor = this->print_config != nullptr &&
+            this->print_config->filuna_oem_legacy_infill_anchor.value;
+        if (!use_legacy_oem_anchor) {
+            const Point c = this->bounding_box.center();
+            bounding_box.translate(c.rotated(- rotate_vector.first) - c);
+        }
     }
 
     // define flow spacing according to requested density

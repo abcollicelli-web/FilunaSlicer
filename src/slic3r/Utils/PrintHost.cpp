@@ -1,4 +1,5 @@
 #include "PrintHost.hpp"
+#include "FilunaGCodeSafety.hpp"
 
 #include "libslic3r/Config.hpp"
 #include <string>
@@ -17,6 +18,7 @@
 #include <sstream>
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <nlohmann/json.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -54,6 +56,17 @@ namespace Slic3r {
 
 
 PrintHost::~PrintHost() {}
+
+// Capture selected profile identity at construction; passing a model name is
+// NOT device attestation and cannot authorize bypass of the safety gate.
+PrintHostJob::PrintHostJob(DynamicPrintConfig *config)
+    : printhost(config ? PrintHost::get_print_host(config) : nullptr)
+{
+    if (config != nullptr) {
+        if (const auto* model = config->option<ConfigOptionString>("printer_model"))
+            filuna_effective_printer_model = model->value;
+    }
+}
 
 PrintHost* PrintHost::get_print_host(DynamicPrintConfig *config)
 {
@@ -463,6 +476,46 @@ bool PrintHostJobQueue::upload_job(PrintHostJob &job, PrintHost::ProgressFn prog
     std::string error;
     // A throwing upload must not stop the worker, or later jobs would stay queued forever.
     try {
+        // Native Filuna U1 read-only safety gate is enforced directly before
+        // the real PrintHost transport (not solely at UI/QA level).
+        // This is an exact effective OEM *profile* scope, NOT proof of
+        // hardware pairing. An unknown firmware/macro cannot be presumed safe.
+        // Never repair/alter G-code, and never auto-accept a collision.
+        if (job.filuna_effective_printer_model == "Snapmaker U1") {
+            if (job.upload_data.use_3mf)
+                throw std::runtime_error("Filuna U1: 3MF upload cannot be cleared by the G-code geometry gate.");
+            boost::filesystem::ifstream source(job.upload_data.source_path, std::ios::binary);
+            if (!source)
+                throw std::runtime_error("Filuna U1: G-code missing or unreadable; upload cancelled.");
+            std::ostringstream original_bytes;
+            original_bytes << source.rdbuf();
+            if (!source.good() && !source.eof())
+                throw std::runtime_error("Filuna U1: G-code read error; upload cancelled.");
+            const Filuna::Safety::Report safety = Filuna::Safety::inspect(original_bytes.str());
+            if (safety.decision == Filuna::Safety::Report::Decision::Block) {
+                std::ostringstream risk;
+                risk << "Filuna U1: G-code travel may collide with previously printed geometry.";
+                if (!safety.collisions.empty()) {
+                    const auto& hit = safety.collisions.front();
+                    risk << " Line " << hit.line << ", layer " << hit.layer
+                         << ", X" << hit.xyz[0] << " Y" << hit.xyz[1]
+                         << " Z" << hit.xyz[2] << "; printed top Z" << hit.printed_z;
+                }
+                risk << ". G-code unchanged; upload cancelled pending verified official comparison and informed authorization.";
+                throw std::runtime_error(risk.str());
+            }
+            if (safety.decision == Filuna::Safety::Report::Decision::Review)
+                throw std::runtime_error("Filuna U1: geometry cannot be validated; upload cancelled: " + safety.explanation);
+            if (safety.decision == Filuna::Safety::Report::Decision::Warn) {
+                // info_fn queues an asynchronous GUI event: it cannot obtain
+                // informed consent before upload() starts on this worker.
+                // Fail closed until an authenticated, per-file approval and
+                // audit trail exist. No OEM G-code is altered or re-exported.
+                info_fn(wxString::FromUTF8("filuna_u1_safety_warning"),
+                        wxString::FromUTF8("Travel may leave the 270 mm volume. Review the Z-hop setting and the original OEM motion. Upload is blocked until this risk can be acknowledged before transfer; G-code is unchanged."));
+                throw std::runtime_error("Filuna U1: geometry warning requires confirmation before upload; authenticated approval is not available. G-code unchanged; upload cancelled.");
+            }
+        }
         success = job.printhost->upload(std::move(job.upload_data), std::move(progress_fn), error_fn, std::move(info_fn));
     } catch (const std::exception &e) {
         error = e.what();

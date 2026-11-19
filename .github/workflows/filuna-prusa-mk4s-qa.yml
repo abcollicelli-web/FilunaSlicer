@@ -1,0 +1,62 @@
+name: Filuna Prusa MK4S 0.4 official portable internal QA
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/prusa_mk4s_official_qa.py"
+      - "lab/test_prusa_mk4s_official_qa.py"
+      - "fixtures/cube20.stl"
+      - ".github/workflows/filuna-prusa-mk4s-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-prusa-mk4s-internal
+  cancel-in-progress: true
+jobs:
+  official-mk4s:
+    name: Official Prusa MK4S 0.4 v2.9.7 portable CLI A/B, Windows only
+    runs-on: windows-2022
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore verified OEM ZIP cache
+        id: oem-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Syntax and negative/positive resolver regression tests, no OEM compile
+        shell: pwsh
+        run: |
+          python -m py_compile lab/prusa_mk4s_official_qa.py lab/test_prusa_mk4s_official_qa.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p test_prusa_mk4s_official_qa.py -v
+          exit $LASTEXITCODE
+      - name: Verify official SHA256 and upstream Git blob, then run isolated A/B
+        shell: pwsh
+        run: |
+          python lab/prusa_mk4s_official_qa.py --cache .oem-portable-cache --out qa-prusa-mk4s
+          $code = $LASTEXITCODE
+          if (Test-Path qa-prusa-mk4s/RESUMO.md) {
+            Get-Content qa-prusa-mk4s/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Cache verified OEM package after execution
+        if: always() && steps.oem-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Preserve logs, outputs, hashes and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-prusa-mk4s-v2.9.7-official-portable-qa
+          path: qa-prusa-mk4s/
+          retention-days: 30
+          if-no-files-found: warn

@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "manufacturer": "snapmaker",
+  "printer_model": "Snapmaker U1",
+  "nozzle_mm": 0.4,
+  "volume_mm": [
+    270,
+    270,
+    270
+  ],
+  "gcode_policy": "READ_ONLY_SPATIAL_VALIDATION_NEVER_POSTPROCESS",
+  "official_reference": {
+    "slicer": "Snapmaker Orca 2.4.1",
+    "portable_zip_sha256": "1f002e2168c576f800bcfd0509b5e164b5ad65a0963abc2bef8317d929d48c9d",
+    "profile_source": "Snapmaker_Orca_Windows_V2.4.1_portable/resources/profiles/Snapmaker/machine/Snapmaker U1 (0.4 nozzle).json",
+    "resolved_profile_qa_sha256": "919717f1b957e66bc85d55d8f8b6fb4776811ff50dd3ca16069b51cf2749b16e",
+    "official_stress_cube": "filuna-snapmaker-u1-40-original-cli-reproducibility / stress-00/plate_1.gcode",
+    "official_stress_cube_sha256": "18486931ede41c194209af31c1ef6894f451d47779e66aaf6c124d209e2c7d42",
+    "artifact_run": "https://github.com/abcollicelli-web/FilunaSlicer/actions/runs/42321783683",
+    "note": "Official cube here was single-material; cannot prove a final 4-color purge"
+  },
+  "firmware_reference": {
+    "source": "Official published Snapmaker/u1-klipper source snapshot, NOT a live device config",
+    "commit": "7ac453b50fe6779b2ec0b759038a17da5e6d671d",
+    "config_url": "https://github.com/Snapmaker/u1-klipper/blob/7ac453b50fe6779b2ec0b759038a17da5e6d671d/lava/fluidd.cfg",
+    "blob_sha": "dd8bf672d53cc58e3f57bd9d8a57f5aba31a37cf",
+    "profile_machine_scripts": "Official U1 2.4.1 effective-machine.json from Actions run 42321783683",
+    "change_filament_gcode_sha256": "c5f09d22c099a7df2395ed76ed27c99d355eaf7caec7405b4eed2a6ebf2a5839",
+    "machine_end_gcode_sha256": "485d67d1dfa8ec829b51d84877b1d028d388aa2ec540bd59e2a9c6eb7e3c3e21",
+    "macro_question": "Inspect Moonraker /printer/objects/query?configfile on authorized real U1 before device-specific proof. Published config may differ by firmware version."
+  },
+  "inline_toolchange_proof": {
+    "source": "Snapmaker U1 effective-machine.json change_filament_gcode 2.4.1",
+    "evidence": "In by-layer mode: emitted G91, G1 Z1.5 F600, G90 before M400, T{next_extruder}, SM_PRINT_PREEXTRUDE_FILAMENT.",
+    "scope": "regular toolchange only; NOT final tower purge without a real tool change"
+  },
+  "safe_macros": [
+    {
+      "name": "PRINT_END",
+      "source_url": "https://github.com/Snapmaker/u1-klipper/blob/7ac453b50fe6779b2ec0b759038a17da5e6d671d/lava/fluidd.cfg",
+      "source_sha": "dd8bf672d53cc58e3f57bd9d8a57f5aba31a37cf",
+      "evidence": "Macro sets Z=200 when current Z<195, relative +5 when 195<=Z<265, and bounded delta toward 270.5 for 265<=Z<270.5; THEN INNER_PRINT_END / PARK_EXTRUDER / G0 X5 Y5.",
+      "scope": "macro_internal_end_parking_only_after_homed_axes_not_final_purge",
+      "conditions": "Z and XY homed and actual Z below configured lift ceiling; z>=270.5 has no guaranteed extra lift",
+      "safety_for_final_purge": "NOT_PROVEN"
+    }
+  ],
+  "not_proven_safe": [
+    {
+      "name": "MOVE_TO_DISCARD_FILAMENT_POSITION",
+      "reason": "Macro calls MOVE_TO_XY_IDLE_POSITION_EXTRUDER with X/Y offsets; no Z-lift in its published own body"
+    },
+    {
+      "name": "SM_PRINT_PREEXTRUDE_FILAMENT",
+      "reason": "Registered dynamic Klipper command in klippy/extras/print_stats.py; no unconditional Z-lift certified by provided code"
+    },
+    {
+      "name": "PRINT_END",
+      "reason": "Firmware lift occurs after final purge command sequence; macro cannot retroactively protect earlier tower travel"
+    }
+  ],
+  "validated_macro_sources": [
+    "published_firmware_source"
+  ],
+  "live_moonraker_config": "NOT_QUERIED_NO_AUTHORIZED_REAL_U1_AVAILABLE",
+  "known_upstream_issue": "https://github.com/Snapmaker/OrcaSlicer/issues/1149",
+  "upstream_patch_not_applied": "https://github.com/Snapmaker/OrcaSlicer/pull/1150",
+  "ack_phrase": "ACEITO O RISCO DE COLISAO DA SNAPMAKER",
+  "policy_notes": [
+    "G-code contents are immutable",
+    "geometry validator checks risk; no change to OEM travel path",
+    "manufacturer attribution needs same risk in pinned official reference",
+    "explicit user consent recorded per exact G-code SHA and operator"
+  ],
+  "check_bounds": true,
+  "note_mechanical_limits": "This 270x270x270 gate applies to explicit slicer G0/G1/G2/G3; firmware-only park macros have separate proof and may use a larger service envelope. No blanket exemption.",
+  "filuna_native_defaults": {
+    "klipper_emit_minimum_cruise_ratio": false,
+    "description": "Snapmaker U1 OEM 2.4.1 Klipper output parity; keep other manufacturers on global true default"
+  }
+}

@@ -1,0 +1,52 @@
+name: Filuna U1 original OEM four-tool 20-run functional repeatability (NO print)
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - "lab/snapmaker_u1_four_core_stress_qa.py"
+      - ".github/workflows/filuna-snapmaker-four-core-stress.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-u1-4tool-stress-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  original-engine-strict-repetition:
+    runs-on: windows-2022
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore SHA-verified original OEM portable cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Execute 20 independent official four-tool CLI runs and strict compare
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          python -m py_compile lab/snapmaker_u1_four_core_stress_qa.py
+          python -m unittest discover -s lab -p "test_snapmaker_minimal_core_3mf.py" -v
+          if ($LASTEXITCODE -ne 0) { throw "SYNTHETIC_3MF_CONTRACT_FAILED" }
+          python lab/snapmaker_u1_four_core_stress_qa.py --runs 20 --cache .oem-portable-cache --out qa-u1-fourcore-stress
+          if ($LASTEXITCODE -ne 0) { throw "OEM_STRICT_FOUR_TOOL_STRESS_NOT_PASS" }
+      - name: Archive original G-codes, hashes and safety reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-core4-oem-grid-20-run-proof
+          path: qa-u1-fourcore-stress/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Clearly separate OEM repeatability from U1 safety/Filuna approval
+        if: always()
+        shell: bash
+        run: |
+          echo "THIS_WORKFLOW_MEASURES_ONLY_ORIGINAL_OEM_4_TOOL_CLI_REPETITION" >> "$GITHUB_STEP_SUMMARY"
+          echo "U1_FINAL_PURGE_COLLISION_IS_KNOWN_BLOCKER; no LAN, firmware, Filuna native parity, release or print authorized" >> "$GITHUB_STEP_SUMMARY"

@@ -3,6 +3,12 @@
 **Contrato:** FLN-SERVER-2026-11-05.1 · **Origem:** decisão expressa do proprietário em 05/11/2026 · **Estado:** ESPECIFICAÇÃO; ainda não homologada nem implantada no novo fork.
 **Regra de segurança inegociável:** o Filuna poderá observar, com controles de privacidade, incidentes e saúde técnica dos clientes; **o administrador Filuna NÃO terá capacidade de acessar, comandar, imprimir, pausar, cancelar, aquecer ou abrir câmeras das impressoras dos clientes**. O controle remoto futuro pertence ao **próprio titular da impressora** e a pessoas que ele autorizar expressamente, segundo política granular auditável.
 
+## Determinação futura adicional — homologação física monitorada no beta (07/11/2026)
+
+A ferramenta de **monitoramento online no servidor Filuna**, prevista em [REGRA-BETA-MONITORAMENTO-HOMOLOGACAO-FISICA-20261107.md](REGRA-BETA-MONITORAMENTO-HOMOLOGACAO-FISICA-20261107.md), deverá acompanhar automaticamente os trabalhos autorizados das impressoras pendentes de homologação física durante o beta vigiado: abertura/arquivo, fatiamento, AMS/multimaterial, perfis, G-code gerado × oficial × enviado × confirmado/executado quando observável, andamento, erros e término.
+
+**Harmonização obrigatória com esta arquitetura:** a observabilidade é somente leitura; não cria poder de comando/impressões nem acesso à LAN/câmera ao administrador. Eventos de clientes exigem consentimento granular/revogável, dados mínimos e segregação; STL/3MF/G-code completos não são enviados automaticamente. A camada de ingestão não é autorização para imprimir; distinguir ACK, estado de job e confirmação real do firmware. O painel não deve marcar homologação física por `FINISHED` sozinho; preservar revisão humana. **Estado: requisito futuro, não serviço implantado.**
+
 ## 1. Fronteira: programas, servidores e dados
 
 \`\`\`text

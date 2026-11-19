@@ -1,0 +1,61 @@
+name: Filuna OEM portable-first validation (no vendor compilation)
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/portable_first_qa.py"
+      - "lab/test_portable_first_qa.py"
+      - "fixtures/oem/**"
+      - ".github/workflows/filuna-oem-portable-first.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-oem-portable-first-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows-portables:
+    name: Official portable SHA256 and reproducibility — Windows x64
+    runs-on: windows-2022
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore OEM official portable ZIP cache
+        id: portable-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Verify portable QA script syntax (without compiling any slicer)
+        shell: pwsh
+        run: python -m py_compile lab/portable_first_qa.py
+      - name: Enforce fail-closed G-code normalization regression tests
+        shell: pwsh
+        run: python -m unittest discover -s lab -p test_portable_first_qa.py -v
+      - name: Verify official release ZIP SHA-256 and execute profiled project when present
+        shell: pwsh
+        run: |
+          python lab/portable_first_qa.py --output qa-portable --cache .oem-portable-cache --run-slicing
+          $result = $LASTEXITCODE
+          if (Test-Path qa-portable/RESUMO.md) {
+            Get-Content qa-portable/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $result
+      - name: Cache SHA-pinned portable ZIPs even if tests fail
+        if: always() && steps.portable-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Store verifiable evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-portable-first-five-official-eight-brands
+          path: qa-portable/
+          retention-days: 30
+          if-no-files-found: warn

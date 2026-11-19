@@ -1474,6 +1474,7 @@ public:
     void set_max_acceleration(unsigned int acceleration) { m_max_acceleration = acceleration; };
     void set_accel_to_decel_enable(bool enable) { m_accel_to_decel_enable = enable; }
     void set_accel_to_decel_factor(float factor) { m_accel_to_decel_factor = factor; }
+    void set_klipper_emit_minimum_cruise_ratio(bool enabled) { m_klipper_emit_minimum_cruise_ratio = enabled; }
     void set_layer_id(int layer_id) { m_layer_id = layer_id; }
     void set_multi_nozzle_group_result(const MultiNozzleUtils::LayeredNozzleGroupResult *multi_nozzle_group_result) { m_multi_nozzle_group_result = multi_nozzle_group_result; }
     void set_physical_extruder_map(const std::vector<int> &physical_extruder_map) { m_physical_extruder_map = physical_extruder_map; }
@@ -1536,7 +1537,7 @@ private:
         else if (m_gcode_flavor == gcfKlipper && m_accel_to_decel_enable) {
             // One line, so Klipper derives the limit from this acceleration rather than the previous one.
             std::string limits = "SET_VELOCITY_LIMIT ACCEL=" + std::to_string(acceleration);
-            GCodeWriter::append_klipper_accel_to_decel(limits, acceleration, m_accel_to_decel_factor);
+            GCodeWriter::append_klipper_accel_to_decel(limits, acceleration, m_accel_to_decel_factor, m_klipper_emit_minimum_cruise_ratio);
             gcode << limits;
         }
         else {
@@ -1555,6 +1556,7 @@ private:
     unsigned int              m_last_acceleration{0};
     bool                      m_accel_to_decel_enable;
     float                     m_accel_to_decel_factor;
+    bool                      m_klipper_emit_minimum_cruise_ratio = true;
     const MultiNozzleUtils::LayeredNozzleGroupResult *m_multi_nozzle_group_result{nullptr};
     int                       m_layer_id = -1;
     std::vector<int>          m_physical_extruder_map;
@@ -2004,6 +2006,7 @@ WipeTower::WipeTower(const PrintConfig& config, int plate_idx, Vec3d plate_origi
     m_max_speed((float)config.wipe_tower_max_purge_speed.value*60.f),
     m_accel_to_decel_enable(config.accel_to_decel_enable.value),
     m_accel_to_decel_factor(config.accel_to_decel_factor.value),
+    m_klipper_emit_minimum_cruise_ratio(config.klipper_emit_minimum_cruise_ratio.value),
     m_printable_height(config.extruder_printable_height.values),
     m_flat_ironing(config.prime_tower_flat_ironing.value),
     m_enable_tower_interface_features(config.enable_tower_interface_features.value),
@@ -2927,6 +2930,7 @@ void WipeTower::set_for_wipe_tower_writer(WipeTowerWriter &writer)
     writer.set_multi_nozzle_group_result(m_multi_nozzle_group_result);
     writer.set_accel_to_decel_enable(m_accel_to_decel_enable);
     writer.set_accel_to_decel_factor(m_accel_to_decel_factor);
+    writer.set_klipper_emit_minimum_cruise_ratio(m_klipper_emit_minimum_cruise_ratio);
     writer.set_first_layer(m_cur_layer_id == 0);
     writer.set_layer_id(m_cur_layer_id);
     writer.set_physical_extruder_map(m_physical_extruder_map);

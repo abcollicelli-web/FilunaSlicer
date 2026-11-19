@@ -1,0 +1,19 @@
+# Candidate only: Snapmaker Orca v2.4.1 FINAL PURGE Z-HOP safety regression.
+# Official upstream issue open: https://github.com/Snapmaker/OrcaSlicer/issues/1149
+# Exact source pin bac6fd5c1e1c23ddf057cf6471ba4ed7ed621c4c.
+# NOT MERGED, NOT COMPILED, NOT HOMOLOGATED, NOT APPLIED TO FILUNA.
+# Required gates: detailed firmware U1 simulation + G-code safety verification
+# + upstream reconciliation + OEM source/ABI/license review, physical in beta.
+diff --git a/src/libslic3r/GCode.cpp b/src/libslic3r/GCode.cpp
+--- a/src/libslic3r/GCode.cpp
++++ b/src/libslic3r/GCode.cpp
+@@ -811,5 +811,8 @@
+     const bool will_go_down = !is_approx(z, current_z);
+-    if (!tcr.priming && (tcr.is_finish_first || will_go_down)) {
++    // Final purge has no change_filament_gcode to provide the usual Z-hop.
++    // Retain pending layer-change lift until travel clears the printed part.
++    const bool is_final_purge = new_extruder_id < 0;
++    if (!tcr.priming && (tcr.is_finish_first || will_go_down || is_final_purge || gcodegen.m_need_change_layer_lift_z)) {
+         // Move over the wipe tower.
+         gcode += gcodegen.retract();
+         gcodegen.m_avoid_crossing_perimeters.use_external_mp_once();

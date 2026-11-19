@@ -372,6 +372,9 @@ CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(WallSequence)
 static t_config_enum_values s_keys_map_WallDirection{
     { "ccw",  int(WallDirection::CounterClockwise) },
     { "cw",   int(WallDirection::Clockwise)},
+    // Flashforge OEM 1.7.9 can request automatic reversal.
+    // Only explicit profiles select Auto; keep core Orca CCW default.
+    { "auto",  int(WallDirection::Auto)},
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(WallDirection)
 
@@ -2797,10 +2800,22 @@ void PrintConfigDef::init_fff_params()
     def->enum_keys_map = &ConfigOptionEnum<WallDirection>::get_enum_values();
     def->enum_values.push_back("ccw");
     def->enum_values.push_back("cw");
+    def->enum_values.push_back("auto");
     def->enum_labels.push_back(L("Counter clockwise"));
     def->enum_labels.push_back(L("Clockwise"));
+    def->enum_labels.push_back(L("Automatic (OEM compatible)"));
     def->mode = comAdvanced;
+    // Existing users and all ordinary Orca presets keep precisely the CCW default.
     def->set_default_value(new ConfigOptionEnum<WallDirection>(WallDirection::CounterClockwise));
+
+    // Exact FlashForge/Orca-Flashforge 1.7.9 option candidate: consistent
+    // rectilinear fill aligned to the unshifted extended object bounding box.
+    // Always off by default, until a verified OEM module explicitly opts in.
+    def = this->add("filuna_oem_legacy_infill_anchor", coBool);
+    def->label = L("OEM legacy infill anchor (QA only)");
+    def->tooltip = L("Use the verified OEM alignment reference for consistent infill patterns. Requires OEM module validation and G-code parity testing.");
+    def->mode = comDevelop;
+    def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("extruder", coInt);
     def->gui_type = ConfigOptionDef::GUIType::i_enum_open;
@@ -3624,6 +3639,14 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionInts{0});
 
     // BBS
+    // Snapmaker open-source OEM profile field. Keep a default of false for
+    // existing Orca printers; the G-code start macro uses this only if asked.
+    def = this->add("filament_is_high_temperature", coBools);
+    def->label = L("Is high-temperature filament");
+    def->tooltip = L("Indicates whether this filament requires high-temperature handling.");
+    def->mode = comSimple;
+    def->set_default_value(new ConfigOptionBools{false});
+
     def = this->add("temperature_vitrification", coInts);
     def->label = L("Softening temperature");
     def->tooltip = L("The material softens at this temperature, so when the bed temperature is equal to or greater than this, it\'s highly recommended to open the front door and/or remove the upper glass to avoid clogs.");
@@ -3943,6 +3966,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->nullable = true;
     def->set_default_value(new ConfigOptionFloatsNullable{300});
+
+    def = this->add("klipper_emit_minimum_cruise_ratio", coBool);
+    def->label = L("Emit Klipper minimum cruise ratio");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("accel_to_decel_enable", coBool);
     def->label = L("Enable accel_to_decel");
@@ -6169,7 +6197,10 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Retraction distance when cut");
     def->tooltip = L("Experimental feature: Retraction length before cutting off during filament change.");
     def->mode = comDevelop;
-    def->min = 10;
+    // OEM profiles may legitimately store 0 for a DISABLED cut-retraction
+    // feature (e.g. Anycubic Kobra 3 V2). Preserve that input byte-for-byte;
+    // Print::validate rejects 0 or 1..9 if the feature is actually enabled.
+    def->min = 0;
     def->max = 18;
     def->set_default_value(new ConfigOptionFloats {18});
 
@@ -6956,6 +6987,11 @@ void PrintConfigDef::init_fff_params()
                      "Only effective in traditional timelapse mode on non-I3 printers.");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("tool_change_temprature_wait", coBool);
+    def->label = L("Wait for tool temperature after tool change");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("standby_temperature_delta", coInt);
     def->label = L("Temperature variation");
@@ -9987,9 +10023,9 @@ void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &va
     } else if (opt_key == "machine_switch_extruder_time") {
         opt_key = "machine_tool_change_time";
     }
-    else if (opt_key == "wall_direction" && value == "auto") {
-        value = "ccw";
-    }
+    // Filuna OEM: wall_direction=auto is now a valid explicit enum value.
+    // Do not silently migrate it to ccw: Flashforge OEM profiles need to
+    // retain Auto, while ordinary Orca profiles retain the CCW default.
     // Orca: the IDEX/IQEX parallel printing keys shipped to testers as ixex_* before the feature
     // was renamed IMEX, and the two clearance keys were renamed again to say what they measure:
     // nozzle to carriage edge on the collision side, not the carriage's full width. Without this
@@ -12378,7 +12414,7 @@ void compute_filament_override_value(const std::string& opt_key, const ConfigOpt
     if (opt_key == "retraction_distances_when_cut" && new_full_config.option<ConfigOptionInt>("enable_long_retraction_when_cut")->value != LongRectrationLevel::EnableFilament) {
         auto ptr = dynamic_cast<const ConfigOptionFloatsNullable*>(opt_new_filament);
         for (size_t idx = 0; idx < ptr->values.size(); ++idx)
-            opt_long_retraction_default.values.push_back(ptr->nil_value());
+            opt_retraction_distance_default.values.push_back(ptr->nil_value());
         opt_new_filament = &opt_retraction_distance_default;
     }
 

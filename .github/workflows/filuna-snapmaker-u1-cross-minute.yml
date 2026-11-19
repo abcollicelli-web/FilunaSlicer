@@ -1,0 +1,49 @@
+name: Filuna Snapmaker U1 cross-minute reproducibility blocker
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_cross_minute_qa.py"
+      - ".github/workflows/filuna-snapmaker-u1-cross-minute.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-u1-cross-minute-qa
+  cancel-in-progress: true
+jobs:
+  differential:
+    name: Official OEM ZIP with identical sources and 2 CLI runs across minute
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax check, no OEM recompilation
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_cross_minute_qa.py
+      - name: Restore official 2.4.1 SHA-pinned portable cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Run original separate processes across minute boundary, no nonheader normalization
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_cross_minute_qa.py --cache .oem-portable-cache --out qa-snapmaker-u1-cross-minute
+          $code = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-u1-cross-minute/RESUMO.md) {
+            Get-Content qa-snapmaker-u1-cross-minute/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Preserve raw Gcodes, exact diff and all hashes even on QA failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-cross-minute-nonheader-gcode-diff
+          path: qa-snapmaker-u1-cross-minute/
+          retention-days: 30
+          if-no-files-found: warn

@@ -1,0 +1,49 @@
+name: Filuna Snapmaker U1 official portable CPU-affinity G-code diagnostic
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_cpu_affinity_qa.py"
+      - ".github/workflows/filuna-snapmaker-u1-cpu-affinity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-u1-cpu-affinity-original
+  cancel-in-progress: true
+jobs:
+  original-oem-cpu-scheduler:
+    name: 24 original default-CPU / 24 single-CPU; no OEM compilation
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax check
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_cpu_affinity_qa.py
+      - name: Restore exact original official Snapmaker 2.4.1 portable ZIP cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Compare actual G-code in 48 isolated original CLI processes
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_cpu_affinity_qa.py --cache .oem-portable-cache --out qa-snapmaker-u1-affinity --runs-per-group 24
+          $code = $LASTEXITCODE
+          if (Test-Path qa-snapmaker-u1-affinity/RESUMO.md) {
+            Get-Content qa-snapmaker-u1-affinity/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Preserve original CLI diagnostics and unchanged G-codes, never OEM binary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-original-oem-single-cpu-vs-multicore
+          path: qa-snapmaker-u1-affinity/
+          if-no-files-found: warn
+          retention-days: 30

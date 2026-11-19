@@ -1,0 +1,88 @@
+name: Filuna U1 native four-tool proof with Filuna executable (NO print, NO network)
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - ".github/workflows/filuna-u1-native-fourtool-proof.yml"
+      - "lab/filuna_u1_native_fourtool_proof.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: filuna-u1-native-proof
+  cancel-in-progress: false
+jobs:
+  slice-with-filuna:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download U1 decision-trace Filuna QA executable (run 42645101191)
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-qa-windows-exe-bda0a0eb00f2e839d3cab8f1f657c14fcd37bd6e
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42645101191
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .filuna-exe
+      - name: Download OEM 20-run stress reference (run 42396616586)
+        uses: actions/download-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-core4-20-official-sha-proof
+          repository: abcollicelli-web/FilunaSlicer
+          run-id: 42396616586
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .oem-stress
+      - name: Slice with Filuna, check final-purge Z-lift, Python validator, compare OEM A/B
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          $exe=(Get-ChildItem -Recurse .filuna-exe -Filter orca-slicer.exe | Select-Object -First 1).FullName
+          if (-not $exe) { throw "FILUNA_EXE_NOT_FOUND" }
+          $a=(Get-ChildItem -Recurse .oem-stress -Filter *.gcode | Where-Object { $_.FullName -match 'stress-00' } | Select-Object -First 1).FullName
+          $b=(Get-ChildItem -Recurse .oem-stress -Filter *.gcode | Where-Object { $_.FullName -match 'stress-09' } | Select-Object -First 1).FullName
+          Write-Host "EXE=$exe"; Write-Host "OEM_A=$a"; Write-Host "OEM_B=$b"
+          if (-not $a -or -not $b) { Get-ChildItem -Recurse .oem-stress | Select-Object FullName; throw "OEM_REFERENCE_NOT_FOUND" }
+          $env:FILUNA_U1_TRACE_FIRST_TCR="1" 
+          python lab/filuna_u1_native_fourtool_proof.py --exe "$exe" --oem-a "$a" --oem-b "$b" --out qa-u1-filuna-native
+          $code=$LASTEXITCODE
+          Get-Content qa-u1-filuna-native/proof.json | Out-File -Append -FilePath $env:GITHUB_STEP_SUMMARY
+          if ($code -ne 0) { Get-Content qa-u1-filuna-native/filuna.log -Tail 80 -ErrorAction SilentlyContinue; exit $code }
+      - name: Archive Filuna G-code and proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-u1-native-fourtool-proof
+          path: qa-u1-filuna-native/
+          retention-days: 30
+          if-no-files-found: warn
+  native-cxx-validator:
+    needs: slice-with-filuna
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: filuna-u1-native-fourtool-proof
+          path: proof
+      - name: C++17 safety scanner on the Filuna G-code (must not BLOCK)
+        shell: bash
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -o /tmp/u1safe lab/test_snapmaker_native_gcode_safety.cpp
+          g=$(find proof/filuna -name '*.gcode' | head -1)
+          test -n "$g"
+          set +e; /tmp/u1safe "$g" | tee native.log; code=${PIPESTATUS[0]}; set -e
+          echo "NATIVE_EXIT=$code" >> "$GITHUB_STEP_SUMMARY"
+          grep -E 'NATIVE_STATUS|NATIVE_COLLISION' native.log >> "$GITHUB_STEP_SUMMARY" || true
+          test "$code" -eq 0
+          grep -q "NATIVE_STATUS=PASS" native.log

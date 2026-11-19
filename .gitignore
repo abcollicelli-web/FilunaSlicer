@@ -55,3 +55,6 @@ __pycache__/
 /.test/
 docs/superpowers/
 ctest_results.xml
+
+# Fonte OEM clonada em tempo de build (pinada em module.json)
+FILUNA/fabricantes/*/oem-src/

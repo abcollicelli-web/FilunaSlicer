@@ -1,0 +1,111 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.body{display:flex;height:850px}
+.main{flex:1;padding:24px;display:flex;gap:20px;min-width:0}
+.colL{flex:1.15;display:flex;flex-direction:column;gap:18px;min-width:0}.colR{flex:1;display:flex;flex-direction:column;gap:16px;min-width:0}
+h1{font-size:30px;font-weight:800;letter-spacing:-.02em}.sub{color:var(--ink2);font-size:14.5px;margin-top:4px}
+.ch{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}.ch .lbl{flex:1;color:var(--ink);letter-spacing:.08em}
+.act{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid #F3EFE9}
+.act .i{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;flex:none}
+.act .t{font-size:14.5px;font-weight:600}.act .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+.st{margin-left:auto;font-size:13px;color:var(--ink2);display:flex;align-items:center;gap:6px;white-space:nowrap}.dot{width:8px;height:8px;border-radius:50%}
+.projs{display:flex;gap:14px;padding:8px 18px 18px;align-items:stretch}
+.proj{flex:1;border:1px solid var(--line);border-radius:14px;padding:10px}.proj .thumb{height:150px}.proj .n{font-weight:700;font-size:14px;margin-top:10px}.proj .s{font-size:12px;color:var(--muted);margin-top:3px}
+.arrow{align-self:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2);flex:none}
+.pf{display:flex;align-items:center;gap:14px;padding:11px 18px;border-top:1px solid #F3EFE9}
+.pf .i{width:44px;height:44px;border-radius:11px;background:var(--pill);display:flex;align-items:center;justify-content:center;color:var(--ink2)}
+.pf .t{font-weight:700;font-size:15px}.pf .s{font-size:12.5px;color:var(--muted);margin-top:2px}.pf .tag{margin-left:auto}
+.add{margin:10px 18px 16px;height:42px;border:1px dashed #DDD7CF;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink2)}
+.spools{display:flex;gap:10px;padding:6px 18px 4px}
+.spool{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;align-items:center;gap:8px}
+.reel{width:44px;height:44px;border-radius:50%;border:9px solid;flex:none}
+.spool .n{font-size:11.5px;font-weight:600;line-height:1.35}.spool .c{font-size:11px;color:var(--muted)}
+.two{display:flex;gap:16px}.two>.card{flex:1}
+.kv{display:flex;align-items:center;justify-content:space-between;padding:8px 18px;font-size:14px}.kv b{font-weight:700}
+.ql{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 18px 18px}
+.q{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;line-height:1.3}
+.conn{margin-top:auto;padding:12px;font-size:14px}.conn .s{color:var(--muted);font-size:12.5px;margin:3px 0 0 18px}
+.selc{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;margin-top:10px;background:#fff}
+</style></head><body><div class="page"><div class="app">
+<div class="top">
+  <div class="logo"><span class="f">Filuna</span><span class="d">3D</span></div><div class="sep"></div>
+  <div class="vtabs">
+    <div class="vtab"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>Início</div>
+    <div class="vtab"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 2.3 5.6"/><path d="M4 20v-4h4"/></svg>Preparação</div>
+    <div class="vtab"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/></svg>Visualização</div>
+    <div class="vtab"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg>Dispositivo</div>
+    <div class="vtab"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Projeto</div>
+    <div class="vtab"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Calibração</div>
+    <div class="vtab on"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>Meu espaço</div>
+  </div>
+  <div class="spacer"></div><span class="lbl">Precision Atelier · 10 nov 2026</span>
+  <svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+</div>
+<div class="body">
+  <div class="side">
+    <div class="lbl" style="padding:0 6px">Perfis</div>
+    <div class="selc"><div class="av" style="width:32px;height:32px"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></div><b style="flex:1;font-size:14.5px">Perfil Padrão</b><span style="color:var(--muted)">▾</span></div>
+    <div class="selc"><svg class="ic" viewBox="0 0 24 24"><rect x="6" y="9" width="12" height="8" rx="1"/><path d="M8 9V5h8v4M8 17v2h8v-2"/></svg><div style="flex:1"><b style="font-size:13.5px">Elegoo Centauri Carbon 2</b><div style="font-size:12px;color:var(--muted)">Impressora 3D</div></div><span style="color:var(--muted)">›</span></div>
+    <div style="height:14px"></div>
+    <div class="nav on"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>Meu espaço</div>
+    <div class="nav"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Projetos</div>
+    <div class="nav"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h10M4 12h16M4 17h7"/><circle cx="17" cy="7" r="2"/></svg>Perfis de Impressão</div>
+    <div class="nav"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg>Filamentos</div>
+    <div class="nav"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 4v16"/></svg>Biblioteca</div>
+    <div class="nav"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7 7 0 0 0 0-2l1.7-1.3-1.7-3-2 .8a7 7 0 0 0-1.7-1L15.3 4H8.7l-.4 2.5a7 7 0 0 0-1.7 1l-2-.8-1.7 3L4.6 11a7 7 0 0 0 0 2l-1.7 1.3 1.7 3 2-.8a7 7 0 0 0 1.7 1l.4 2.5h6.6l.4-2.5a7 7 0 0 0 1.7-1l2 .8 1.7-3Z"/></svg>Configurações</div>
+    <div class="conn"><span class="dot" style="display:inline-block;background:var(--good);margin-right:8px"></span><b>Conectado</b><div class="s">Elegoo Centauri Carbon 2</div></div>
+  </div>
+  <div class="main">
+    <div class="colL">
+      <div><h1>Meu espaço</h1><div class="sub">Bem-vindo(a) ao seu espaço de trabalho pessoal.</div></div>
+      <div class="card">
+        <div class="ch"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">Atividade recente</span><span class="link">Ver tudo</span></div>
+        <div class="act"><div class="i" style="background:#8E4EC6"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></div><div><div class="t">Projeto "Suporte Caixa Organizador" fatiado</div><div class="s">Hoje, 10:24</div></div><div class="st"><span class="dot" style="background:var(--good)"></span>Concluído</div></div>
+        <div class="act"><div class="i" style="background:var(--magenta-deep)"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg></div><div><div class="t">Perfil "Qualidade padrão" atualizado</div><div class="s">Hoje, 09:15</div></div><div class="st"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></div></div>
+        <div class="act"><div class="i" style="background:#3B6FD4"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 9h6M9 13h6"/></svg></div><div><div class="t">Filamento "eSun PLA+ Preto" visualizado</div><div class="s">Ontem, 16:42</div></div><div class="st"><span class="dot" style="background:#3B6FD4"></span>Visualizado</div></div>
+        <div class="act"><div class="i" style="background:var(--orange)"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div><div class="t">Projeto "Suporte Gaveta Impressa" aberto</div><div class="s">Ontem, 14:08</div></div></div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="ch"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl">Meus projetos</span><span class="link">Ver todos os projetos</span></div>
+        <div class="projs">
+          <div class="proj"><div class="thumb"><svg width="74" height="74" viewBox="0 0 24 24" style="color:#B9B2A8;stroke-width:1"><path d="M4 9l8-4 8 4v8l-8 4-8-4z"/><path d="M4 9l8 4 8-4M12 13v8"/></svg></div><div class="n">Caixa Organizador</div><div class="s">Fatiado hoje · 42.6 MB</div></div>
+          <div class="proj"><div class="thumb"><svg width="74" height="74" viewBox="0 0 24 24" style="color:#B9B2A8;stroke-width:1"><rect x="3" y="8" width="18" height="10" rx="1"/><path d="M9 13h6"/></svg></div><div class="n">Suporte Gaveta Impressa</div><div class="s">Fatiado ontem · 28.1 MB</div></div>
+          <div class="proj"><div class="thumb"><svg width="74" height="74" viewBox="0 0 24 24" style="color:#B9B2A8;stroke-width:1"><path d="M5 20V8h14v12M5 8l3-4h8l3 4M9 20v-6h6v6"/></svg></div><div class="n">Suporte Mecânico</div><div class="s">Fatiado em 06/11 · 18.7 MB</div></div>
+          <div class="arrow">›</div>
+        </div>
+      </div>
+    </div>
+    <div class="colR">
+      <div class="card">
+        <div class="ch"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h10M4 12h16M4 17h7"/></svg><span class="lbl">Perfis salvos</span><span class="link">Gerenciar</span></div>
+        <div class="pf"><div class="i"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg></div><div><div class="t">Qualidade padrão</div><div class="s">Qualidade equilibrada</div></div><span class="tag">Personalizado</span></div>
+        <div class="pf"><div class="i"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></div><div><div class="t">Alto detalhe</div><div class="s">Alta resolução e acabamento</div></div><span class="tag">Personalizado</span></div>
+        <div class="pf"><div class="i"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg></div><div><div class="t">Rascunho rápido</div><div class="s">Rápido para testes</div></div><span class="tag">Padrão</span></div>
+        <div class="add">+ Novo perfil</div>
+      </div>
+      <div class="card">
+        <div class="ch"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg><span class="lbl">Biblioteca de filamentos</span><span class="link">Ver biblioteca</span></div>
+        <div class="spools">
+          <div class="spool"><div class="reel" style="border-color:#2C2A28"></div><div><div class="n">eSun PLA+ Preto</div><div class="c">Preto</div></div></div>
+          <div class="spool"><div class="reel" style="border-color:#E9E4DC"></div><div><div class="n">eSun PLA+ Branco</div><div class="c">Branco</div></div></div>
+          <div class="spool"><div class="reel" style="border-color:#D92D3A"></div><div><div class="n">Polymaker PETG</div><div class="c">Vermelho</div></div></div>
+          <div class="spool"><div class="reel" style="border-color:#3B6FD4"></div><div><div class="n">eSun ABS+ Azul</div><div class="c">Azul</div></div></div>
+        </div>
+        <div class="add">+ Adicionar filamento</div>
+      </div>
+      <div class="two">
+        <div class="card"><div class="ch"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span class="lbl">Status da conta</span></div>
+          <div class="kv"><span>Plano<br><b>Pessoal</b></span><span class="tag">Gerenciar</span></div>
+          <div class="kv"><span>Projetos</span><b>24 / 100</b></div>
+          <div class="kv" style="display:block"><span>Armazenamento</span><div style="font-size:12.5px;color:var(--muted);margin:3px 0 8px">2.1 GB / 10 GB</div><div class="bar"><i style="width:68%;background:linear-gradient(90deg,var(--magenta),var(--orange))"></i></div></div><div style="height:12px"></div></div>
+        <div class="card"><div class="ch"><span class="lbl">Links rápidos</span></div>
+          <div class="ql">
+            <div class="q"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5h5"/></svg>Novo Projeto</div>
+            <div class="q"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 21h16"/></svg>Importar Modelo</div>
+            <div class="q"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/></svg>Configurações</div>
+            <div class="q"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/></svg>Documentação</div>
+          </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div></div></body></html>

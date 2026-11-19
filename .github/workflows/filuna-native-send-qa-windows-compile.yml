@@ -1,0 +1,69 @@
+name: Filuna native Windows GUI QA compile (NO installer)
+on:
+  push:
+    branches: [filuna/oem-portable-first-qa-20261106]
+    paths:
+      - "src/libslic3r/GCode.cpp"
+      - "fabricantes/**"
+      - "fabricantes/CMakeLists.txt"
+      - "lab/filuna_batch_test.cpp"
+      - "src/slic3r/Utils/FilunaGCodeSafety.hpp"
+      - "src/slic3r/Utils/PrintHost.cpp"
+      - "src/slic3r/Utils/PrintHost.hpp"
+      - "src/slic3r/GUI/PrintHostDialogs.cpp"
+      - "src/slic3r/CMakeLists.txt"
+      - ".github/workflows/filuna-native-send-qa-windows-compile.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-qa-windows-gui-compile-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  compile-libslic3r-gui-windows:
+    runs-on: windows-2022
+    timeout-minutes: 180
+    steps:
+      - name: Checkout current QA branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          lfs: false
+      - uses: lukka/get-cmake@latest
+      - uses: microsoft/setup-msbuild@v2
+      - name: Restore exact native Windows MSVC dependencies
+        id: deps
+        uses: actions/cache/restore@v4
+        with:
+          path: deps/build/OrcaSlicer_dep
+          key: windows-x64-msvc-deps-cad-v2-${{ hashFiles('deps/CMakeLists.txt', 'deps/*.cmake', 'deps/*/CMakeLists.txt', 'build_win.bat') }}
+          fail-on-cache-miss: false
+      - name: Build pinned Orca Windows deps on this QA branch when the cache is unavailable
+        if: steps.deps.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\","/")
+          .\build_win.bat -d --arch x64 --deps-dir $deps --msvc --msbuild --jobs 4
+          if ($LASTEXITCODE -ne 0) {
+            throw "FILUNA_QA_WINDOWS_DEPENDENCIES_FAILED exit=$LASTEXITCODE"
+          }
+      - name: Cache exact dependencies for repeatable QA (optional; never blocks compilation)
+        if: steps.deps.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: deps/build/OrcaSlicer_dep
+          key: windows-x64-msvc-deps-cad-v2-${{ hashFiles('deps/CMakeLists.txt', 'deps/*.cmake', 'deps/*/CMakeLists.txt', 'build_win.bat') }}
+      - name: Compile shared engine and GUI including PrintHost send path (no packaging)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          $deps=(Join-Path $env:GITHUB_WORKSPACE "deps/build").Replace("\","/")
+          Write-Host "QA source=$env:GITHUB_SHA deps=$deps"
+          .\build_win.bat -s --slicer-target libslic3r_gui --arch x64 --deps-dir $deps --msvc --msbuild --no-gettext --jobs 4
+          if ($LASTEXITCODE -ne 0) {
+            throw "FILUNA_NATIVE_SEND_GUI_COMPILE_FAILED exit=$LASTEXITCODE"
+          }
+          "G4I_NATIVE_GUI_COMPILE_PASS_ONLY=YES" | Out-File -Append -FilePath $env:GITHUB_STEP_SUMMARY
+          "NO_INSTALLER_NO_RELEASE_NO_DEVICE_APPROVAL=YES" | Out-File -Append -FilePath $env:GITHUB_STEP_SUMMARY

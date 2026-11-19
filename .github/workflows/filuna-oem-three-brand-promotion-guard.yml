@@ -1,0 +1,45 @@
+name: Filuna QA reject false OEM internal homologation three brands
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "FILUNA/fabricantes/snapmaker/manifest.json"
+      - "FILUNA/fabricantes/anycubic/manifest.json"
+      - "FILUNA/fabricantes/flashforge/manifest.json"
+      - "fabricantes/snapmaker/adapter/*.cpp"
+      - "fabricantes/anycubic/adapter/*.cpp"
+      - "fabricantes/flashforge/adapter/*.cpp"
+      - "FILUNA/tools/oem_three_brand_promotion_guard.py"
+      - "lab/test_oem_three_brand_promotion_guard.py"
+      - ".github/workflows/filuna-oem-three-brand-promotion-guard.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fail-closed-promotion-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax and 9 independent negative tests
+        run: |
+          python -m py_compile FILUNA/tools/oem_three_brand_promotion_guard.py
+          python -m unittest discover -s lab -p test_oem_three_brand_promotion_guard.py -v
+      - name: Verify manifest and actual C++ adapter status before any beta promotion
+        run: |
+          python FILUNA/tools/oem_three_brand_promotion_guard.py \
+            --out qa-oem-promotion-guard/report.json
+          echo 'PASS means only no false homologation was claimed. No actual Filuna OEM brand is being approved.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Source static scan is NOT printer discovery, native device/engine parity or hardware testing.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain guard observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-anycubic-flashforge-homologation-fail-closed-guard
+          path: qa-oem-promotion-guard/
+          if-no-files-found: warn
+          retention-days: 30

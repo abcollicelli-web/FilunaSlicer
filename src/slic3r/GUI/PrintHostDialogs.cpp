@@ -1496,6 +1496,15 @@ void PrintHostQueueDialog::on_cancel(Event &evt)
 
 void PrintHostQueueDialog::on_info(Event& evt)
 {
+    // Native OEM geometry warning emitted by PrintHostJobQueue on a worker.
+    // The wxEvent lands on the GUI thread; never show dialogs from the worker.
+    // The warning never rewrites vendor G-code or silently promotes a printer.
+    if (evt.tag == "filuna_u1_safety_warning") {
+        wxMessageBox(evt.status,
+                     _L("Filuna U1 - G-code safety warning"),
+                     wxOK | wxICON_WARNING, this);
+        return;
+    }
     /*
     wxCHECK_RET(evt.job_id < (size_t)job_list->GetItemCount(), "Out of bounds access to job list");
     

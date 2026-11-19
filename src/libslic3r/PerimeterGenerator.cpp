@@ -299,8 +299,12 @@ static ExtrusionEntityCollection traverse_loops(const PerimeterGenerator &perime
             ExtrusionLoop *eloop = static_cast<ExtrusionLoop*>(coll.entities[idx.first]);
             coll.entities[idx.first] = nullptr;
 
-            // Orca: holes run against the contour, except thin wall holes, which run with it.
-            if ((perimeter_generator.config->wall_direction == WallDirection::CounterClockwise) == (loop.is_contour || loop.is_thin_wall_hole))
+            // Preserve Orca's explicit contour/hole directions. For the
+            // explicitly requested OEM Auto mode, start with the original
+            // Flashforge all-CCW loops and decide overhang reversal below.
+            if (perimeter_generator.config->wall_direction == WallDirection::Auto ||
+                ((perimeter_generator.config->wall_direction == WallDirection::CounterClockwise) ==
+                 (loop.is_contour || loop.is_thin_wall_hole)))
                 eloop->make_counter_clockwise();
             else
                 eloop->make_clockwise();
@@ -564,8 +568,9 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator& p
             if (extrusion->is_closed) {
                 ExtrusionLoop extrusion_loop(std::move(paths), pg_extrusion.is_contour ? elrDefault : elrHole);
                 extrusion_loop.inset_idx = extrusion->inset_idx;
-                if ((perimeter_generator.config->wall_direction == WallDirection::CounterClockwise) ==
-                    (pg_extrusion.is_contour || pg_extrusions.size() == 2))
+                if (perimeter_generator.config->wall_direction == WallDirection::Auto ||
+                    ((perimeter_generator.config->wall_direction == WallDirection::CounterClockwise) ==
+                     (pg_extrusion.is_contour || pg_extrusions.size() == 2)))
                     extrusion_loop.make_counter_clockwise();
                 else
                     extrusion_loop.make_clockwise();  
@@ -1840,16 +1845,17 @@ void PerimeterGenerator::process_classic()
             // at this point, all loops should be in contours[0]
             bool steep_overhang_contour = false;
             bool steep_overhang_hole    = false;
-            if (!config->overhang_reverse) {
-                // Skip steep overhang detection no reverse is specified
+            const bool auto_oem_wall_direction = config->wall_direction == WallDirection::Auto;
+            if (!config->overhang_reverse && !auto_oem_wall_direction) {
+                // Preserve historical Orca behavior for explicitly selected CCW/CW.
                 steep_overhang_contour = true;
                 steep_overhang_hole    = true;
             }
             ExtrusionEntityCollection entities = traverse_loops(*this, contours.front(), thin_walls, steep_overhang_contour, steep_overhang_hole);
-            // All walls are counter-clockwise initially, so we don't need to reorient it if that's what we want
-            if (config->overhang_reverse) {
+            // Only the opt-in OEM Auto mode follows upstream conditional wall reversal.
+            // Existing CCW/CW profiles retain the exact previous branch behavior.
+            if (auto_oem_wall_direction || config->overhang_reverse) {
                 reorient_perimeters(entities, steep_overhang_contour, steep_overhang_hole,
-                                    // Reverse internal only if the wall direction is auto
                                     this->config->overhang_reverse_internal_only);
             }
 
@@ -3095,13 +3101,14 @@ void PerimeterGenerator::process_arachne()
         
             bool steep_overhang_contour = false;
             bool steep_overhang_hole    = false;
-            if (!config->overhang_reverse) {
-                // Skip steep overhang detection no reverse is specified
+            const bool auto_oem_wall_direction = config->wall_direction == WallDirection::Auto;
+            if (!config->overhang_reverse && !auto_oem_wall_direction) {
+                // Preserve historical Orca behavior for explicitly selected CCW/CW.
                 steep_overhang_contour = true;
                 steep_overhang_hole    = true;
             }
             if (ExtrusionEntityCollection extrusion_coll = traverse_extrusions(*this, ordered_extrusions, steep_overhang_contour, steep_overhang_hole); !extrusion_coll.empty()) {
-                if (config->overhang_reverse) {
+                if (auto_oem_wall_direction || config->overhang_reverse) {
                     reorient_perimeters(extrusion_coll, steep_overhang_contour, steep_overhang_hole,
                                         this->config->overhang_reverse_internal_only);
                 }

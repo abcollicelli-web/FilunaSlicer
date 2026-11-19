@@ -1,0 +1,49 @@
+name: Filuna Snapmaker U1 10-run original CLI file-path stability
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/snapmaker_u1_path_repeat_diagnostic.py"
+      - ".github/workflows/filuna-snapmaker-u1-path-repeat.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-snapmaker-u1-path-repeat
+  cancel-in-progress: true
+jobs:
+  original-cli:
+    name: Original U1 OEM CLI - same-byte profiles and repeated path variants
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Original Snapmaker package from pinned vendor cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Syntax only - no native/OEM compilation
+        shell: pwsh
+        run: python -m py_compile lab/snapmaker_u1_path_repeat_diagnostic.py
+      - name: Repeated path variants with ten independent CLI processes
+        shell: pwsh
+        run: |
+          python lab/snapmaker_u1_path_repeat_diagnostic.py --cache .oem-portable-cache --out qa-snapmaker-u1-path-repeat
+          $code=$LASTEXITCODE
+          if(Test-Path qa-snapmaker-u1-path-repeat/RESUMO.md){
+            Get-Content qa-snapmaker-u1-path-repeat/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Preserve each genuine G-code, profile SHA and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-snapmaker-u1-10-repeat-original-path-diagnostic
+          path: qa-snapmaker-u1-path-repeat/
+          retention-days: 30
+          if-no-files-found: warn

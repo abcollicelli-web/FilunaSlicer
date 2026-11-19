@@ -1,0 +1,55 @@
+name: Filuna Prusa CORE One variants original portable QA
+on:
+  push:
+    branches:
+      - filuna/oem-portable-first-qa-20261106
+    paths:
+      - "lab/prusa_coreone_models_qa.py"
+      - "lab/test_prusa_coreone_models_qa.py"
+      - ".github/workflows/filuna-prusa-coreone-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: filuna-prusa-coreone-official-qa
+  cancel-in-progress: true
+jobs:
+  two-models:
+    name: Prusa CORE One / CORE One L 0.4 - independently verified A/B
+    runs-on: windows-2022
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore pinned original Prusa ZIP cache
+        id: oem-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .oem-portable-cache
+          key: filuna-portable-upstream-windows-20261106-v1
+      - name: Regression tests fail closed
+        shell: pwsh
+        run: |
+          python -m py_compile lab/prusa_coreone_models_qa.py lab/test_prusa_coreone_models_qa.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s lab -p test_prusa_coreone_models_qa.py -v
+          exit $LASTEXITCODE
+      - name: Official source SHA and isolated A/B per model, no compilation
+        shell: pwsh
+        run: |
+          python lab/prusa_coreone_models_qa.py --cache .oem-portable-cache --out qa-prusa-coreone
+          $code = $LASTEXITCODE
+          if (Test-Path qa-prusa-coreone/RESUMO.md) {
+            Get-Content qa-prusa-coreone/RESUMO.md | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+          exit $code
+      - name: Save logs/hashes even when model fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filuna-prusa-coreone-and-coreone-l-v2.9.7
+          path: qa-prusa-coreone/
+          retention-days: 30
+          if-no-files-found: warn
