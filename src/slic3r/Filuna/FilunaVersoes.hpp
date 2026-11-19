@@ -33,9 +33,19 @@ inline const std::vector<Motor>& motores_filuna()
         {"dados", "Filuna Dados", "1.2.0"},               // banco local, fórmulas de estoque e leitor de G-code
         {"sincronizacao", "Filuna Sincronização", "1.0.0"}, // fila, enviar/receber e restauração
         {"telas", "Filuna Telas", "1.3.0"},               // páginas web internas (Meu espaço, Estoque, Dispositivos, Farm, Modelos 3D)
-        {"atualizacao", "Filuna Atualização", "1.1.0"},   // catálogo assinado, download, SHA-256, diferença binária e modo Store
+        {"inicio", "Filuna Início", "1.0.0"},             // tela Início (resources/web/homepage e o que ela usa de web/include)
+        {"atualizacao", "Filuna Atualização", "1.2.0"},   // catálogo assinado, download, SHA-256, modo Store e correção de telas por geração
     };
     return lista;
+}
+
+// Versão embutida de um motor ("" quando o id não existe).
+inline std::string versao_embutida(const std::string& id)
+{
+    for (const Motor& m : motores_filuna())
+        if (id == m.id)
+            return m.versao;
+    return {};
 }
 
 } // namespace Slic3r::Filuna

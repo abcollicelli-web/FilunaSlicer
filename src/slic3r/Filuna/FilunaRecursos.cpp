@@ -9,7 +9,9 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <sstream>
 #include <stdexcept>
+#include <vector>
 
 namespace Slic3r::Filuna::Recursos {
 
@@ -51,6 +53,40 @@ std::string versao_atual(const std::string& raiz, const std::string& id)
     if (!id_valido(id))
         return {};
     return ler_ponteiro(fs::path(raiz) / id / "atual");
+}
+
+// "1.3.0" -> {1, 3, 0}; vazio quando alguma parte não é número.
+static std::vector<int> numeros(const std::string& versao)
+{
+    std::vector<int>  n;
+    std::stringstream s(versao);
+    std::string       parte;
+    while (std::getline(s, parte, '.')) {
+        if (parte.empty() || parte.size() > 6 ||
+            !std::all_of(parte.begin(), parte.end(), [](unsigned char c) { return std::isdigit(c) != 0; }))
+            return {};
+        n.push_back(std::stoi(parte));
+    }
+    return n;
+}
+
+std::string id_da_correcao(const std::string& id, const std::string& versao_embutida)
+{
+    const std::vector<int> e = numeros(versao_embutida);
+    if (e.size() != 3)
+        return {};
+    return id + "-" + std::to_string(e[0]) + "-" + std::to_string(e[1]);
+}
+
+std::string dir_da_correcao(const std::string& raiz, const std::string& id, const std::string& versao_embutida)
+{
+    const std::string geracao = id_da_correcao(id, versao_embutida);
+    if (geracao.empty())
+        return {};
+    const std::vector<int> e = numeros(versao_embutida), b = numeros(versao_atual(raiz, geracao));
+    if (b.size() != 3 || b[0] != e[0] || b[1] != e[1] || b[2] <= e[2])
+        return {};
+    return dir_atual(raiz, geracao);
 }
 
 std::string dir_atual(const std::string& raiz, const std::string& id)

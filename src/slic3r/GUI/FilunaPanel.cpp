@@ -3,6 +3,7 @@
 #include <ctime>
 #include "FilunaAtualizacao.hpp"
 #include "slic3r/Filuna/FilunaRecursos.hpp"
+#include "slic3r/Filuna/FilunaVersoes.hpp"
 #include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaDispositivos.hpp"
@@ -470,12 +471,16 @@ FilunaPanel::FilunaPanel(wxWindow* parent, const std::string& page) : wxPanel(pa
 {
     SetBackgroundColour(wxColour(0xED, 0xEB, 0xE7));
     FilunaDispositivos::monitor_iniciar(); // vigia das impressoras: avisos e estado para a conta, com qualquer aba aberta
-    // Fase 7: páginas atualizadas pelo servidor (recurso "telas") valem sobre as embutidas no instalador.
+    // Fase 7: correção de páginas vinda do servidor (recurso "telas" da geração deste programa, no catálogo assinado)
+    // vale sobre as embutidas quando é mais nova.
     boost::filesystem::path base = boost::filesystem::path(resources_dir()) / "web" / "filuna";
     const std::string atualizadas =
-        Filuna::Recursos::dir_atual((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(), "telas");
-    if (!atualizadas.empty() && boost::filesystem::exists(boost::filesystem::path(atualizadas) / page))
+        Filuna::Recursos::dir_da_correcao((boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(), "telas",
+                                          Filuna::versao_embutida("telas"));
+    if (!atualizadas.empty() && boost::filesystem::exists(boost::filesystem::path(atualizadas) / page)) {
         base = atualizadas;
+        BOOST_LOG_TRIVIAL(info) << "Filuna: tela " << page << " vem da correção do servidor: " << atualizadas;
+    }
     m_url = file_url_from_path(base / page);
     auto* sizer = new wxBoxSizer(wxVERTICAL);
     SetSizer(sizer);
