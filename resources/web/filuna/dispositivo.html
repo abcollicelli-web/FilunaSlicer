@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dispositivo</title>
 <link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="casa.css">
 <style>
 .head{display:flex;align-items:flex-start;padding:8px 32px 18px;gap:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .hr{margin-left:auto;display:flex;align-items:center;gap:12px;padding-top:6px;flex-wrap:wrap}
@@ -108,11 +109,12 @@
 <script src="ponte.js"></script>
 <script src="mpegts.js"></script>
 <script src="camera-conta.js"></script>
+<script src="casa.js"></script>
 <script>
 // Fluxo do Dispositivo: sem impressora → configuração (DEV-01); com impressoras → galeria de unidades (DEV-02);
 // ao abrir uma unidade → a tela aprovada (02-dispositivo). As impressoras cadastradas neste computador aparecem
 // mesmo sem internet; a leitura da Farm (estado, trabalho, slots) entra quando a conta está conectada.
-var estado = { vista: "lista", filtro: "todas", busca: "", unidades: [], imps: [], bobinas: [], locais: [], sel: null, local: null, confirmar: null, vivas: [], assist: null };
+var estado = { vista: "lista", filtro: "todas", busca: "", unidades: [], imps: [], bobinas: [], locais: [], sel: null, local: null, confirmar: null, vivas: [], assist: null, cat: catSalva() };
 var NOMES = { livre: "Livre", imprimindo: "Imprimindo", pausada: "Pausada", limpar_mesa: "Limpar a mesa", erro: "Com erro", offline: "Desconectada", falhou: "Falhou" };
 var TONS = { livre: "ok", imprimindo: "rosa", limpar_mesa: "rosa", pausada: "alerta", erro: "alerta", falhou: "alerta" };
 var E = Filuna.esc;
@@ -188,18 +190,20 @@ function configurar(app) {
 		'<div class="p"><b>Verificar</b><span>As capacidades são observadas antes de liberar comandos.</span></div>' +
 		'<button class="btn primario" id="adicionar">+ Conectar nova impressora</button></div></div></div>';
 	app.querySelector("#adicionar").onclick = abrirAssistente;
+	poeCats(app);
 }
 
 function galeria(app) {
 	var f = estado.filtro, q = estado.busca.toLowerCase();
-	var vis = estado.unidades.filter(function (u) {
+	var base = unidadesDe("filamento");
+	var vis = base.filter(function (u) {
 		var l = leitura(u);
 		if (f == "disp" && !l.livre) return false;
 		if (f == "sem" && l.ok) return false;
 		return !q || (u.nome + " " + u.modelo).toLowerCase().indexOf(q) >= 0;
 	});
-	app.innerHTML = '<div class="pg"><div class="topo entre"><div><div class="h1">Lista de unidades</div><div class="sub">' + estado.unidades.length +
-		(estado.unidades.length == 1 ? " impressora cadastrada" : " impressoras cadastradas") + (estado.semLeitura ? " · sem conexão, mostrando o último estado guardado" : "") + '</div></div>' +
+	app.innerHTML = '<div class="pg"><div class="topo entre"><div><div class="h1">Impressoras de filamento</div><div class="sub">' + base.length +
+		(base.length == 1 ? " impressora cadastrada" : " impressoras cadastradas") + (estado.semLeitura ? " · sem conexão, mostrando o último estado guardado" : "") + '</div></div>' +
 		'<button class="btn primario" id="adicionar">+ Conectar nova impressora</button></div>' +
 		'<div class="filtros"><div class="campo"><label>Buscar unidade</label><input type="text" id="busca" placeholder="Nome, modelo ou identificador" value="' + E(estado.busca) + '"></div>' +
 		[["todas", "Todas"], ["disp", "Disponíveis"], ["sem", "Sem conexão"]].map(function (c) { return '<button class="chip' + (c[0] == f ? " on" : "") + '" data-f="' + c[0] + '">' + c[1] + "</button>"; }).join("") + "</div>" +
@@ -218,15 +222,64 @@ function galeria(app) {
 	var b = app.querySelector("#busca"); b.oninput = function () { estado.busca = b.value; var pos = b.selectionStart; galeria(app); var nb = app.querySelector("#busca"); nb.focus(); nb.setSelectionRange(pos, pos); };
 	app.querySelectorAll("[data-f]").forEach(function (x) { x.onclick = function () { estado.filtro = x.dataset.f; galeria(app); }; });
 	app.querySelectorAll("[data-u]").forEach(function (x) { x.onclick = function () { estado.sel = x.dataset.u; estado.vista = "unidade"; estado.confirmar = null; estado.msg = ""; estado.pedeCodigo = false; estado.selecionando = null; desenhar(); }; });
+	poeCats(app);
+}
+
+// ---- Categorias do topo: impressoras de filamento, impressoras de resina e Casa (Filuna Home) ----
+var CATS = [["filamento", "Impressoras de filamento", '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5v6M12 14.5v6"/>'],
+	["resina", "Impressoras de resina", '<path d="M9 3.5h6"/><path d="M10 3.5v4l-4 6.5a3.5 3.5 0 0 0 3 5.5h6a3.5 3.5 0 0 0 3-5.5l-4-6.5v-4"/><path d="M7.5 14h9"/>'],
+	["casa", "Casa · Filuna Home", '<path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><circle cx="12" cy="14.5" r="2"/>']];
+var RESINA_RE = /halot|photon|\bmars\b|saturn|jupiter|sonic mini|sonic mighty|uniformation|phrozen|\bresina\b|\bmsla\b|\bsla\b|form ?[234]\b/i;
+function catSalva() { try { var c = localStorage.getItem("fl.cat"); return c == "resina" || c == "casa" ? c : "filamento"; } catch (e) { return "filamento"; } }
+// A tecnologia vem do perfil da impressora cadastrada; a da Farm e a conectada pelo assistente vão pelo nome do modelo.
+function tecnologiaDe(u) { if (u.local && u.local.tecnologia) return u.local.tecnologia; return RESINA_RE.test((u.nome || "") + " " + (u.modelo || "")) ? "resina" : "filamento"; }
+function unidadesDe(t) { return estado.unidades.filter(function (u) { return tecnologiaDe(u) == t; }); }
+function resinaAtual() { return estado.local && estado.local.tecnologia == "resina" ? estado.local : null; }
+function barraCats() {
+	var n = { filamento: unidadesDe("filamento").length, resina: unidadesDe("resina").length || (resinaAtual() ? 1 : 0) };
+	return '<div class="cats">' + CATS.map(function (c) {
+		return '<button class="cat' + (estado.cat == c[0] ? " on" : "") + '" data-cat="' + c[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + c[2] + "</svg>" + c[1] +
+			(n[c[0]] != null ? " <span>" + n[c[0]] + "</span>" : "") + "</button>";
+	}).join("") + "</div>";
+}
+function ligarCats(app) {
+	app.querySelectorAll("[data-cat]").forEach(function (b) {
+		b.onclick = function () { estado.cat = b.dataset.cat; try { localStorage.setItem("fl.cat", estado.cat); } catch (e) {} estado.vista = "lista"; desenhar(); };
+	});
+}
+function poeCats(app) { app.insertAdjacentHTML("afterbegin", barraCats()); ligarCats(app); }
+
+function galeriaResina(app) {
+	var lista = unidadesDe("resina"), atual = resinaAtual();
+	var cards = lista.map(function (u) {
+		var perfis = (u.local && u.local.perfis) || [];
+		return '<div class="un">' + (u.foto ? '<div class="ft"><img src="' + E(u.foto) + '" alt=""></div>' : "") + '<div class="n">' + E(u.nome) + '</div><div class="st">' + E(perfis[0] || u.modelo || "") +
+			'</div><div class="st">' + (u.local && u.local.endereco ? "Na rede: " + E(u.local.endereco) : "Envio por pendrive") + "</div></div>";
+	});
+	if (atual && !lista.some(function (u) { return u.nome == atual.impressora || mesmoModelo(u.modelo, atual.modelo); }))
+		cards.unshift('<div class="un"><div class="n">' + E(atual.impressora) + '<span class="pillv on">em uso</span></div><div class="st">Escolhida na Preparação</div><div class="st">Arquivo ' +
+			E(atual.arquivo ? "." + String(atual.arquivo).toLowerCase() : "da resina") + " · envio por pendrive</div></div>");
+	app.innerHTML = '<div class="pg"><div class="topo"><div class="h1">Impressoras de resina</div><div class="sub">' +
+		(cards.length ? cards.length + (cards.length == 1 ? " impressora de resina" : " impressoras de resina") : "Nenhuma impressora de resina ainda") + "</div></div>" +
+		(cards.length ? '<div class="galeria">' + cards.join("") + "</div>"
+			: '<div class="vazio">Escolha a impressora de resina na Preparação, em Selecionar impressora (por exemplo, Creality HALOT R6). Ela aparece aqui com o tipo de arquivo e o jeito de enviar.</div>') +
+		'<div class="nota">Estas impressoras de resina recebem o arquivo fatiado por pendrive: na Preparação, fatie e use Exportar.</div></div>';
+	poeCats(app);
 }
 
 function desenhar() {
 	var app = document.getElementById("app");
 	if (estado.vista == "assistente") { assistente(app); return; }
-	if (!estado.unidades.length) { estado.vista = "lista"; configurar(app); return; }
 	var u = estado.unidades.filter(function (x) { return x.id == estado.sel; })[0];
-	if (estado.vista != "unidade" || !u) { estado.vista = "lista"; galeria(app); return; }
-	unidade(app, u);
+	if (estado.vista == "unidade" && u) { unidade(app, u); return; }
+	estado.vista = "lista";
+	if (estado.cat == "casa") {
+		FilunaCasa.desenhar(app, barraCats(), ligarCats, estado.unidades.map(function (x) { return { nome: x.nome, modelo: x.modelo, tecnologia: tecnologiaDe(x), viva: x.viva }; }));
+		return;
+	}
+	if (estado.cat == "resina") { galeriaResina(app); return; }
+	if (!unidadesDe("filamento").length) { configurar(app); return; }
+	galeria(app);
 }
 
 function unidade(app, u) {

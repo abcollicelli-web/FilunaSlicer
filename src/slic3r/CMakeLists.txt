@@ -521,6 +521,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/FilunaImpressao.hpp
     GUI/FilunaManutencao.hpp
     GUI/FilunaDispositivos.cpp
+    GUI/FilunaCasa.cpp
+    GUI/FilunaCasa.hpp
     GUI/FilunaAoVivo.cpp
     GUI/FilunaAoVivo.hpp
     GUI/FilunaDispositivos.hpp

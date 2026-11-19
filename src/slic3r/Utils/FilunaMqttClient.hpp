@@ -23,7 +23,7 @@ std::string encode_remaining_length(std::size_t n);
 std::string encode_string(const std::string& s);
 std::string connect_packet(const std::string& client_id, const std::string& user, const std::string& password, std::uint16_t keepalive_s);
 std::string subscribe_packet(std::uint16_t packet_id, const std::string& topic);
-std::string publish_packet(const std::string& topic, const std::string& payload);
+std::string publish_packet(const std::string& topic, const std::string& payload, bool retain = false);
 // Lê um pacote completo do início de 'buf'. Devolve false se ainda faltam bytes.
 bool        decode_packet(const std::string& buf, std::uint8_t& type_flags, std::string& body, std::size_t& consumed);
 bool        decode_publish(std::uint8_t type_flags, const std::string& body, std::string& topic, std::string& payload);
@@ -55,7 +55,7 @@ public:
     // Conecta (bloqueia até CONNACK ou erro), assina 'subscribe_topics' e inicia a leitura.
     bool connect(const Options& opt, const std::vector<std::string>& subscribe_topics, MessageFn on_message, ClosedFn on_closed,
                  std::string& error);
-    bool publish(const std::string& topic, const std::string& payload);
+    bool publish(const std::string& topic, const std::string& payload, bool retain = false);
     void close();
     bool connected() const { return m_connected.load(); }
 

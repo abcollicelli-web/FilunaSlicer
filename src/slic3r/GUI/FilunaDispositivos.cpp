@@ -1,5 +1,6 @@
 #include <boost/asio.hpp> // no Windows o boost precisa vir antes dos cabeçalhos do wxWidgets
 #include "FilunaDispositivos.hpp"
+#include "FilunaCasa.hpp"
 #include "FilunaAoVivo.hpp"
 
 #include "FilunaAtualizacao.hpp"
@@ -1253,9 +1254,11 @@ void monitor_iniciar()
             erro_antes[dev] = err;
             antes[dev] = est;
         }
-        if (++volta % 3 == 0)
+        if (++volta % 3 == 0) {
             if (AppConfig* cfg = wxGetApp().app_config)
                 sincronizar_estado(e, cfg->get("filuna_token"));
+            FilunaCasa::publicar_home_assistant(e); // Filuna Home: impressoras no Home Assistant, se ligado
+        }
     });
     vigia->Start(10000);
 }
