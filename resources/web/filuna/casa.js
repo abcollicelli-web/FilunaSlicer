@@ -132,7 +132,7 @@ var FilunaCasa = (function () {
 			if (!itens.length) return;
 			h += '<section class="fh-grupo"><h2>' + svg(g[0]) + E(g[1]) + " <span>" + itens.length + '</span></h2><div class="fh-grade">' + itens.map(function (a) {
 				return '<button class="fh-ap" data-id="' + E(a.id) + '" data-estado="' + E(a.estado) + '"><span class="fh-ico">' + svg(g[0]) + '</span><span class="fh-ap-txt"><b>' + E(a.nome) +
-					"</b><small>" + E([a.marca, a.modelo].filter(Boolean).join(" · ")) + (a.ip ? " · " + E(a.ip) : "") + '</small></span><span class="fh-estado">' + E(ESTADOS[a.estado] || a.estado) + "</span></button>";
+					"</b><small>" + E(rotulo(a)) + '</small><span class="fh-estado">' + E(ESTADOS[a.estado] || a.estado) + "</span></span></button>";
 			}).join("") + "</div></section>";
 		});
 		if (!lista.length && !st.procurando) h += '<div class="fh-vazio">Nenhum aparelho respondeu. Confira se o computador está na mesma rede da casa (não na rede de visitantes) e toque em Procurar de novo.</div>';
@@ -156,6 +156,13 @@ var FilunaCasa = (function () {
 			var novo = st.aparelhos.filter(function (x) { return x.chave == a.chave; })[0];
 			if (novo) abrir(novo.id);
 		});
+	}
+
+	// "Apollo Premium4K TV · Apollo Premium4K TV": a marca já vem no modelo
+	function rotulo(a, semIp) {
+		var m = a.marca || "", mo = a.modelo || "";
+		var partes = mo && m && mo.toLowerCase().indexOf(m.toLowerCase()) == 0 ? [mo] : [m, mo];
+		return partes.filter(Boolean).concat(a.ip && !semIp ? [a.ip] : []).join(" · ");
 	}
 
 	// ---------------------------------------------------------------- janela de configuração
@@ -197,23 +204,27 @@ var FilunaCasa = (function () {
 
 	function desenharJanela() {
 		var j = st.janela, a = j.a, ps = passos(a), nome = ps[j.passo];
-		var f = document.getElementById("fh-fundo");
-		if (!f) { f = document.createElement("div"); f.id = "fh-fundo"; f.className = "fh-fundo"; document.body.appendChild(f); f.onclick = function (e) { if (e.target == f) fechar(); }; }
 		var ultimo = j.passo == ps.length - 1;
-		f.innerHTML = '<div class="fh-j"><div class="fh-j-cab"><span class="fh-ico">' + svg(grupo(a)) + '</span><div><h3>' + E(a.nome) + "</h3><p>" + E([a.marca, a.modelo].filter(Boolean).join(" · ")) +
+		var html = '<div class="fh-j"><div class="fh-j-cab"><span class="fh-ico">' + svg(grupo(a)) + '</span><div><h3>' + E(a.nome) + "</h3><p>" + E(rotulo(a, true)) +
 			'</p></div><button class="fh-fechar" id="fh-x" aria-label="Fechar">×</button></div>' +
 			(ps.length > 1 ? '<ol class="fh-passos">' + ps.map(function (p, i) { return '<li class="' + (i == j.passo ? "on" : i < j.passo ? "feito" : "") + '"><b>' + (i + 1) + "</b>" + E(p) + "</li>"; }).join("") + "</ol>" : "") +
 			'<div class="fh-j-corpo">' + conteudo(a, nome, j.cfg) + '</div><div class="fh-j-rod"><button class="btn" id="fh-voltar"' + (j.passo ? "" : ' style="visibility:hidden"') + '>Voltar</button>' +
 			'<button class="btn primario" id="fh-avancar">' + (ps.length == 1 ? "Entendi" : ultimo ? "Concluir" : "Continuar") + "</button></div></div>";
+		var f = document.getElementById("fh-fundo");
+		if (!f) { f = document.createElement("div"); f.id = "fh-fundo"; f.className = "fh-fundo"; document.body.appendChild(f); f.onclick = function (e) { if (e.target == f) fechar(); }; }
+		f.innerHTML = html;
 		f.querySelector("#fh-x").onclick = fechar;
 		f.querySelector("#fh-voltar").onclick = function () { if (j.passo) { j.passo--; desenharJanela(); } };
 		f.querySelector("#fh-avancar").onclick = function () { if (ps.length == 1) fechar(); else if (!ultimo) { j.passo++; desenharJanela(); } else concluir(); };
 		ligarCampos(f, a, j.cfg);
 	}
 
+	// a conta pode ter guardado os fatos como objeto {rótulo: valor} (versão anterior do Slicer)
+	function paresDe(f) { return Array.isArray(f) ? f : f && typeof f == "object" ? Object.keys(f).map(function (k) { return [k, f[k]]; }) : []; }
 	function fatos(a) {
-		return '<dl class="fh-fatos">' + (a.fatos || []).map(function (x) { return "<div><dt>" + E(x[0]) + "</dt><dd>" + E(x[1]) + "</dd></div>"; }).join("") +
-			(a.ip ? "<div><dt>Endereço na rede</dt><dd>" + E(a.ip) + "</dd></div>" : "") + "<div><dt>Encontrado por</dt><dd>" + E(a.via || "") + "</dd></div></dl>";
+		a.fatos = paresDe(a.fatos);
+		return '<dl class="fh-fatos">' + a.fatos.map(function (x) { return "<div><dt>" + E(x[0]) + "</dt><dd>" + E(x[1]) + "</dd></div>"; }).join("") +
+			(a.ip && !a.fatos.some(function (f) { return f[1] == a.ip; }) ? "<div><dt>Endereço na rede</dt><dd>" + E(a.ip) + "</dd></div>" : "") + "<div><dt>Encontrado por</dt><dd>" + E(a.via || "") + "</dd></div></dl>";
 	}
 	function chave(nome, rotulo, marcado, dica) {
 		return '<label class="fh-chave"><span><b>' + E(rotulo) + "</b>" + (dica ? "<small>" + E(dica) + "</small>" : "") + '</span><input type="checkbox" data-cfg="' + nome + '"' + (marcado ? " checked" : "") + "></label>";
