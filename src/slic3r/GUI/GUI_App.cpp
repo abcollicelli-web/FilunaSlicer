@@ -7101,6 +7101,9 @@ std::string GUI_App::format_display_version()
     if (!version_display.empty()) return version_display;
 
     version_display = SoftFever_VERSION;
+    // Filuna: o "-dev" é do Orca (ramo de origem); na abertura e no Sobre o cliente vê só o número.
+    if (const size_t dev = version_display.find("-dev"); dev != std::string::npos)
+        version_display.erase(dev);
     return version_display;
 }
 
