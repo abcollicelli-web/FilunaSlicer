@@ -742,6 +742,10 @@ static void correcao_da_loja_iniciar()
                 if (versao > 0)
                     filuna_correcao::marcar_recusada(prog, versao);
                 diagnostico("correcao.queda", "a correção " + std::to_string(versao) + " não ficou de pé em duas aberturas e foi retirada");
+            } else if (GetFileAttributesW((pasta + L"correcao.txt").c_str()) == INVALID_FILE_ATTRIBUTES) {
+                // sobra de uma correção retirada enquanto a DLL estava em uso (visto no teste do voo 2.5.82):
+                // agora o programa roda a DLL da loja e os 120 MB podem sair da pasta
+                filuna_correcao::retirar(prog);
             }
         }
         for (;;) {
