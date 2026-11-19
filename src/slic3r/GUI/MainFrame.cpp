@@ -1966,6 +1966,10 @@ void MainFrame::fit_tab_labels()
         // ajustada depois deste ponto.
         const int largura = barra->GetParent()->GetClientSize().GetWidth();
         wxWindowUpdateLocker sem_piscar(barra);
+        // A lista de sobra muda com a aba escolhida: quem saiu dela numa medida anterior volta a aparecer.
+        for (size_t i = 0; i < m_tabpanel->GetPageCount(); ++i)
+            if (std::find(fora.begin(), fora.end(), int(i)) == fora.end() && std::find(sobra.begin(), sobra.end(), i) == sobra.end())
+                barra->ShowPageButton(i, true);
         for (int nivel = 0; nivel <= ultimo; ++nivel) {
             barra->SetFilunaDensidade(nivel >= 5 ? 3 : std::min(nivel, 2));
             if (m_filuna_ajuda_btn != nullptr) {
