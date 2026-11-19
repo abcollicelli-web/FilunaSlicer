@@ -6,6 +6,7 @@
 #include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaDispositivos.hpp"
+#include "FilunaCasa.hpp"
 #include "FilunaManutencao.hpp"
 #include "FilunaImpressao.hpp"
 
@@ -128,6 +129,9 @@ json printer_info()
         return r;
     const Preset& printer = bundle->printers.get_edited_preset();
     r["impressora"] = printer.label(false);
+    r["tecnologia"] = printer.printer_technology() == ptSLA ? "resina" : "filamento";
+    if (printer.printer_technology() == ptSLA && printer.config.has("sla_archive_format"))
+        r["arquivo"] = printer.config.opt_string("sla_archive_format");
     if (const auto* model = printer.config.option<ConfigOptionString>("printer_model"))
         r["modelo"] = model->value;
     r["bico"] = first_value<ConfigOptionFloats>(printer.config, "nozzle_diameter");
@@ -802,7 +806,14 @@ json FilunaPanel::handle(const std::string& action, const json& d)
                 for (const std::string& name : printer.preset_names)
                     presets.push_back(name);
                 const std::string host = printer.config.has("print_host") ? printer.config.opt_string("print_host") : std::string();
-                list.push_back({{"nome", printer.name}, {"perfis", presets}, {"endereco", host}});
+                // filamento ou resina, pela tecnologia do primeiro perfil (a tela Dispositivo separa as duas)
+                std::string tecnologia = "filamento";
+                for (const std::string& name : printer.preset_names)
+                    if (const Preset* p = bundle->printers.find_preset(name)) {
+                        tecnologia = p->printer_technology() == ptSLA ? "resina" : "filamento";
+                        break;
+                    }
+                list.push_back({{"nome", printer.name}, {"perfis", presets}, {"endereco", host}, {"tecnologia", tecnologia}});
             }
         return {{"impressoras", list}};
     }
@@ -887,6 +898,13 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return FD::preparar(d.value("fabricante", std::string()), d.value("modelo", std::string()));
     if (action == "dispositivos.descobertas")
         return FD::descobertas();
+    // ---- Filuna Home (Dispositivo › Casa): aparelhos da rede da casa ----
+    if (action == "casa.procurar")
+        return FilunaCasa::procurar();
+    if (action == "casa.resultado")
+        return FilunaCasa::resultado();
+    if (action == "casa.acao")
+        return FilunaCasa::acao(d);
     if (action == "dispositivos.conectar")
         return FD::conectar(d.value("dev_id", std::string()), d.value("codigo", std::string()));
     if (action == "dispositivos.conectar_ip")

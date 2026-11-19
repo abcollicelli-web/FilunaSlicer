@@ -79,7 +79,10 @@ std::string subscribe_packet(std::uint16_t packet_id, const std::string& topic)
     return packet(0x82, body);
 }
 
-std::string publish_packet(const std::string& topic, const std::string& payload) { return packet(0x30, encode_string(topic) + payload); }
+std::string publish_packet(const std::string& topic, const std::string& payload, bool retain)
+{
+    return packet(retain ? 0x31 : 0x30, encode_string(topic) + payload);
+}
 
 bool decode_packet(const std::string& buf, std::uint8_t& type_flags, std::string& body, std::size_t& consumed)
 {
@@ -284,11 +287,11 @@ bool MqttClient::connect(const Options& opt, const std::vector<std::string>& top
     return true;
 }
 
-bool MqttClient::publish(const std::string& topic, const std::string& payload)
+bool MqttClient::publish(const std::string& topic, const std::string& payload, bool retain)
 {
     if (!m_connected || !m)
         return false;
-    net::post(m->ioc, [impl = m.get(), pkt = mqtt::publish_packet(topic, payload)]() mutable { impl->send(std::move(pkt)); });
+    net::post(m->ioc, [impl = m.get(), pkt = mqtt::publish_packet(topic, payload, retain)]() mutable { impl->send(std::move(pkt)); });
     return true;
 }
 
