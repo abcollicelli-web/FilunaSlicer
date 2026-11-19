@@ -92,6 +92,17 @@ struct CorrecaoPerfis
     std::string sha256, url, notas;
 };
 
+// Conta em uso, para o servidor escolher o canal. Na abertura a busca pode rodar antes de a conta ser carregada
+// pelo FilunaAtualizacao; aí vale a que ficou guardada nas preferências.
+static void com_conta_filuna(Http &pedido)
+{
+    std::string conta = GUI::FilunaAtualizacao::instancia().conta();
+    if (conta.empty())
+        conta = GUI::wxGetApp().app_config->get("filuna_token");
+    if (!conta.empty())
+        pedido.header("Authorization", "Bearer " + conta);
+}
+
 // Devolve a correção quando o documento está assinado e é deste fabricante; vazio (com o motivo no registro) se não.
 static std::optional<CorrecaoPerfis> correcao_assinada(const std::string &vendor_id, const std::string &documento,
                                                         const std::string &assinatura)
@@ -346,13 +357,9 @@ void PresetUpdater::priv::set_download_prefs(AppConfig *app_config)
 {
 	version_check_url = app_config->version_check_url();
 
-	auto profile_update_url = app_config->profile_update_url();
-	// Dev builds keep the profiles from their own source tree; an over-the-air bundle would replace them.
-	const bool dev_build = boost::algorithm::icontains(std::string(SoftFever_VERSION), "dev");
-	if (!profile_update_url.empty() && !dev_build)
-		enabled_config_update = true;
-	else
-		enabled_config_update = false;
+	// Filuna: a correção de perfis só entra com a assinatura da Filuna e versão maior que a instalada, então vale em
+	// toda compilação. No Orca o "-dev" de SoftFever_VERSION desligava esta busca, e o Filuna Slicer sai com ele.
+	enabled_config_update = !app_config->profile_update_url().empty();
 }
 
 //BBS: refine the Preset Updater logic
@@ -701,8 +708,7 @@ void PresetUpdater::priv::sync_vendor_config(const std::string& vendor_id)
     BOOST_LOG_TRIVIAL(info) << "[Orca Updater] fetching vendor update status from " << url;
 
     Http consulta = Http::get(url);
-    if (const std::string conta = GUI::FilunaAtualizacao::instancia().conta(); !conta.empty())
-        consulta.header("Authorization", "Bearer " + conta);
+    com_conta_filuna(consulta);
     consulta.timeout_connect(5)
         .on_progress(check_cancel)
         .on_error([&vendor_id](std::string body, std::string error, unsigned http_status) {
@@ -749,8 +755,9 @@ void PresetUpdater::priv::sync_vendor_config(const std::string& vendor_id)
     fs::path download_file = cache_path / (vendor_id + TMP_EXTENSION);
     bool download_ok = false;
 
-    Http::get(download_url_str)
-        .timeout_connect(5)
+    Http baixar = Http::get(download_url_str);
+    com_conta_filuna(baixar);
+    baixar.timeout_connect(5)
         .on_progress(check_cancel)
         .on_error([&vendor_id](std::string body, std::string error, unsigned http_status) {
             BOOST_LOG_TRIVIAL(warning) << "[Orca Updater] download failed for " << vendor_id << ": " << error;
