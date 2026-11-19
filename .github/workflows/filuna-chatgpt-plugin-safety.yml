@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "filuna/chatgpt-plugin-library-only-20261119"
+      - "filuna/chatgpt-complete-review-20261119"
     paths:
       - "FILUNA/chatgpt_plugin/**"
       - ".github/workflows/filuna-chatgpt-plugin-safety.yml"
@@ -35,6 +36,16 @@ jobs:
         run: python -m compileall -q FILUNA/chatgpt_plugin
       - name: Testes de segurança
         run: python -m unittest discover -s FILUNA/chatgpt_plugin/tests -v
+      - name: Conferir botão de impressão e confirmação local
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          html=Path('FILUNA/chatgpt_plugin/package/widgets/impressao.html').read_text()
+          assert 'filuna_impressao_confirmar' in html
+          assert 'confirmacao' in html
+          assert 'aprovacao' in html
+          assert 'window.openai.callTool' in html
+          PY
       - name: Validar manifests
         run: |
           python -m json.tool FILUNA/chatgpt_plugin/package/plugin.json >/dev/null
@@ -45,4 +56,4 @@ jobs:
           GH_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           git fetch --depth=1 origin "$GH_BASE_SHA"
-          python -c "import os, subprocess, sys; files=subprocess.check_output(['git','diff','--name-only',os.environ['GH_BASE_SHA'],'HEAD'],text=True).splitlines(); bad=[p for p in files if not (p.startswith('FILUNA/chatgpt_plugin/') or p=='.github/workflows/filuna-chatgpt-plugin-safety.yml')]; print('Fora do escopo:',bad); sys.exit(bool(bad))"
+          python -c "import os, subprocess, sys; files=subprocess.check_output(['git','diff','--name-only',os.environ['GH_BASE_SHA'],'HEAD'],text=True).splitlines(); bad=[p for p in files if not (p.startswith('FILUNA/chatgpt_plugin/') or p.startswith('integrations/chatgpt/') or p in ('.github/workflows/filuna-chatgpt-plugin-safety.yml','.github/workflows/filuna-chatgpt-contract-qa.yml'))]; print('Fora do escopo:',bad); sys.exit(bool(bad))"

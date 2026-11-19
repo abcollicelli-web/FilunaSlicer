@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import os
 import time
+from pathlib import Path
 
 from pydantic import AnyHttpUrl
 from mcp.server.auth.provider import AccessToken, TokenVerifier
@@ -139,7 +140,7 @@ def make_server() -> FastMCP:
         """Consultar diagnósticos sanitizados de uma impressora da conta."""
         return await call("filuna_impressora_erros", {"impressora_id": impressora_id})
 
-    @mcp.tool()
+    @mcp.tool(meta={"ui": {"resourceUri": "ui://filuna/impressao.html"}, "openai/widgetAccessible": True})
     async def filuna_impressao_preparar(biblioteca_id: str, impressora_id: str) -> dict:
         """Preparar impressão sem ligar ou iniciar hardware."""
         return await call("filuna_impressao_preparar",
@@ -418,12 +419,17 @@ def make_server() -> FastMCP:
         return await call("filuna_fatiamento_executar",
                           {"recomendacao_id": recomendacao_id, "confirmacao": confirmacao})
 
-    @mcp.tool()
+    @mcp.tool(meta={"ui": {"resourceUri": "ui://filuna/impressao.html"}, "openai/widgetAccessible": True})
     async def filuna_fatiamento_resultado(fatiamento_id: str) -> dict:
         """Consultar status real do fatiamento, massa, tempo, alertas e preparo.
         Nunca entregar arquivos ou G-code ao chat.
         """
         return await call("filuna_fatiamento_resultado", {"fatiamento_id": fatiamento_id})
+
+    @mcp.resource("ui://filuna/impressao.html", mime_type="text/html;profile=mcp-app")
+    def filuna_impressao_widget() -> str:
+        """Controle de revisão do fatiamento e autorização de impressão pelo cliente."""
+        return (Path(__file__).parent / "package" / "widgets" / "impressao.html").read_text(encoding="utf-8")
 
     assert len(OPERATIONS) == 63
     return mcp
