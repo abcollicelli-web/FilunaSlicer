@@ -7736,10 +7736,13 @@ bool Tab::select_preset(
              * So, it is necessary to update list of dependent tabs
              * to the corresponding printer_technology
              */
+            // Filuna: escolher de novo a impressora já escolhida deixa a lista vazia; ler front() nela derrubava o
+            // programa (resina, ao escolher a HALOT pela lista).
             const PrinterTechnology printer_technology = m_presets->get_edited_preset().printer_technology();
-            if (printer_technology == ptFFF && m_dependent_tabs.front() != Preset::Type::TYPE_PRINT)
+            const bool sem_dependentes = m_dependent_tabs.empty();
+            if (printer_technology == ptFFF && (sem_dependentes || m_dependent_tabs.front() != Preset::Type::TYPE_PRINT))
                 m_dependent_tabs = { Preset::Type::TYPE_PRINT, Preset::Type::TYPE_FILAMENT };
-            else if (printer_technology == ptSLA && m_dependent_tabs.front() != Preset::Type::TYPE_SLA_PRINT)
+            else if (printer_technology == ptSLA && (sem_dependentes || m_dependent_tabs.front() != Preset::Type::TYPE_SLA_PRINT))
                 m_dependent_tabs = { Preset::Type::TYPE_SLA_PRINT, Preset::Type::TYPE_SLA_MATERIAL };
         }
 
