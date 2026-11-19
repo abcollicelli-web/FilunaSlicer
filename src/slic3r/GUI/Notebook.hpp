@@ -51,7 +51,7 @@ public:
     void SetFilunaNavbar(bool on) { m_filuna_navbar = on; }
     bool IsFilunaNavbar() const { return m_filuna_navbar; }
     // Filuna: aperta as abas quando a barra não cabe na janela.
-    // 0 = desenho aprovado, 1 = menos margem entre as abas, 2 = margem mínima e letra um pouco menor.
+    // 0 = desenho aprovado, 1 = menos margem entre as abas, 2 = margem pequena e letra um pouco menor, 3 = a mais apertada.
     void SetFilunaDensidade(int nivel);
     wxString GetPageText(size_t n) const;
     // ORCA: the full page label, unaffected by SetCompact() blanking the button text.

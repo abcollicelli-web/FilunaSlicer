@@ -1515,6 +1515,7 @@ void MainFrame::show_option(bool show)
                 m_salvar_btn->Hide();
             }
             Layout();
+            fit_tab_labels(); // Filuna: sem os botões de ação sobra espaço na barra
         }
     } else {
         if (!m_slice_btn->IsShown()) {
@@ -1527,6 +1528,7 @@ void MainFrame::show_option(bool show)
                 m_salvar_btn->Show();
             }
             Layout();
+            fit_tab_labels(); // Filuna: com os botões de ação a barra pode precisar apertar
         }
     }
 }
@@ -1562,6 +1564,12 @@ void MainFrame::init_tabpanel() {
     m_tabpanel->GetBtnsListCtrl()->SetFilunaNavbar(true);
 #ifndef __APPLE__
     m_tabpanel->MoveTabsInto(m_topbar->GetTabsHost());
+    // Filuna: o Windows só entrega a largura nova à barra depois que o tratamento de tamanho da janela termina. Medir
+    // aqui, quando ela chega de fato, é o que impede o botão Fatiar/Imprimir de ficar cortado ao encolher a janela.
+    m_topbar->GetTabsHost()->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
+        e.Skip();
+        fit_tab_labels();
+    });
 #ifdef __WXMSW__
     // The free space of the bar still moves and maximizes the window, like any title bar.
     m_tabpanel->GetBtnsListCtrl()->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent&) {
@@ -1641,6 +1649,9 @@ void MainFrame::init_tabpanel() {
         if (m_design_page != nullptr && panel == m_design_page)
             DesignPanel::ensure()->update_undo_redo_buttons();
 #endif
+
+        if (panel != m_plater)
+            fit_tab_labels(); // Filuna: a aba escolhida nunca fica escondida numa barra apertada
 
         if (panel)
             panel->SetFocus();
@@ -1928,19 +1939,35 @@ void MainFrame::fit_tab_labels()
     // Paramétricos/Ferramentas e Modelos 3D abrem pelo menu da tela inicial (ordem do dono, 15/11/2026); a Farm também
     // (16/11/2026: com Novo e Salvar na barra, o botão Fatiar ficava escondido)
     // MakerWorld também abre pelo menu da tela inicial (ordem do dono, 17/11/2026)
+    std::vector<int> fora; // páginas que não têm botão na barra
     for (const char* id : {TAB_ID_MONITOR, TAB_ID_MONITOR_WEB, TAB_ID_MULTI_DEVICE, TAB_ID_CALIBRATION, TAB_ID_FILUNA_STORE, TAB_ID_FILUNA_PARAM,
                            TAB_ID_FILUNA_MODELOS, TAB_ID_FILUNA_FARM, TAB_ID_FILUNA_MAKERWORLD})
-        if (const int idx = m_tabpanel->FindPageByName(id); idx != wxNOT_FOUND)
+        if (const int idx = m_tabpanel->FindPageByName(id); idx != wxNOT_FOUND) {
             m_tabpanel->GetBtnsListCtrl()->ShowPageButton(size_t(idx), false);
+            fora.push_back(idx);
+        }
 
     if (auto* barra = m_tabpanel->GetBtnsListCtrl(); barra->IsFilunaNavbar()) {
         // Filuna: as abas são só texto e não têm modo ícone. Quando a barra não cabe na janela, aperta por etapas até
-        // caber, em vez de deixar o botão Fatiar/Imprimir e a engrenagem cortados na borda (pedido do dono, 19/11/2026):
+        // caber, em vez de deixar o botão Fatiar/Imprimir cortado na borda (pedido do dono, 19/11/2026):
         // 1 e 2 = abas mais juntas; 3 = sai o "?" (a Autoajuda continua nas Preferências); 4 = saem Novo e Salvar
-        // (continuam no menu do logo). Fatiar/Imprimir, Exportar e a engrenagem ficam sempre.
-        const bool acoes = m_slice_btn != nullptr && m_slice_btn->IsShown(); // Preparação e Visualização
-        for (int nivel = 0; nivel <= 4; ++nivel) {
-            barra->SetFilunaDensidade(std::min(nivel, 2));
+        // (continuam no menu do logo); 5 = letra menor nas abas; 6 = sai a engrenagem (Preferências continua no menu do
+        // logo); de 7 em diante sai uma aba por etapa, da direita para a esquerda. Exportar e Fatiar/Imprimir ficam sempre.
+        const bool acoes     = m_slice_btn != nullptr && m_slice_btn->IsShown(); // Preparação e Visualização
+        const int  escolhida = m_tabpanel->GetSelection();
+        // Abas que podem sair no último recurso: nunca a escolhida nem as três primeiras da esquerda.
+        std::vector<size_t> sobra;
+        for (size_t i = m_tabpanel->GetPageCount(); i-- > 0;)
+            if (int(i) != escolhida && std::find(fora.begin(), fora.end(), int(i)) == fora.end())
+                sobra.push_back(i);
+        sobra.resize(sobra.size() > 3 ? sobra.size() - 3 : 0);
+        const int ultimo = 6 + int(sobra.size());
+        // A largura é a da área que hospeda a barra (entre o logo e os botões da janela), não a da barra, que só é
+        // ajustada depois deste ponto.
+        const int largura = barra->GetParent()->GetClientSize().GetWidth();
+        wxWindowUpdateLocker sem_piscar(barra);
+        for (int nivel = 0; nivel <= ultimo; ++nivel) {
+            barra->SetFilunaDensidade(nivel >= 5 ? 3 : std::min(nivel, 2));
             if (m_filuna_ajuda_btn != nullptr) {
                 m_filuna_ajuda_btn->Show(nivel < 3);
                 m_filuna_divisor->Show(nivel < 3);
@@ -1949,8 +1976,11 @@ void MainFrame::fit_tab_labels()
                 m_novo_btn->Show(acoes && nivel < 4);
                 m_salvar_btn->Show(acoes && nivel < 4);
             }
+            if (m_filuna_engrenagem != nullptr)
+                m_filuna_engrenagem->Show(nivel < 6);
+            for (size_t k = 0; k < sobra.size(); ++k)
+                barra->ShowPageButton(sobra[k], nivel < 7 + int(k));
             barra->Layout();
-            const int largura = std::min(barra->GetClientSize().GetWidth(), barra->GetParent()->GetClientSize().GetWidth());
             if (barra->GetSizer()->GetMinSize().GetWidth() <= largura)
                 break;
         }
@@ -2610,6 +2640,7 @@ wxBoxSizer* MainFrame::create_side_tools()
     sizer->Add(FromDIP(12), 0, 0, 0, 0);
     sizer->Add(slice_panel, 0, wxALIGN_CENTER_VERTICAL);
     sizer->Add(FromDIP(18), 0, 0, 0, 0);
+    m_filuna_engrenagem = gear_btn;
     sizer->Add(gear_btn, 0, wxALIGN_CENTER_VERTICAL);
     sizer->Add(FromDIP(8), 0, 0, 0, 0);
 
