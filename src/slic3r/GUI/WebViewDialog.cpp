@@ -6,6 +6,7 @@
 #include "slic3r/GUI/MainFrame.hpp"
 #include "libslic3r_version.h"
 
+#include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
 #include <algorithm>
@@ -18,6 +19,8 @@
 #include <wx/gdicmn.h>
 #include "slic3r/GUI/GUI.hpp"
 #include "libslic3r/Utils.hpp"
+#include "slic3r/Filuna/FilunaRecursos.hpp"
+#include "slic3r/Filuna/FilunaVersoes.hpp"
 #include <wx/log.h>
 #include "libslic3r/Config.hpp"
 #include "slic3r/Utils/NetworkAgent.hpp"
@@ -101,7 +104,17 @@ static json home_page_strings()
 WebViewPanel::WebViewPanel(wxWindow *parent)
         : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
  {
-    m_home_url = file_url_from_path(boost::filesystem::path(resources_dir()) / "web/homepage/index.html");
+    // Filuna: correção da tela Início vinda do servidor (recurso "inicio" da geração deste programa, no catálogo
+    // assinado). O pacote repete a árvore de resources (web/homepage, web/include, images) para os caminhos
+    // relativos da página continuarem valendo.
+    boost::filesystem::path inicio = boost::filesystem::path(resources_dir()) / "web/homepage/index.html";
+    const std::string corrigida = Slic3r::Filuna::Recursos::dir_da_correcao(
+        (boost::filesystem::path(data_dir()) / "filuna" / "recursos").string(), "inicio", Slic3r::Filuna::versao_embutida("inicio"));
+    if (!corrigida.empty() && boost::filesystem::exists(boost::filesystem::path(corrigida) / "web/homepage/index.html")) {
+        inicio = boost::filesystem::path(corrigida) / "web/homepage/index.html";
+        BOOST_LOG_TRIVIAL(info) << "Filuna: tela Início vem da correção do servidor: " << corrigida;
+    }
+    m_home_url = file_url_from_path(inicio);
     wxString strlang = wxGetApp().current_language_code_safe();
     if (strlang != "")
         m_home_url += "?lang=" + strlang;

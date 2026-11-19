@@ -23,6 +23,13 @@ std::string versao_atual(const std::string& raiz, const std::string& id);
 // Pasta da versão em uso ("" quando o ponteiro não existe ou a pasta sumiu).
 std::string dir_atual(const std::string& raiz, const std::string& id);
 
+// Correção, vinda do servidor, de um recurso que já vem dentro do programa (telas, tela Início).
+// O id no catálogo leva a geração do recurso embutido: "telas" 1.3.0 procura "telas-1-3". Assim um programa
+// nunca recebe página feita para outro, e o programa novo não fica preso a uma correção antiga.
+std::string id_da_correcao(const std::string& id, const std::string& versao_embutida);
+// Pasta da correção baixada quando ela é da mesma geração e mais nova que a embutida; "" caso contrário.
+std::string dir_da_correcao(const std::string& raiz, const std::string& id, const std::string& versao_embutida);
+
 // Troca o ponteiro de forma atômica (escreve atual.novo e renomeia) e apaga as versões antigas,
 // guardando a recém-ativada e a imediatamente anterior.
 void ativar(const std::string& raiz, const std::string& id, const std::string& versao);
