@@ -367,3 +367,18 @@ function FlM3dCarregar() {
 	}).catch(function () { /* sem internet: a seção simplesmente não aparece */ });
 }
 $(function () { FlM3dCarregar(); });
+
+/* ---- Rodapé da coluna da esquerda: suporte remoto, aviso de atualização e versão num bloco só ----
+   O link do suporte entra no rodapé (antes ficava solto numa altura fixa e encostava nos outros) e a coluna
+   reserva embaixo a altura real do rodapé, que muda quando o aviso ou o resultado da busca aparecem. */
+function FlRodapeArrumar() {
+	var r = document.getElementById("FlRodape"), s = document.getElementById("FlSupLink");
+	if (!r) return;
+	if (s && s.parentNode !== r) r.insertBefore(s, r.firstChild);
+	document.documentElement.style.setProperty("--fl-rodape-h", r.offsetHeight + "px");
+}
+$(function () {
+	FlRodapeArrumar();
+	var r = document.getElementById("FlRodape");
+	if (r && window.ResizeObserver) new ResizeObserver(FlRodapeArrumar).observe(r);
+});
