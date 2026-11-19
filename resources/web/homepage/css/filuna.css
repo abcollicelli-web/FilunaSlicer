@@ -377,7 +377,7 @@ body, button, input
 /* Destaque do topo da tela inicial (prancha HOME-01) */
 #FlDestaque{margin:6px 28px 6px;padding:26px 30px;border-radius:20px;background:#1E2024;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
 .FlDestTxt span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#E9B8CC;font-weight:700}
-.FlDestTxt b{display:block;font-size:26px;letter-spacing:-.02em;margin:6px 0 4px}
+.FlDestTxt b{display:block;font-size:26px;line-height:1.15;letter-spacing:-.02em;margin:6px 0 4px}
 .FlDestTxt p{margin:0;color:#C9C4BD;font-size:14px}
 .FlDestBot{display:flex;gap:10px;flex-wrap:wrap}
 .FlDestBtn{padding:11px 18px;border-radius:12px;border:1px solid rgba(255,255,255,.28);color:#fff;cursor:pointer;font-weight:600;font-size:14px;text-decoration:none}
