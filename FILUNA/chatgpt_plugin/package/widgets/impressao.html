@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Filuna Slicer — Conferir impressão</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#2c292b;background:#fff;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;padding:14px}
+main{border:1px solid #e9e5e9;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 4px 16px rgba(24,17,24,.04);max-width:560px;margin:auto}
+.header{padding:18px 20px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #f0edf0}
+.brand{width:36px;height:36px;border-radius:11px;background:#1d1a17;display:grid;place-items:center}
+.brand svg{width:29px;height:29px}.header b{font-size:16px;letter-spacing:-.025em}
+.header small{color:#777079;display:block;font-size:12px;margin-top:2px}
+.content{padding:18px 20px}h2{font-size:17px;letter-spacing:-.025em;margin:0 0 8px}
+.note{font-size:13px;line-height:1.5;color:#655f66;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.metric{border:1px solid #f0ecf0;padding:10px 12px;border-radius:12px;background:#fff}
+.metric small{display:block;font-size:11px;color:#78727a;margin-bottom:6px}.metric strong{font-size:14px;overflow-wrap:anywhere}
+.warn{padding:10px 12px;border-radius:10px;background:#fff7ed;font-size:12px;color:#8b551b;line-height:1.45}
+label{display:flex;gap:10px;align-items:flex-start;margin:14px 0;font-size:12px;line-height:1.45;cursor:pointer}
+input[type=checkbox]{accent-color:#7b4bff;margin-top:2px;min-width:16px;min-height:16px}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{border:0;border-radius:11px;padding:12px 8px;font:600 13px inherit;font-family:inherit;cursor:pointer;min-height:44px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.secondary{background:#f2edf9;color:#6435bc}.primary{background:#7b4bff;color:#fff}
+.status{font-size:12px;color:#635b66;margin-top:14px;min-height:30px;line-height:1.4}
+.footer{padding:12px 20px;border-top:1px solid #f0edf0;background:#fffdfd;font-size:11px;color:#898189}
+@media(max-width:330px){.grid,.buttons{grid-template-columns:1fr}}
+</style></head><body><main>
+  <div class="header"><div class="brand" aria-hidden="true"><svg viewBox="0 0 64 64">
+  <rect x="16" y="40" width="32" height="6" rx="3" fill="#E0186B"/>
+  <rect x="19" y="31" width="26" height="6" rx="3" fill="#F04A8C"/>
+  <rect x="22" y="22" width="20" height="6" rx="3" fill="#FF7A1A"/></svg></div>
+  <div><b>Filuna Slicer</b><small>Revisar fatiamento e impressão</small></div></div>
+  <div class="content"><h2 id="titulo">Preparação para impressão</h2>
+  <p class="note">As configurações serão aplicadas pelo Filuna instalado no seu computador. Nenhum arquivo 3D ou G-code é enviado de volta ao chat.</p>
+  <div class="grid">
+    <div class="metric"><small>Impressora</small><strong id="printer">Aguardando dados</strong></div>
+    <div class="metric"><small>Material</small><strong id="material">—</strong></div>
+    <div class="metric"><small>Tempo estimado</small><strong id="tempo">—</strong></div>
+    <div class="metric"><small>Material previsto</small><strong id="peso">—</strong></div>
+  </div>
+  <div class="warn" id="avisos">A impressão só será iniciada após sua confirmação no aplicativo Filuna Windows e a validação de segurança da impressora.</div>
+  <label><input id="aprovacao" type="checkbox" disabled><span>Revisei o perfil, o material, as orientações e os alertas de segurança. Autorizo solicitar a etapa selecionada.</span></label>
+  <div class="buttons"><button class="secondary" type="button" id="fatiar" disabled>Fatiar no Filuna</button><button class="primary" type="button" id="imprimir" disabled>Imprimir</button></div>
+  <div id="status" class="status" aria-live="polite">Aguardando resultado real do Filuna.</div></div>
+  <div class="footer">Confirmar aqui não dispensa autorização local no aplicativo Windows.</div>
+</main><script>
+(function(){
+  "use strict";
+  const out=(window.openai&&window.openai.toolOutput)||{};
+  const txt=(id,value)=>{document.getElementById(id).textContent=(value===null||value===undefined||value==="")?"—":String(value).slice(0,120);};
+  const validId=x=>typeof x==="string"&&/^[A-Za-z0-9_-]{1,100}$/.test(x);
+  const rid=out.recomendacao_id, pid=out.preparo_id;
+  const ready=validId(rid)||validId(pid);
+  txt("printer",out.impressora_id||out.modelo||"Não informada");
+  txt("material",out.material||"Não informado");
+  txt("tempo",out.tempo_estimado_min!=null?out.tempo_estimado_min+" min":"—");
+  txt("peso",out.massa_estimada_g!=null?out.massa_estimada_g+" g":"—");
+  if(Array.isArray(out.avisos)&&out.avisos.length){
+    document.getElementById("avisos").textContent=out.avisos.filter(x=>typeof x==="string").slice(0,3).join(" · ").slice(0,300);
+  }
+  const check=document.getElementById("aprovacao");
+  const fatiar=document.getElementById("fatiar"),imprimir=document.getElementById("imprimir");
+  const bridge=Boolean(window.openai&&typeof window.openai.callTool==="function");
+  check.disabled=!(ready&&bridge);
+  function refresh(){
+    fatiar.disabled=!(bridge&&validId(rid)&&check.checked);
+    imprimir.disabled=!(bridge&&validId(pid)&&check.checked);
+  }
+  check.addEventListener("change",refresh);refresh();
+  async function invoke(tool,args){
+    fatiar.disabled=true;imprimir.disabled=true;check.disabled=true;
+    txt("status","Solicitando validação no Filuna...");
+    try{
+      const response=await window.openai.callTool(tool,args);
+      // Respostas do plugin podem indicar falha; não afirmar início da impressão.
+      if(response&&response.isError)txt("status","O Filuna recusou ou não pôde realizar a solicitação. Confira o estado no aplicativo.");
+      else txt("status",tool==="filuna_impressao_confirmar"
+        ?"Solicitação enviada. Confirme no Filuna Windows; a impressão ainda não foi iniciada por este botão."
+        :"Fatiamento solicitado. Consulte o estado e os alertas do trabalho no Filuna.");
+    }catch(e){txt("status","Não foi possível executar. Verifique a conexão do Filuna no seu computador.");}
+    finally{check.disabled=false;refresh();}
+  }
+  fatiar.addEventListener("click",()=>{if(check.checked&&validId(rid))invoke("filuna_fatiamento_executar",{recomendacao_id:rid,confirmacao:true});});
+  imprimir.addEventListener("click",()=>{if(check.checked&&validId(pid))invoke("filuna_impressao_confirmar",{preparo_id:pid,confirmacao:true});});
+  if(!ready||!bridge)txt("status","Aguardando vínculo com o Filuna e uma recomendação ou preparo autenticado.");
+})();
+</script></body></html>

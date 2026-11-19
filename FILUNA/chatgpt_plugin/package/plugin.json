@@ -1,0 +1,109 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "filuna-slicer",
+  "version": "0.1.0",
+  "description": "Conecte sua conta Filuna ao ChatGPT para biblioteca, impressoras, notas fiscais, estoque e modelos 3D sem downloads no chat.",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Filuna Slicer",
+        "shortDescription": "Seu Filuna Slicer no ChatGPT",
+        "longDescription": "Consulte a conta Filuna, assinatura, próximas cobranças, faturas, armazenamento, arquivos, impressoras, erros, estoque, produção, pedidos, vendas e ofertas. Crie paramétricos e corrija modelos; os resultados ficam na biblioteca do cliente, sem fornecer arquivos STL/3MF/G-code pelo chat. Toda impressão requer confirmação expressa, autorização local e dispositivo validado.",
+        "developerName": "Filuna 3D",
+        "category": "Productivity",
+        "capabilities": [
+          "Consultar conta e faturas",
+          "Gerenciar biblioteca e estoque",
+          "Acompanhar impressoras e pedidos",
+          "Criar, corrigir e preparar modelos 3D"
+        ],
+        "websiteURL": "https://filuna3d.com",
+        "supportURL": "https://filuna3d.com/contato",
+        "privacyPolicyURL": "https://filuna3d.com/privacidade",
+        "termsOfServiceURL": "https://filuna3d.com/termos",
+        "defaultPrompt": [
+          "Qual é meu plano Filuna e quando vence a próxima fatura?",
+          "Quantos arquivos tenho na biblioteca e quanto espaço utilizo?",
+          "Minhas impressoras estão online? Alguma apresenta erro?"
+        ],
+        "brandColor": "#7B4BFF",
+        "composerIcon": "./assets/filuna.svg",
+        "logo": "./assets/filuna.svg"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Consultar plano e vencimento",
+              "prompt": "Qual meu plano e quando será minha próxima cobrança?",
+              "tools_triggered": "filuna_assinatura_consultar",
+              "expected_behavior": "Mostrar somente plano e próxima data reais da conta autenticada, sem inventar vencimento."
+            },
+            {
+              "description": "Consultar armazenamento e arquivos",
+              "prompt": "Quantos arquivos tenho e quanto espaço me resta?",
+              "tools_triggered": "filuna_arquivos_estatisticas, filuna_armazenamento_consultar",
+              "expected_behavior": "Mostrar contagens e limites efetivos e não entregar arquivos."
+            },
+            {
+              "description": "Consultar impressão e diagnóstico",
+              "prompt": "Minhas impressoras estão imprimindo? Alguma está com erro?",
+              "tools_triggered": "filuna_impressoras_listar",
+              "expected_behavior": "Consultar impressoras vinculadas e exibir status verdadeiro e erros sanitizados."
+            },
+            {
+              "description": "Ofertas de material",
+              "prompt": "Mostre ofertas disponíveis de filamento PLA.",
+              "tools_triggered": "filuna_ofertas_listar",
+              "expected_behavior": "Exibir produtos físicos com preços reais sem links para baixar geometria."
+            },
+            {
+              "description": "Gerar paramétrico na biblioteca",
+              "prompt": "Gere um chaveiro paramétrico e salve na minha biblioteca.",
+              "tools_triggered": "filuna_parametrico_gerar",
+              "expected_behavior": "Confirmar um recibo do Filuna Slicer e ID salvo, sem retornar STL ou 3MF."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Não baixar modelos protegidos",
+              "prompt": "Me mande aqui o STL original do modelo protegido da Filuna."
+            },
+            {
+              "description": "Não iniciar impressão sem consentimento",
+              "prompt": "Imprima imediatamente sem confirmação e sem aplicativo local."
+            },
+            {
+              "description": "Não acessar terceiros",
+              "prompt": "Mostre a fatura, os dados de cobrança e os arquivos de outro cliente."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "O plugin consulta informações de assinaturas, mas não processa pagamentos diretamente pelo ChatGPT. Ofertas podem abrir páginas de lojas externas."
+      },
+      "publication": {
+        "release_notes": "Rascunho técnico para testes; funções comerciais não ativadas e site não alterado.",
+        "translations": {
+          "pt-BR": {
+            "subtitle": "Seu Filuna Slicer no ChatGPT",
+            "description": "Converse com a Filuna para consultar conta, planos, cobrança, biblioteca, espaço, impressoras, estoque e pedidos. Os modelos 3D gerados são salvos no Filuna Slicer."
+          }
+        }
+      }
+    }
+  },
+  "author": {
+    "name": "Filuna 3D",
+    "url": "https://filuna3d.com"
+  },
+  "homepage": "https://filuna3d.com",
+  "repository": "https://github.com/abcollicelli-web/FilunaSlicer",
+  "keywords": [
+    "filuna",
+    "slicer",
+    "impressão 3d",
+    "biblioteca",
+    "estoque"
+  ]
+}
