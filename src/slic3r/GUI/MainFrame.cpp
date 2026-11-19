@@ -1933,6 +1933,31 @@ void MainFrame::fit_tab_labels()
         if (const int idx = m_tabpanel->FindPageByName(id); idx != wxNOT_FOUND)
             m_tabpanel->GetBtnsListCtrl()->ShowPageButton(size_t(idx), false);
 
+    if (auto* barra = m_tabpanel->GetBtnsListCtrl(); barra->IsFilunaNavbar()) {
+        // Filuna: as abas são só texto e não têm modo ícone. Quando a barra não cabe na janela, aperta por etapas até
+        // caber, em vez de deixar o botão Fatiar/Imprimir e a engrenagem cortados na borda (pedido do dono, 19/11/2026):
+        // 1 e 2 = abas mais juntas; 3 = sai o "?" (a Autoajuda continua nas Preferências); 4 = saem Novo e Salvar
+        // (continuam no menu do logo). Fatiar/Imprimir, Exportar e a engrenagem ficam sempre.
+        const bool acoes = m_slice_btn != nullptr && m_slice_btn->IsShown(); // Preparação e Visualização
+        for (int nivel = 0; nivel <= 4; ++nivel) {
+            barra->SetFilunaDensidade(std::min(nivel, 2));
+            if (m_filuna_ajuda_btn != nullptr) {
+                m_filuna_ajuda_btn->Show(nivel < 3);
+                m_filuna_divisor->Show(nivel < 3);
+            }
+            if (m_novo_btn != nullptr) {
+                m_novo_btn->Show(acoes && nivel < 4);
+                m_salvar_btn->Show(acoes && nivel < 4);
+            }
+            barra->Layout();
+            const int largura = std::min(barra->GetClientSize().GetWidth(), barra->GetParent()->GetClientSize().GetWidth());
+            if (barra->GetSizer()->GetMinSize().GetWidth() <= largura)
+                break;
+        }
+        m_tabpanel->Refresh();
+        return;
+    }
+
     if (!m_slice_option_btn) // ignore layout change while slice/print buttons not visible
         return;
 
@@ -2573,6 +2598,8 @@ wxBoxSizer* MainFrame::create_side_tools()
     auto* divider = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(1, 28)));
     divider->SetBackgroundColour(wxColour(236, 232, 226));
 
+    m_filuna_ajuda_btn = help_btn;
+    m_filuna_divisor   = divider;
     sizer->Add(help_btn, 0, wxALIGN_CENTER_VERTICAL);
     sizer->Add(FromDIP(14), 0, 0, 0, 0);
     sizer->Add(divider, 0, wxALIGN_CENTER_VERTICAL);

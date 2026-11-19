@@ -33,7 +33,7 @@ inline const std::vector<Motor>& motores_filuna()
         {"dados", "Filuna Dados", "1.2.0"},               // banco local, fórmulas de estoque e leitor de G-code
         {"sincronizacao", "Filuna Sincronização", "1.0.0"}, // fila, enviar/receber e restauração
         {"telas", "Filuna Telas", "1.3.0"},               // páginas web internas (Meu espaço, Estoque, Dispositivos, Farm, Modelos 3D)
-        {"inicio", "Filuna Início", "1.0.0"},             // tela Início (resources/web/homepage e o que ela usa de web/include)
+        {"inicio", "Filuna Início", "1.0.2"},             // tela Início (resources/web/homepage e o que ela usa de web/include)
         {"atualizacao", "Filuna Atualização", "1.2.0"},   // catálogo assinado, download, SHA-256, modo Store e correção de telas por geração
     };
     return lista;

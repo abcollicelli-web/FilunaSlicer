@@ -302,11 +302,17 @@ body, button, input
 .FlImp:hover { border-color: #d9d2c8; }
 
 /*---- Manutenção: aviso de atualização (canto inferior esquerdo), janela de novidades, primeira instalação ----*/
-#FlUpdAviso { position: fixed; left: 14px; bottom: 34px; z-index: 900; display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+/* Rodapé da coluna da esquerda: tem a largura da coluna e fundo próprio, então nenhum texto sai para a área do lado nem
+   fica por cima do menu; o resultado de "Procurar atualização" quebra em linhas. */
+#FlRodape { position: fixed; left: 0; bottom: 0; z-index: 900; box-sizing: border-box; width: 389px; padding: 8px 14px 10px;
+	display: flex; flex-direction: column; align-items: flex-start; gap: 8px; background: var(--bg-color-sidebar, #FFFDFB); }
+#FlUpdAviso { display: flex; align-items: center; gap: 8px; padding: 9px 14px; max-width: 100%; box-sizing: border-box;
 	background: var(--filuna-framboesa); color: #fff; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: var(--filuna-sombra); }
 #FlUpdAviso b { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: FlPulso 1.4s infinite; }
 @keyframes FlPulso { 50% { opacity: .35; } }
-#FlVersaoAtual { position: fixed; left: 14px; bottom: 10px; z-index: 899; font-size: 11px; color: var(--fg-color-disabled); }
+#FlVersaoAtual { font-size: 11px; line-height: 1.4; color: var(--fg-color-disabled); max-width: 100%; overflow-wrap: anywhere; }
+#FlVersaoAtual .r { display: block; }
+#FlVersaoAtual .r:empty { display: none; }
 #FlVersaoAtual a { color: inherit; text-decoration: underline; cursor: pointer; margin-left: 8px; }
 #FlVersaoAtual a:hover { color: #C2185B; }
 #FlVersaoAtual a.off { text-decoration: none; cursor: default; opacity: .7; }

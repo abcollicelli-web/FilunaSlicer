@@ -61,6 +61,10 @@ Sempre com estas condições, que as ferramentas conferem:
    próxima versão da loja, não um caminho paralelo.
 6. **Correção de código é pequena:** até 15 arquivos e 400 linhas mexidas.
 
+7. **Versão nova do programa que muda as páginas embutidas** sobe o último número delas em `FilunaVersoes.hpp` para
+   acima da correção já publicada (ex.: correção 1.0.1 no ar, programa novo sai com 1.0.2). Sem isso o programa
+   novo trocaria as páginas novas dele pela correção antiga.
+
 ## Só pela Microsoft Store
 
 - Função nova, ou mudança no que uma função faz (10.2.2). Se a descrição da loja precisaria mudar, vai pela loja.
