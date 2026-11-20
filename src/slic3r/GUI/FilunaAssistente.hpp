@@ -39,6 +39,7 @@ public:
 
 private:
     void on_new_window(wxWebViewEvent& e);
+    void on_new_window_features(wxWebViewEvent& e);
 
     FilunaPanel* m_tela{nullptr};
     wxWebView*   m_ia{nullptr};
