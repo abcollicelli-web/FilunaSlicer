@@ -1,7 +1,9 @@
 #include "FilunaAssistente.hpp"
 
 #include "FilunaPanel.hpp"
+#include "GLCanvas3D.hpp"
 #include "GLToolbar.hpp"
+#include "Selection.hpp"
 #include "GUI.hpp"
 #include "GUI_App.hpp"
 #include "GUI_ObjectList.hpp"
@@ -179,7 +181,9 @@ json analisar_pecas()
                          {"area_no_ar_mm2", std::round(no_ar)},
                          {"area_base_mm2", std::round(base)},
                          // alta e de base estreita: tomba ou solta da mesa no meio da impressão
-                         {"base_pequena", altura > 15. && altura > 3. * std::sqrt(std::max(base, 1.)) && base < 600.}});
+                         {"base_pequena", altura > 15. && altura > 3. * std::sqrt(std::max(base, 1.)) && base < 600.},
+                         {"escala_porcento", std::round(obj->instances.front()->get_scaling_factor().x() * 1000.) / 10.},
+                         {"copias", obj->instances.size()}});
     }
     return {{"pecas", lista},
             {"mesa_mm", area.defined ? json{area.size().x(), area.size().y(), altura_max} : json()},
@@ -187,6 +191,82 @@ json analisar_pecas()
             {"com_suporte", com_suporte},
             {"com_aba", com_aba},
             {"processo", ler_processo()}};
+}
+
+// Mexe nas peças da mesa como o cliente mexeria (cada comando vira um passo do Desfazer, Ctrl+Z):
+//   escalar  {fator} ou {maior_lado_mm}   girar {eixo: x|y|z, graus}   copias {quantidade: total de cópias}
+// "peca" = índice da peça (0 = primeira); ausente ou -1 = todas.
+json comando_na_mesa(const json& d)
+{
+    Plater&            plater = mesa();
+    Model&             model  = plater.model();
+    const std::string  acao   = d.value("acao", std::string());
+    const int          peca   = d.value("peca", -1);
+    if (model.objects.empty())
+        throw std::runtime_error("Coloque um modelo na mesa primeiro.");
+    if (peca >= int(model.objects.size()))
+        throw std::runtime_error("Essa peça não existe na mesa.");
+    std::vector<size_t> alvos;
+    for (size_t i = 0; i < model.objects.size(); ++i)
+        if (peca < 0 || int(i) == peca)
+            alvos.push_back(i);
+
+    if (acao == "escalar") {
+        plater.take_snapshot("Assistente: escala");
+        for (size_t i : alvos) {
+            ModelObject* obj = model.objects[i];
+            double       f   = d.value("fator", 0.);
+            if (d.contains("maior_lado_mm")) {
+                const Vec3d  t     = obj->instance_bounding_box(0).size();
+                const double maior = std::max({t.x(), t.y(), t.z()});
+                if (maior <= 0.)
+                    continue;
+                f = d.value("maior_lado_mm", 0.) / maior;
+            }
+            if (!(f >= 0.05 && f <= 20.))
+                throw std::runtime_error("Escala fora do aceito (de 5% a 2000%).");
+            for (ModelInstance* inst : obj->instances)
+                inst->set_scaling_factor(inst->get_scaling_factor() * f);
+            obj->invalidate_bounding_box();
+            obj->ensure_on_bed();
+        }
+        plater.changed_objects(alvos);
+    } else if (acao == "girar") {
+        const std::string eixo  = d.value("eixo", std::string("z"));
+        const double      graus = d.value("graus", 0.);
+        if (std::abs(graus) > 360. || (eixo != "x" && eixo != "y" && eixo != "z"))
+            throw std::runtime_error("Giro inválido: eixo x, y ou z e até 360 graus.");
+        const Vec3d   vetor = eixo == "x" ? Vec3d::UnitX() : eixo == "y" ? Vec3d::UnitY() : Vec3d::UnitZ();
+        const Matrix3d rot  = Eigen::AngleAxisd(graus * M_PI / 180., vetor).toRotationMatrix();
+        plater.take_snapshot("Assistente: girar");
+        for (size_t i : alvos) {
+            ModelObject* obj = model.objects[i];
+            for (ModelInstance* inst : obj->instances)
+                inst->rotate(rot);
+            obj->invalidate_bounding_box();
+            obj->ensure_on_bed();
+        }
+        plater.changed_objects(alvos);
+    } else if (acao == "copias") {
+        const int total = d.value("quantidade", 1);
+        if (total < 1 || total > 50)
+            throw std::runtime_error("Quantidade de cópias de 1 a 50.");
+        for (size_t i : alvos) {
+            const int atual = int(model.objects[i]->instances.size());
+            if (total == atual)
+                continue;
+            plater.canvas3D()->get_selection().add_object(unsigned(i), true);
+            if (total > atual)
+                plater.increase_instances(size_t(total - atual));
+            else
+                plater.decrease_instances(size_t(atual - total));
+        }
+    } else if (acao == "desfazer") {
+        plater.undo();
+    } else {
+        throw std::runtime_error("Comando desconhecido: " + acao);
+    }
+    return analisar_pecas();
 }
 
 json avisos_do_fatiamento()
@@ -447,6 +527,8 @@ std::optional<json> filuna_assistente_acao(const std::string& acao, const json& 
                     {"ia_aberta", FilunaAssistentePainel::atual() != nullptr && FilunaAssistentePainel::atual()->ia_aberta()}};
     if (acao == "peca.analise")
         return analisar_pecas();
+    if (acao == "mesa.comando")
+        return comando_na_mesa(d);
     if (acao == "processo.ler")
         return json{{"valores", ler_processo()}};
     if (acao == "processo.ajustar")
