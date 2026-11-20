@@ -1,3 +1,11 @@
+# Filuna Slicer
+
+Este repositório é o **FilunaSlicer** (fork AGPL do OrcaSlicer). O trabalho Filuna fica no ramo do cliente `filuna/v1-teste-fisico`; leia o `AGENTS.md` dele antes de começar.
+
+**Erro relatado por cliente no fatiador** (algo que não funciona, câmera que não aparece, texto cortado, queda, perfil que imprime errado): antes de mexer, leia `FILUNA/CORRECOES-DO-FATIADOR.md` (o passo a passo e a tabela do que vai direto ao cliente pelo servidor Filuna e do que só vai pela Microsoft Store) e `FILUNA/ATUALIZACAO-REMOTA.md` (a regra). Publicar para clientes, no canal `todos` ou na Microsoft, só com o OK expresso do proprietário.
+
+---
+
 # CLAUDE.md
 
 OrcaSlicer — open-source C++17 3D slicer. wxWidgets GUI, CMake build system.
