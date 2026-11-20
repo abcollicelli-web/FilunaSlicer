@@ -12,7 +12,7 @@ Não é firmware: não imprime nem simula movimento. Serve para provar descobert
 autenticação, envio, início, controle e leitura do sistema de cores.
 
 Uso: bambu_lan.py --ip 127.0.0.1 --serial 01P00A123456789 --codigo 12345678 --pasta /tmp/sd
-     [--mqtt 8883 --ftps 990 --ssdp 2021 --modelo C11 --nome "P1P emulada"]
+     [--mqtt 8883 --ftps 990 --ssdp 2021 --modelo C11 --nome "P1P emulada"] [--fechamento-a1]
 Registra cada evento em JSON por linha em --log (para a prova).
 """
 from __future__ import annotations
@@ -292,6 +292,14 @@ def ftps_servidor(a, log: Log, ctx: ssl.SSLContext | None):
                                 break
                             out.write(b)
                             total += len(b)
+                    if a.fechamento_a1 and isinstance(dc, ssl.SSLSocket):
+                        # como a A1: não responde ao close_notify; só fecha o arquivo quando a conexão de dados fecha
+                        bruto = socket.socket(fileno=os.dup(dc.fileno()))
+                        try:
+                            while bruto.recv(4096):
+                                pass
+                        finally:
+                            bruto.close()
                     try:
                         dc.close()
                     except OSError:
@@ -350,6 +358,8 @@ def main():
     ap.add_argument("--ssdp-destino", default="")
     ap.add_argument("--ssdp-intervalo", type=float, default=2.0)
     ap.add_argument("--sem-tls", action="store_true")
+    ap.add_argument("--fechamento-a1", action="store_true",
+                    help="canal de dados como o da A1: sem resposta ao close_notify, arquivo gravado só quando a conexão fecha")
     ap.add_argument("--log")
     a = ap.parse_args()
     os.makedirs(a.pasta, exist_ok=True)
