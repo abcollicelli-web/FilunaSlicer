@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+/* Assistente de impressão (aprovado pelo dono em 20/11/2026): painel à direita da mesa, com as 5 etapas, a IA do próprio
+   cliente (pela assinatura dele, sem crédito) e a ajuda da Filuna. Ações do programa: FilunaAssistente.cpp. */
+html,body{background:#fff;height:100%;overflow:hidden}
+body{display:flex;flex-direction:column}
+.tabs{display:flex;align-items:center;gap:2px;padding:6px 8px 0;border-bottom:1px solid var(--line);flex:none}
+.tabs button{border:0;background:none;padding:9px 12px;font-weight:800;font-size:13.5px;color:var(--ink2);border-bottom:3px solid transparent}
+.tabs button.on{color:var(--magenta-deep);border-bottom-color:var(--magenta)}
+.tabs .x{margin-left:auto;font-size:18px;color:var(--muted);padding:6px 10px}
+.navb{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--side);border-bottom:1px solid var(--line);flex:none}
+.navb button{border:0;background:none;font-size:15px;color:var(--ink2);padding:2px 6px}
+.navb .url{flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph{padding:14px 18px 10px;border-bottom:1px solid var(--line);flex:none}
+.ph .t{font-size:17px;font-weight:800}.ph .s{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.trilha{display:flex;gap:5px;margin-top:10px}.trilha span{flex:1;height:5px;border-radius:3px;background:var(--pill)}.trilha .ok{background:var(--good)}.trilha .at{background:var(--magenta)}
+.pc{padding:14px 18px;flex:1;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.pc h3{font-size:15px;font-weight:800}
+.txt{font-size:13.5px;color:var(--ink2);line-height:1.5}
+.it{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font-size:13.5px;line-height:1.4}
+.it .ic{width:24px;height:24px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:12.5px;background:var(--pill)}
+.it.ok .ic{background:var(--good-bg);color:var(--good)}.it.av .ic{background:var(--warn-bg);color:var(--warn)}
+.it.ia{background:#F7F3FF;border-color:#E2D8FF}.it.ia .ic{background:var(--violeta);color:#fff}
+.it b{font-weight:800}.it small{display:block;color:var(--ink2);font-size:12px;margin-top:2px}
+.it .cx{flex:1;min-width:0}
+.ac{margin-left:auto;flex:none;align-self:center;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--magenta);background:#fff;color:var(--magenta-deep);font-weight:700;font-size:12.5px}
+.ac.cinza{border-color:var(--line);color:var(--ink2)}
+.met{display:grid;grid-template-columns:1fr 1fr;gap:8px}.met div{background:var(--side);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.met span{font-size:11.5px;color:var(--ink2);display:block}.met b{font-size:18px;font-weight:800}.met i{font-style:normal;font-size:12px;color:var(--good);font-weight:700;margin-left:6px}
+.pf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex:none}
+.bp{flex:1;height:42px;border:0;border-radius:12px;background:var(--magenta);color:#fff;font-weight:800;font-size:14.5px}
+.bp:disabled{opacity:.5}
+.bs{height:42px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:#fff;font-weight:700;font-size:13.5px;color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chips span{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--rose);color:var(--magenta-deep);font-weight:700}
+.prog{height:8px;border-radius:4px;background:var(--pill);overflow:hidden;position:relative}
+.prog div{position:absolute;height:100%;width:35%;background:var(--magenta);border-radius:4px;animation:vai 1.2s ease-in-out infinite}
+@keyframes vai{0%{left:-35%}100%{left:100%}}
+.pedir{display:flex;gap:8px}.pedir input,.pedir textarea{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:13.5px;resize:none}
+.op{border:1px solid var(--line);border-radius:14px;padding:11px 13px;display:grid;grid-template-columns:1fr auto;gap:3px;cursor:pointer}
+.op.sel{border:2px solid var(--magenta);background:#FFF7FA}
+.op b{font-size:14.5px;font-weight:800}.op .v{font-size:12.5px;color:var(--ink2)}.op .n{grid-row:span 2;align-self:center;text-align:right;font-size:12.5px;color:var(--ink2)}.op .n b{display:block;font-size:16px;color:var(--ink)}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--violeta);color:#fff;margin-left:6px;vertical-align:2px}
+.m{max-width:90%;padding:9px 12px;border-radius:14px;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+.m.eu{align-self:flex-end;background:#EFE9E4}.m.f{align-self:flex-start;background:#fff;border:1px solid var(--line)}
+.m small{display:block;color:var(--ink2);font-size:11.5px;margin-top:5px;white-space:normal}
+.erro{color:var(--warn);font-size:13px}
+.vazio{color:var(--ink2);font-size:13.5px;text-align:center;padding:20px 0}
+.ok-verde{color:var(--good);font-weight:800;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="tabs" id="tabs"></div>
+<div id="nav"></div>
+<div id="corpo" style="flex:1;display:flex;flex-direction:column;min-height:0"></div>
+<script src="ponte.js"></script>
+<script>
+var E = Filuna.esc;
+var NOMES = ["Peça", "Conferir", "Fatiar", "Ficha", "Imprimir"];
+var IAS = {
+	claude: { nome: "Claude", cor: "#B5552F", fundo: "#F4E9E1", letra: "C", inicio: "https://claude.ai/new", conectores: "https://claude.ai/settings/connectors",
+		pergunta: function (q) { return "https://claude.ai/new?q=" + encodeURIComponent(q); }, nota: "Sua assinatura do Claude (inclusive a grátis)" },
+	chatgpt: { nome: "ChatGPT", cor: "#10845F", fundo: "#E3F1EC", letra: "G", inicio: "https://chatgpt.com/", conectores: "https://chatgpt.com/#settings/Connectors",
+		pergunta: function (q) { return "https://chatgpt.com/?q=" + encodeURIComponent(q); }, nota: "Sua assinatura do ChatGPT" },
+	gemini: { nome: "Gemini", cor: "#3367D6", fundo: "#E6EEFB", letra: "✧", inicio: "https://gemini.google.com/app", conectores: "https://gemini.google.com/app",
+		pergunta: null, nota: "Sua conta Google com Gemini" }
+};
+var st = { aba: "etapas", etapa: 1, sub: "", conferido: false, chavePecas: "", analise: null, resumo: null, estado: {}, avisos: [], preco: null,
+	desfazer: {}, sugestoes: [], conectadas: [], endereco: "https://filuna3d.com/api/ia/mcp", ia: "", iaAberta: false, iaUrl: "",
+	conversa: [], conversaId: "", ocupado: "", erro: "", antes: null, comparar: null, pasta: null, impressora: null, filamento: null };
+
+function nat(a, d) { return Filuna.nativo(a, d); }
+function espera(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function tempo(s) { s = Math.round(s || 0); var h = Math.floor(s / 3600), m = Math.round(s % 3600 / 60); return h ? h + "h" + (m < 10 ? "0" : "") + m : m + "min"; }
+function gramas(r) { return r && r.gramas_estimadas != null ? Math.round(r.gramas_estimadas) + " g" : "—"; }
+function falha(e) { st.ocupado = ""; st.erro = (e && (e.erro || e.message)) || "Não deu certo. Tente de novo."; desenhar(); }
+
+// ---------------------------------------------------------------- leitura do programa
+function lerTudo() {
+	return Promise.all([nat("fatiamento.estado").catch(function () { return {}; }), nat("peca.analise").catch(function () { return null; })]).then(function (v) {
+		st.estado = v[0] || {}; st.analise = v[1];
+		var chave = st.analise ? JSON.stringify((st.analise.pecas || []).map(function (p) { return [p.nome, p.tamanho_mm]; })) : "";
+		if (chave != st.chavePecas) { st.chavePecas = chave; st.conferido = false; st.desfazer = {}; }
+		if (!st.estado.fatiado) { st.resumo = null; st.avisos = []; st.preco = null; return; }
+		return Promise.all([nat("fatiamento.resumo"), nat("fatiamento.avisos").catch(function () { return { avisos: [] }; })]).then(function (x) {
+			var mudou = !st.resumo || st.resumo.tempo_s != x[0].tempo_s;
+			st.resumo = x[0]; st.avisos = x[1].avisos || [];
+			if (mudou && Filuna.temToken() && st.resumo.fatiado)
+				return Filuna.api("POST", "/preco", { material: st.resumo.material, placas: [{ tempo_s: st.resumo.tempo_s, camadas: st.resumo.camadas || 0, volumes: st.resumo.volumes }] })
+					.then(function (p) { st.preco = p; }, function () { st.preco = null; });
+		});
+	});
+}
+function etapaPossivel() {
+	if (!st.estado.objetos) return 1;
+	if (!st.estado.fatiado) return st.conferido ? 3 : 2;
+	return Math.max(4, Math.min(st.etapa, 5));
+}
+function avisarRodape() { nat("assistente.avisar", { etapa: st.etapa, conferido: st.conferido }).catch(function () {}); }
+
+// O que a IA do cliente lê pelo conector (filuna_fatiador). Só com conta e com o painel aberto.
+var ultimoEnvio = "";
+function publicar() {
+	if (!Filuna.temToken() || !st.analise) return;
+	var e = { impressora: st.analise.impressora, mesa_mm: st.analise.mesa_mm, pecas: st.analise.pecas, processo: st.analise.processo,
+		com_suporte: st.analise.com_suporte, com_aba: st.analise.com_aba, fatiado: !!st.estado.fatiado,
+		filamento: st.filamento ? { material: st.filamento.material, nome: st.filamento.filamento || st.filamento.nome } : null };
+	if (st.resumo && st.resumo.fatiado) e.fatiamento = { tempo: tempo(st.resumo.tempo_s), tempo_s: st.resumo.tempo_s, gramas: Math.round(st.resumo.gramas_estimadas),
+		volumes_mm3: st.resumo.volumes, trocas_filamento: st.resumo.trocas_filamento, avisos: st.avisos.map(function (a) { return a.texto; }) };
+	var t = JSON.stringify(e);
+	if (t == ultimoEnvio) return;
+	ultimoEnvio = t;
+	Filuna.api("POST", "/ia/fatiador", { estado: e }).catch(function () { ultimoEnvio = ""; });
+}
+function buscarSugestoes() {
+	if (!Filuna.temToken()) return Promise.resolve();
+	return Filuna.api("GET", "/ia/fatiador/sugestoes").then(function (r) {
+		var novas = (r.sugestoes || []).filter(function (s) { return !st.sugestoes.some(function (x) { return x.id == s.id; }); });
+		st.sugestoes = r.sugestoes || []; st.conectadas = r.conectadas || []; if (r.endereco) st.endereco = r.endereco;
+		if (novas.length && st.aba == "etapas" && !st.ocupado) { st.sub = "sugestao"; desenhar(); }
+		else if (novas.length) desenharTabs();
+	}).catch(function () {});
+}
+
+// ---------------------------------------------------------------- ações
+function ajustar(valores, chaveDesfazer) {
+	var v = {};
+	Object.keys(valores).forEach(function (k) { var x = valores[k]; v[k] = typeof x == "boolean" ? (x ? "1" : "0") : String(x); });
+	return nat("processo.ajustar", { valores: v }).then(function (r) {
+		if (chaveDesfazer) st.desfazer[chaveDesfazer] = r.antes;
+		return lerTudo();
+	});
+}
+function desfazer(k) {
+	var antes = st.desfazer[k]; if (!antes) return;
+	st.ocupado = "Desfazendo…"; desenhar();
+	nat("processo.ajustar", { valores: antes }).then(function () { delete st.desfazer[k]; st.ocupado = ""; return lerTudo(); }).then(desenhar, falha);
+}
+function aguardarLivre() {
+	var t0 = Date.now();
+	function volta() {
+		return espera(600).then(function () { return nat("fatiamento.estado"); }).then(function (e) {
+			if ((e.ocupado || e.fatiando) && Date.now() - t0 < 180000) return volta();
+			st.estado = e;
+		});
+	}
+	return volta();
+}
+function girar() { st.ocupado = "Girando a peça para usar menos suporte…"; desenhar(); return nat("peca.orientar").then(aguardarLivre); }
+function fatiar() {
+	st.ocupado = "Fatiando…"; st.erro = ""; desenhar();
+	return nat("fatiar").then(function () { return espera(800); }).then(aguardarLivre).then(lerTudo).then(function () {
+		st.ocupado = "";
+		if (!st.estado.fatiado) throw { erro: "O fatiamento não terminou. Veja o aviso na mesa." };
+	});
+}
+
+// ---------------------------------------------------------------- desenho
+function desenharTabs() {
+	var n = st.sugestoes.length;
+	document.getElementById("tabs").innerHTML = [["etapas", "Etapas" + (n ? " ●" : "")], ["ia", "✦ Minha IA"], ["filuna", "Filuna"]].map(function (t) {
+		return '<button data-aba="' + t[0] + '" class="' + (st.aba == t[0] ? "on" : "") + '">' + E(t[1]) + "</button>"; }).join("") +
+		'<button class="x" id="fechar" title="Fechar o Assistente">×</button>';
+	document.querySelectorAll("[data-aba]").forEach(function (b) { b.onclick = function () { trocarAba(b.dataset.aba); }; });
+	document.getElementById("fechar").onclick = function () { if (st.iaAberta) nat("ia.fechar"); st.iaAberta = false; nat("assistente.fechar"); };
+	var nav = document.getElementById("nav");
+	nav.innerHTML = st.iaAberta ? '<div class="navb"><button id="nv" title="Voltar">‹</button><button id="nr" title="Recarregar">↻</button><div class="url">🔒 ' +
+		E((st.iaUrl || "").replace(/^https:\/\//, "").split("?")[0]) + '</div><button id="nb" title="Abrir no seu navegador">⤢</button></div>' : "";
+	if (st.iaAberta) {
+		document.getElementById("nv").onclick = function () { nat("ia.comando", { comando: "voltar" }); };
+		document.getElementById("nr").onclick = function () { nat("ia.comando", { comando: "recarregar" }); };
+		document.getElementById("nb").onclick = function () { nat("ia.comando", { comando: "navegador" }); };
+	}
+}
+function trocarAba(a) {
+	if (a != "ia" && st.iaAberta) { nat("ia.fechar"); st.iaAberta = false; }
+	st.aba = a; st.sub = a == "etapas" ? st.sub : ""; st.erro = "";
+	desenhar();
+}
+function cab(t, s) {
+	var at = st.etapa;
+	return '<div class="ph"><div class="t">✦ ' + E(t) + '</div><div class="s">' + E(s) + '</div><div class="trilha">' +
+		NOMES.map(function (n, k) { return '<span class="' + (k + 1 < at ? "ok" : k + 1 == at ? "at" : "") + '"></span>'; }).join("") + "</div></div>";
+}
+function item(cls, ic, titulo, texto, botao, id) {
+	return '<div class="it ' + cls + '"><div class="ic">' + ic + '</div><div class="cx"><b>' + E(titulo) + "</b>" + (texto ? "<small>" + E(texto) + "</small>" : "") + "</div>" +
+		(botao ? '<button class="ac' + (botao.cinza ? " cinza" : "") + '" id="' + id + '">' + E(botao.t) + "</button>" : "") + "</div>";
+}
+function on(id, f) { var b = document.getElementById(id); if (b) b.onclick = f; }
+function rodape(btns) {
+	return '<div class="pf">' + btns.map(function (b) { return '<button class="' + (b.p ? "bp" : "bs") + '" id="' + b.id + '"' + (b.off ? " disabled" : "") + ">" + E(b.t) + "</button>"; }).join("") + "</div>";
+}
+function ocupadoHtml() { return st.ocupado ? '<div class="prog"><div></div></div><div class="txt" style="font-size:12.5px">' + E(st.ocupado) + "</div>" : ""; }
+function erroHtml() { return st.erro ? '<div class="erro">' + E(st.erro) + "</div>" : ""; }
+
+function desenhar() {
+	desenharTabs();
+	var c = document.getElementById("corpo");
+	if (st.iaAberta) { c.innerHTML = ""; return; }
+	if (st.aba == "ia") return telaIA(c);
+	if (st.aba == "filuna") return telaFiluna(c);
+	if (st.sub == "sugestao" && st.sugestoes.length) return telaSugestao(c);
+	if (st.sub == "comparar") return telaComparar(c);
+	if (st.sub == "pasta") return telaPasta(c);
+	if (st.sub == "imprimindo") return telaImprimindo(c);
+	st.etapa = Math.min(st.etapa, etapaPossivel());
+	if (st.etapa < 1) st.etapa = 1;
+	avisarRodape();
+	[null, etapa1, etapa2, etapa3, etapa4, etapa5][st.etapa](c);
+}
+function irPara(n) { st.etapa = n; st.sub = ""; st.erro = ""; if (n == 2 || n == 4) lerTudo().then(desenhar); else desenhar(); }
+
+// 1 · Peça
+function etapa1(c) {
+	var pecas = (st.analise && st.analise.pecas) || [];
+	c.innerHTML = cab("Assistente de impressão", "Etapa 1 de 5 · Peça") + '<div class="pc"><h3>Coloque a peça na mesa</h3>' +
+		'<div class="txt">Arraste o arquivo (STL, 3MF, OBJ ou STEP) para a mesa, ou escolha um jeito abaixo. O Assistente acompanha você até a impressão.</div>' +
+		pecas.map(function (p) { return item("ok", "✓", p.nome + " está na mesa", p.tamanho_mm.map(function (x) { return Math.round(x); }).join(" × ") + " mm"); }).join("") +
+		item("", "+", "Importar do computador", "STL, 3MF, OBJ, STEP", { t: "Importar" }, "imp") +
+		item("", "◎", "Modelos 3D da Filuna", "Peças prontas do catálogo", { t: "Abrir" }, "mod") +
+		item("", "✎", "Criar no Design", "Chaveiro, placa, caixa e outras peças por medida", { t: "Criar" }, "des") +
+		item("", "📁", "Pasta automática", "Arquivos jogados numa pasta saem prontos para imprimir", { t: "Ver" }, "pas") + "</div>" +
+		rodape([{ id: "prox", t: "Próximo: conferir a peça", p: 1, off: !pecas.length }]);
+	on("imp", function () { nat("projeto.importar"); });
+	on("mod", function () { nat("aba.abrir", { aba: "filuna.modelos" }); });
+	on("des", function () { nat("aba.abrir", { aba: "design" }); });
+	on("pas", function () { st.sub = "pasta"; desenhar(); });
+	on("prox", function () { irPara(2); });
+}
+
+// 2 · Conferir
+function etapa2(c) {
+	var a = st.analise || { pecas: [] }, h = "", acoes = {};
+	a.pecas.forEach(function (p, i) {
+		var pre = a.pecas.length > 1 ? p.nome + ": " : "";
+		h += p.bordas_abertas > 0 ? item("av", "!", pre + "Furos na malha", p.bordas_abertas + " bordas abertas. A peça pode sair falhada ou nem fatiar.", { t: "Consertar" }, "rep" + i)
+			: item("ok", "✓", pre + "Peça fechada", "Sem furos nem faces invertidas");
+		acoes["rep" + i] = function () { st.ocupado = "Consertando a malha…"; desenhar(); nat("modelo.reparar").then(lerTudo).then(function () { st.ocupado = ""; desenhar(); }, falha); };
+		h += p.cabe_na_mesa ? item("ok", "✓", pre + "Cabe na mesa", a.mesa_mm ? Math.round(a.mesa_mm[0]) + " × " + Math.round(a.mesa_mm[1]) + " mm" : "")
+			: item("av", "!", pre + "Não cabe na mesa", "Diminua com a ferramenta Escala (tecla S) ou deite a peça.", { t: "Deitar" }, "gir" + i);
+		acoes["gir" + i] = function () { girar().then(lerTudo).then(function () { st.ocupado = ""; desenhar(); }, falha); };
+	});
+	var noAr = a.pecas.some(function (p) { return p.area_no_ar_mm2 > 25; }), base = a.pecas.some(function (p) { return p.base_pequena; });
+	if (noAr && !a.com_suporte) h += item("av", "!", "Parte solta no ar", "Sem apoio, essa parte cai ou sai feia", { t: "Ligar suporte" }, "sup");
+	else if (noAr) h += item("ok", "✓", "Suporte ligado", "Só onde a peça fica no ar", st.desfazer.sup ? { t: "Desfazer", cinza: 1 } : null, "dsup");
+	if (base && !a.com_aba) h += item("av", "!", "Base pequena para a altura", "Pode soltar da mesa no meio da impressão", { t: "Pôr aba" }, "aba");
+	else if (base) h += item("ok", "✓", "Aba ligada", "Segura a peça na mesa", st.desfazer.aba ? { t: "Desfazer", cinza: 1 } : null, "daba");
+	c.innerHTML = cab("Assistente de impressão", "Etapa 2 de 5 · Conferir") + '<div class="pc"><h3>Conferência da peça</h3>' +
+		'<div class="txt">O Filuna olhou a peça antes de fatiar. Resolva o que estiver em laranja com um clique.</div>' + h + ocupadoHtml() + erroHtml() + "</div>" +
+		rodape([{ id: "volt", t: "Voltar" }, { id: "prox", t: "Próximo: fatiar", p: 1 }]);
+	Object.keys(acoes).forEach(function (k) { on(k, acoes[k]); });
+	on("sup", function () { ajustar({ enable_support: true, support_type: "tree(auto)" }, "sup").then(desenhar, falha); });
+	on("aba", function () { ajustar({ brim_type: "outer_only", brim_width: 5 }, "aba").then(desenhar, falha); });
+	on("dsup", function () { desfazer("sup"); });
+	on("daba", function () { desfazer("aba"); });
+	on("volt", function () { irPara(1); });
+	on("prox", function () { st.conferido = true; irPara(3); });
+}
+
+// 3 · Fatiar
+function etapa3(c) {
+	var a = st.analise || {}, p = a.processo || {};
+	var chips = [a.impressora, st.filamento && (st.filamento.filamento || st.filamento.material), p.layer_height && "Camada " + String(p.layer_height).replace(".", ",") + " mm",
+		p.enable_support == "1" ? "Suporte ligado" : "Sem suporte", p.brim_type && p.brim_type != "no_brim" ? "Aba " + String(p.brim_width || "").replace(".", ",") + " mm" : "",
+		p.wall_loops && p.wall_loops + " voltas", p.sparse_infill_density && p.sparse_infill_density + " preenchimento"].filter(Boolean);
+	c.innerHTML = cab("Assistente de impressão", "Etapa 3 de 5 · Fatiar") + '<div class="pc"><h3>Fatiar com estes ajustes</h3><div class="chips">' +
+		chips.map(function (x) { return "<span>" + E(x) + "</span>"; }).join("") + "</div>" +
+		'<div class="txt">O fatiamento transforma a peça nas camadas que a impressora vai fazer e calcula tempo, peso e preço.</div>' + ocupadoHtml() + erroHtml() + "</div>" +
+		rodape([{ id: "volt", t: "Voltar" }, { id: "fat", t: st.ocupado ? "Fatiando…" : "Fatiar mesa", p: 1, off: !!st.ocupado }]);
+	on("volt", function () { irPara(2); });
+	on("fat", function () { fatiar().then(function () { irPara(4); }, falha); });
+}
+
+// 4 · Ficha
+function conferencia() {
+	var h = "", acoes = {}, r = st.resumo || {}, v = r.volumes || {}, p = (st.analise && st.analise.processo) || {};
+	(st.avisos || []).forEach(function (a, i) { h += item("av", "!", a.grave ? "Aviso importante do fatiador" : "Aviso do fatiador", a.texto); });
+	var total = (v.peca || 0) + (v.suporte || 0), parte = total ? v.suporte / total : 0;
+	var gSup = r.gramas_estimadas && total ? r.gramas_estimadas * (v.suporte || 0) / (total + (v.torre || 0) + (v.purga || 0)) : 0;
+	if (parte > 0.12 && gSup > 3) {
+		h += item("av", "!", "Suporte usa " + Math.round(gSup) + " g (" + Math.round(parte * 100) + "%)", "Girar a peça pode cortar o suporte", { t: "Girar" }, "gir");
+		acoes.gir = function () { st.antes = st.resumo; girar().then(fatiar).then(desenhar, falha); };
+	}
+	if (+p.wall_loops > 0 && +p.wall_loops <= 2) {
+		h += item("av", "!", "Parede fina", p.wall_loops + " voltas: peça de encaixe ou que leva força costuma pedir 3 ou mais", { t: "3 voltas" }, "par");
+		acoes.par = function () { st.antes = st.resumo; ajustar({ wall_loops: 3 }, "par").then(fatiar).then(desenhar, falha); };
+	}
+	if (!h) h = item("ok", "✓", "Nada a corrigir", "O fatiador não deu aviso e os ajustes estão no padrão");
+	return { h: h, acoes: acoes };
+}
+function metricas() {
+	var r = st.resumo || {}, p = st.preco, a = st.antes;
+	function dif(novo, velho, fmt) { if (!a || velho == null || novo == null || Math.round(novo) == Math.round(velho)) return ""; return "<i>antes " + fmt(velho) + "</i>"; }
+	return '<div class="met"><div><span>Tempo</span><b>' + tempo(r.tempo_s) + "</b>" + dif(r.tempo_s, a && a.tempo_s, tempo) + "</div>" +
+		"<div><span>Peso</span><b>" + gramas(r) + "</b>" + dif(r.gramas_estimadas, a && a.gramas_estimadas, function (g) { return Math.round(g) + " g"; }) + "</div>" +
+		"<div><span>Custo</span><b>" + (p ? Filuna.reais(p.custo_total) : "—") + "</b></div>" +
+		"<div><span>Venda sugerida</span><b>" + (p ? Filuna.reais(p.preco_sugerido) : Filuna.temToken() ? "—" : "Entre na conta") + "</b></div></div>";
+}
+function etapa4(c) {
+	var cf = conferencia(), n = st.sugestoes.length;
+	c.innerHTML = cab("Ficha antes de imprimir", "Etapa 4 de 5 · Ficha") + '<div class="pc">' + metricas() +
+		(n ? item("ia", "✦", "Sua IA mandou uma proposta", st.sugestoes[0].texto, { t: "Ver" }, "sug") : "") +
+		'<div class="ok-verde">✓ Conferência do Filuna · sem custo</div>' + cf.h + ocupadoHtml() + erroHtml() +
+		item("ia", "✦", "Quer uma opinião da sua IA?", "Seu Claude, ChatGPT ou Gemini lê o fatiamento e sugere. Usa a sua assinatura.") +
+		'<div class="pedir"><textarea id="ped" rows="2" placeholder="Ex.: quero mais resistente e gastar menos suporte"></textarea></div>' +
+		'<div class="txt" style="font-size:12px">Para falar em vez de digitar: clique no campo e aperte Windows + H.</div></div>' +
+		rodape([{ id: "cmp", t: "Comparar opções" }, { id: "per", t: "Perguntar à minha IA" }, { id: "prox", t: "Imprimir", p: 1 }]);
+	Object.keys(cf.acoes).forEach(function (k) { on(k, cf.acoes[k]); });
+	on("sug", function () { st.sub = "sugestao"; desenhar(); });
+	on("cmp", function () { st.sub = "comparar"; st.comparar = null; desenhar(); });
+	on("per", function () { perguntarIA(document.getElementById("ped").value.trim()); });
+	on("prox", function () { irPara(5); });
+}
+
+// Sugestão que a IA do cliente mandou pelo conector
+function valorTexto(v) { return v === true ? "ligado" : v === false ? "desligado" : String(v).replace(".", ","); }
+function telaSugestao(c) {
+	var s = st.sugestoes[0], atual = (st.analise && st.analise.processo) || {};
+	function valorAtual(k) { var v = atual[k]; if (v == null) return ""; return (k == "enable_support" ? valorTexto(v == "1") : valorTexto(v)) + " → "; }
+	var lista = (s.itens || []).map(function (it, i) {
+		var antes = valorAtual(it.chave);
+		return item("ok", i + 1, it.nome + ": " + antes + valorTexto(it.valor), it.por_que);
+	}).join("") + (s.girar ? item("ok", "↻", "Girar a peça", "O Filuna escolhe a posição que pede menos suporte") : "");
+	c.innerHTML = '<div class="ph"><div class="t">✦ Seu ' + E(s.ia) + " sugeriu mudanças</div><div class=\"s\">Chegou pelo conector Filuna · você decide</div></div>" +
+		'<div class="pc"><div class="it" style="background:var(--side)"><div class="ic">“</div><div class="cx">' + E(s.texto) + "</div></div>" + lista +
+		'<div class="txt" style="font-size:12.5px">Nada muda sem o seu clique. Depois de aplicar, o Filuna fatia de novo e mostra o antes e o depois.</div>' + ocupadoHtml() + erroHtml() + "</div>" +
+		rodape([{ id: "rec", t: "Não, obrigado" }, { id: "apl", t: "Aplicar" + (s.fatiar_de_novo ? " e fatiar de novo" : ""), p: 1, off: !!st.ocupado }]);
+	on("rec", function () { Filuna.api("POST", "/ia/fatiador/sugestoes/" + s.id, { estado: "recusada" }).catch(function () {}); st.sugestoes.shift(); st.sub = ""; desenhar(); });
+	on("apl", function () {
+		st.antes = st.resumo; st.ocupado = "Aplicando…"; desenhar();
+		var p = Object.keys(s.ajustes || {}).length ? ajustar(s.ajustes, "ia") : Promise.resolve();
+		p.then(function () { return s.girar ? girar() : null; }).then(function () { return s.fatiar_de_novo ? fatiar() : lerTudo(); }).then(function () {
+			Filuna.api("POST", "/ia/fatiador/sugestoes/" + s.id, { estado: "aplicada" }).catch(function () {});
+			st.sugestoes.shift(); st.sub = ""; st.ocupado = ""; st.etapa = st.estado.fatiado ? 4 : 3; desenhar();
+		}, falha);
+	});
+}
+
+// Comparar 3 jeitos de fatiar a mesma peça
+function opcoes() {
+	var p = (st.analise && st.analise.processo) || {}, lh = parseFloat(p.layer_height) || 0.2;
+	return [
+		{ id: "rapida", nome: "Rápida", v: { layer_height: Math.min(0.28, Math.max(lh, 0.24)).toFixed(2), wall_loops: 2, sparse_infill_density: "10%" }, d: "Camada mais alta · 2 voltas · 10%" },
+		{ id: "equilibrada", nome: "Equilibrada", v: { layer_height: lh.toFixed(2), wall_loops: 3, sparse_infill_density: "15%" }, d: "Camada atual · 3 voltas · 15%" },
+		{ id: "resistente", nome: "Resistente", v: { layer_height: Math.max(0.12, Math.min(lh, 0.16)).toFixed(2), wall_loops: 5, sparse_infill_density: "40%", sparse_infill_pattern: "gyroid" }, d: "Camada fina · 5 voltas · 40% giroide" }];
+}
+function rodarComparacao() {
+	var lista = opcoes(), original = {}, chaves = ["layer_height", "wall_loops", "sparse_infill_density", "sparse_infill_pattern"];
+	chaves.forEach(function (k) { if (st.analise && st.analise.processo[k] != null) original[k] = st.analise.processo[k]; });
+	st.comparar = { resultados: {}, rodando: true, escolha: "equilibrada" };
+	var cadeia = Promise.resolve();
+	lista.forEach(function (o, i) {
+		cadeia = cadeia.then(function () {
+			st.ocupado = "Fatiando a opção " + (i + 1) + " de 3: " + o.nome + "…"; desenhar();
+			return nat("processo.ajustar", { valores: Object.assign({}, original, o.v) }).then(fatiar).then(function () {
+				st.comparar.resultados[o.id] = { tempo_s: st.resumo.tempo_s, gramas: st.resumo.gramas_estimadas };
+			});
+		});
+	});
+	return cadeia.then(function () { return nat("processo.ajustar", { valores: original }); }).then(function () {
+		var r = st.comparar.resultados;
+		st.comparar.escolha = r.equilibrada ? "equilibrada" : "rapida";
+		st.comparar.rodando = false; st.ocupado = ""; return lerTudo();
+	}).then(desenhar, function (e) { nat("processo.ajustar", { valores: original }).catch(function () {}); falha(e); });
+}
+function telaComparar(c) {
+	var lista = opcoes(), cp = st.comparar;
+	c.innerHTML = '<div class="ph"><div class="t">✦ Comparar opções</div><div class="s">A mesma peça fatiada de 3 jeitos</div></div><div class="pc">' +
+		(!cp ? '<div class="txt">O Filuna fatia a peça 3 vezes, com estes jeitos, e mostra lado a lado. Leva alguns segundos por opção. No fim, seus ajustes voltam como estavam até você escolher.</div>' : "") +
+		lista.map(function (o) {
+			var r = cp && cp.resultados[o.id];
+			return '<div class="op' + (cp && cp.escolha == o.id ? " sel" : "") + '" data-op="' + o.id + '"><b>' + E(o.nome) + (o.id == "equilibrada" ? '<span class="tag">recomendada</span>' : "") +
+				'</b><div class="n">' + (r ? "<b>" + tempo(r.tempo_s) + "</b>" + Math.round(r.gramas) + " g" : "—") + '</div><div class="v">' + E(o.d) + "</div></div>";
+		}).join("") + ocupadoHtml() + erroHtml() + "</div>" +
+		rodape(!cp || cp.rodando ? [{ id: "volt", t: "Voltar à ficha" }, { id: "rod", t: cp ? "Fatiando…" : "Fatiar as 3 opções", p: 1, off: !!cp }]
+			: [{ id: "volt", t: "Voltar à ficha" }, { id: "usa", t: "Usar " + lista.filter(function (o) { return o.id == cp.escolha; })[0].nome, p: 1 }]);
+	document.querySelectorAll("[data-op]").forEach(function (b) { b.onclick = function () { if (cp && !cp.rodando) { cp.escolha = b.dataset.op; desenhar(); } }; });
+	on("volt", function () { if (cp && cp.rodando) return; st.sub = ""; irPara(st.estado.fatiado ? 4 : 3); });
+	on("rod", function () { rodarComparacao(); });
+	on("usa", function () {
+		var o = lista.filter(function (x) { return x.id == cp.escolha; })[0];
+		st.antes = st.resumo; ajustar(o.v, "cmp").then(fatiar).then(function () { st.sub = ""; irPara(4); }, falha);
+	});
+}
+
+// 5 · Imprimir
+function impressoraSelecionada(e) { var l = (e && e.impressoras) || []; return l.filter(function (i) { return i.selecionada; })[0] || l[0] || null; }
+function etapa5(c) {
+	var i = st.impressora, f = st.filamento;
+	c.innerHTML = cab("Assistente de impressão", "Etapa 5 de 5 · Imprimir") + '<div class="pc"><h3>Enviar para a impressora</h3>' +
+		(i ? item(i.ligada ? "ok" : "av", i.ligada ? "✓" : "!", i.nome || i.modelo_nome || "Impressora", i.ligada ? "Ligada na rede · " + (i.estado || "pronta") : "Desligada ou fora da rede")
+			: item("av", "!", "Nenhuma impressora conectada", "Conecte em Dispositivo, ou exporte o arquivo para imprimir por cartão ou pendrive", { t: "Conectar" }, "con")) +
+		(f ? item("ok", "✓", (f.filamento || f.material || "Filamento"), "Filamento do fatiamento") : "") +
+		'<div class="txt" style="font-size:12.5px">Antes de começar, o Filuna confere pela câmera se a mesa está livre (nas impressoras com câmera). Você acompanha em Dispositivo, no site e no app do celular.</div>' + erroHtml() + "</div>" +
+		rodape([{ id: "dis", t: "Ver no Dispositivo" }, { id: "env", t: "Enviar e imprimir", p: 1 }]);
+	on("con", function () { nat("aba.abrir", { aba: "filuna.dispositivo" }); });
+	on("dis", function () { nat("aba.abrir", { aba: "filuna.dispositivo" }); });
+	on("env", function () { nat("imprimir").then(function () { st.sub = "imprimindo"; desenhar(); }, falha); });
+	nat("dispositivos.estado").then(function (e) { var n = impressoraSelecionada(e); if (JSON.stringify(n) != JSON.stringify(st.impressora)) { st.impressora = n; if (st.etapa == 5 && !st.sub) desenhar(); } }).catch(function () {});
+}
+function telaImprimindo(c) {
+	var i = st.impressora || {}, t = i.trabalho || {};
+	var prog = t.progresso != null ? t.progresso : i.progresso;
+	c.innerHTML = cab("Assistente de impressão", "Imprimindo") + '<div class="pc"><h3>' + E(i.nome || "Impressora") + "</h3>" +
+		'<div class="txt">' + E(i.estado || "Enviando…") + "</div>" + (prog != null ? '<div class="prog"><div style="animation:none;left:0;width:' + Math.max(2, Math.min(100, +prog)) + '%"></div></div>' : "") +
+		'<div class="met"><div><span>Andamento</span><b>' + (prog != null ? Math.round(prog) + "%" : "—") + "</b></div><div><span>Falta</span><b>" +
+		(t.restante_s != null ? tempo(t.restante_s) : "—") + "</b></div></div>" +
+		'<div class="txt" style="font-size:12.5px">Aviso no celular quando terminar. Pode fechar o Filuna: a impressão continua.</div></div>' +
+		rodape([{ id: "nova", t: "Nova peça" }, { id: "dis", t: "Abrir no Dispositivo", p: 1 }]);
+	on("nova", function () { st.sub = ""; irPara(1); });
+	on("dis", function () { nat("aba.abrir", { aba: "filuna.dispositivo" }); });
+}
+
+// Pasta automática: prepara um arquivo por vez quando o cliente pede. Nunca imprime sozinha.
+function lerPasta() { return nat("pasta.listar").then(function (p) { st.pasta = p; }); }
+function prepararPasta() {
+	var fila = ((st.pasta && st.pasta.arquivos) || []).filter(function (a) { return !a.pronto; });
+	if (!fila.length) return;
+	if (st.estado.objetos && !confirm("A mesa atual vai ser trocada pelos arquivos da pasta. Salve o projeto antes, se precisar. Continuar?")) return;
+	var cadeia = Promise.resolve();
+	fila.forEach(function (a, i) {
+		cadeia = cadeia.then(function () {
+			st.ocupado = "Preparando " + a.nome + " (" + (i + 1) + " de " + fila.length + ")…"; desenhar();
+			return nat("pasta.abrir", { nome: a.nome }).then(girar).then(fatiar).then(function () { return nat("pasta.salvar", { nome: a.nome }); })
+				.then(function () { a.pronto = true; a.resumo = tempo(st.resumo.tempo_s) + " · " + gramas(st.resumo); }, function (e) { a.erro = e.erro || e.message; });
+		});
+	});
+	cadeia.then(function () { st.ocupado = ""; desenhar(); });
+}
+function telaPasta(c) {
+	if (!st.pasta) { c.innerHTML = '<div class="vazio">Carregando…</div>'; lerPasta().then(desenhar, falha); return; }
+	var p = st.pasta, arqs = p.arquivos || [], falta = arqs.filter(function (a) { return !a.pronto; }).length;
+	c.innerHTML = '<div class="ph"><div class="t">✦ Pasta automática</div><div class="s">Arquivos que chegam saem prontos para imprimir</div></div><div class="pc">' +
+		item("", "📁", p.ok ? p.pasta : "Nenhuma pasta escolhida", p.ok ? "Prontos ficam em " + p.pasta.replace(/\\$/, "") + "\\Prontos" : "Escolha a pasta onde você joga os arquivos", { t: p.ok ? "Trocar" : "Escolher" }, "esc") +
+		'<div class="chips"><span>' + E((st.analise && st.analise.impressora) || "Impressora atual") + "</span><span>Conserta furos</span><span>Gira a peça</span></div>" +
+		(arqs.length ? arqs.map(function (a) {
+			return '<div class="it ' + (a.erro ? "av" : a.pronto ? "ok" : "") + '"><div class="ic">' + (a.erro ? "!" : a.pronto ? "✓" : "…") + '</div><div class="cx"><b>' + E(a.nome) + "</b><small>" +
+				E(a.erro || (a.pronto ? "Pronto" + (a.resumo ? " · " + a.resumo : "") : "Esperando")) + "</small></div></div>"; }).join("")
+			: p.ok ? '<div class="vazio">A pasta está vazia.</div>' : "") +
+		ocupadoHtml() + erroHtml() + '<div class="txt" style="font-size:12.5px">Nada é impresso sozinho: os prontos viram arquivos .gcode.3mf para você enviar quando quiser.</div></div>' +
+		rodape([{ id: "volt", t: "Voltar" }, { id: "atu", t: "Atualizar" }, { id: "pre", t: falta ? "Preparar " + falta : "Tudo pronto", p: 1, off: !falta || !!st.ocupado }]);
+	on("esc", function () { nat("pasta.escolher").then(function (r) { st.pasta = r; desenhar(); }, falha); });
+	on("volt", function () { st.sub = ""; desenhar(); });
+	on("atu", function () { st.pasta = null; desenhar(); });
+	on("pre", prepararPasta);
+}
+
+// ---------------------------------------------------------------- Minha IA (assinatura do cliente, sem crédito)
+function guardarIA(k) { st.ia = k; nat("armazem.gravar", { chave: "assistente.ia", valor: k }).catch(function () {}); }
+function abrirIA(url) {
+	return nat("ia.abrir", { url: url }).then(function () { st.iaAberta = true; st.iaUrl = url; st.aba = "ia"; desenhar(); }, falha);
+}
+function perguntarIA(pedido) {
+	var k = st.ia || "claude", ia = IAS[k];
+	var q = "Use o conector Filuna. Leia o fatiamento que está aberto no meu Filuna Slicer (filuna_fatiador) e me diga, em português simples, o que melhorar" +
+		(pedido ? ". Meu pedido: " + pedido : "") + ". Se valer a pena mudar ajustes, mande a proposta com filuna_fatiador_sugerir para eu aprovar no Filuna.";
+	publicar();
+	if (!st.ia) { st.aba = "ia"; st.erro = "Escolha a sua IA primeiro."; desenhar(); return; }
+	if (ia.pergunta) return abrirIA(ia.pergunta(q));
+	nat("texto.copiar", { texto: q }).catch(function () {});
+	abrirIA(ia.inicio).then(function () { st.erro = ""; });
+}
+function conectada(k) { var n = IAS[k].nome.toLowerCase(); return st.conectadas.some(function (c) { return String(c).toLowerCase().indexOf(n == "chatgpt" ? "chatgpt" : n) >= 0 || (k == "chatgpt" && /openai/i.test(c)); }); }
+function telaIA(c) {
+	var esc = st.ia;
+	if (!Filuna.temToken()) {
+		c.innerHTML = '<div class="ph"><div class="t">✦ Ligar a sua IA</div><div class="s">Use a IA que você já assina. A Filuna não cobra nada.</div></div><div class="pc">' +
+			'<div class="txt">Entre na sua conta Filuna primeiro: é por ela que a sua IA vê o fatiador e as suas impressoras.</div></div>' + rodape([{ id: "ent", t: "Entrar na conta Filuna", p: 1 }]);
+		on("ent", function () { Filuna.telaLogin ? Filuna.telaLogin() : nat("aba.abrir", { aba: "home" }); });
+		return;
+	}
+	var h = '<div class="ph"><div class="t">✦ Ligar a sua IA</div><div class="s">Use a IA que você já assina. A Filuna não cobra nada.</div></div><div class="pc">' +
+		'<div class="txt">Você entra na sua conta aqui dentro, como num navegador, e a IA passa a ver o fatiador e as suas impressoras pela Filuna.</div>';
+	Object.keys(IAS).forEach(function (k) {
+		var ia = IAS[k], lig = conectada(k);
+		h += '<div class="it' + (esc == k ? " ok" : "") + '"><div class="ic" style="background:' + ia.fundo + ";color:" + ia.cor + '">' + ia.letra + '</div><div class="cx"><b>' + ia.nome +
+			(lig ? ' <span class="ok-verde">· Filuna ligada</span>' : "") + "</b><small>" + ia.nota + '</small></div><button class="ac" data-ia="' + k + '">' + (esc == k ? "Abrir" : "Usar") + "</button></div>";
+	});
+	if (esc) {
+		var lig = conectada(esc);
+		h += '<h3 style="margin-top:6px">' + (lig ? "Tudo pronto com o " + IAS[esc].nome : "Ligar a Filuna no " + IAS[esc].nome + " (só na primeira vez)") + "</h3>" +
+			(lig ? '<div class="txt">Pergunte o que quiser na conversa. Exemplos: “o que melhoro nessa peça?”, “minha impressora parou, o que houve?”.</div>'
+				: item("", "1", "Entrar na sua conta", "Abre o " + IAS[esc].nome + " aqui no painel. A Filuna não vê a sua senha.", { t: "Entrar" }, "p1") +
+				item("", "2", "Adicionar o conector da Filuna", "Copio o endereço; na tela de conectores, adicione um conector personalizado e cole: " + st.endereco, { t: "Copiar e abrir" }, "p2") +
+				item("", "3", "Permitir na tela da Filuna", "Você escolhe o que a IA pode ver e fazer. Depois volte aqui.", { t: "Conferir" }, "p3"));
+	}
+	h += '<div class="it ok"><div class="ic">✓</div><div class="cx"><b>Sem chave, sem crédito</b><small>A IA trabalha pela sua assinatura de sempre</small></div></div>' +
+		'<div class="it ok"><div class="ic">✓</div><div class="cx"><b>Você aprova tudo</b><small>O que a IA sugere aparece em Etapas e só muda com o seu clique</small></div></div>' + erroHtml() + "</div>";
+	c.innerHTML = h + (esc ? rodape([{ id: "per", t: "Perguntar sobre esta peça" }, { id: "abr", t: "Abrir o " + IAS[esc].nome, p: 1 }]) : "");
+	document.querySelectorAll("[data-ia]").forEach(function (b) { b.onclick = function () { var k = b.dataset.ia; if (st.ia == k) abrirIA(IAS[k].inicio); else { guardarIA(k); st.erro = ""; desenhar(); } }; });
+	on("p1", function () { abrirIA(IAS[esc].inicio); });
+	on("p2", function () { nat("texto.copiar", { texto: st.endereco }).catch(function () {}); abrirIA(IAS[esc].conectores); });
+	on("p3", function () { buscarSugestoes().then(desenhar); });
+	on("per", function () { perguntarIA(""); });
+	on("abr", function () { abrirIA(IAS[esc].inicio); });
+}
+
+// ---------------------------------------------------------------- Pergunte à Filuna (ajuda da Filuna, grátis)
+function telaFiluna(c) {
+	c.innerHTML = '<div class="ph"><div class="t">✦ Pergunte à Filuna</div><div class="s">Respostas da ajuda da Filuna · grátis</div></div>' +
+		'<div class="pc" id="chat">' + (st.conversa.length ? st.conversa.map(function (m) {
+			return '<div class="m ' + (m.de == "eu" ? "eu" : "f") + '">' + E(m.t) + (m.fonte ? "<small>" + E(m.fonte) + "</small>" : "") + "</div>"; }).join("")
+			: '<div class="txt">Pergunte sobre impressão, filamentos, a sua impressora ou o Filuna. Ex.: “qual temperatura de mesa para PETG?”, “por que a peça faz fios?”.</div>') +
+		(st.conversa.length && st.conversa[st.conversa.length - 1].de != "eu" ? '<button class="ac cinza" id="pia" style="align-self:flex-start;margin:0">Mandar para a minha IA</button>' : "") + "</div>" +
+		'<div class="pf"><div class="pedir" style="flex:1"><textarea id="perg" rows="2" placeholder="Escreva sua pergunta"></textarea></div><button class="bp" id="env" style="flex:none;padding:0 16px">Enviar</button></div>';
+	var ch = document.getElementById("chat"); ch.scrollTop = 1e6;
+	on("pia", function () { var u = st.conversa.filter(function (m) { return m.de == "eu"; }).pop(); perguntarIA(u ? u.t : ""); });
+	on("env", function () {
+		var t = document.getElementById("perg").value.trim(); if (!t) return;
+		if (!Filuna.temToken()) { st.conversa.push({ de: "eu", t: t }, { de: "f", t: "Entre na sua conta Filuna para perguntar." }); return desenhar(); }
+		st.conversa.push({ de: "eu", t: t }, { de: "f", t: "Pensando…" }); desenhar();
+		Filuna.api("POST", "/ia/ajuda", { texto: t, conversa_id: st.conversaId }).then(function (r) {
+			st.conversaId = r.conversa_id || st.conversaId;
+			st.conversa[st.conversa.length - 1] = { de: "f", t: r.resposta || "Não achei a resposta. Tente perguntar à sua IA.", fonte: (r.fontes || []).length ? "Fonte: " + r.fontes.join(", ") : "" };
+			desenhar();
+		}, function (e) { st.conversa[st.conversa.length - 1] = { de: "f", t: e.erro || "A ajuda não respondeu agora." }; desenhar(); });
+	});
+}
+
+// ---------------------------------------------------------------- início
+Filuna.ouvir("assistente", function (d) {
+	if (d.aberto && d.etapa) { if (st.iaAberta) { nat("ia.fechar"); st.iaAberta = false; } st.aba = "etapas"; st.sub = ""; st.etapa = d.etapa; if (d.etapa >= 3) st.conferido = true; }
+	lerTudo().then(desenhar);
+});
+Filuna.ouvir("fatiado", function () { lerTudo().then(function () { if (!st.ocupado) { if (st.estado.fatiado && st.etapa == 3 && st.aba == "etapas" && !st.sub) st.etapa = 4; desenhar(); } publicar(); }); });
+Filuna.ouvir("conta", function () { desenhar(); });
+Filuna.iniciar().then(function () {
+	return Promise.all([nat("armazem.ler", { chave: "assistente.ia" }).then(function (r) { if (r && r.valor) st.ia = r.valor; }).catch(function () {}),
+		nat("filamento.atual").then(function (f) { st.filamento = f; }).catch(function () {}), lerTudo()]);
+}).then(function () { desenhar(); buscarSugestoes(); });
+// Enquanto o painel está aberto: acompanha a mesa, manda o estado para a IA do cliente e busca as propostas dela.
+setInterval(function () {
+	nat("assistente.estado").then(function (e) {
+		if (!e.aberto) return;
+		var antes = JSON.stringify([st.estado, st.chavePecas]);
+		lerTudo().then(function () {
+			publicar();
+			if (JSON.stringify([st.estado, st.chavePecas]) != antes && !st.ocupado && st.aba == "etapas" && !st.sub) desenhar();
+		});
+		buscarSugestoes();
+	}).catch(function () {});
+}, 5000);
+</script>
+</body>
+</html>

@@ -17,6 +17,17 @@ html,body{background:#fff;overflow:hidden;height:100%}
 #dica b{color:var(--ink)}
 .dir{display:flex;align-items:center;gap:22px;flex:none}
 .dir label{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600}
+/* Assistente de impressão: o caminho da impressão em 5 etapas; clicar abre o painel na etapa. */
+.etapas{flex:1;min-width:0;display:flex;align-items:center;gap:5px;overflow:hidden}
+.et{display:flex;align-items:center;gap:6px;height:30px;padding:0 11px 0 4px;border:0;border-radius:999px;font:inherit;font-size:13px;font-weight:700;color:var(--ink2);background:var(--pill);cursor:pointer;flex:none}
+.et i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;background:#fff;color:var(--ink2)}
+.et.ok{background:var(--good-bg);color:var(--good)}.et.ok i{background:var(--good);color:#fff}
+.et.at{background:var(--magenta);color:#fff}.et.at i{background:#fff;color:var(--magenta-deep)}
+.seta{color:#c9c3bb;font-size:13px;flex:none}
+.ass{display:flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;border:0;background:linear-gradient(90deg,var(--magenta),var(--violeta));color:#fff;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer;white-space:nowrap}
+/* janela estreita: as etapas ficam só com o número */
+@media (max-width:1250px){.et span{display:none}.et{padding:0 4px}.seta{display:none}}
+@media (max-width:980px){#nuvem,.venda{display:none}}
 </style>
 </head>
 <body>
@@ -26,9 +37,10 @@ html,body{background:#fff;overflow:hidden;height:100%}
 	<div class="bl num"><span>Custo</span><b id="custo">—</b></div>
 	<div class="bl num"><span>Tempo</span><b id="tempo">—</b></div>
 	<div class="div"></div>
-	<div id="dica"></div>
+	<div id="dica" hidden></div>
+	<div class="etapas" id="etapas"></div>
 	<div id="detalhe" hidden></div>
-	<div class="dir"><span id="nuvem" style="font-size:12.5px;color:var(--ink2);white-space:nowrap"></span><a id="ia">IA Filuna</a><label><span id="autoTxt">Autoajuda ligada</span><span class="chave"><input type="checkbox" id="auto" checked><span></span></span></label></div>
+	<div class="dir"><span id="nuvem" style="font-size:12.5px;color:var(--ink2);white-space:nowrap"></span><button class="ass" id="ia" title="Assistente de impressão: etapas, sua IA e ajuda da Filuna">✦ Assistente</button><label><span id="autoTxt">Autoajuda ligada</span><span class="chave"><input type="checkbox" id="auto" checked><span></span></span></label></div>
 </div>
 <script src="ponte.js"></script>
 <script>
@@ -75,7 +87,25 @@ function ler() {
 }
 var E = Filuna.esc;
 document.getElementById("venda").onclick = function () { Filuna.nativo("aba.abrir", { aba: "filuna.espaco", secao: "config" }); };
-document.getElementById("ia").onclick = function () { Filuna.nativo("aba.abrir", { aba: "filuna.espaco", secao: "ia" }); };
+document.getElementById("ia").onclick = function () { Filuna.nativo("assistente.abrir", { etapa: 0 }); };
+// ---- Etapas do Assistente: a tela do painel conta em que etapa o cliente está; sem ela, conta pelo estado da mesa.
+var ETAPAS = ["Peça", "Conferir", "Fatiar", "Ficha", "Imprimir"], etapaPainel = 0, conferido = false, objetosAntes = -1;
+function etapas() {
+	Filuna.nativo("fatiamento.estado").then(function (e) {
+		if (e.objetos != objetosAntes) { if (objetosAntes >= 0) { conferido = false; etapaPainel = 0; } objetosAntes = e.objetos; }
+		var at = !e.objetos ? 1 : !e.fatiado ? (conferido ? 3 : 2) : 4;
+		if (etapaPainel == 5 && e.fatiado) at = 5;
+		document.getElementById("etapas").innerHTML = ETAPAS.map(function (n, k) {
+			var c = k + 1 < at ? "ok" : k + 1 == at ? "at" : "";
+			return (k ? '<b class="seta">›</b>' : "") + '<button class="et ' + c + '" data-e="' + (k + 1) + '" title="' + n + '"><i>' + (c == "ok" ? "✓" : k + 1) + "</i><span>" + n + "</span></button>";
+		}).join("");
+		document.querySelectorAll("[data-e]").forEach(function (b) { b.onclick = function () { Filuna.nativo("assistente.abrir", { etapa: +b.dataset.e }); }; });
+	}).catch(function () {});
+}
+Filuna.ouvir("assistente.etapas", function (d) { etapaPainel = d.etapa || 0; conferido = !!d.conferido; etapas(); });
+Filuna.ouvir("fatiado", etapas);
+etapas();
+setInterval(etapas, 3000);
 document.getElementById("auto").onchange = function () {
 	autoajuda = this.checked; ultimo = ""; ler();
 	// Mesma chave das Configurações (engrenagem › Filuna › Autoajuda); a conta recebe uma cópia.

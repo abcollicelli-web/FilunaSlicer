@@ -518,6 +518,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/FilunaImpressao.cpp
     GUI/FilunaAutoajuda.cpp
     GUI/FilunaAutoajuda.hpp
+    GUI/FilunaAssistente.cpp
+    GUI/FilunaAssistente.hpp
     GUI/FilunaImpressao.hpp
     GUI/FilunaManutencao.hpp
     GUI/FilunaDispositivos.cpp
