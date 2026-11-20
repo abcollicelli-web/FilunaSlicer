@@ -113,10 +113,13 @@ function publicar() {
 		filamento: st.filamento ? { material: st.filamento.material, nome: st.filamento.filamento || st.filamento.nome } : null };
 	if (st.resumo && st.resumo.fatiado) e.fatiamento = { tempo: tempo(st.resumo.tempo_s), tempo_s: st.resumo.tempo_s, gramas: Math.round(st.resumo.gramas_estimadas),
 		volumes_mm3: st.resumo.volumes, trocas_filamento: st.resumo.trocas_filamento, avisos: st.avisos.map(function (a) { return a.texto; }) };
-	var t = JSON.stringify(e);
-	if (t == ultimoEnvio) return;
-	ultimoEnvio = t;
-	Filuna.api("POST", "/ia/fatiador", { estado: e }).catch(function () { ultimoEnvio = ""; });
+	nat("perfil.lista").catch(function () { return null; }).then(function (perfis) {
+		if (perfis) e.perfis = perfis;
+		var t = JSON.stringify(e);
+		if (t == ultimoEnvio) return;
+		ultimoEnvio = t;
+		Filuna.api("POST", "/ia/fatiador", { estado: e }).catch(function () { ultimoEnvio = ""; });
+	});
 }
 function buscarSugestoes() {
 	if (!Filuna.temToken()) return Promise.resolve();
@@ -137,6 +140,10 @@ function aplicarSugestao(s) {
 	var passos = 0, antesProc = null;
 	st.antes = st.resumo; st.ocupado = "Sua IA está mexendo no fatiador…"; st.erro = ""; if (!st.iaAberta) desenhar();
 	var cadeia = Promise.resolve();
+	// perfis primeiro: trocar a impressora ou o processo troca os ajustes que vêm depois
+	["impressora", "filamento", "processo"].forEach(function (t) {
+		if (s.perfis && s.perfis[t]) cadeia = cadeia.then(function () { return nat("perfil.trocar", { tipo: t, nome: s.perfis[t] }).then(function () { return espera(800); }); });
+	});
 	(s.comandos || []).forEach(function (c) { cadeia = cadeia.then(function () { return nat("mesa.comando", c).then(function () { passos++; }); }); });
 	return cadeia.then(function () { if (s.girar) return girar().then(function () { passos++; }); })
 		.then(function () { if (s.organizar) return nat("peca.arrumar").then(aguardarLivre).then(function () { passos++; }); })
@@ -146,6 +153,7 @@ function aplicarSugestao(s) {
 			return nat("processo.ajustar", { valores: v }).then(function (r) { antesProc = r.antes; });
 		})
 		.then(function () { return s.fatiar_de_novo && st.estado.objetos ? fatiar() : lerTudo(); })
+		.then(function () { if (s.imprimir && st.estado.fatiado) return nat("imprimir"); })
 		.then(function () {
 			var pecas = ((st.analise && st.analise.pecas) || []).map(function (p, i) {
 				return "peça " + i + " (" + p.nome + "): " + p.tamanho_mm.map(function (x) { return Math.round(x); }).join("×") + " mm, " + p.escala_porcento + "%, " + p.copias + " cópia(s)" + (p.cabe_na_mesa ? "" : ", NÃO CABE NA MESA"); });
