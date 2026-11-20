@@ -738,6 +738,9 @@ public:
 
     void arrange();
     void orient();
+    // Filuna: painel do Assistente de impressão, à direita da mesa (Preparação e Visualização).
+    void mostrar_assistente(bool mostrar);
+    bool assistente_visivel();
     void find_new_position(const ModelInstancePtrs  &instances);
     //BBS: add job state related functions
     void set_prepare_state(int state);

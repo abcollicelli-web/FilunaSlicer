@@ -57,6 +57,7 @@
 #include "Plater.hpp"
 #include "Tab.hpp"
 #include "WebViewDialog.hpp"
+#include "FilunaAssistente.hpp"
 #include "libslic3r/miniz_extension.hpp"
 #include "slic3r/Filuna/FilunaCalculos.hpp"
 #include "slic3r/Utils/Http.hpp"
@@ -617,6 +618,9 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     // Banco local (estoque, histórico, painel, manutenção): FilunaDados.cpp.
     if (auto dados = filuna_dados_acao(action, d))
         return *dados;
+    // Assistente de impressão (etapas, conferência da peça, ajustes, pasta automática): FilunaAssistente.cpp.
+    if (auto assistente = filuna_assistente_acao(action, d))
+        return *assistente;
     AppConfig* cfg = wxGetApp().app_config;
     if (action == "config.ler") {
         const std::string key = d.value("chave", std::string());

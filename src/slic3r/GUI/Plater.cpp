@@ -1,5 +1,6 @@
 #include "Plater.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaAssistente.hpp"
 #include "FilunaLateral.hpp"
 #include "FilunaFilamento.hpp"
 #include "slic3r/Filuna/FilunaDb.hpp"
@@ -8867,6 +8868,24 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                                          .MinSize(wxSize(-1, q->FromDIP(44)))
                                          .BestSize(wxSize(-1, q->FromDIP(44))));
 
+    // Filuna: Assistente de impressão (etapas Peça, Conferir, Fatiar, Ficha e Imprimir), à direita da mesa. Começa
+    // fechado; abre pelo botão Assistente ou por uma etapa do rodapé (FilunaAssistente.cpp).
+    auto* filuna_assistente = new FilunaAssistentePainel(q);
+    m_aui_mgr.AddPane(filuna_assistente, wxAuiPaneInfo()
+                                             .Name("filuna_assistente")
+                                             .Right()
+                                             .Layer(1)
+                                             .CaptionVisible(false)
+                                             .PaneBorder(false)
+                                             .CloseButton(false)
+                                             .Gripper(false)
+                                             .Floatable(false)
+                                             .Movable(false)
+                                             .Dockable(false)
+                                             .MinSize(wxSize(q->FromDIP(360), -1))
+                                             .BestSize(wxSize(q->FromDIP(440), -1))
+                                             .Hide());
+
     // The UV editor pane is added by make_uv_editor().
     // Closing the pane with its own X has to reach the gizmo, or its next update would simply show the pane again.
     q->Bind(wxEVT_AUI_PANE_CLOSE, [this](wxAuiManagerEvent &evt) {
@@ -14545,6 +14564,7 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
         BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(": ignore this event %1%") % evt.status();
         return;
     }
+    filuna_assistente_fatiado(evt.success()); // Filuna: rodapé e Assistente atualizam na hora
     //BBS: add project slice logic
     bool is_finished = !m_slice_all || (m_cur_slice_plate == (partplate_list.get_plate_count() - 1));
 
@@ -15763,6 +15783,21 @@ void Plater::priv::update_objects_position_when_select_preset(const std::functio
     }
 
     update();
+}
+
+void Plater::mostrar_assistente(bool mostrar)
+{
+    wxAuiPaneInfo& pane = p->m_aui_mgr.GetPane("filuna_assistente");
+    if (!pane.IsOk() || pane.IsShown() == mostrar)
+        return;
+    pane.Show(mostrar);
+    p->m_aui_mgr.Update();
+}
+
+bool Plater::assistente_visivel()
+{
+    const wxAuiPaneInfo& pane = p->m_aui_mgr.GetPane("filuna_assistente");
+    return pane.IsOk() && pane.IsShown();
 }
 
 void Plater::orient()
