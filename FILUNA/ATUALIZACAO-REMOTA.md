@@ -5,6 +5,8 @@ segurança e a conta da Microsoft Store não pode ser punida. Este documento é 
 (`lab/oem_homolog/publicar_perfis.py`, `publicar_telas.py`, `publicar_correcao.py`) aplicam o que está aqui e recusam
 o resto.
 
+O passo a passo de uma correção, com exemplos de cada caso, está em [`CORRECOES-DO-FATIADOR.md`](CORRECOES-DO-FATIADOR.md).
+
 ## O que a Microsoft exige (Store Policies 7.20, em vigor desde 22/10/2026)
 
 - **10.2.2** O produto não pode mudar nem ampliar de forma fundamental a função descrita, nem introduzir função que

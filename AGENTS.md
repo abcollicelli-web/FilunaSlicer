@@ -7,6 +7,8 @@ Este repositório é o **FilunaSlicer** (fork AGPL do OrcaSlicer). Antes de qual
 3. Respeite `upstream-mirror` intacto e a pasta `FILUNA/`; não alterar `src/libslic3r/**` na fundação sem ADR
 4. Para testar um build no PC do proprietário, siga a regra "Validação de builds no PC do proprietário" do registro: o Claude Code em `claude remote-control` baixa o executável portátil (nunca o instalador) para `C:\Users\abcol\Downloads\FilunaSlicer-teste`, e o chat ligado ao PC abre e testa a interface
 
+5. **Erro relatado por cliente no fatiador** (algo que não funciona, câmera que não aparece, texto cortado, queda, perfil que imprime errado): antes de mexer, leia `FILUNA/CORRECOES-DO-FATIADOR.md` (o passo a passo e a tabela do que vai direto ao cliente pelo servidor Filuna e do que só vai pela Microsoft Store) e `FILUNA/ATUALIZACAO-REMOTA.md` (a regra). Publicar para clientes, no canal `todos` ou na Microsoft, só com o OK expresso do proprietário.
+
 As seções abaixo são as regras de engenharia herdadas do OrcaSlicer (também em `CLAUDE.md` → este arquivo). Elas continuam válidas para o core C++/wxWidgets.
 
 ---
