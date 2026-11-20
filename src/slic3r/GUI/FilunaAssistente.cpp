@@ -90,35 +90,106 @@ json ler_processo()
     return valores;
 }
 
+// Ajuste que nunca muda por aqui: o que roda programa ou escreve G-code próprio no computador do cliente.
+bool ajuste_travado(const std::string& chave)
+{
+    return chave.find("gcode") != std::string::npos || chave.find("post_process") != std::string::npos ||
+           chave == "filename_format" || chave.find("script") != std::string::npos;
+}
+
 // Muda os ajustes pedidos de uma vez (como se o cliente tivesse mudado na lateral) e devolve os valores de antes, para o
-// Desfazer da tela.
+// Desfazer da tela. Vale qualquer ajuste do Processo ou do Filamento (temperatura, velocidade, ventilador, retração…);
+// os da lista AJUSTES ainda têm o intervalo conferido; os outros, o próprio Orca recusa se o valor não servir.
 json ajustar_processo(const json& pedidos)
 {
     if (!pedidos.is_object() || pedidos.empty())
         throw std::runtime_error("Nenhum ajuste pedido.");
-    Tab&               tab = aba_processo();
-    DynamicPrintConfig mudancas;
+    const auto&        do_processo = Preset::print_options();
+    const auto&        do_filamento = Preset::filament_options();
+    Tab*               tabs[2]      = {&aba_processo(), wxGetApp().get_tab(Preset::TYPE_FILAMENT)};
+    DynamicPrintConfig mudancas[2];
     json               antes = json::object();
     for (const auto& [chave, bruto] : pedidos.items()) {
-        const Ajuste* a = ajuste(chave);
-        if (a == nullptr)
-            throw std::runtime_error("O assistente não muda o ajuste \"" + chave + "\".");
+        if (ajuste_travado(chave))
+            throw std::runtime_error("Por segurança o assistente não muda \"" + chave + "\".");
+        const int qual = std::find(do_processo.begin(), do_processo.end(), chave) != do_processo.end()   ? 0
+                         : std::find(do_filamento.begin(), do_filamento.end(), chave) != do_filamento.end() ? 1
+                                                                                                        : -1;
+        if (qual < 0 || tabs[qual] == nullptr || tabs[qual]->get_config() == nullptr)
+            throw std::runtime_error("Ajuste desconhecido no Processo e no Filamento: \"" + chave + "\".");
         std::string valor = bruto.is_string() ? bruto.get<std::string>() : bruto.dump();
         if (bruto.is_boolean())
             valor = bruto.get<bool>() ? "1" : "0";
-        if (a->minimo < a->maximo) {
+        if (const Ajuste* a = ajuste(chave); a != nullptr && a->minimo < a->maximo) {
             char*        fim = nullptr;
             const double n   = std::strtod(valor.c_str(), &fim);
             if (fim == valor.c_str() || n < a->minimo || n > a->maximo)
                 throw std::runtime_error("Valor fora do aceito para \"" + chave + "\": " + valor);
         }
-        mudancas.set_deserialize_strict(chave, valor);
-        if (const ConfigOption* atual = tab.get_config()->option(chave))
-            antes[chave] = atual->serialize();
+        const ConfigOption* atual = tabs[qual]->get_config()->option(chave);
+        if (atual == nullptr)
+            throw std::runtime_error("Ajuste \"" + chave + "\" não existe neste perfil.");
+        // listas por extrusora (temperatura, fluxo…): um valor só vale para todas
+        if (atual->is_vector() && valor.find(',') == std::string::npos) {
+            const size_t n = static_cast<const ConfigOptionVectorBase*>(atual)->size();
+            std::string  v = valor;
+            for (size_t i = 1; i < n; ++i)
+                v += "," + valor;
+            valor = v;
+        }
+        try {
+            mudancas[qual].set_deserialize_strict(chave, valor);
+        } catch (const std::exception&) {
+            throw std::runtime_error("Valor não aceito para \"" + chave + "\": " + valor);
+        }
+        antes[chave] = atual->serialize();
     }
-    tab.load_config(mudancas);
-    mesa().on_config_change(*tab.get_config());
+    for (int i = 0; i < 2; ++i)
+        if (!mudancas[i].empty()) {
+            tabs[i]->load_config(mudancas[i]);
+            mesa().on_config_change(*tabs[i]->get_config());
+        }
     return {{"antes", antes}, {"valores", ler_processo()}};
+}
+
+// Troca impressora, filamento (primeira entrada) ou perfil de processo pelo nome do perfil, como na lateral.
+json trocar_perfil(const std::string& tipo, const std::string& nome)
+{
+    const Preset::Type t = tipo == "impressora" ? Preset::TYPE_PRINTER : tipo == "filamento" ? Preset::TYPE_FILAMENT
+                         : tipo == "processo"   ? Preset::TYPE_PRINT
+                                                : Preset::TYPE_INVALID;
+    if (t == Preset::TYPE_INVALID)
+        throw std::runtime_error("Tipo de perfil: impressora, filamento ou processo.");
+    PresetCollection& col = t == Preset::TYPE_PRINTER ? wxGetApp().preset_bundle->printers
+                          : t == Preset::TYPE_FILAMENT ? wxGetApp().preset_bundle->filaments
+                                                       : wxGetApp().preset_bundle->prints;
+    const Preset* p = col.find_preset(nome, false);
+    if (p == nullptr || !p->is_visible)
+        throw std::runtime_error("Perfil não encontrado: " + nome);
+    Tab* tab = wxGetApp().get_tab(t);
+    if (tab == nullptr)
+        throw std::runtime_error("Os perfis ainda não abriram.");
+    tab->select_preset(nome);
+    return {{"ok", true}, {"tipo", tipo}, {"nome", nome}};
+}
+
+// Perfis que dá para escolher agora (os compatíveis com a impressora atual), para a IA trocar pelo nome.
+json perfis_disponiveis()
+{
+    PresetBundle& b     = *wxGetApp().preset_bundle;
+    auto          lista = [](const PresetCollection& col, bool so_compat) {
+        json l = json::array();
+        for (const Preset& p : col)
+            if (p.is_visible && (!so_compat || p.is_compatible) && l.size() < 60)
+                l.push_back(p.name);
+        return l;
+    };
+    return {{"impressora_atual", b.printers.get_edited_preset().name},
+            {"filamento_atual", b.filaments.get_edited_preset().name},
+            {"processo_atual", b.prints.get_edited_preset().name},
+            {"impressoras", lista(b.printers, false)},
+            {"filamentos", lista(b.filaments, true)},
+            {"processos", lista(b.prints, true)}};
 }
 
 // Conferência da peça antes de fatiar: o que dá para ver só pela malha, sem fatiar.
@@ -261,6 +332,21 @@ json comando_na_mesa(const json& d)
             else
                 plater.decrease_instances(size_t(atual - total));
         }
+    } else if (acao == "espelhar") {
+        const std::string eixo = d.value("eixo", std::string("x"));
+        if (eixo != "x" && eixo != "y" && eixo != "z")
+            throw std::runtime_error("Espelhar: eixo x, y ou z.");
+        plater.take_snapshot("Assistente: espelhar");
+        for (size_t i : alvos) {
+            model.objects[i]->mirror(eixo == "x" ? X : eixo == "y" ? Y : Z);
+            model.objects[i]->invalidate_bounding_box();
+            model.objects[i]->ensure_on_bed();
+        }
+        plater.changed_objects(alvos);
+    } else if (acao == "remover") {
+        if (peca < 0)
+            throw std::runtime_error("Diga qual peça remover (índice).");
+        plater.remove(size_t(peca));
     } else if (acao == "desfazer") {
         plater.undo();
     } else {
@@ -529,6 +615,10 @@ std::optional<json> filuna_assistente_acao(const std::string& acao, const json& 
         return analisar_pecas();
     if (acao == "mesa.comando")
         return comando_na_mesa(d);
+    if (acao == "perfil.trocar")
+        return trocar_perfil(d.value("tipo", std::string()), d.value("nome", std::string()));
+    if (acao == "perfil.lista")
+        return perfis_disponiveis();
     if (acao == "processo.ler")
         return json{{"valores", ler_processo()}};
     if (acao == "processo.ajustar")
