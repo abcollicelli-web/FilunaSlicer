@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "filuna-slicer",
+  "version": "0.1.0",
+  "description": "Integracao do ChatGPT com o Filuna Slicer: resultados somente na biblioteca do cliente.",
+  "author": {"name": "Filuna 3D", "url": "https://filuna3d.com"},
+  "homepage": "https://filuna3d.com",
+  "repository": "https://github.com/abcollicelli-web/FilunaSlicer",
+  "extensions": {"com.openai": {
+    "onboardingSkill": "./skills/filuna/SKILL.md",
+    "interface": {
+      "displayName": "Filuna Slicer",
+      "shortDescription": "Sua oficina 3D no ChatGPT",
+      "longDescription": "Consulte biblioteca, impressoras, erros, estoque e ofertas. Crie parametricos e execute ferramentas, sempre salvando resultados apenas na biblioteca Filuna. Nenhum STL, 3MF, G-code, ZIP, geometria ou link para arquivos 3D e entregue no ChatGPT. Enviar impressao exige confirmacao no aplicativo. Recursos estao sujeitos a disponibilidade e autorizacao.",
+      "developerName": "Filuna 3D",
+      "category": "Productivity",
+      "capabilities": ["Consulta de biblioteca e impressoras", "Estoque e notas fiscais", "Modelos e ferramentas na biblioteca", "Impressao com confirmacao"],
+      "websiteURL": "https://filuna3d.com",
+      "defaultPrompt": [
+        "Mostre minhas impressoras e alertas recentes.",
+        "Confira minha nota fiscal antes de cadastrar bobinas.",
+        "Gere um parametrico e salve na minha biblioteca Filuna."
+      ]
+    }
+  }}
+}
