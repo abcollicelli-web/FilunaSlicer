@@ -6,6 +6,7 @@
 #include "slic3r/Filuna/FilunaDb.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaImpressao.hpp"
+#include "FilunaDispositivos.hpp"
 #include "DeviceCore/FilunaOEMOverlay.hpp"
 #include "../../../FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp"
 #include "DeviceCore/FilunaVendorRegistry.hpp"
@@ -939,6 +940,7 @@ struct Sidebar::priv
     void fl_atualizar();
     bool fl_esconder_originais();
     void fl_abrir(ComboBox* combo, const wxRect& tela, int largura_min = 0);
+    void fl_impressoras(const wxRect& tela);
     void fl_tipo_bico(const wxRect& tela);
     void fl_recolher(bool recolher);
     void fl_adicionar();
@@ -1236,7 +1238,7 @@ void Sidebar::priv::fl_criar()
     using Cartao           = FilunaLateral::CartaoImpressora;
     fl_impressora->ao_area = [this](int area, const wxRect& r) {
         switch (area) {
-        case Cartao::FAIXA: fl_abrir(combo_printer, r); break;
+        case Cartao::FAIXA: fl_impressoras(r); break;
         case Cartao::BICO: fl_abrir(combo_nozzle_dia, r); break;
         case Cartao::TIPO: fl_tipo_bico(r); break;
         case Cartao::MESA: fl_abrir(combo_printer_bed, r, fl_impressora->FromDIP(180)); break;
@@ -1291,6 +1293,41 @@ void Sidebar::priv::fl_abrir(ComboBox* combo, const wxRect& tela, int largura_mi
     const wxPoint destino = combo->GetParent()->ScreenToClient(tela.GetTopLeft());
     combo->SetSize(destino.x, destino.y, std::max(tela.width, largura_min), tela.height);
     combo->ForceDropdownOpen();
+}
+
+// A faixa da impressora lista só as impressoras conectadas (as desligadas saem, para não repetir o modelo). Escolher
+// uma abre a impressora no programa e acerta o perfil do modelo; "Outro perfil" abre a lista de perfis para fatiar sem
+// impressora conectada.
+void Sidebar::priv::fl_impressoras(const wxRect& tela)
+{
+    namespace FD           = FilunaDispositivos;
+    const nlohmann::json e = FD::estado();
+    std::vector<std::pair<std::string, wxString>> ligadas;
+    for (const auto& i : e.value("impressoras", nlohmann::json::array()))
+        if (i.value("ligada", false) && !i.value("dev_id", std::string()).empty())
+            ligadas.push_back({i.value("dev_id", std::string()),
+                               wxString::FromUTF8((i.value("selecionada", false) ? "✓ " : "") + i.value("nome", std::string()) + "  ·  " +
+                                                  i.value("modelo_nome", std::string()))});
+    wxMenu menu;
+    const int base = wxID_HIGHEST + 4100;
+    if (ligadas.empty())
+        menu.Append(base - 1, wxString::FromUTF8("Nenhuma impressora conectada"))->Enable(false);
+    for (size_t k = 0; k < ligadas.size(); ++k)
+        menu.Append(base + int(k), ligadas[k].second);
+    menu.AppendSeparator();
+    menu.Append(base - 2, wxString::FromUTF8("Outro perfil de impressora…"));
+    menu.Append(base - 3, wxString::FromUTF8("Conectar impressora…"));
+    const int escolha = fl_impressora->GetPopupMenuSelectionFromUser(menu, fl_impressora->ScreenToClient(tela.GetBottomLeft()));
+    if (escolha == base - 2)
+        fl_abrir(combo_printer, tela);
+    else if (escolha == base - 3)
+        wxGetApp().mainframe->select_tab(wxString(TAB_ID_FILUNA_DEVICE));
+    else if (escolha >= base && escolha < base + int(ligadas.size())) {
+        const nlohmann::json r = FD::selecionar(ligadas[size_t(escolha - base)].first);
+        if (r.contains("erro"))
+            MessageDialog(fl_impressora, wxString::FromUTF8(r.value("erro", std::string())), wxString::FromUTF8("Impressora"), wxOK | wxICON_WARNING).ShowModal();
+        fl_atualizar();
+    }
 }
 
 // Tipo de bico: as opções do Orca, gravadas no perfil da impressora pela própria aba (o perfil fica "modificado",
@@ -1448,6 +1485,10 @@ void Sidebar::priv::fl_atualizar()
                                    wxString::FromUTF8("Padrão");
     FilunaLateral::CartaoImpressora::Info info;
     info.impressora = combo_printer ? combo_printer->GetValue() : wxString();
+    // conectada e aberta no programa: o nome dela (ex.: P2S-CHLOE), não só o modelo
+    if (DeviceManager* dm = wxGetApp().getDeviceManager())
+        if (MachineObject* o = dm->get_selected_machine(); o != nullptr && o->is_connected() && !o->get_dev_name().empty())
+            info.impressora = wxString::FromUTF8(o->get_dev_name());
     info.bico       = bico;
     info.tipo       = tipo;
     info.mesa       = mesa;
@@ -22726,6 +22767,11 @@ void Plater::print_job_finished(wxCommandEvent &evt)
     // Keep the active session while asynchronous status traffic may still be in flight.
     if (!selected || selected->get_dev_id() != dev_id || selected->connection_type() != "lan")
         dev->set_selected_machine(dev_id);
+    // Filuna: depois do envio vai para o Dispositivo do Filuna, não para o painel nativo da Bambu.
+    if (wxGetApp().app_config->get_bool("use_printer_agents") && p->main_frame->m_tabpanel->FindPageByName(TAB_ID_FILUNA_DEVICE) != wxNOT_FOUND) {
+        p->main_frame->request_select_tab(TAB_ID_FILUNA_DEVICE);
+        return;
+    }
     p->main_frame->request_select_tab(TAB_ID_MONITOR);
     // Selects the status page on a built Device tab; one built by the switch starts there.
     MonitorPanel* curr_monitor = MonitorPanel::if_built();
