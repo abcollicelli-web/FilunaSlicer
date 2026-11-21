@@ -1680,6 +1680,110 @@ void farm_destravar()
     g_farm_agora     = true;
 }
 
+// ---- Assistência remota: impressão de teste ----
+namespace {
+std::mutex g_teste_trava;
+json       g_teste = {{"estado", "nenhum"}};
+
+void teste_estado(json j)
+{
+    j["hora"] = (long long) std::time(nullptr);
+    std::lock_guard<std::mutex> l(g_teste_trava);
+    g_teste = std::move(j);
+}
+
+// Placa de 40 × 40 × 0,6 mm em STL binário: testa a primeira camada e o envio gastando quase nada.
+bool gravar_placa_teste(const fsf::path& arq)
+{
+    const float    a = 40.f, h = 0.6f;
+    const float    v[8][3] = {{0, 0, 0}, {a, 0, 0}, {a, a, 0}, {0, a, 0}, {0, 0, h}, {a, 0, h}, {a, a, h}, {0, a, h}};
+    const int      f[12][3] = {{0, 2, 1}, {0, 3, 2}, {4, 5, 6}, {4, 6, 7}, {0, 1, 5}, {0, 5, 4},
+                               {1, 2, 6}, {1, 6, 5}, {2, 3, 7}, {2, 7, 6}, {3, 0, 4}, {3, 4, 7}};
+    fsf::ofstream  o(arq, std::ios::binary | std::ios::trunc);
+    char           cabecalho[80] = "Filuna - placa de teste";
+    const uint32_t n             = 12;
+    const float    normal[3]     = {0, 0, 0};
+    const uint16_t atributo      = 0;
+    o.write(cabecalho, sizeof(cabecalho));
+    o.write(reinterpret_cast<const char*>(&n), sizeof(n));
+    for (const auto& t : f) {
+        o.write(reinterpret_cast<const char*>(normal), sizeof(normal));
+        for (int k = 0; k < 3; ++k)
+            o.write(reinterpret_cast<const char*>(v[t[k]]), sizeof(v[0]));
+        o.write(reinterpret_cast<const char*>(&atributo), sizeof(atributo));
+    }
+    return o.good();
+}
+} // namespace
+
+json impressao_teste(const std::string& dev_id, const std::string& material, int posicao)
+{
+    {
+        std::lock_guard<std::mutex> l(g_teste_trava);
+        if (g_teste.value("estado", std::string()) == "andamento")
+            return {{"erro", "Já há uma impressão de teste sendo preparada."}};
+    }
+    // a impressora pedida (ou a aberta no programa), entre as conectadas: a mesma lista que a Farm usa
+    FarmMaquina maq;
+    for (const FarmMaquina& m : farm_maquinas())
+        if (dev_id.empty() ? !m.ao_vivo : m.dev_id == dev_id) {
+            maq = m;
+            break;
+        }
+    if (!maq.ok)
+        return {{"erro", "A impressora não está conectada no programa: conecte antes de mandar o teste."}};
+    if (maq.imprimindo)
+        return {{"erro", "A impressora está imprimindo agora."}};
+    const std::string tid   = "teste-" + std::to_string((long long) std::time(nullptr));
+    const fsf::path   pasta = fsf::path(data_dir()) / "filuna" / "teste";
+    boost::system::error_code ec;
+    fsf::create_directories(pasta, ec);
+    const fsf::path stl = pasta / (tid + ".stl");
+    if (!gravar_placa_teste(stl))
+        return {{"erro", "Não consegui gravar a peça de teste."}};
+    {
+        // o caminho da Farm pega do índice local o modelo de um projeto feito aqui (não baixa do servidor)
+        std::lock_guard<std::mutex> g(g_farm_indice_trava);
+        json j = farm_indice_ler();
+        j[tid] = utf8_de(stl);
+        fsf::create_directories(farm_indice().parent_path(), ec);
+        fsf::ofstream o(farm_indice(), std::ios::binary | std::ios::trunc);
+        o << j.dump();
+    }
+    const std::string token = wxGetApp().app_config->get("filuna_token");
+    const json        t     = {{"id", tid},           {"material", material.empty() ? std::string("PLA") : material},
+                               {"posicao", std::max(1, posicao)}, {"quantidade", 1}, {"arquivo", "teste.stl"}, {"descricao", "Teste Filuna"}};
+    teste_estado({{"estado", "andamento"}, {"dev_id", maq.dev_id}, {"etapa", "fatiando e enviando"}});
+    std::thread([t, token, maq, tid, stl] {
+        std::string erro;
+        try {
+            FarmAtivo ativo;
+            erro = farm_imprimir_mesa(t, token, maq, ativo);
+        } catch (const std::exception& e) {
+            erro = e.what();
+        }
+        {
+            std::lock_guard<std::mutex> g(g_farm_indice_trava);
+            json j = farm_indice_ler();
+            j.erase(tid);
+            fsf::ofstream o(farm_indice(), std::ios::binary | std::ios::trunc);
+            o << j.dump();
+        }
+        boost::system::error_code e2;
+        fsf::remove(stl, e2);
+        BOOST_LOG_TRIVIAL(info) << "Filuna: impressão de teste do suporte em " << maq.dev_id << ": " << (erro.empty() ? "enviada" : erro);
+        teste_estado(erro.empty() ? json{{"estado", "enviado"}, {"dev_id", maq.dev_id}}
+                                  : json{{"estado", "falhou"}, {"dev_id", maq.dev_id}, {"erro", erro}});
+    }).detach();
+    return {{"ok", true}, {"teste", tid}, {"impressora", maq.dev_id}};
+}
+
+json impressao_teste_estado()
+{
+    std::lock_guard<std::mutex> l(g_teste_trava);
+    return g_teste;
+}
+
 void farm_iniciar()
 {
     if (g_farm_iniciada.exchange(true))

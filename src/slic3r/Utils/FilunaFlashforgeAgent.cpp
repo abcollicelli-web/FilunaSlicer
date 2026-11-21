@@ -1,10 +1,12 @@
 #include "FilunaFlashforgeAgent.hpp"
 #include "FilunaCameraUrls.hpp"
+#include "FilunaRede.hpp"
 
 #include <array>
 #include <chrono>
 #include <fstream>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 #include <boost/algorithm/string/trim.hpp>
@@ -78,6 +80,74 @@ bool FilunaFlashforgeAgent::parse_discovery(const std::string& d, std::string& n
     name   = cstr(d.data(), 32);
     serial = cstr(d.data() + 0x92, 32);
     return !(name.empty() && serial.empty());
+}
+
+bool FilunaFlashforgeAgent::perguntar(const std::string& ip, std::string& name, std::string& serial, int wait_ms, unsigned short port)
+{
+    using udp = net::ip::udp;
+    boost::system::error_code ec;
+    const auto                alvo = net::ip::make_address_v4(ip, ec);
+    if (ec)
+        return false;
+    net::io_context ioc;
+    udp::socket     s(ioc);
+    s.open(udp::v4(), ec);
+    if (ec)
+        return false;
+    s.non_blocking(true, ec);
+    const auto fim = std::chrono::steady_clock::now() + std::chrono::milliseconds(wait_ms);
+    auto       ultimo = std::chrono::steady_clock::time_point{};
+    char       buf[1024];
+    while (std::chrono::steady_clock::now() < fim) {
+        if (std::chrono::steady_clock::now() - ultimo > std::chrono::milliseconds(700)) { // pacote UDP pode se perder
+            s.send_to(net::buffer(DISCOVERY_MSG), udp::endpoint(alvo, port), 0, ec);
+            ultimo = std::chrono::steady_clock::now();
+        }
+        udp::endpoint de;
+        const std::size_t n = s.receive_from(net::buffer(buf), de, 0, ec);
+        if (ec) { // would_block, ou ICMP de porta fechada no Windows: espera e tenta de novo
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            continue;
+        }
+        if (de.address().to_string() == ip && parse_discovery(std::string(buf, n), name, serial))
+            return true;
+    }
+    return false;
+}
+
+std::map<std::string, std::pair<std::string, std::string>> FilunaFlashforgeAgent::perguntar_rede(int wait_ms, unsigned short port)
+{
+    using udp = net::ip::udp;
+    std::map<std::string, std::pair<std::string, std::string>> achadas;
+    boost::system::error_code ec;
+    net::io_context           ioc;
+    udp::socket               s(ioc);
+    s.open(udp::v4(), ec);
+    if (ec)
+        return achadas;
+    s.non_blocking(true, ec);
+    const std::vector<std::string> redes = Filuna::redes_locais();
+    const std::string              msg(DISCOVERY_MSG.begin(), DISCOVERY_MSG.end());
+    const auto inicio = std::chrono::steady_clock::now(), fim = inicio + std::chrono::milliseconds(wait_ms);
+    bool       segunda = false;
+    Filuna::enviar_para_rede(s, port, msg, redes);
+    char buf[1024];
+    while (std::chrono::steady_clock::now() < fim) {
+        if (!segunda && std::chrono::steady_clock::now() - inicio > std::chrono::milliseconds(wait_ms / 2)) {
+            Filuna::enviar_para_rede(s, port, msg, redes); // pacote UDP pode se perder: manda de novo na metade
+            segunda = true;
+        }
+        udp::endpoint     de;
+        const std::size_t n = s.receive_from(net::buffer(buf), de, 0, ec);
+        if (ec) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            continue;
+        }
+        std::string name, serial;
+        if (parse_discovery(std::string(buf, n), name, serial))
+            achadas[de.address().to_string()] = {name, serial};
+    }
+    return achadas;
 }
 
 json FilunaFlashforgeAgent::to_push_status(const json& reply)
@@ -422,14 +492,22 @@ bool FilunaFlashforgeAgent::start_discovery(bool start, bool)
             s.set_option(net::socket_base::broadcast(true));
             s.bind(udp::endpoint(udp::v4(), m_ports.listen));
             s.non_blocking(true);
-            auto last = std::chrono::steady_clock::time_point{};
+            auto last = std::chrono::steady_clock::time_point{}, last_rede = last;
             char buf[1024];
+            const std::vector<std::string> redes = Filuna::redes_locais();
+            const std::string              msg(DISCOVERY_MSG.begin(), DISCOVERY_MSG.end());
             while (m_discovering) {
                 if (std::chrono::steady_clock::now() - last > std::chrono::seconds(2)) {
                     boost::system::error_code ec;
                     for (auto a : {net::ip::address_v4::broadcast(), net::ip::address_v4::loopback()})
                         s.send_to(net::buffer(DISCOVERY_MSG), udp::endpoint(a, m_ports.discovery), 0, ec);
                     last = std::chrono::steady_clock::now();
+                }
+                // O firewall do Windows barra a resposta a um broadcast; a resposta a um pedido mandado direto ao
+                // endereço passa. A cada 6 s o pedido vai também para cada endereço das redes do computador.
+                if (std::chrono::steady_clock::now() - last_rede > std::chrono::seconds(6)) {
+                    Filuna::enviar_para_rede(s, m_ports.discovery, msg, redes);
+                    last_rede = std::chrono::steady_clock::now();
                 }
                 udp::endpoint             from;
                 boost::system::error_code ec;

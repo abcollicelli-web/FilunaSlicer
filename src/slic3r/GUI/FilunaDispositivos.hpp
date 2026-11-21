@@ -31,9 +31,20 @@ json preparar(const std::string& modulo_id, const std::string& modelo);
 json descobertas();
 // Conecta a uma impressora descoberta (código de acesso quando a marca exige).
 json conectar(const std::string& dev_id, const std::string& codigo);
-// Outro meio: por endereço IP (e código), quando a descoberta não achou.
+// Outro meio: por endereço IP (e código), quando a descoberta não achou. A Flashforge pede o número de série: o
+// programa pergunta direto ao IP; 'serie' só é preciso se ela não responder.
 json conectar_ip(const std::string& modulo_id, const std::string& modelo, const std::string& ip, const std::string& codigo,
-                 const std::string& nome);
+                 const std::string& nome, const std::string& serie = {});
+// ---- Assistência remota (lista fechada do suporte; só leitura, exceto onde dito) ----
+// Rede até uma impressora: redes do computador, por qual endereço ele sai até o IP, se é a mesma rede, portas das
+// marcas abertas no IP, nome e série da Flashforge (pergunta direta) e da Bambu (certificado), e um resumo.
+json rede_diagnostico(const std::string& ip, const std::string& modulo_id);
+// Procura impressoras nas redes do computador pelas portas das marcas (e pela pergunta direta da Flashforge).
+json rede_procurar();
+// Predefinições ativas no fatiador e se combinam com a impressora conectada.
+json fatiador_estado();
+// Acerta a predefinição de impressora do fatiador para o modelo da impressora (muda a escolha do cliente).
+json fatiador_ajustar(const std::string& dev_id);
 // Passo a passo da ponte LAN assistida da marca (resources/filuna/ponte-lan.json).
 json ponte_instrucoes(const std::string& modulo_id);
 // Cadastra a impressora conectada no banco local (sincroniza com a conta e o app) e guarda o vínculo.

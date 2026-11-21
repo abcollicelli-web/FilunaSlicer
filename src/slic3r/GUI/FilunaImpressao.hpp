@@ -40,6 +40,11 @@ void farm_iniciar();
 // Reparo pelo suporte remoto: esquece as mesas que o programa acha que estão em andamento (mesa presa depois de a
 // impressora sumir). As mesas continuam no site; a próxima volta da Farm recomeça do estado real das impressoras.
 void farm_destravar();
+// Assistência remota: impressão de teste. Uma placa de 40 × 40 mm (três camadas) fatiada aqui com o perfil da
+// impressora e o filamento pedido, enviada pelo mesmo caminho da Farm, em segundo plano. dev_id vazio = a impressora
+// aberta no programa; posicao = entrada do sistema de cores. O resultado sai em impressao_teste_estado().
+nlohmann::json impressao_teste(const std::string& dev_id, const std::string& material, int posicao);
+nlohmann::json impressao_teste_estado();
 
 // Modelos 3D do catálogo Filuna: abertos no fatiador só para imprimir. Enquanto um estiver no projeto, salvar e
 // exportar (projeto, 3MF, STL/OBJ, G-code, mesa fatiada, caminhos) ficam bloqueados; imprimir pela impressora vale.

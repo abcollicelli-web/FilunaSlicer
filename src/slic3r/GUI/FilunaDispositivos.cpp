@@ -29,6 +29,7 @@
 #include "slic3r/Utils/FilunaCameraUrls.hpp"
 #include "slic3r/Utils/FilunaCameraRelay.hpp"
 #include "slic3r/Utils/FilunaRede.hpp"
+#include "slic3r/Utils/FilunaFlashforgeAgent.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <wx/notifmsg.h>
@@ -790,6 +791,22 @@ void ativar_marca_de(MachineObject* o)
         }
 }
 
+// Mensagem de falha de conexão por marca. O texto da Bambu (Modo LAN, Modo desenvolvedor e Código de acesso) aparecia
+// para todas as marcas e fazia o cliente de uma Flashforge procurar na impressora um modo que ela não tem.
+static std::string falha_conexao(const MachineObject* o)
+{
+    const std::string ag = o != nullptr ? o->printer_agent_id : std::string();
+    if (ag == "filuna_bambu_lan")
+        return "Não foi possível conectar. Confira o código de acesso. Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o "
+               "Modo desenvolvedor e copie o Código de acesso.";
+    const std::string suporte = " Se continuar, o suporte Filuna pode testar a conexão por você (Suporte remoto, na tela Início).";
+    if (ag == "filuna_flashforge_lan")
+        return "Não foi possível conectar à Flashforge. Confira se ela está ligada e na mesma rede do computador, e o código de "
+               "verificação: na impressora, Configurações › Rede, com o modo somente LAN ligado." + suporte;
+    return "Não foi possível conectar à impressora. Confira se ela está ligada, na mesma rede do computador e com o modo LAN da "
+           "marca ativo." + suporte;
+}
+
 json conectar(const std::string& dev_id, const std::string& codigo)
 {
     DeviceManager* dev = wxGetApp().getDeviceManager();
@@ -808,7 +825,7 @@ json conectar(const std::string& dev_id, const std::string& codigo)
         garantir_codigo(o);
     FilunaAoVivo::ativa(dev_id); // libera a conexão em segundo plano antes de o programa conectar
     if (!dev->set_selected_machine(dev_id))
-        return {{"erro", "Não foi possível conectar. Confira o código de acesso. " "Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o Modo desenvolvedor e copie o Código de acesso."}, {"precisa_codigo", true}};
+        return {{"erro", falha_conexao(o)}, {"precisa_codigo", true}};
     dev->set_local_selected_machine(dev_id);
     if (NetworkAgent* net = wxGetApp().getAgent())
         net->set_user_selected_machine(dev_id);
@@ -841,7 +858,7 @@ bool ip_da_rede_local(const std::string& ip)
 }
 
 json conectar_ip(const std::string& modulo_id, const std::string& modelo, const std::string& ip, const std::string& codigo,
-                 const std::string& nome)
+                 const std::string& nome, const std::string& serie_informada)
 {
     DeviceManager* dev = wxGetApp().getDeviceManager();
     if (dev == nullptr)
@@ -863,6 +880,20 @@ json conectar_ip(const std::string& modulo_id, const std::string& modelo, const 
         if (serie.size() < 10)
             return {{"erro", "Não achei uma Bambu Lab no IP " + ip + ". Confira o IP e se o Modo LAN (Somente LAN) está ligado na impressora."}};
         m.dev_id = serie;
+    } else if (modulo_id == "flashforge") {
+        // A API local da Flashforge só responde com o número de série + código de verificação. Antes o cadastro pelo
+        // IP usava "ip-<ip>" no lugar da série e a impressora recusava sempre. A série vem da pergunta direta ao IP.
+        std::string nome_ff, serie = serie_informada;
+        if (serie.empty() && !FilunaFlashforgeAgent::perguntar(ip, nome_ff, serie))
+            return {{"erro", "A Flashforge no IP " + ip + " não respondeu. Confira se ela está ligada e na mesma rede do computador "
+                              "(Configurações › Rede, modo somente LAN), ou informe o número de série (Configurações › Sobre)."},
+                    {"precisa_serie", true}};
+        if (codigo.empty())
+            return {{"erro", "Informe o código de verificação da Flashforge (Configurações › Rede, com o modo somente LAN ligado)."},
+                    {"precisa_codigo", true}, {"serie", serie}};
+        m.dev_id = serie;
+        if (nome.empty() && !nome_ff.empty())
+            m.dev_name = nome_ff + " (" + ip + ")";
     }
     m.printer_type     = (p != nullptr && p->config.has("printer_model")) ? [&] { const std::string n = p->config.opt_string("printer_model"); if (modulo_id == "bambu" && p->vendor != nullptr) for (const auto& vm : p->vendor->models) if (vm.name == n && !vm.model_id.empty()) return vm.model_id; return n; }() : modelo; // Bambu: o código do modelo (N7 = P2S), como a busca grava; o nome fazia a tela de envio dizer "incompatível"
     m.printer_agent_id = agente_da_marca(modulo_id, modelo);
@@ -871,6 +902,168 @@ json conectar_ip(const std::string& modulo_id, const std::string& modelo, const 
     if (o == nullptr)
         return {{"erro", "Não foi possível registrar o endereço."}};
     return conectar(o->get_dev_id(), codigo);
+}
+
+// ---- Assistência remota: rede do cliente e fatiador ----
+
+namespace {
+
+// Portas das marcas no IP da impressora (e a página web, que quase todas têm).
+const std::vector<std::pair<unsigned short, std::string>> PORTAS_MARCAS = {
+    {8883, "Bambu Lab (MQTT)"},  {990, "Bambu Lab (arquivos)"},  {8898, "Flashforge (API local)"}, {8899, "Flashforge (G-code)"},
+    {7125, "Klipper/Moonraker (Creality, Qidi, Snapmaker)"},      {3030, "Elegoo Centauri Carbon 2"},
+    {18910, "Anycubic (Modo LAN)"}, {80, "página web da impressora"}};
+
+// Portas abertas num IP, todas testadas ao mesmo tempo.
+std::set<unsigned short> portas_do_ip(const std::string& ip, std::chrono::milliseconds espera)
+{
+    std::vector<std::thread> ts;
+    std::mutex               mx;
+    std::set<unsigned short> abertas;
+    for (const auto& pm : PORTAS_MARCAS) {
+        const unsigned short porta = pm.first;
+        ts.emplace_back([&ip, &mx, &abertas, porta, espera] {
+            if (!Filuna::portas_abertas({ip}, porta, espera).empty()) {
+                std::lock_guard<std::mutex> l(mx);
+                abertas.insert(porta);
+            }
+        });
+    }
+    for (auto& t : ts)
+        t.join();
+    return abertas;
+}
+
+// Endereço deste computador por onde o tráfego sai até o IP ("connect" em UDP não manda nada).
+std::string saida_para(const std::string& ip)
+{
+    namespace net = boost::asio;
+    boost::system::error_code ec;
+    net::io_context           io;
+    net::ip::udp::socket      s(io);
+    s.open(net::ip::udp::v4(), ec);
+    if (!ec)
+        s.connect({net::ip::make_address_v4(ip, ec), 9}, ec);
+    if (ec)
+        return std::string();
+    const auto ep = s.local_endpoint(ec);
+    return ec ? std::string() : ep.address().to_string();
+}
+
+std::string lista_de(const std::set<unsigned short>& portas)
+{
+    std::string s;
+    for (unsigned short p : portas)
+        s += (s.empty() ? "" : ", ") + std::to_string(p);
+    return s;
+}
+
+} // namespace
+
+json rede_diagnostico(const std::string& ip, const std::string& modulo_id)
+{
+    const std::vector<std::string> redes = Filuna::redes_locais();
+    json r = {{"redes_do_computador", redes}};
+    if (ip.empty())
+        return r;
+    if (!ip_da_rede_local(ip))
+        return {{"erro", "\"" + ip + "\" não é um endereço de rede local (exemplo: 192.168.0.50)."}, {"redes_do_computador", redes}};
+    const std::string prefixo = ip.substr(0, ip.rfind('.') + 1);
+    const bool        mesma   = std::find(redes.begin(), redes.end(), prefixo) != redes.end();
+    r["ip"]                   = ip;
+    r["saida_do_computador"]  = saida_para(ip);
+    r["mesma_rede"]           = mesma;
+    const std::set<unsigned short> abertas = portas_do_ip(ip, std::chrono::milliseconds(1500));
+    json portas = json::array();
+    for (const auto& [porta, uso] : PORTAS_MARCAS)
+        portas.push_back({{"porta", porta}, {"uso", uso}, {"aberta", abertas.count(porta) > 0}});
+    r["portas"] = portas;
+    std::string nome, serie;
+    const bool  ff = (modulo_id.empty() || modulo_id == "flashforge") && FilunaFlashforgeAgent::perguntar(ip, nome, serie, 2000);
+    if (ff)
+        r["flashforge"] = {{"nome", nome}, {"serie", serie}};
+    if (abertas.count(8883))
+        r["bambu_serie"] = Filuna::cn_do_certificado(ip, 8883);
+    if (!mesma)
+        r["resumo"] = "O computador não está na rede " + prefixo + "x (ele está em " + boost::algorithm::join(redes, ", ") +
+                      "). Computador e impressora precisam estar no mesmo roteador, fora do Wi-Fi de visitante.";
+    else if (abertas.empty() && !ff)
+        r["resumo"] = "Nada respondeu em " + ip + ": a impressora está desligada, em repouso, com outro IP, ou com o modo LAN "
+                      "desligado.";
+    else if (ff)
+        r["resumo"] = "A Flashforge respondeu (" + nome + ", série " + serie + "): dá para cadastrar pelo IP com o código de "
+                      "verificação dela.";
+    else
+        r["resumo"] = "A impressora responde em " + ip + " (portas " + lista_de(abertas) + ").";
+    return r;
+}
+
+json rede_procurar()
+{
+    const std::vector<std::string> redes = Filuna::redes_locais(), ips = Filuna::enderecos_locais();
+    std::map<std::string, std::set<unsigned short>> portas;
+    // uma porta por vez (todos os endereços ao mesmo tempo): poucos milhares de conexões abertas no máximo
+    for (const auto& pm : PORTAS_MARCAS)
+        for (const auto& ip : Filuna::portas_abertas(ips, pm.first, std::chrono::milliseconds(1200)))
+            portas[ip].insert(pm.first);
+    const auto ff = FilunaFlashforgeAgent::perguntar_rede(2500);
+    std::set<std::string> todos;
+    for (const auto& [ip, _] : portas)
+        todos.insert(ip);
+    for (const auto& [ip, _] : ff)
+        todos.insert(ip);
+    json lista = json::array();
+    for (const auto& ip : todos) {
+        json marcas = json::array(), abertas = json::array();
+        if (portas.count(ip))
+            for (unsigned short p : portas[ip]) {
+                abertas.push_back(p);
+                for (const auto& [porta, uso] : PORTAS_MARCAS)
+                    if (porta == p && p != 80)
+                        marcas.push_back(uso);
+            }
+        json a = {{"ip", ip}, {"portas", abertas}, {"marcas", marcas}};
+        if (ff.count(ip))
+            a["flashforge"] = {{"nome", ff.at(ip).first}, {"serie", ff.at(ip).second}};
+        lista.push_back(a);
+    }
+    return {{"redes_do_computador", redes}, {"aparelhos", lista}};
+}
+
+json fatiador_estado()
+{
+    PresetBundle* b = wxGetApp().preset_bundle;
+    if (b == nullptr)
+        return {{"erro", "Predefinições indisponíveis."}};
+    Preset&           pr     = b->printers.get_edited_preset();
+    const std::string modelo = pr.config.has("printer_model") ? pr.config.opt_string("printer_model") : std::string();
+    const std::string codigo = pr.get_printer_type(b);
+    json filamentos = json::array();
+    for (const auto& f : b->filament_presets)
+        filamentos.push_back(f);
+    json r = {{"impressora", pr.name}, {"processo", b->prints.get_edited_preset().name}, {"filamentos", filamentos},
+              {"modelo_do_perfil", modelo}, {"codigo_do_modelo", codigo}};
+    DeviceManager* dev = wxGetApp().getDeviceManager();
+    if (MachineObject* o = dev != nullptr ? dev->get_selected_machine() : nullptr) {
+        r["impressora_conectada"] = {{"dev_id", o->get_dev_id()}, {"nome", o->get_dev_name()}, {"modelo", o->printer_type},
+                                     {"agente", o->printer_agent_id}};
+        r["combina"] = o->printer_type == codigo || o->printer_type == modelo;
+    }
+    return r;
+}
+
+json fatiador_ajustar(const std::string& dev_id)
+{
+    DeviceManager* dev = wxGetApp().getDeviceManager();
+    if (dev == nullptr)
+        return {{"erro", "Gerenciador de dispositivos indisponível."}};
+    MachineObject* o = dev_id.empty() ? dev->get_selected_machine() : dev->get_local_machine(dev_id);
+    if (o == nullptr && !dev_id.empty())
+        o = dev->get_my_machine(dev_id);
+    if (o == nullptr)
+        return {{"erro", "Impressora não encontrada no programa."}};
+    ativar_marca_de(o);
+    return fatiador_estado();
 }
 
 json ponte_instrucoes(const std::string& modulo_id)
@@ -1054,7 +1247,7 @@ json selecionar(const std::string& dev_id)
     if (o->printer_agent_id == "filuna_bambu_lan" && o->get_access_code().empty() && !o->has_access_right())
         return {{"erro", "Esta impressora pede o código de acesso. " "Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o Modo desenvolvedor e copie o Código de acesso."}, {"precisa_codigo", true}};
     if (!dev->set_selected_machine(dev_id))
-        return {{"erro", "Não foi possível conectar. Confira o código de acesso. " "Na impressora: Configurações › Rede (WLAN), ligue o Modo LAN e o Modo desenvolvedor e copie o Código de acesso."}, {"precisa_codigo", true}};
+        return {{"erro", falha_conexao(o)}, {"precisa_codigo", true}};
     dev->set_local_selected_machine(dev_id);
     if (NetworkAgent* net = wxGetApp().getAgent())
         net->set_user_selected_machine(dev_id);

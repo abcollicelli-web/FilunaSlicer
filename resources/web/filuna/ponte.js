@@ -363,7 +363,21 @@ var Filuna = (function () {
 	// o resultado. Nada de comando livre, nada fora do Filuna. Sem autorização em vigor o servidor não entrega nada.
 	var SUP_ACOES = ["coletar", "diagnostico.enviar", "atualizacao.verificar", "atualizacao.aplicar", "dispositivos.fabricantes",
 		"dispositivos.modelos", "dispositivos.complemento", "dispositivos.complemento.baixar", "dispositivos.preparar",
-		"dispositivos.descobertas", "dispositivos.estado", "recarregar", "dispositivos.esquecer", "dispositivos.reconectar", "farm.destravar"];
+		"dispositivos.descobertas", "dispositivos.estado", "recarregar", "dispositivos.esquecer", "dispositivos.reconectar", "farm.destravar",
+		// assistência remota: rede do cliente, conexão, impressora, fatiador e impressão de teste
+		"rede.diagnostico", "rede.procurar", "dispositivos.conectar_ip", "dispositivos.selecionar", "dispositivos.comando",
+		"dispositivos.controle", "fatiador.estado", "fatiador.ajustar_impressora", "impressao.teste", "impressao.teste.estado"];
+	// campos que o suporte pode mandar em cada ação (só texto, número e sim/não; nada de objeto ou lista)
+	var SUP_CAMPOS = ["fabricante", "modelo", "dev_id", "ip", "codigo", "serie", "nome", "material", "posicao", "cmd", "tipo", "ligar", "valor",
+		"eixo", "eixos", "distancia", "temperatura", "unidade", "slot"];
+	function supDados(d) {
+		var r = {};
+		SUP_CAMPOS.forEach(function (k) {
+			var v = d[k];
+			if (typeof v == "string" || typeof v == "number" || typeof v == "boolean") r[k] = v;
+		});
+		return r;
+	}
 	function supSeguro(acao, dados) { return nativo(acao, dados).catch(function (e) { return { erro: (e && e.message) || "falhou" }; }); }
 	function supExecutar(c) {
 		if (SUP_ACOES.indexOf(c.acao) < 0) return Promise.resolve({ erro: "ação fora da lista permitida" });
@@ -376,7 +390,7 @@ var Filuna = (function () {
 				return { programa: r[0], marcas: r[1], impressoras: r[2], rede_local: r[3], preferencias: r[4],
 					tela: location.pathname.split("/").pop(), sistema: navigator.userAgent, hora: new Date().toISOString() };
 			});
-		return supSeguro(c.acao, { fabricante: d.fabricante || "", modelo: d.modelo || "", dev_id: d.dev_id || "" });
+		return supSeguro(c.acao, supDados(d));
 	}
 	function supCiclo() {
 		if (!token) { setTimeout(supCiclo, 120000); return; }

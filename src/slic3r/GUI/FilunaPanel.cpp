@@ -19,6 +19,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 #include <boost/filesystem/operations.hpp>
@@ -595,6 +596,29 @@ void FilunaPanel::on_script_message(wxWebViewEvent& evt)
     if (param && action != "parametrico.mesa" && action != "parametrico.voltar")
         return;
     const json data          = msg.contains("dados") && msg["dados"].is_object() ? msg["dados"] : json::object();
+    // Rede (assistência remota): testar portas e procurar na rede levam segundos; rodam fora da linha da tela, para o
+    // programa do cliente não congelar, e respondem quando terminam (se esta tela ainda estiver aberta).
+    if (action == "rede.diagnostico" || action == "rede.procurar") {
+        FilunaPanel* eu = this;
+        std::thread([eu, id, action, data] {
+            json r;
+            bool ok = true;
+            try {
+                r = action == "rede.procurar" ? FilunaDispositivos::rede_procurar()
+                                              : FilunaDispositivos::rede_diagnostico(data.value("ip", std::string()), data.value("fabricante", std::string()));
+            } catch (const std::exception& e) {
+                ok = false;
+                r  = {{"erro", e.what()}};
+            }
+            wxGetApp().CallAfter([eu, id, ok, r, action]() mutable {
+                if (action == "rede.procurar")
+                    r["descobertas"] = FilunaDispositivos::descobertas(); // impressoras que a busca da marca já achou
+                if (panels().count(eu))
+                    eu->reply(id, ok, r);
+            });
+        }).detach();
+        return;
+    }
     try {
         json r;
         if (!FilunaManutencao::acao(action, data, r))
@@ -918,7 +942,17 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return FD::conectar(d.value("dev_id", std::string()), d.value("codigo", std::string()));
     if (action == "dispositivos.conectar_ip")
         return FD::conectar_ip(d.value("fabricante", std::string()), d.value("modelo", std::string()), d.value("ip", std::string()),
-                               d.value("codigo", std::string()), d.value("nome", std::string()));
+                               d.value("codigo", std::string()), d.value("nome", std::string()), d.value("serie", std::string()));
+    // ---- Assistência remota (suporte, lista fechada): fatiador e impressão de teste ----
+    if (action == "fatiador.estado")
+        return FD::fatiador_estado();
+    if (action == "fatiador.ajustar_impressora")
+        return FD::fatiador_ajustar(d.value("dev_id", std::string()));
+    if (action == "impressao.teste")
+        return FilunaImpressao::impressao_teste(d.value("dev_id", std::string()), d.value("material", std::string("PLA")),
+                                                d.contains("posicao") && d["posicao"].is_number_integer() ? d["posicao"].get<int>() : 1);
+    if (action == "impressao.teste.estado")
+        return FilunaImpressao::impressao_teste_estado();
     if (action == "dispositivos.ponte")
         return FD::ponte_instrucoes(d.value("fabricante", std::string()));
     if (action == "dispositivos.registrar")

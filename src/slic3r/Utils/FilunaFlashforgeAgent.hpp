@@ -72,6 +72,12 @@ public:
     static nlohmann::json to_push_status(const nlohmann::json& detail_reply);
     static std::string    action_for(const nlohmann::json& device_manager_command); // "" = sem equivalente
     static bool           parse_discovery(const std::string& datagram, std::string& name, std::string& serial);
+    // Pergunta de descoberta mandada DIRETO a um IP (a resposta passa pelo firewall do Windows: é a volta de uma
+    // conversa aberta pelo programa). Nome e número de série da impressora; false se ela não respondeu no prazo.
+    static bool perguntar(const std::string& ip, std::string& name, std::string& serial, int wait_ms = 2500,
+                          unsigned short port = 48899);
+    // A mesma pergunta para cada endereço das redes do computador: IP -> (nome, série) das Flashforge que responderam.
+    static std::map<std::string, std::pair<std::string, std::string>> perguntar_rede(int wait_ms = 2500, unsigned short port = 48899);
 
 private:
     bool post_json(const std::string& path, const nlohmann::json& body, nlohmann::json& reply, std::string& error);
