@@ -77,13 +77,16 @@ public:
     };
     void set_ports(const Ports& p) { m_ports = p; }
 
-    // Monta o comando "project_file" que inicia a impressão do 3MF já enviado.
-    static std::string project_file_command(const PrintParams& params, const std::string& remote_name);
+    // Monta o comando "project_file" que inicia a impressão do 3MF já enviado (url vazia: o do cartão, file:///sdcard/).
+    static std::string project_file_command(const PrintParams& params, const std::string& remote_name, const std::string& url = std::string());
     // Lê um anúncio SSDP da Bambu e devolve o JSON de descoberta do DeviceManager (vazio se não for Bambu).
     static std::string ssdp_to_discovery_json(const std::string& datagram, const std::string& sender_ip);
 
 private:
     bool upload_ftps(const PrintParams& params, const std::string& local_path, const std::string& remote_name,
+                     OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, std::string& error);
+    // Memória interna (P2S, H2D... sem cartão): porta 6000, FilunaBambuEmmc.hpp.
+    bool upload_emmc(const PrintParams& params, const std::string& local_path, const std::string& remote_name,
                      OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, std::string& error);
     void dispatch_local_connect(int state, const std::string& dev_id, const std::string& msg);
     void dispatch_message(const std::string& dev_id, const std::string& payload);

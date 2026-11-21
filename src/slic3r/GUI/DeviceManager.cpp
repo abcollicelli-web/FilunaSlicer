@@ -620,8 +620,9 @@ bool MachineObject::is_series_o() const { return is_series_o(DevPrinterConfigUti
 bool MachineObject::can_use_emmc_print() const
 {
     AppConfig* config = GUI::wxGetApp().app_config;
-    std::string disable_emmc_print = config ? config->get("disable_emmc_print") : "true";
-    return is_support_print_with_emmc && (disable_emmc_print == "0" || disable_emmc_print == "false");
+    // Filuna: ligado por padrão (envio próprio pela porta 6000); desliga só com disable_emmc_print = 1.
+    std::string disable_emmc_print = config ? config->get("disable_emmc_print") : std::string();
+    return is_support_print_with_emmc && disable_emmc_print != "1" && disable_emmc_print != "true";
 }
 
 std::string MachineObject::get_printer_series_str() const{ return DevPrinterConfigUtil::get_printer_series_str(printer_type);};

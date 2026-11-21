@@ -314,15 +314,13 @@ void PrintJob::process(Ctl &ctl)
     params.auto_offset_cali     = this->auto_offset_cali;
     params.extruder_cali_manual_mode = this->extruder_cali_manual_mode;
     params.task_ext_change_assist = this->task_ext_change_assist;
-    // Allow disabling the eMMC print path via AppConfig. Plugin 02.03.00.62's
-    // eMMC tunnel code hangs indefinitely at the upload phase with some
-    // printers (e.g., Bambu H2D), so we default to disabled. Users with
-    // working eMMC support can opt-in by setting disable_emmc_print = 0.
-    bool disable_emmc = true;
+    // Filuna: o envio para a memória interna é o do próprio Filuna (porta 6000), não o túnel do plug-in da Bambu que
+    // travava na H2D; fica ligado e só desliga com disable_emmc_print = 1.
+    bool disable_emmc = false;
     if (wxGetApp().app_config) {
         auto v = wxGetApp().app_config->get("disable_emmc_print");
-        if (v == "0" || v == "false")
-            disable_emmc = false;
+        if (v == "1" || v == "true")
+            disable_emmc = true;
     }
     params.try_emmc_print         = this->could_emmc_print && !disable_emmc;
 

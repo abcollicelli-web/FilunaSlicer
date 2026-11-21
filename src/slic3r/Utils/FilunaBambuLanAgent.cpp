@@ -14,6 +14,7 @@
 #include <nlohmann/json.hpp>
 
 #include "FilunaMqttClient.hpp"
+#include "FilunaBambuEmmc.hpp"
 #include "FilunaFtps.hpp"
 #include "FilunaRede.hpp"
 
@@ -90,7 +91,7 @@ std::string FilunaBambuLanAgent::ssdp_to_discovery_json(const std::string& d, co
     return j.dump();
 }
 
-std::string FilunaBambuLanAgent::project_file_command(const PrintParams& p, const std::string& remote_name)
+std::string FilunaBambuLanAgent::project_file_command(const PrintParams& p, const std::string& remote_name, const std::string& url)
 {
     nlohmann::json print;
     print["sequence_id"]    = "0";
@@ -101,8 +102,10 @@ std::string FilunaBambuLanAgent::project_file_command(const PrintParams& p, cons
     print["task_id"]        = "0";
     print["subtask_id"]     = "0";
     print["subtask_name"]   = p.project_name.empty() ? remote_name : p.project_name;
-    print["url"]            = "file:///sdcard/" + remote_name;
-    print["md5"]            = p.ftp_file_md5;
+    print["url"]            = url.empty() ? "file:///sdcard/" + remote_name : url;
+    print["md5"]            = url.empty() ? p.ftp_file_md5 : std::string("from_sd_card"); // memória interna: o literal, como o Bambu Studio
+    if (!url.empty())
+        print["file"] = remote_name;
     print["timelapse"]      = p.task_record_timelapse;
     print["bed_type"]       = p.task_bed_type.empty() ? std::string("auto") : p.task_bed_type;
     print["bed_levelling"]  = p.task_bed_leveling;
@@ -372,21 +375,63 @@ bool FilunaBambuLanAgent::upload_ftps(const PrintParams& p, const std::string& l
     return false;
 }
 
+bool FilunaBambuLanAgent::upload_emmc(const PrintParams& p, const std::string& local_path, const std::string& remote_name,
+                                      OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, std::string& error)
+{
+    FilunaBambuEmmc::Envio e;
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
+        e.ip     = p.dev_ip.empty() ? m_dev_ip : p.dev_ip;
+        e.codigo = p.password.empty() ? m_access_code : p.password;
+    }
+    e.arquivo_local = local_path;
+    e.nome_remoto   = remote_name;
+    if (update_fn)
+        e.progresso = [&update_fn](int pct) { update_fn(PrintingStageUpload, pct, ""); };
+    if (cancel_fn)
+        e.cancelado = [&cancel_fn] { return cancel_fn(); };
+    e.registro = [ip = e.ip](const std::string& etapa) { BOOST_LOG_TRIVIAL(info) << "Filuna Bambu memória interna " << ip << ": " << etapa; };
+    error      = FilunaBambuEmmc::enviar(e);
+    if (error.empty())
+        return true;
+    error = "falha no envio para a memória interna: " + error;
+    BOOST_LOG_TRIVIAL(error) << "Filuna Bambu memória interna " << e.ip << ": " << error;
+    return false;
+}
+
 int FilunaBambuLanAgent::start_local_print(PrintParams params, OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn)
 {
     const std::string local  = params.filename;
     const std::string remote = sanitize(params.dst_file.empty() ? boost::filesystem::path(local).filename().string() : params.dst_file);
     if (update_fn)
         update_fn(PrintingStageCreate, 0, "");
-    std::string error;
-    if (!upload_ftps(params, local, remote, update_fn, cancel_fn, error)) {
+    // Cartão (FTPS 990) ou memória interna (porta 6000). Começa pelo que o programa indicou (impressora sem cartão que
+    // imprime da memória interna: try_emmc_print) e, se falhar, tenta o outro: a Farm e a impressão de teste não sabem
+    // se há cartão.
+    std::string nome_emmc = remote;
+    if (!boost::iends_with(nome_emmc, ".gcode.3mf") && boost::iends_with(nome_emmc, ".3mf"))
+        nome_emmc = nome_emmc.substr(0, nome_emmc.size() - 4) + ".gcode.3mf";
+    const bool  pode_emmc = boost::iends_with(nome_emmc, ".gcode.3mf");
+    std::string error, outro;
+    bool        emmc = params.try_emmc_print && pode_emmc;
+    bool        ok   = emmc ? upload_emmc(params, local, nome_emmc, update_fn, cancel_fn, error)
+                            : upload_ftps(params, local, remote, update_fn, cancel_fn, error);
+    if (!ok && pode_emmc && !(cancel_fn && cancel_fn())) {
+        emmc = !emmc;
+        ok   = emmc ? upload_emmc(params, local, nome_emmc, update_fn, cancel_fn, outro)
+                    : upload_ftps(params, local, remote, update_fn, cancel_fn, outro);
+        if (!ok)
+            error += "; " + outro;
+    }
+    if (!ok) {
         if (update_fn)
             update_fn(PrintingStageERROR, BAMBU_NETWORK_ERR_FTP_UPLOAD_FAILED, error);
         return BAMBU_NETWORK_ERR_FTP_UPLOAD_FAILED;
     }
     if (update_fn)
         update_fn(PrintingStageSending, 0, "");
-    if (send_message_to_printer(params.dev_id, project_file_command(params, remote), 0, 0) != BAMBU_NETWORK_SUCCESS) {
+    const std::string cmd = emmc ? project_file_command(params, nome_emmc, FilunaBambuEmmc::endereco(nome_emmc)) : project_file_command(params, remote);
+    if (send_message_to_printer(params.dev_id, cmd, 0, 0) != BAMBU_NETWORK_SUCCESS) {
         if (update_fn)
             update_fn(PrintingStageERROR, BAMBU_NETWORK_ERR_CONNECT_FAILED, "impressora desconectada");
         return BAMBU_NETWORK_ERR_CONNECT_FAILED;
