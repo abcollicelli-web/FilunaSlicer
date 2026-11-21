@@ -524,7 +524,7 @@ function vigiarIA() {
 function perguntarIA(pedido) {
 	var k = st.ia || "claude", ia = IAS[k];
 	var q = "Use o conector Filuna. Leia o fatiamento que está aberto no meu Filuna Slicer (filuna_fatiador) e me diga, em português simples, o que melhorar" +
-		(pedido ? ". Meu pedido: " + pedido : "") + ". Para mudar tamanho, posição, cópias ou ajustes, use filuna_fatiador_fazer e depois confira com filuna_fatiador_resposta.";
+		(pedido ? ". Meu pedido: " + pedido : "") + ". Para mudar tamanho, posição, cópias ou ajustes, use filuna_fatiador_fazer (aplique direto na peça aberta, sem gerar arquivo novo) e depois confira com filuna_fatiador_resposta.";
 	publicar();
 	if (!st.ia) { st.aba = "ia"; st.erro = "Escolha a sua IA primeiro."; desenhar(); return; }
 	if (ia.pergunta) return abrirIA(ia.pergunta(q));
