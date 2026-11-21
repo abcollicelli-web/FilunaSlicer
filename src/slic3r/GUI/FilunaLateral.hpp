@@ -62,21 +62,22 @@ void     desenhar_icone(wxGraphicsContext& gc, wxWindow* w, Icone ic, const wxRe
 void     cursor_mao(wxWindow* w, bool mao);
 } // namespace pintura
 
-// Cartão lilás: faixa magenta "SELECIONAR IMPRESSORA" com a foto (e o lápis de editar o perfil da impressora) e, embaixo,
-// os seletores de bico, tipo de bico e mesa. Impressora de 2 bicos: sem o seletor de bico (o Orca mostra os dois bicos
-// logo abaixo, com o tipo de fluxo e o AMS de cada um).
+// Cartão lilás: faixa magenta com a foto e o nome da impressora escolhida ("SELECIONAR IMPRESSORA" só sem nenhuma), o lápis
+// de editar o perfil da impressora e, embaixo, os seletores de bico, tipo de bico e mesa. Impressora de 2 bicos: sem o
+// seletor de bico (o Orca mostra os dois bicos logo abaixo, com o tipo de fluxo e o AMS de cada um).
 class CartaoImpressora : public wxPanel
 {
 public:
     enum Area { NADA = 0, FAIXA, BICO, TIPO, MESA, LAPIS };
     struct Info
     {
+        wxString impressora; // nome da impressora escolhida na lista (vazio: a faixa pede para selecionar)
         wxString bico, tipo, mesa;
         wxString rotulo_bico, rotulo_tipo, rotulo_mesa; // vazio: Bico, Tipo de bico, Mesa (resina: Tela, Arquivo, Envio)
         bool     mostrar_bico{true}, bico_selecionavel{true}, tipo_selecionavel{true}, mesa_selecionavel{true};
         bool     operator==(const Info& o) const
         {
-            return bico == o.bico && tipo == o.tipo && mesa == o.mesa && rotulo_bico == o.rotulo_bico && rotulo_tipo == o.rotulo_tipo &&
+            return impressora == o.impressora && bico == o.bico && tipo == o.tipo && mesa == o.mesa && rotulo_bico == o.rotulo_bico && rotulo_tipo == o.rotulo_tipo &&
                    rotulo_mesa == o.rotulo_mesa && mostrar_bico == o.mostrar_bico && bico_selecionavel == o.bico_selecionavel &&
                    tipo_selecionavel == o.tipo_selecionavel && mesa_selecionavel == o.mesa_selecionavel;
         }

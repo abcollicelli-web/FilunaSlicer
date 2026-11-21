@@ -474,10 +474,19 @@ void CartaoImpressora::pintar()
         gc->DrawBitmap(m_foto, fx + (lado - m_foto.GetWidth() * esc) / 2., fy + (lado - m_foto.GetHeight() * esc) / 2., m_foto.GetWidth() * esc,
                        m_foto.GetHeight() * esc);
     }
-    gc->SetFont(fonte(this, 9.5, true), BRANCO);
-    double tw = 0, th = 0;
-    gc->GetTextExtent(wxString::FromUTF8("SELECIONAR IMPRESSORA"), &tw, &th);
-    gc->DrawText(wxString::FromUTF8("SELECIONAR IMPRESSORA"), fx + lado + FromDIP(10), f.y + (f.height - th) / 2.);
+    // o nome da impressora escolhida, para o cliente ver que a escolha ficou; sem nenhuma, o convite para selecionar
+    const int tx = fx + lado + FromDIP(10), larg_texto = f.GetRight() - FromDIP(26) - tx;
+    double    tw = 0, th = 0;
+    if (m_info.impressora.empty()) {
+        gc->SetFont(fonte(this, 9.5, true), BRANCO);
+        gc->GetTextExtent(wxString::FromUTF8("SELECIONAR IMPRESSORA"), &tw, &th);
+        gc->DrawText(wxString::FromUTF8("SELECIONAR IMPRESSORA"), tx, f.y + (f.height - th) / 2.);
+    } else {
+        gc->SetFont(fonte(this, 6.5, true), wxColour(255, 255, 255, 200));
+        gc->DrawText(wxString::FromUTF8("IMPRESSORA"), tx, f.y + FromDIP(6));
+        gc->SetFont(fonte(this, 9.5, true), BRANCO);
+        gc->DrawText(caber(this, m_info.impressora, fonte(this, 9.5, true), larg_texto), tx, f.y + FromDIP(19));
+    }
     seta(*gc, f.GetRight() - FromDIP(16), f.y + f.height / 2., (FromDIP(9) / 2.), BRANCO, FromDIP(2));
     // lápis no canto da foto: editar o perfil da impressora
     const wxRect l = area(LAPIS);

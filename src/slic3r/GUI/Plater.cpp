@@ -1447,9 +1447,10 @@ void Sidebar::priv::fl_atualizar()
                                    combo_printer_bed->GetString(combo_printer_bed->GetSelection()) :
                                    wxString::FromUTF8("Padrão");
     FilunaLateral::CartaoImpressora::Info info;
-    info.bico = bico;
-    info.tipo = tipo;
-    info.mesa = mesa;
+    info.impressora = combo_printer ? combo_printer->GetValue() : wxString();
+    info.bico       = bico;
+    info.tipo       = tipo;
+    info.mesa       = mesa;
     // 2 bicos: o Orca mostra os dois logo abaixo do cartão (diâmetro, tipo de fluxo e AMS de cada um)
     const auto* diametros  = pb.printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
     info.mostrar_bico      = !(diametros && diametros->values.size() > 1);
@@ -1564,6 +1565,7 @@ void Sidebar::priv::fl_atualizar_resina()
     PresetBundle&             pb  = *wxGetApp().preset_bundle;
     const DynamicPrintConfig& cfg = pb.printers.get_edited_preset().config;
     FilunaLateral::CartaoImpressora::Info info;
+    info.impressora        = combo_printer ? combo_printer->GetValue() : wxString();
     info.rotulo_bico       = wxString::FromUTF8("Tela");
     info.rotulo_tipo       = wxString::FromUTF8("Arquivo");
     info.rotulo_mesa       = wxString::FromUTF8("Envio");
