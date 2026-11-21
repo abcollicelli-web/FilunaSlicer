@@ -119,6 +119,21 @@ var NOMES = { livre: "Livre", imprimindo: "Imprimindo", pausada: "Pausada", limp
 var TONS = { livre: "ok", imprimindo: "rosa", limpar_mesa: "rosa", pausada: "alerta", erro: "alerta", falhou: "alerta" };
 var E = Filuna.esc;
 
+// Excluir impressora (pedido do dono, 21/11/2026): sai deste computador (rede, vínculo e cadastro) e da conta (site e app).
+function excluirUnidade(u) {
+	var nome = u.nome || "esta impressora";
+	if (u.farm && u.farm.estado == "imprimindo") { estado.msg = "A impressora está imprimindo. Espere terminar ou cancele a impressão antes de excluir."; desenhar(); return; }
+	if (!confirm("Excluir " + nome + " do Filuna?\n\nEla sai deste computador, do site e do app. A impressora em si não é apagada: para usar de novo, é só adicionar outra vez.")) return;
+	var v = u.viva || {}, passos = [];
+	if (v.dev_id || v.cadastro_id) passos.push(Filuna.nativo("dispositivos.excluir", { dev_id: v.dev_id || "", cadastro_id: v.cadastro_id || "" }));
+	if (u.farm && u.farm.id && Filuna.temToken()) passos.push(Filuna.api("POST", "/impressoras/" + encodeURIComponent(u.farm.id) + "/excluir", {}));
+	Promise.all(passos).then(function (r) {
+		var erro = r.filter(function (x) { return x && x.erro; })[0];
+		if (erro) { estado.msg = erro.erro; desenhar(); return; }
+		estado.msg = nome + " foi excluída."; estado.sel = null; estado.vista = "lista"; carregar();
+	}, function (e) { estado.msg = (e && (e.erro || e.message)) || "Não deu para excluir agora."; desenhar(); });
+}
+
 function carregar() {
 	carregarFotos();
 	var pedidos = [
@@ -347,7 +362,8 @@ function unidade(app, u) {
 	var flv = ativa && v.camera_flv && window.mpegts && mpegts.isSupported() ? v.camera_flv : "";
 	var foto = flv ? '<video data-cam="1" crossorigin="anonymous" data-src="' + E(flv) + '" muted autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>' : camVivo ? '<img alt="" data-cam="1"' + (v.camera_repasse ? ' crossorigin="anonymous"' : "") + ' data-src="' + E(camVivo) + '" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
-	var html = '<div style="padding:16px 32px 0"><a class="voltar" id="voltar">‹ Unidades</a></div>' + cabecalho(i.nome, i.estado, i.modelo || "", local) +
+	var html = '<div style="padding:16px 32px 0;display:flex;justify-content:space-between;align-items:center"><a class="voltar" id="voltar">‹ Unidades</a>' +
+		((u.viva || u.farm) ? '<a class="voltar" id="excluirImp" style="color:#D9480F" title="Tira esta impressora do Filuna, do site e do app">Excluir impressora</a>' : "") + "</div>" + cabecalho(i.nome, i.estado, i.modelo || "", local) +
 		(v && v.erro ? '<div class="aviso" style="background:#FDE8DF;color:#D9480F"><span><b>A impressora informou um problema:</b> ' + E(v.erro) + ".</span></div>" : "") +
 		(i.estado == "limpar_mesa" ? '<div class="aviso"><span><b>Impressão concluída.</b> Retire as peças e limpe a mesa para liberar a próxima da fila.</span><button class="btn primario peq" id="mesaLimpa">Mesa limpa, pode seguir</button></div>' : "") +
 		'<div class="corpo">' + lista + '<div style="flex:1;display:flex;flex-direction:column;min-width:0"><div class="body">' +
@@ -378,6 +394,7 @@ function unidade(app, u) {
 		(aoVivo && v.cores && v.cores.length ? "" : '<div class="mats"><div class="lbl">Materiais</div>' + materiais(i) + "</div>") + "</div></div>" + rodape();
 	var camAntes = app.querySelector("[data-cam]");
 	app.innerHTML = html;
+	var ex = document.getElementById("excluirImp"); if (ex) ex.onclick = function () { excluirUnidade(u); };
 	var camNova = app.querySelector("[data-cam]");
 	// a câmera que já está tocando continua a mesma entre redesenhos (não reinicia o vídeo)
 	if (camAntes && camNova && camAntes.tagName == camNova.tagName && camAntes.getAttribute("data-src") == camNova.getAttribute("data-src")) camNova.parentNode.replaceChild(camAntes, camNova);

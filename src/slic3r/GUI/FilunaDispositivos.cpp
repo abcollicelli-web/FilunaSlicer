@@ -981,6 +981,38 @@ json esquecer(const std::string& dev_id)
     return {{"ok", true}, {"esquecida", dev_id}};
 }
 
+json excluir(const std::string& dev_id, const std::string& cadastro_id)
+{
+    DeviceManager* dev = wxGetApp().getDeviceManager();
+    AppConfig*     cfg = wxGetApp().app_config;
+    if (dev_id.empty() && cadastro_id.empty())
+        return {{"erro", "Informe a impressora."}};
+    std::string cadastro = cadastro_id;
+    if (!dev_id.empty()) {
+        if (cadastro.empty() && cfg != nullptr)
+            cadastro = cfg->get(chave_vinculo(dev_id));
+        if (dev != nullptr) {
+            // a aberta no programa: desconecta antes (id vazio desconecta e tira a seleção)
+            if (MachineObject* s = dev->get_selected_machine(); s != nullptr && s->get_dev_id() == dev_id)
+                dev->set_selected_machine("");
+            dev->erase_local_machine(dev_id);
+        }
+        FilunaAoVivo::esquecer(dev_id);
+        if (cfg != nullptr) {
+            cfg->erase_local_machine(dev_id);
+            cfg->erase("app", "filuna_dispositivo_" + dev_id);
+            cfg->erase("app", chave_vinculo(dev_id));
+        }
+    }
+    if (!cadastro.empty())
+        filuna_db().excluir_impressora(cadastro);
+    if (cfg != nullptr)
+        cfg->save();
+    filuna_sync_avisar(); // a exclusão sobe para a conta: some do site e do app
+    BOOST_LOG_TRIVIAL(info) << "Filuna Dispositivos: impressora excluída pelo cliente: " << dev_id << " " << cadastro;
+    return {{"ok", true}};
+}
+
 bool temperaturas(const std::string& dev_id, double& bico, double& bico_alvo, double& mesa, double& mesa_alvo)
 {
     bico = bico_alvo = mesa = mesa_alvo = 0.;
