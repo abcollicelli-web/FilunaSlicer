@@ -2724,6 +2724,17 @@ wxBoxSizer* MainFrame::create_side_tools()
                 // check valid of print
                 m_print_enable = get_enable_print_status();
                 m_print_btn->Enable(m_print_enable);
+                if (!m_print_enable) {
+                    // Filuna: o botão não fica mudo; diz por que não dá para enviar ainda.
+                    const bool todas = wxGetApp().plater()->get_preview_canvas3D()->is_all_plates_selected();
+                    MessageDialog(this,
+                                  todas ? wxString::FromUTF8("Escolha uma placa na lista de placas (à esquerda) para imprimir: com \"todas as placas\" "
+                                                             "selecionado não dá para enviar uma placa só. Para mandar todas, use \"Imprimir tudo\" na seta do botão.")
+                                        : wxString::FromUTF8("Fatie a placa antes de imprimir (botão Fatiar placa). Se ela já foi fatiada, confira os avisos "
+                                                             "da Visualização: algum problema impede o envio."),
+                                  wxString::FromUTF8("Imprimir placa"), wxOK | wxICON_INFORMATION)
+                        .ShowModal();
+                }
                 if (m_print_enable) {
                     if (m_print_select == ePrintAll)
                         wxPostEvent(m_plater, SimpleEvent(EVT_GLTOOLBAR_PRINT_ALL));
@@ -4675,6 +4686,9 @@ void MainFrame::prebuild_pages_when_idle()
 //BBS
 void MainFrame::jump_to_monitor(std::string dev_id)
 {
+    // Filuna: o Dispositivo do Filuna no lugar do painel nativo da Bambu.
+    if (wxGetApp().app_config->get_bool("use_printer_agents") && m_tabpanel->SelectPageByName(TAB_ID_FILUNA_DEVICE))
+        return;
     m_tabpanel->SelectPageByName(TAB_ID_MONITOR);
     if (!dev_id.empty()) {
         MonitorPanel::ensure()->select_machine(dev_id);

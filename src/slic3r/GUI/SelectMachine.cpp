@@ -719,17 +719,27 @@ SelectMachineDialog::SelectMachineDialog(Plater *plater)
         ops_no_auto, "pa_value"
     );
 
+    // Filuna: a impressora procura com a câmera a marca da placa antes de imprimir; placa sem marca dá o erro
+    // 0500-8062. Daqui o cliente liga ou desliga sem ir à tela da impressora.
+    auto option_plate_marker = new PrintOption(
+        m_options_other, wxString::FromUTF8("Detecção da placa"),
+        wxString::FromUTF8("A impressora confere com a câmera a marca da placa antes de imprimir. Desligue se a sua placa não tem a marca "
+                           "(a impressora para com o erro 0500-8062)."),
+        ops_no_auto, "plate_marker");
+
     m_sizer_options = new wxGridSizer(0, 2, FromDIP(5), FromDIP(10));
     m_sizer_options->Add(option_timelapse, 0, wxEXPAND);
     m_sizer_options->Add(option_auto_bed_level, 0, wxEXPAND);
     m_sizer_options->Add(option_flow_dynamics_cali, 0, wxEXPAND);
     m_sizer_options->Add(option_nozzle_offset_cali_cali, 0, wxEXPAND);
+    m_sizer_options->Add(option_plate_marker, 0, wxEXPAND);
 
     m_checkbox_list_order.push_back(option_timelapse);
     m_checkbox_list_order.push_back(option_auto_bed_level);
     m_checkbox_list_order.push_back(option_flow_dynamics_cali);
     m_checkbox_list_order.push_back(option_nozzle_offset_cali_cali);
     m_checkbox_list_order.push_back(option_pa_value);
+    m_checkbox_list_order.push_back(option_plate_marker);
 
     m_options_other->SetSizer(m_sizer_options);
     m_options_other->Layout();
@@ -740,6 +750,7 @@ SelectMachineDialog::SelectMachineDialog(Plater *plater)
     m_checkbox_list["flow_cali"]     = option_flow_dynamics_cali;
     m_checkbox_list["nozzle_offset_cali"] = option_nozzle_offset_cali_cali;
     m_checkbox_list["pa_value"]      = option_pa_value;
+    m_checkbox_list["plate_marker"]  = option_plate_marker;
     for (auto print_opt : m_checkbox_list_order) {
         print_opt->Bind(EVT_SWITCH_PRINT_OPTION, [this, print_opt](auto &e) {
             save_option_vals();
@@ -753,6 +764,7 @@ SelectMachineDialog::SelectMachineDialog(Plater *plater)
     option_flow_dynamics_cali->Hide();
     option_nozzle_offset_cali_cali->Hide();
     option_pa_value->Hide();
+    option_plate_marker->Hide();
 
     m_simplebook   = new wxSimplebook(this, wxID_ANY, wxDefaultPosition, SELECT_MACHINE_DIALOG_SIMBOOK_SIZE2, 0);
     m_simplebook->SetMinSize(SELECT_MACHINE_DIALOG_SIMBOOK_SIZE2);
@@ -3145,6 +3157,12 @@ void SelectMachineDialog::update_option_opts(MachineObject *obj)
         m_checkbox_list["bed_leveling"]->Hide();
     }
 
+    /*plate_marker (Filuna)*/
+    if (obj->is_support_build_plate_marker_detect)
+        m_checkbox_list["plate_marker"]->Show();
+    else
+        m_checkbox_list["plate_marker"]->Hide();
+
     /*nozzle_offset_cali*/
     bool support_cali_nozzle_offset = obj->GetConfig()->SupportCalibrationNozzleOffset();
     if (support_cali_nozzle_offset) {
@@ -3225,6 +3243,8 @@ void SelectMachineDialog::load_option_vals(MachineObject *obj)
             opt->setValue("on");
         }
     }
+    // Filuna: a detecção da placa mostra o que está ligado na impressora (não o último envio).
+    m_checkbox_list["plate_marker"]->setValue(obj->xcam_buildplate_marker_detector ? "on" : "off");
 
     /*STUDIO-9197*/
     wxString error_messgae;
@@ -3756,6 +3776,13 @@ void SelectMachineDialog::on_send_print()
 
     if (timelapse_option && obj_->is_support_internal_timelapse && !m_timelapse_storage.empty()) {
         m_print_job->task_timelapse_use_internal = (m_timelapse_storage == "internal");
+    }
+
+    // Filuna: aplica a detecção da placa escolhida antes de a impressão começar.
+    if (obj_->is_support_build_plate_marker_detect) {
+        const bool deteccao = m_checkbox_list["plate_marker"]->getValue() == "on";
+        if (deteccao != obj_->xcam_buildplate_marker_detector)
+            obj_->command_xcam_control_buildplate_marker_detector(deteccao);
     }
 
     m_print_job->set_print_config(
