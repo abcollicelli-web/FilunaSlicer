@@ -1,0 +1,52 @@
+name: Filuna native update admission QA (no release)
+on:
+  push:
+    paths:
+      - "FILUNA/update/**"
+      - ".github/workflows/filuna-native-update-policy-qa.yml"
+  pull_request:
+    paths:
+      - "FILUNA/update/**"
+      - ".github/workflows/filuna-native-update-policy-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and test C++17
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic -IFILUNA/update FILUNA/update/test_native_update_policy.cpp -o /tmp/filuna-policy
+          /tmp/filuna-policy
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic -IFILUNA/update FILUNA/update/test_native_update_flow.cpp -o /tmp/filuna-flow
+          /tmp/filuna-flow
+          python3 FILUNA/update/test_gui_update_entrypoints.py
+          python3 FILUNA/update/test_github_attestation_gate.py
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile and test MSVC
+        shell: pwsh
+        run: |
+          cl /nologo /std:c++17 /EHsc /W4 /WX /I FILUNA\update FILUNA\update\test_native_update_policy.cpp /Fe:filuna-policy.exe
+          if ($LASTEXITCODE -ne 0) { throw "POLICY_COMPILE_FAILED" }
+          .\filuna-policy.exe
+          if ($LASTEXITCODE -ne 0) { throw "POLICY_QA_FAILED" }
+          cl /nologo /std:c++17 /EHsc /W4 /WX /I FILUNA\update FILUNA\update\test_windows_release_transport.cpp /Fe:filuna-transport.exe winhttp.lib
+          if ($LASTEXITCODE -ne 0) { throw "TRANSPORT_COMPILE_FAILED" }
+          .\filuna-transport.exe
+          if ($LASTEXITCODE -ne 0) { throw "TRANSPORT_QA_FAILED" }
+          cl /nologo /std:c++17 /EHsc /W4 /WX /I FILUNA\update FILUNA\update\test_windows_payload_hash.cpp /Fe:filuna-payload-hash.exe bcrypt.lib
+          if ($LASTEXITCODE -ne 0) { throw "PAYLOAD_HASH_COMPILE_FAILED" }
+          .\filuna-payload-hash.exe
+          if ($LASTEXITCODE -ne 0) { throw "PAYLOAD_HASH_QA_FAILED" }
+          cl /nologo /std:c++17 /EHsc /W4 /WX /I FILUNA\update FILUNA\update\test_native_update_flow.cpp /Fe:filuna-flow.exe
+          if ($LASTEXITCODE -ne 0) { throw "FLOW_COMPILE_FAILED" }
+          .\filuna-flow.exe
+          if ($LASTEXITCODE -ne 0) { throw "FLOW_QA_FAILED" }
+          python FILUNA/update/test_github_attestation_gate.py
+          if ($LASTEXITCODE -ne 0) { throw "GITHUB_ATTESTATION_GATE_QA_FAILED" }
