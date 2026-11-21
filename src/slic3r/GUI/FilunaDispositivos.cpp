@@ -864,7 +864,7 @@ json conectar_ip(const std::string& modulo_id, const std::string& modelo, const 
             return {{"erro", "Não achei uma Bambu Lab no IP " + ip + ". Confira o IP e se o Modo LAN (Somente LAN) está ligado na impressora."}};
         m.dev_id = serie;
     }
-    m.printer_type     = (p != nullptr && p->config.has("printer_model")) ? p->config.opt_string("printer_model") : modelo;
+    m.printer_type     = (p != nullptr && p->config.has("printer_model")) ? [&] { const std::string n = p->config.opt_string("printer_model"); if (modulo_id == "bambu" && p->vendor != nullptr) for (const auto& vm : p->vendor->models) if (vm.name == n && !vm.model_id.empty()) return vm.model_id; return n; }() : modelo; // Bambu: o código do modelo (N7 = P2S), como a busca grava; o nome fazia a tela de envio dizer "incompatível"
     m.printer_agent_id = agente_da_marca(modulo_id, modelo);
     m.access_code      = codigo;
     MachineObject* o = dev->insert_local_device(m, "lan", "free", "", codigo);
