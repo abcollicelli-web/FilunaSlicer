@@ -741,6 +741,8 @@ public:
     // Filuna: painel do Assistente de impressão, à direita da mesa (Preparação e Visualização).
     void mostrar_assistente(bool mostrar);
     bool assistente_visivel();
+    // Filuna: os avisos do último fatiamento, como aparecem na tela (balanço flutuante, camada vazia...).
+    std::vector<std::string> avisos_do_fatiamento() const;
     void find_new_position(const ModelInstancePtrs  &instances);
     //BBS: add job state related functions
     void set_prepare_state(int state);

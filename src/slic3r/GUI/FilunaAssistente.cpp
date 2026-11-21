@@ -369,6 +369,10 @@ json avisos_do_fatiamento()
             if (w.current && !w.message.empty() && vistos.insert(w.message).second && lista.size() < 10)
                 lista.push_back({{"texto", w.message}, {"grave", w.level == PrintStateBase::WarningLevel::CRITICAL}});
     };
+    // os que a Plater mostra na tela (ex.: "balanço flutuante", que vem do passo de suporte e não ficava na lista)
+    for (const std::string& texto : mesa().avisos_do_fatiamento())
+        if (vistos.insert(texto).second && lista.size() < 10)
+            lista.push_back({{"texto", texto}, {"grave", false}});
     const Print& print = mesa().fff_print();
     for (int s = 0; s < int(psCount); ++s)
         juntar(print.step_state_with_warnings(PrintStep(s)).warnings);
