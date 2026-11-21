@@ -66,7 +66,7 @@ var IAS = {
 	chatgpt: { nome: "ChatGPT", cor: "#10845F", fundo: "#E3F1EC", letra: "G", inicio: "https://chatgpt.com/", conectores: "https://chatgpt.com/#settings/Connectors",
 		pergunta: function (q) { return "https://chatgpt.com/?q=" + encodeURIComponent(q); }, nota: "Sua assinatura do ChatGPT" },
 	gemini: { nome: "Gemini", cor: "#3367D6", fundo: "#E6EEFB", letra: "✧", inicio: "https://gemini.google.com/app", conectores: "https://gemini.google.com/app",
-		pergunta: null, nota: "Sua conta Google com Gemini" }
+		pergunta: null, nota: "Sua conta Google com Gemini · só conversa", soConversa: true }
 };
 var st = { aba: "etapas", etapa: 1, sub: "", conferido: false, chavePecas: "", analise: null, resumo: null, estado: {}, avisos: [], preco: null,
 	desfazer: {}, sugestoes: [], conectadas: [], endereco: "https://filuna3d.com/api/ia/mcp", ia: "", iaAberta: false, iaUrl: "",
@@ -515,8 +515,19 @@ function perguntarIA(pedido) {
 	publicar();
 	if (!st.ia) { st.aba = "ia"; st.erro = "Escolha a sua IA primeiro."; desenhar(); return; }
 	if (ia.pergunta) return abrirIA(ia.pergunta(q));
+	// Gemini: o Google ainda não deixa ligar conector próprio na conta comum. Vai junto o estado da mesa, em texto,
+	// copiado para o cliente colar (Ctrl+V); ele conversa, mas não mexe no fatiador.
+	if (ia.soConversa) q = (pedido || "O que eu melhoro nesta impressão?") + "\n\nDados do meu Filuna Slicer agora:\n" + resumoTexto();
 	nat("texto.copiar", { texto: q }).catch(function () {});
 	abrirIA(ia.inicio).then(function () { st.erro = ""; });
+}
+function resumoTexto() {
+	var a = st.analise || {}, p = a.processo || {}, r = st.resumo || {};
+	return ["Impressora: " + (a.impressora || "?"), "Filamento: " + ((st.filamento && (st.filamento.filamento || st.filamento.material)) || "?"),
+		"Peças: " + (a.pecas || []).map(function (x) { return x.nome + " " + x.tamanho_mm.map(function (n) { return Math.round(n); }).join("×") + " mm" + (x.area_no_ar_mm2 > 25 ? ", tem parte no ar" : "") + (x.bordas_abertas ? ", malha com furos" : ""); }).join("; "),
+		"Camada " + p.layer_height + " mm, " + p.wall_loops + " voltas, preenchimento " + p.sparse_infill_density + " " + p.sparse_infill_pattern + ", suporte " + (p.enable_support == "1" ? "ligado" : "desligado") + ", aba " + p.brim_type,
+		r.fatiado ? "Fatiado: " + tempo(r.tempo_s) + ", " + gramas(r) : "Ainda não fatiado",
+		st.avisos.length ? "Avisos do fatiador: " + st.avisos.map(function (x) { return x.texto; }).join(" | ") : ""].filter(Boolean).join("\n");
 }
 function conectada(k) { var n = IAS[k].nome.toLowerCase(); return st.conectadas.some(function (c) { return String(c).toLowerCase().indexOf(n == "chatgpt" ? "chatgpt" : n) >= 0 || (k == "chatgpt" && /openai/i.test(c)); }); }
 function telaIA(c) {
@@ -534,7 +545,12 @@ function telaIA(c) {
 		h += '<div class="it' + (esc == k ? " ok" : "") + '"><div class="ic" style="background:' + ia.fundo + ";color:" + ia.cor + '">' + ia.letra + '</div><div class="cx"><b>' + ia.nome +
 			(lig ? ' <span class="ok-verde">· Filuna ligada</span>' : "") + "</b><small>" + ia.nota + '</small></div><button class="ac" data-ia="' + k + '">' + (esc == k ? "Abrir" : "Usar") + "</button></div>";
 	});
-	if (esc) {
+	if (esc && IAS[esc].soConversa) {
+		h += '<h3 style="margin-top:6px">Gemini só conversa, por enquanto</h3>' +
+			item("av", "!", "O Gemini ainda não mexe no fatiador", "O Google ainda não deixa ligar um conector próprio na conta comum. Quando liberar, a Filuna liga nele igual ao Claude.") +
+			item("", "✎", "Perguntar com os dados da mesa", "O Filuna copia peça, ajustes, tempo e avisos; no Gemini, cole com Ctrl+V e envie.", { t: "Copiar e abrir" }, "gem") +
+			item("", "✦", "Para a IA mexer no fatiador", "Use o Claude (até no plano grátis) ou o ChatGPT.", { t: "Usar o Claude" }, "trc");
+	} else if (esc) {
 		var lig = conectada(esc);
 		h += '<h3 style="margin-top:6px">' + (lig ? "Tudo pronto com o " + IAS[esc].nome : "Ligar a Filuna no " + IAS[esc].nome + " (só na primeira vez)") + "</h3>" +
 			(lig ? '<div class="txt">Pergunte o que quiser na conversa. Exemplos: “o que melhoro nessa peça?”, “minha impressora parou, o que houve?”.</div>'
@@ -554,6 +570,8 @@ function telaIA(c) {
 	on("p3", function () { buscarSugestoes().then(desenhar); });
 	on("per", function () { perguntarIA(""); });
 	on("abr", function () { abrirIA(IAS[esc].inicio); });
+	on("gem", function () { perguntarIA(""); });
+	on("trc", function () { guardarIA("claude"); desenhar(); });
 	on("dir", function () { st.iaDireto = !st.iaDireto; nat("armazem.gravar", { chave: "assistente.ia_direto", valor: st.iaDireto }).catch(function () {}); desenhar(); });
 }
 
