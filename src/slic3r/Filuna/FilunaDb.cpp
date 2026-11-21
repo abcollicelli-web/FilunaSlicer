@@ -474,6 +474,18 @@ std::string FilunaDb::criar_impressora(const std::string& nome, const std::strin
     return id;
 }
 
+bool FilunaDb::excluir_impressora(const std::string& id)
+{
+    if (id.empty())
+        return false;
+    Transacao t(m_db);
+    Comando(m_db, "UPDATE impressora SET excluido = 1, atualizado_em = ?2 WHERE id = ?1 AND excluido = 0")
+        .texto(1, id).texto(2, agora()).executar();
+    enfileirar("impressora", id, "upsert");
+    t.confirmar();
+    return true;
+}
+
 std::string FilunaDb::adicionar_regra_manutencao(const std::string& impressora_id, const std::string& nome, double intervalo_h,
                                                  double feito_ate_h)
 {

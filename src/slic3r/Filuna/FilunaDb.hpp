@@ -36,6 +36,8 @@ public:
     // --- Impressoras e manutenção (§8) ---
     std::string criar_impressora(const std::string& nome, const std::string& fabricante, const std::string& modelo,
                                  const std::string& numero_serie = {}, const std::string& modulo_id = {});
+    // Tira a impressora do cadastro (excluido = 1); a sincronia leva a exclusão para a conta.
+    bool excluir_impressora(const std::string& id);
     std::string adicionar_regra_manutencao(const std::string& impressora_id, const std::string& nome, double intervalo_h,
                                            double feito_ate_h = 0.);
     double      horas_maquina(const std::string& impressora_id) const;

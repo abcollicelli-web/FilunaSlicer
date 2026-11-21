@@ -44,6 +44,8 @@ json estado();
 json selecionar(const std::string& dev_id);
 // Reparo pelo suporte remoto: tira a impressora da lista do programa, do acompanhamento ao vivo e do vínculo com a
 // conta (cadastro errado, IP trocado). Não mexe na impressora aberta no programa.
+// Exclui a impressora de vez, a pedido do cliente (Dispositivo › Excluir): rede, vínculo e cadastro.
+json excluir(const std::string& dev_id, const std::string& cadastro_id);
 json esquecer(const std::string& dev_id);
 json comando(const std::string& dev_id, const std::string& cmd);
 json controle(const std::string& dev_id, const nlohmann::json& dados);

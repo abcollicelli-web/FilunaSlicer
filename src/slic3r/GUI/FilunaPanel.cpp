@@ -935,6 +935,8 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return FD::comando(d.value("dev_id", std::string()), d.value("cmd", std::string()));
     if (action == "dispositivos.selecionar")
         return FD::selecionar(d.value("dev_id", std::string()));
+    if (action == "dispositivos.excluir")
+        return FD::excluir(d.value("dev_id", std::string()), d.value("cadastro_id", std::string()));
     if (action == "dispositivos.esquecer") // reparo pelo suporte remoto
         return FD::esquecer(d.value("dev_id", std::string()));
     if (action == "dispositivos.reconectar") // reparo pelo suporte remoto: refaz a conexão com o código guardado
