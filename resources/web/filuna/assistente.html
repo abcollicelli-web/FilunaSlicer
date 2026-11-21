@@ -463,10 +463,12 @@ function telaImprimindo(c) {
 		'<div class="txt">' + E(i.estado || "Enviando…") + "</div>" + (prog != null ? '<div class="prog"><div style="animation:none;left:0;width:' + Math.max(2, Math.min(100, +prog)) + '%"></div></div>' : "") +
 		'<div class="met"><div><span>Andamento</span><b>' + (prog != null ? Math.round(prog) + "%" : "—") + "</b></div><div><span>Falta</span><b>" +
 		(t.restante_s != null ? tempo(t.restante_s) : "—") + "</b></div></div>" +
-		'<div class="txt" style="font-size:12.5px">Aviso no celular quando terminar. Pode fechar o Filuna: a impressão continua.</div></div>' +
+		'<div class="txt" style="font-size:12.5px">Aviso no celular quando terminar. Pode fechar o Filuna: a impressão continua.</div>' +
+		item("ia", "✦", "Sua IA vigia a câmera", "Ela olha a mesa e avisa se a peça soltou ou virou espaguete. Usa a sua assinatura.", { t: "Vigiar agora" }, "vig") + "</div>" +
 		rodape([{ id: "nova", t: "Nova peça" }, { id: "dis", t: "Abrir no Dispositivo", p: 1 }]);
 	on("nova", function () { st.sub = ""; irPara(1); });
 	on("dis", function () { nat("aba.abrir", { aba: "filuna.dispositivo" }); });
+	on("vig", vigiarIA);
 }
 
 // Pasta automática: prepara um arquivo por vez quando o cliente pede. Nunca imprime sozinha.
@@ -507,6 +509,17 @@ function telaPasta(c) {
 function guardarIA(k) { st.ia = k; nat("armazem.gravar", { chave: "assistente.ia", valor: k }).catch(function () {}); }
 function abrirIA(url) {
 	return nat("ia.abrir", { url: url }).then(function () { st.iaAberta = true; st.iaUrl = url; st.aba = "ia"; desenhar(); }, falha);
+}
+// Vigiar a impressão com a IA do cliente (pedido do dono, 21/11/2026): ela olha a câmera pelo conector Filuna
+// (filuna_camera_agora) e aponta peça solta, descolada ou espaguete. A assinatura comum só responde quando o
+// cliente pergunta, então é um clique por vez; o alerta automático do Filuna continua por conta própria.
+function vigiarIA() {
+	var k = st.ia || "claude", ia = IAS[k];
+	if (!ia) { st.aba = "ia"; desenhar(); return; }
+	var q = "Use o conector Filuna (filuna_camera_agora) e olhe agora a câmera das minhas impressoras. Veja se tem peça solta, " +
+		"descolada ou fora do lugar, espaguete (fios soltos no ar), bolha de plástico no bico ou a mesa vazia com a impressora imprimindo. " +
+		"Me diga em poucas palavras o que viu em cada uma. Se houver problema, ofereça pausar a impressão pelo Filuna.";
+	abrirIA(ia.pergunta ? ia.pergunta(q) : ia.inicio);
 }
 function perguntarIA(pedido) {
 	var k = st.ia || "claude", ia = IAS[k];
@@ -553,7 +566,8 @@ function telaIA(c) {
 	} else if (esc) {
 		var lig = conectada(esc);
 		h += '<h3 style="margin-top:6px">' + (lig ? "Tudo pronto com o " + IAS[esc].nome : "Ligar a Filuna no " + IAS[esc].nome + " (só na primeira vez)") + "</h3>" +
-			(lig ? '<div class="txt">Pergunte o que quiser na conversa. Exemplos: “o que melhoro nessa peça?”, “minha impressora parou, o que houve?”.</div>'
+			(lig ? '<div class="txt">Pergunte o que quiser na conversa. Exemplos: “o que melhoro nessa peça?”, “minha impressora parou, o que houve?”.</div>' +
+				item("ia", "✦", "Vigiar a impressão", "Sua IA olha a câmera e avisa se a peça soltou ou virou espaguete.", { t: "Vigiar agora" }, "vig2")
 				: item("", "1", "Entrar na sua conta", "Abre o " + IAS[esc].nome + " aqui no painel. A Filuna não vê a sua senha.", { t: "Entrar" }, "p1") +
 				item("", "2", "Adicionar o conector da Filuna", "Copio o endereço; na tela de conectores, adicione um conector personalizado e cole: " + st.endereco, { t: "Copiar e abrir" }, "p2") +
 				item("", "3", "Permitir na tela da Filuna", "Você escolhe o que a IA pode ver e fazer. Depois volte aqui.", { t: "Conferir" }, "p3"));
@@ -569,6 +583,7 @@ function telaIA(c) {
 	on("p2", function () { nat("texto.copiar", { texto: st.endereco }).catch(function () {}); abrirIA(IAS[esc].conectores); });
 	on("p3", function () { buscarSugestoes().then(desenhar); });
 	on("per", function () { perguntarIA(""); });
+	on("vig2", vigiarIA);
 	on("abr", function () { abrirIA(IAS[esc].inicio); });
 	on("gem", function () { perguntarIA(""); });
 	on("trc", function () { guardarIA("claude"); desenhar(); });
