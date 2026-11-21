@@ -3,7 +3,8 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap rescap">
+  xmlns:desktop2="http://schemas.microsoft.com/appx/manifest/desktop/windows10/2"
+  IgnorableNamespaces="uap rescap desktop2">
 
   <Identity
     Name="AndersonBarroso.FilunaSlicer"
@@ -53,6 +54,20 @@
       </Extensions>
     </Application>
   </Applications>
+
+  <!-- Filuna (2.5.85): a busca de impressoras na rede local recebe respostas em UDP. Sem estas regras o Firewall do
+       Windows bloqueava as respostas e a impressora "não era achada" (Bambu SSDP 2021, Flashforge 18007, Elegoo CC2
+       52700; Elegoo SDCP e Anycubic respondem na porta efêmera de origem). Só rede privada e só este programa. -->
+  <Extensions>
+    <desktop2:Extension Category="windows.firewallRules">
+      <desktop2:FirewallRules Executable="FilunaSlicer.exe">
+        <desktop2:Rule Direction="in" IPProtocol="UDP" LocalPortMin="2021" LocalPortMax="2021" Profile="private" />
+        <desktop2:Rule Direction="in" IPProtocol="UDP" LocalPortMin="18007" LocalPortMax="18007" Profile="private" />
+        <desktop2:Rule Direction="in" IPProtocol="UDP" LocalPortMin="52700" LocalPortMax="52700" Profile="private" />
+        <desktop2:Rule Direction="in" IPProtocol="UDP" LocalPortMin="49152" LocalPortMax="65535" Profile="private" />
+      </desktop2:FirewallRules>
+    </desktop2:Extension>
+  </Extensions>
 
   <Capabilities>
     <Capability Name="internetClient" />
