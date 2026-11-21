@@ -32,7 +32,9 @@
 #include <algorithm>
 #include <cmath>
 #include <ctime>
+#include <locale>
 #include <set>
+#include <sstream>
 
 namespace Slic3r { namespace GUI {
 
@@ -121,9 +123,12 @@ json ajustar_processo(const json& pedidos)
         if (bruto.is_boolean())
             valor = bruto.get<bool>() ? "1" : "0";
         if (const Ajuste* a = ajuste(chave); a != nullptr && a->minimo < a->maximo) {
-            char*        fim = nullptr;
-            const double n   = std::strtod(valor.c_str(), &fim);
-            if (fim == valor.c_str() || n < a->minimo || n > a->maximo)
+            // número com ponto, sem depender do idioma do Windows (com vírgula decimal, strtod lia "0.24" como 0)
+            std::istringstream ler(valor);
+            ler.imbue(std::locale::classic());
+            double n = 0.;
+            ler >> n;
+            if (ler.fail() || n < a->minimo || n > a->maximo)
                 throw std::runtime_error("Valor fora do aceito para \"" + chave + "\": " + valor);
         }
         const ConfigOption* atual = tabs[qual]->get_config()->option(chave);

@@ -419,7 +419,7 @@ function rodarComparacao() {
 		var r = st.comparar.resultados;
 		st.comparar.escolha = r.equilibrada ? "equilibrada" : "rapida";
 		st.comparar.rodando = false; st.ocupado = ""; return lerTudo();
-	}).then(desenhar, function (e) { nat("processo.ajustar", { valores: original }).catch(function () {}); falha(e); });
+	}).then(desenhar, function (e) { nat("processo.ajustar", { valores: original }).catch(function () {}); st.comparar = null; falha(e); });
 }
 function telaComparar(c) {
 	var lista = opcoes(), cp = st.comparar;
@@ -562,7 +562,7 @@ function telaIA(c) {
 		(st.iaDireto ? "Ela aumenta, diminui, gira, faz cópias e muda ajustes na hora. Tudo tem Desfazer." : "Desligado: o que ela pedir aparece em Etapas para você aprovar.") +
 		'</small></div><button class="ac cinza" id="dir">' + (st.iaDireto ? "Desligar" : "Ligar") + "</button></div>";
 	h += '<div class="it ok"><div class="ic">✓</div><div class="cx"><b>Sem chave, sem crédito</b><small>A IA trabalha pela sua assinatura de sempre</small></div></div>' +
-		'<div class="it ok"><div class="ic">✓</div><div class="cx"><b>Você aprova tudo</b><small>O que a IA sugere aparece em Etapas e só muda com o seu clique</small></div></div>' + erroHtml() + "</div>";
+		'<div class="it ok"><div class="ic">✓</div><div class="cx"><b>Você no controle</b><small>Tudo o que a IA faz aparece em Etapas, com Desfazer; desligue acima para aprovar antes</small></div></div>' + erroHtml() + "</div>";
 	c.innerHTML = h + (esc ? rodape([{ id: "per", t: "Perguntar sobre esta peça" }, { id: "abr", t: "Abrir o " + IAS[esc].nome, p: 1 }]) : "");
 	document.querySelectorAll("[data-ia]").forEach(function (b) { b.onclick = function () { var k = b.dataset.ia; if (st.ia == k) abrirIA(IAS[k].inicio); else { guardarIA(k); st.erro = ""; desenhar(); } }; });
 	on("p1", function () { abrirIA(IAS[esc].inicio); });
