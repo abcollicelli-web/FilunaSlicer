@@ -212,7 +212,7 @@ function FlUpdDesenhar() {
 	// busca manual (botão "Procurar atualização"): mostra o resultado em vez de esperar a busca automática
 	var $b = $("#FlUpdBuscar"), $r = $("#FlVersaoAtual .r");
 	// instalado pela Microsoft Store: quem atualiza o programa é a Store, então aqui não há o que procurar
-	if (s == "loja") { $b.hide(); $r.text("atualizado pela Microsoft Store"); return; }
+	if (s == "loja") { $b.hide(); $r.text("atualizado pela Microsoft Store"); FlLojaConferir(e.build); return; }
 	$b.text(s == "verificando" ? "Procurando…" : "Procurar atualização").toggleClass("off", s == "verificando" || s == "baixando" || s == "aplicando");
 	if (m_FlBusca && s == "verificando") m_FlViuVerif = true;
 	// a resposta imediata ao clique ainda traz o estado de antes: só conclui depois de ver "procurando" ou após 3 s
@@ -235,6 +235,24 @@ function FlUpdDesenhar() {
 	$("#FlUpdMsg").text(s == "baixando" ? "Baixando… " + (e.feito || 0) + "%" : s == "aplicando" ? "Pronto. O Filuna vai fechar e abrir de novo sozinho." : s == "erro" ? (e.erro || "Não deu certo.") + " O erro já foi enviado para a Filuna." : s == "pronto" ? "Já está baixada. O Filuna fecha uma vez, aplica e abre de novo sozinho." : "O Filuna fecha, atualiza e abre de novo sozinho.").toggleClass("erro", s == "erro");
 	$("#FlUpdAgora").prop("disabled", ocupado).text(s == "erro" ? "Tentar de novo" : "Atualizar agora");
 	$("#FlUpdDepois").prop("disabled", ocupado);
+}
+
+// Instalado pela Microsoft Store: a Store atualiza sozinha, mas no horário dela e sem avisar. O site diz se este build
+// é mais velho que o publicado na loja; aí aparece "Nova versão na Microsoft Store", que abre o app na Store para
+// atualizar na hora (pedido do dono, 21/11/2026). Confere ao abrir e a cada 30 min.
+var m_FlLoja = { em: 0, dados: null };
+function FlLojaConferir(build) {
+	if (!build || Date.now() - m_FlLoja.em < 1800000) return FlLojaDesenhar();
+	m_FlLoja.em = Date.now();
+	fetch(FL_API + "/loja/versao?build=" + encodeURIComponent(build), { cache: "no-store" }).then(function (r) { return r.json(); })
+		.then(function (d) { m_FlLoja.dados = d; FlLojaDesenhar(); }).catch(function () { m_FlLoja.em = 0; });
+}
+function FlLojaDesenhar() {
+	var d = m_FlLoja.dados;
+	if (!d || !d.atualizar) return;
+	$("#FlUpdAviso").show().addClass("loja");
+	$("#FlUpdAviso .t").text("Nova versão " + String(d.publicada || "").replace(/\.0$/, "") + " na Microsoft Store · Atualizar");
+	$("#FlVersaoAtual .r").text("");
 }
 
 function FlPrimeiraDesenhar() {
@@ -274,7 +292,14 @@ $(function () {
 		'<label><input type="checkbox" id="FlPrefDisp" checked> Atualizar sozinho os dispositivos e o suporte às minhas impressoras</label>' +
 		'<p>Você muda isso depois, quando quiser.</p>' +
 		'<div class="bt"><button id="FlPrefSalvar">Salvar</button></div></div></div>');
-	$("#FlUpdAviso").on("click", function () { $("#FlUpdJanela").show(); FlUpdDesenhar(); });
+	$("#FlUpdAviso").on("click", function () {
+		// na versão da Store o aviso abre o Filuna na Microsoft Store, onde fica o botão Atualizar
+		if (m_FlUpd.situacao == "loja" && m_FlLoja.dados && m_FlLoja.dados.atualizar) {
+			try { window.wx.postMessage(JSON.stringify({ command: "common_openurl", url: m_FlLoja.dados.abrir })); } catch (e) { }
+			return;
+		}
+		$("#FlUpdJanela").show(); FlUpdDesenhar();
+	});
 	$("#FlUpdDepois").on("click", function () { $("#FlUpdJanela").hide(); });
 	$(document).on("click", "#FlUpdBuscar", function (ev) {
 		ev.preventDefault();
