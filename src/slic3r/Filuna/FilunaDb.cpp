@@ -486,6 +486,82 @@ bool FilunaDb::excluir_impressora(const std::string& id)
     return true;
 }
 
+std::string FilunaDb::impressora_por_serie(const std::string& numero_serie) const
+{
+    if (numero_serie.empty())
+        return {};
+    Comando c(m_db, "SELECT id FROM impressora WHERE excluido = 0 AND numero_serie = ?1 ORDER BY criado_em, id LIMIT 1");
+    c.texto(1, numero_serie);
+    return c.passo() ? c.texto_em(0) : std::string();
+}
+
+bool FilunaDb::impressora_ativa(const std::string& id) const
+{
+    if (id.empty())
+        return false;
+    Comando c(m_db, "SELECT 1 FROM impressora WHERE id = ?1 AND excluido = 0");
+    c.texto(1, id);
+    return c.passo();
+}
+
+bool FilunaDb::atualizar_impressora(const std::string& id, const std::string& nome, const std::string& fabricante,
+                                    const std::string& modelo, const std::string& numero_serie, const std::string& modulo_id)
+{
+    if (!impressora_ativa(id))
+        return false;
+    Transacao t(m_db);
+    Comando(m_db, "UPDATE impressora SET nome = COALESCE(NULLIF(?2, ''), nome), fabricante = COALESCE(NULLIF(?3, ''), fabricante), "
+                  "modelo = COALESCE(NULLIF(?4, ''), modelo), numero_serie = COALESCE(NULLIF(?5, ''), numero_serie), "
+                  "modulo_id = COALESCE(NULLIF(?6, ''), modulo_id), atualizado_em = ?7 WHERE id = ?1")
+        .texto(1, id).texto(2, nome).texto(3, fabricante).texto(4, modelo).texto(5, numero_serie).texto(6, modulo_id)
+        .texto(7, agora()).executar();
+    enfileirar("impressora", id, "upsert");
+    t.confirmar();
+    return true;
+}
+
+std::map<std::string, std::string> FilunaDb::juntar_impressoras_repetidas()
+{
+    std::map<std::string, std::string> juntadas, primeira; // removido -> mantido; série -> mantido
+    {
+        Comando c(m_db, "SELECT numero_serie, id FROM impressora WHERE excluido = 0 AND COALESCE(numero_serie, '') <> '' "
+                        "ORDER BY numero_serie, criado_em, id");
+        while (c.passo()) {
+            const auto [it, nova] = primeira.emplace(c.texto_em(0), c.texto_em(1));
+            if (!nova)
+                juntadas[c.texto_em(1)] = it->second;
+        }
+    }
+    if (juntadas.empty())
+        return juntadas;
+    Transacao t(m_db);
+    const std::string ts = agora();
+    for (const auto& [velho, fica] : juntadas) {
+        for (const char* tabela : {"trabalho", "manutencao_regra"}) {
+            std::vector<std::string> ids;
+            {
+                Comando c(m_db, std::string("SELECT id FROM ") + tabela + " WHERE impressora_id = ?1");
+                c.texto(1, velho);
+                while (c.passo())
+                    ids.push_back(c.texto_em(0));
+            }
+            Comando(m_db, std::string("UPDATE ") + tabela + " SET impressora_id = ?2, atualizado_em = ?3 WHERE impressora_id = ?1")
+                .texto(1, velho).texto(2, fica).texto(3, ts).executar();
+            for (const std::string& i : ids)
+                enfileirar(tabela, i, "upsert");
+        }
+        Comando(m_db, "UPDATE impressora SET horas_impressao_s = horas_impressao_s + "
+                      "(SELECT horas_impressao_s FROM impressora WHERE id = ?1), atualizado_em = ?3 WHERE id = ?2")
+            .texto(1, velho).texto(2, fica).texto(3, ts).executar();
+        Comando(m_db, "UPDATE impressora SET excluido = 1, horas_impressao_s = 0, atualizado_em = ?2 WHERE id = ?1")
+            .texto(1, velho).texto(2, ts).executar();
+        enfileirar("impressora", velho, "upsert");
+        enfileirar("impressora", fica, "upsert");
+    }
+    t.confirmar();
+    return juntadas;
+}
+
 std::string FilunaDb::adicionar_regra_manutencao(const std::string& impressora_id, const std::string& nome, double intervalo_h,
                                                  double feito_ate_h)
 {

@@ -1085,11 +1085,33 @@ json ponte_instrucoes(const std::string& modulo_id)
                                     "Anote o endereço IP e o código de acesso, se houver.", "Volte aqui e toque em Procurar de novo."})}};
 }
 
+// Cadastro da impressora com este dev_id: o do vínculo, se ainda existe, ou o de mesmo número de série (refaz o
+// vínculo). Uma impressora tem um cadastro só, mesmo que o cliente troque o código LAN, o IP ou o nome.
+std::string cadastro_de(const std::string& dev_id)
+{
+    if (dev_id.empty())
+        return {};
+    Filuna::FilunaDb& db  = filuna_db();
+    AppConfig*        cfg = wxGetApp().app_config;
+    const std::string v   = cfg != nullptr ? cfg->get(chave_vinculo(dev_id)) : std::string();
+    if (db.impressora_ativa(v))
+        return v;
+    const std::string id = db.impressora_por_serie(dev_id);
+    if (cfg != nullptr && !id.empty())
+        cfg->set(chave_vinculo(dev_id), id);
+    return id;
+}
+
 json registrar(const std::string& nome, const std::string& modulo_id, const std::string& modelo, const std::string& dev_id)
 {
     Filuna::FilunaDb& db = filuna_db();
-    const std::string id = db.criar_impressora(nome, modulo_id, modelo, dev_id, modulo_id);
-    if (AppConfig* cfg = wxGetApp().app_config)
+    // Já cadastrada (ex.: o cliente trocou o código LAN e passou de novo pelo assistente): só atualiza.
+    std::string id = cadastro_de(dev_id);
+    if (!id.empty())
+        db.atualizar_impressora(id, nome, modulo_id, modelo, dev_id, modulo_id);
+    else
+        id = db.criar_impressora(nome, modulo_id, modelo, dev_id, modulo_id);
+    if (AppConfig* cfg = wxGetApp().app_config; cfg != nullptr && !dev_id.empty())
         cfg->set(chave_vinculo(dev_id), id);
     filuna_sync_avisar(); // cadastro sobe para a conta (servidor → app Android) em segundos
     return {{"id", id}, {"nome", nome}};
@@ -1107,6 +1129,13 @@ json estado()
         todas.emplace(id, o);
     MachineObject* sel = dev->get_selected_machine();
     FilunaAoVivo::ativa(sel != nullptr ? sel->get_dev_id() : std::string());
+    // Cadastros repetidos de versões antigas (o assistente criava um novo a cada passagem): junta uma vez por sessão.
+    static bool juntou = false;
+    if (!juntou) {
+        juntou = true;
+        for (const auto& [velho, fica] : filuna_db().juntar_impressoras_repetidas())
+            BOOST_LOG_TRIVIAL(info) << "Filuna Dispositivos: cadastro repetido " << velho << " juntado em " << fica;
+    }
     for (auto& [id, o] : todas) {
         if (o == nullptr)
             continue;
@@ -1118,7 +1147,7 @@ json estado()
                 c[k] = v;
         }
         c["selecionada"] = (sel != nullptr && sel->get_dev_id() == o->get_dev_id());
-        c["cadastro_id"] = cfg != nullptr ? cfg->get(chave_vinculo(o->get_dev_id())) : std::string();
+        c["cadastro_id"] = cadastro_de(o->get_dev_id());
         // Conectada de verdade e ainda sem cadastro (ex.: aberta pelo cartão, sem passar pelo assistente): cadastra
         // uma vez, para aparecer no site e no app como as do assistente.
         if (c["selecionada"].get<bool>() && o->is_connected())

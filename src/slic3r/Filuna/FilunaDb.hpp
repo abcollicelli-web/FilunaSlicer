@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -38,6 +39,15 @@ public:
                                  const std::string& numero_serie = {}, const std::string& modulo_id = {});
     // Tira a impressora do cadastro (excluido = 1); a sincronia leva a exclusão para a conta.
     bool excluir_impressora(const std::string& id);
+    // Cadastro ativo com este número de série (ou id de rede da impressora); vazio se não houver.
+    std::string impressora_por_serie(const std::string& numero_serie) const;
+    bool        impressora_ativa(const std::string& id) const;
+    // Atualiza o cadastro (campo vazio fica como está) e leva a mudança para a conta.
+    bool atualizar_impressora(const std::string& id, const std::string& nome, const std::string& fabricante,
+                              const std::string& modelo, const std::string& numero_serie, const std::string& modulo_id);
+    // Junta cadastros repetidos da mesma impressora (mesma série): fica o mais antigo; trabalhos, manutenção e horas
+    // passam para ele e os outros saem do cadastro. Devolve {removido -> mantido}.
+    std::map<std::string, std::string> juntar_impressoras_repetidas();
     std::string adicionar_regra_manutencao(const std::string& impressora_id, const std::string& nome, double intervalo_h,
                                            double feito_ate_h = 0.);
     double      horas_maquina(const std::string& impressora_id) const;

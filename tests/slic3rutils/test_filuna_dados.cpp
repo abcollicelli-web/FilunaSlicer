@@ -323,6 +323,41 @@ TEST_CASE("The shortage forecast needs three jobs and a week of history", "[Filu
     CHECK_FALSE(vazio->previsao_tipo(tipo_pla_branco(*vazio)).dados_suficientes);
 }
 
+TEST_CASE("The same printer registered twice is merged into the oldest record", "[FilunaDados]")
+{
+    RelogioTeste relogio;
+    auto db = banco_em_memoria(relogio);
+    const std::string primeira = db->criar_impressora("K2", "creality", "K2", "ip-192.168.1.2", "creality");
+    *relogio.agora = "2026-11-02T12:00:00Z";
+    const std::string repetida = db->criar_impressora("K2 nova", "creality", "K2", "ip-192.168.1.2", "creality");
+    const std::string outra    = db->criar_impressora("A1", "bambu", "A1", "SERIE-A1", "bambu");
+    GcodeResumo resumo;
+    resumo.filamento_g      = {10.};
+    resumo.tempo_previsto_s = 3600;
+    db->criar_trabalho({}, repetida, resumo);
+    const auto juntadas = db->juntar_impressoras_repetidas();
+    REQUIRE(juntadas.size() == 1);
+    CHECK(juntadas.at(repetida) == primeira);
+    CHECK(db->impressora_ativa(primeira));
+    CHECK_FALSE(db->impressora_ativa(repetida));
+    CHECK(db->impressora_ativa(outra));
+    CHECK(db->impressora_por_serie("ip-192.168.1.2") == primeira);
+    CHECK(db->impressoras().size() == 2);
+    CHECK(db->juntar_impressoras_repetidas().empty());
+}
+
+TEST_CASE("Registering a printer again only updates its name", "[FilunaDados]")
+{
+    auto db = banco_em_memoria();
+    const std::string id = db->criar_impressora("P2S", "bambu", "P2S", "SERIE-P2S", "bambu");
+    REQUIRE(db->atualizar_impressora(id, "P2S oficina", "", "", "", ""));
+    const auto lista = db->impressoras();
+    REQUIRE(lista.size() == 1);
+    CHECK(lista[0].nome == "P2S oficina");
+    CHECK(lista[0].modelo == "P2S");
+    CHECK(db->impressora_por_serie("SERIE-P2S") == id);
+}
+
 TEST_CASE("Maintenance done resets the counter at the current machine hours", "[FilunaDados]")
 {
     auto db = banco_em_memoria();
