@@ -64,9 +64,9 @@ var IAS = {
 	claude: { nome: "Claude", cor: "#B5552F", fundo: "#F4E9E1", letra: "C", inicio: "https://claude.ai/new", conectores: "https://claude.ai/settings/connectors",
 		pergunta: function (q) { return "https://claude.ai/new?q=" + encodeURIComponent(q); }, nota: "Sua assinatura do Claude (inclusive a grátis)" },
 	chatgpt: { nome: "ChatGPT", cor: "#10845F", fundo: "#E3F1EC", letra: "G", inicio: "https://chatgpt.com/", conectores: "https://chatgpt.com/#settings/Connectors",
-		pergunta: function (q) { return "https://chatgpt.com/?q=" + encodeURIComponent(q); }, nota: "Sua assinatura do ChatGPT" },
-	gemini: { nome: "Gemini", cor: "#3367D6", fundo: "#E6EEFB", letra: "✧", inicio: "https://gemini.google.com/app", conectores: "https://gemini.google.com/app",
-		pergunta: null, nota: "Sua conta Google com Gemini · só conversa", soConversa: true }
+		pergunta: function (q) { return "https://chatgpt.com/?q=" + encodeURIComponent(q); }, nota: "Sua assinatura do ChatGPT" }
+	// Gemini fora a pedido do dono (21/11/2026): o Google não deixa ligar conector próprio na conta comum, então ele
+	// não mexe no fatiador. Para voltar: entrada com soConversa: true (o painel já trata esse modo).
 };
 var st = { aba: "etapas", etapa: 1, sub: "", conferido: false, chavePecas: "", analise: null, resumo: null, estado: {}, avisos: [], preco: null,
 	desfazer: {}, sugestoes: [], conectadas: [], endereco: "https://filuna3d.com/api/ia/mcp", ia: "", iaAberta: false, iaUrl: "",
@@ -366,7 +366,7 @@ function etapa4(c) {
 	c.innerHTML = cab("Ficha antes de imprimir", "Etapa 4 de 5 · Ficha") + '<div class="pc">' + metricas() +
 		(n ? item("ia", "✦", "Sua IA mandou uma proposta", st.sugestoes[0].texto, { t: "Ver" }, "sug") : "") +
 		'<div class="ok-verde">✓ Conferência do Filuna · sem custo</div>' + cf.h + ocupadoHtml() + erroHtml() +
-		item("ia", "✦", "Quer uma opinião da sua IA?", "Seu Claude, ChatGPT ou Gemini lê o fatiamento e sugere. Usa a sua assinatura.") +
+		item("ia", "✦", "Quer uma opinião da sua IA?", "Seu Claude ou ChatGPT lê o fatiamento e mexe no fatiador. Usa a sua assinatura.") +
 		'<div class="pedir"><textarea id="ped" rows="2" placeholder="Ex.: quero mais resistente e gastar menos suporte"></textarea></div>' +
 		'<div class="txt" style="font-size:12px">Para falar em vez de digitar: clique no campo e aperte Windows + H.</div></div>' +
 		rodape([{ id: "cmp", t: "Comparar opções" }, { id: "per", t: "Perguntar à minha IA" }, { id: "prox", t: "Imprimir", p: 1 }]);
@@ -605,7 +605,7 @@ Filuna.ouvir("assistente", function (d) {
 Filuna.ouvir("fatiado", function () { lerTudo().then(function () { if (!st.ocupado) { if (st.estado.fatiado && st.etapa == 3 && st.aba == "etapas" && !st.sub) st.etapa = 4; desenhar(); } publicar(); }); });
 Filuna.ouvir("conta", function () { desenhar(); });
 Filuna.iniciar().then(function () {
-	return Promise.all([nat("armazem.ler", { chave: "assistente.ia" }).then(function (r) { if (r && r.valor) st.ia = r.valor; }).catch(function () {}),
+	return Promise.all([nat("armazem.ler", { chave: "assistente.ia" }).then(function (r) { if (r && r.valor && IAS[r.valor]) st.ia = r.valor; }).catch(function () {}),
 		nat("armazem.ler", { chave: "assistente.ia_direto" }).then(function (r) { st.iaDireto = !(r && r.valor === false); }).catch(function () {}),
 		nat("filamento.atual").then(function (f) { st.filamento = f; }).catch(function () {}), lerTudo()]);
 }).then(function () { st.etapa = etapaAtual(); desenhar(); buscarSugestoes(); });
