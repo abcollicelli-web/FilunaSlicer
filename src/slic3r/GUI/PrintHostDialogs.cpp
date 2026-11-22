@@ -74,6 +74,7 @@
 #include "Flashforge.hpp"
 #include "GUI.hpp"
 #include "GUI_App.hpp"
+#include "FilunaMidia.hpp"
 #include "MsgDialog.hpp"
 #include "I18N.hpp"
 #include "MainFrame.hpp"
@@ -561,6 +562,7 @@ void PrintHostSendDialog::init()
     checkbox_text->SetFont(::Label::Body_13);
     checkbox_text->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#323A3D")));
     content_sizer->Add(checkbox_sizer);
+    filuna_midia_caixa_no_envio(this, content_sizer);
     content_sizer->AddSpacer(VERT_SPACING);
 
     if (size_t extension_start = recent_path.find_last_of('.'); extension_start != std::string::npos)
@@ -671,6 +673,7 @@ std::string PrintHostSendDialog::storage() const
 void PrintHostSendDialog::EndModal(int ret)
 {
     if (ret == wxID_OK) {
+        filuna_midia_envio_confirmado(); // Post nas redes sociais: espera a impressão começar sem erro
         // Persist path and print settings
         wxString path = txt_filename->GetValue();
         int last_slash = path.Find('/', true);
@@ -770,6 +773,7 @@ void FlashforgePrintHostSendDialog::init()
         checkbox_text->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#323A3D")));
         checkbox_sizer->Add(checkbox_text, 0, wxALL | wxALIGN_CENTER, FromDIP(2));
         content_sizer->Add(checkbox_sizer);
+        filuna_midia_caixa_no_envio(this, content_sizer);
         content_sizer->AddSpacer(VERT_SPACING);
     }
 
@@ -1705,6 +1709,7 @@ void ElegooPrintHostSendDialog::init() {
         checkbox_text->SetFont(::Label::Body_13);
         checkbox_text->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#323A3D")));
         content_sizer->Add(checkbox_sizer);
+        filuna_midia_caixa_no_envio(this, content_sizer);
         content_sizer->AddSpacer(VERT_SPACING);
     }
     warning_text = new wxStaticText(this, wxID_ANY,
@@ -1731,6 +1736,7 @@ void ElegooPrintHostSendDialog::init() {
         checkbox_text->SetFont(::Label::Body_13);
         checkbox_text->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#323A3D")));
         content_sizer->Add(checkbox_sizer);
+        filuna_midia_caixa_no_envio(this, content_sizer);
         content_sizer->AddSpacer(VERT_SPACING);
     }
 

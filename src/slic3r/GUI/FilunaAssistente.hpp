@@ -38,9 +38,6 @@ public:
     void ia_comando(const std::string& comando); // "voltar", "recarregar", "navegador"
 
 private:
-    void on_new_window(wxWebViewEvent& e);
-    void on_new_window_features(wxWebViewEvent& e);
-
     FilunaPanel* m_tela{nullptr};
     wxWebView*   m_ia{nullptr};
     bool         m_ia_aberta{false};
@@ -53,5 +50,11 @@ std::optional<nlohmann::json> filuna_assistente_acao(const std::string& acao, co
 // Chamado pela Plater quando um fatiamento termina: avisa todas as telas ("fatiado") para o rodapé e o painel
 // atualizarem sem esperar a próxima consulta.
 void filuna_assistente_fatiado(bool ok);
+
+// Prepara um navegador para o site de uma IA do cliente (Assistente e Post nas redes): aparência de navegador comum e
+// as janelinhas de login (Google, Apple, autorização do conector) como janelas de verdade.
+void filuna_ia_preparar_navegador(wxWebView* web);
+// Sites que os navegadores das IAs abrem e por onde o login delas passa.
+bool filuna_site_de_ia(const wxString& url);
 
 }} // namespace Slic3r::GUI

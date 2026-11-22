@@ -480,9 +480,7 @@ void FilunaAssistentePainel::abrir_ia(const wxString& url)
         m_ia = WebView::CreateWebView(this, url);
         if (m_ia == nullptr)
             throw std::runtime_error("O navegador embutido não abriu neste computador. Use o botão de abrir no navegador.");
-        m_ia->SetUserAgent(wxString::FromUTF8(NAVEGADOR_COMUM));
-        m_ia->Bind(wxEVT_WEBVIEW_NEWWINDOW, &FilunaAssistentePainel::on_new_window, this);
-        m_ia->Bind(wxEVT_WEBVIEW_NEWWINDOW_FEATURES, &FilunaAssistentePainel::on_new_window_features, this);
+        filuna_ia_preparar_navegador(m_ia);
         GetSizer()->Add(m_ia, 1, wxEXPAND);
     } else if (!url.empty()) {
         m_ia->LoadURL(url);
@@ -521,7 +519,7 @@ void FilunaAssistentePainel::ia_comando(const std::string& comando)
 // pediu. O login com Google do Claude responde à página de origem por essa ligação; carregar a janelinha no próprio
 // painel (como era) perdia a resposta e a tela ficava em branco. O que não for da IA nem da Filuna vai para o navegador
 // do cliente.
-void FilunaAssistentePainel::on_new_window(wxWebViewEvent& e)
+static void ia_nova_janela(wxWebViewEvent& e)
 {
     const wxString url = e.GetURL();
     if (site_de_ia(url) || url.empty() || url == "about:blank")
@@ -530,13 +528,13 @@ void FilunaAssistentePainel::on_new_window(wxWebViewEvent& e)
     wxLaunchDefaultBrowser(url);
 }
 
-void FilunaAssistentePainel::on_new_window_features(wxWebViewEvent& e)
+static void ia_janela_de_login(wxWebViewEvent& e)
 {
     wxWebViewWindowFeatures* features = e.GetTargetWindowFeatures();
     if (features == nullptr)
         return;
     auto* janela = new wxDialog(wxGetApp().mainframe, wxID_ANY, wxString::FromUTF8("Entrar na sua IA"), wxDefaultPosition,
-                                FromDIP(wxSize(520, 700)), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+                                wxGetApp().mainframe->FromDIP(wxSize(520, 700)), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
     wxWebView* filho = features->GetChildWebView();
     if (filho == nullptr || !filho->Create(janela, wxID_ANY, e.GetURL())) {
         janela->Destroy();
@@ -544,7 +542,7 @@ void FilunaAssistentePainel::on_new_window_features(wxWebViewEvent& e)
     }
     filho->SetUserAgent(wxString::FromUTF8(NAVEGADOR_COMUM));
     if (features->GetSize().IsFullySpecified())
-        janela->SetClientSize(FromDIP(features->GetSize()));
+        janela->SetClientSize(janela->FromDIP(features->GetSize()));
     auto* s = new wxBoxSizer(wxVERTICAL);
     s->Add(filho, 1, wxEXPAND);
     janela->SetSizer(s);
@@ -561,6 +559,15 @@ void FilunaAssistentePainel::on_new_window_features(wxWebViewEvent& e)
     janela->CentreOnParent();
     janela->Show();
 }
+
+void filuna_ia_preparar_navegador(wxWebView* web)
+{
+    web->SetUserAgent(wxString::FromUTF8(NAVEGADOR_COMUM));
+    web->Bind(wxEVT_WEBVIEW_NEWWINDOW, &ia_nova_janela);
+    web->Bind(wxEVT_WEBVIEW_NEWWINDOW_FEATURES, &ia_janela_de_login);
+}
+
+bool filuna_site_de_ia(const wxString& url) { return site_de_ia(url); }
 
 void filuna_assistente_fatiado(bool ok)
 {

@@ -6,6 +6,7 @@
 #include "slic3r/Filuna/FilunaVersoes.hpp"
 #include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
+#include "FilunaMidia.hpp"
 #include "FilunaDispositivos.hpp"
 #include "FilunaCasa.hpp"
 #include "FilunaManutencao.hpp"
@@ -469,6 +470,8 @@ bool mapear_parametricos(wxWebView* b)
 
 } // namespace
 
+json filuna_imagem_da_mesa() { return plate_image(); }
+
 FilunaPanel::FilunaPanel(wxWindow* parent, const std::string& page) : wxPanel(parent, wxID_ANY)
 {
     SetBackgroundColour(wxColour(0xED, 0xEB, 0xE7));
@@ -645,6 +648,9 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     // Assistente de impressão (etapas, conferência da peça, ajustes, pasta automática): FilunaAssistente.cpp.
     if (auto assistente = filuna_assistente_acao(action, d))
         return *assistente;
+    // Post nas redes sociais (só com a ferramenta liberada para a conta): FilunaMidia.cpp.
+    if (auto midia = filuna_midia_acao(action, d))
+        return *midia;
     AppConfig* cfg = wxGetApp().app_config;
     if (action == "config.ler") {
         const std::string key = d.value("chave", std::string());

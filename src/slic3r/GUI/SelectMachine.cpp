@@ -7,6 +7,7 @@
 #include "FilamentBitmapUtils.hpp"
 #include "GUI.hpp"
 #include "GUI_App.hpp"
+#include "FilunaMidia.hpp"
 #include "GUI_Preview.hpp"
 #include "MainFrame.hpp"
 #include "Widgets/ProgressDialog.hpp"
@@ -922,6 +923,7 @@ SelectMachineDialog::SelectMachineDialog(Plater *plater)
     m_scroll_sizer->Add(sizer_split_options, 1, wxEXPAND|wxLEFT|wxRIGHT, FromDIP(15));
     m_scroll_sizer->Add(0, 0, 0, wxTOP, FromDIP(10));
     m_scroll_sizer->Add(m_options_other, 0, wxEXPAND|wxLEFT|wxRIGHT, FromDIP(15));
+    filuna_midia_caixa_no_envio(m_scroll_area, m_scroll_sizer); // Post nas redes sociais (só liberado para a conta)
     m_scroll_sizer->Add(0, 0, 0, wxTOP, FromDIP(30));
 
     show_print_failed_info(false);
@@ -3858,6 +3860,7 @@ void SelectMachineDialog::on_send_print()
 
     replace_job(*m_worker, m_print_job);
     BOOST_LOG_TRIVIAL(info) << "print_job: start print job";
+    filuna_midia_envio_confirmado(m_printer_last_select); // Post nas redes sociais: espera a impressão começar sem erro
 }
 
 void SelectMachineDialog::clear_ip_address_config(wxCommandEvent& e)

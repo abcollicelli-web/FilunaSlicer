@@ -168,7 +168,7 @@ function prefs() {
 function desenhar() {
 	if (st.secao == "loja") { location.href = "loja.html"; return; }
 	menu();
-	({ visao: visao, estoque: estoque, historico: historico, painel: painel, perfis: perfis, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia }[st.secao] || visao)();
+	({ visao: visao, estoque: estoque, historico: historico, painel: painel, perfis: perfis, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia, marca: window.midiaMarca, posts: window.midiaPosts }[st.secao] || visao)();
 }
 
 var ICONE = {
@@ -626,5 +626,6 @@ Filuna.ouvir("sincronizado", function () { if (st.secao == "estoque" || st.secao
 Filuna.ouvir("estoque", function () { if (st.secao == "estoque" || st.secao == "visao" || st.secao == "historico" || st.secao == "painel") desenhar(); });
 Filuna.ouvir("mostrar", function () { iniciais().then(function () { if (st.secao == "visao" || st.secao == "perfis") desenhar(); else menu(); }); });
 </script>
+<script src="midia-espaco.js"></script>
 </body>
 </html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+/* Post nas redes sociais (telas aprovadas pelo dono em 22/11/2026). Janela aberta pelo FilunaMidia.cpp quando a impressão
+   começa sem erro (ou por Meu espaço › Posts); à direita fica o ChatGPT do cliente, pela assinatura dele. */
+html,body{background:#fff;height:100%;margin:0}
+body{display:flex;flex-direction:column;font-family:Nunito,"Segoe UI",sans-serif;color:var(--ink)}
+.topo{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);font-weight:800;font-size:17px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;background:var(--good-bg);color:var(--good)}
+.chip.v{background:#F1ECFF;color:var(--violeta)}.chip.c{background:var(--pill);color:var(--ink2)}.chip.a{background:var(--warn-bg);color:var(--warn)}
+.pc{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.it{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:13.5px}
+.it .lg{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:900;font-size:12.5px;flex:none}
+.it small{display:block;color:var(--ink2);font-size:12px}
+.it .ck{margin-left:auto;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:13px;font-weight:900;flex:none;cursor:pointer}
+.it .ck.on{background:var(--magenta);color:#fff}.it .ck.off{border:2px solid #D6D1CA}
+.foto{border-radius:14px;overflow:hidden;aspect-ratio:1/1;background:var(--pill);display:grid;place-items:center}
+.foto img{width:100%;height:100%;object-fit:cover}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mini img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;border:2px solid transparent;cursor:pointer}
+.mini img.on{border-color:var(--magenta)}
+label.r{display:block;font-size:12.5px;font-weight:800;color:var(--ink2);margin-bottom:5px}
+textarea,input[type=text]{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:13.5px;resize:vertical}
+.rod{display:flex;gap:10px;padding:12px 18px;border-top:1px solid var(--line);background:var(--side)}
+.bt{height:42px;padding:0 16px;border-radius:12px;border:0;background:var(--magenta);color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.bt:disabled{opacity:.5;cursor:default}.bt.s{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.prog{height:8px;border-radius:4px;background:var(--pill);overflow:hidden;position:relative}
+.prog div{position:absolute;height:100%;width:35%;background:var(--violeta);border-radius:4px;animation:vai 1.3s ease-in-out infinite}
+@keyframes vai{0%{left:-35%}100%{left:100%}}
+.ajuda{font-size:12.5px;color:var(--ink2);line-height:1.45}
+.erro{color:var(--warn);font-size:13px}
+.fmt{display:flex;gap:6px}.fmt button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-weight:700;font-size:12.5px;cursor:pointer}
+.fmt button.on{border-color:var(--magenta);color:var(--magenta-deep);background:#FFF5F9}
+</style>
+</head>
+<body>
+<div class="topo"><span>✦ <span id="tit">Criando o seu post</span></span><span id="imp"></span></div>
+<div class="pc" id="corpo"></div>
+<div class="rod" id="rod"></div>
+<script src="ponte.js"></script>
+<script>
+var E = Filuna.esc;
+var st = { fase: "preparando", dados: {}, marca: null, redes: {}, fotos: [], sel: 0, legenda: "", hashtags: "", cenario: "", formato: "1:1",
+	marcadas: { instagram: true, facebook: true }, erro: "", aviso: "", pedidos: 0 };
+
+// ---------- conversa com o ChatGPT ao lado (scripts rodados na página dele) ----------
+var esperas = {}, seq = 0;
+Filuna.ouvir("midia.script", function (r) {
+	var f = esperas[r.id]; if (!f) return;
+	delete esperas[r.id];
+	var v = r.valor;
+	try { v = JSON.parse(v); if (typeof v == "string") v = JSON.parse(v); } catch (e) {}
+	f(r.ok ? v : { erro: String(r.valor || "erro") });
+});
+function naIA(js) {
+	return new Promise(function (ok) {
+		var id = "s" + (++seq);
+		esperas[id] = ok;
+		Filuna.nativo("midia.ia", { acao: "script", id: id, js: "(function(){try{return JSON.stringify((function(){" + js + "})());}catch(e){return JSON.stringify({erro:String(e)});}})()" })
+			.catch(function (e) { delete esperas[id]; ok({ erro: e.message || String(e) }); });
+	});
+}
+function pausa(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+var JS_ESTADO = "var ed=document.querySelector('#prompt-textarea');" +
+	"return {pronto:!!ed, entrar:!!document.querySelector('[data-testid=\"login-button\"],[data-testid=\"signup-button\"]'), url:location.href};";
+
+// Anexa as imagens (data URLs) e escreve o pedido no campo do ChatGPT.
+function jsAnexarEscrever(imagens, texto) {
+	return "var imgs=" + JSON.stringify(imagens) + ", texto=" + JSON.stringify(texto) + ";" +
+		"var inp=document.querySelector('input[type=file]'), dt=new DataTransfer();" +
+		"imgs.forEach(function(u,i){var b=atob(u.split(',')[1]),a=new Uint8Array(b.length);for(var k=0;k<b.length;k++)a[k]=b.charCodeAt(k);" +
+		"var tipo=u.slice(5,u.indexOf(';'));dt.items.add(new File([a],'filuna_'+i+'.'+(tipo.split('/')[1]||'png'),{type:tipo}));});" +
+		"if(inp&&imgs.length){inp.files=dt.files;inp.dispatchEvent(new Event('change',{bubbles:true}));}" +
+		"var ed=document.querySelector('#prompt-textarea');if(!ed)return {erro:'campo da conversa não achado'};" +
+		"ed.focus();document.execCommand('insertText',false,texto);" +
+		"window.__filuna={antes:document.querySelectorAll('[data-message-author-role=\"assistant\"]').length};return {ok:true};";
+}
+var JS_ENVIAR = "var b=document.querySelector('[data-testid=\"send-button\"]');if(!b||b.disabled)return {ok:false};b.click();return {ok:true};";
+var JS_RESPOSTA = "var ms=document.querySelectorAll('[data-message-author-role=\"assistant\"]');var f=window.__filuna||{antes:0};" +
+	"if(ms.length<=f.antes)return {pronta:false};var m=ms[ms.length-1];" +
+	"var imgs=[].slice.call(m.querySelectorAll('img')).filter(function(i){return i.naturalWidth>=400&&!/^data:/.test(i.src);}).map(function(i){return i.src;});" +
+	"var gerando=!!document.querySelector('[data-testid=\"stop-button\"]');" +
+	"return {pronta:!gerando&&imgs.length>0,gerando:gerando,imagens:imgs,texto:m.innerText||''};";
+function jsBaixar(src) {
+	return "window.__filuna=window.__filuna||{};window.__filuna.foto=null;" +
+		"fetch(" + JSON.stringify(src) + ",{credentials:'include'}).then(function(r){return r.blob();}).then(function(b){" +
+		"var fr=new FileReader();fr.onload=function(){window.__filuna.foto=fr.result;};fr.readAsDataURL(b);}).catch(function(e){window.__filuna.foto='erro:'+e;});return {ok:true};";
+}
+var JS_FOTO = "var f=window.__filuna&&window.__filuna.foto;return {foto:f||null};";
+
+// ---------- etapas ----------
+function iniciar() {
+	Promise.all([Filuna.nativo("midia.dados"), Filuna.api("GET", "/midia/estado")]).then(function (r) {
+		st.dados = r[0] || {};
+		if (!r[1].disponivel) { st.fase = "indisponivel"; desenhar(); return; }
+		st.marca = r[1].marca; st.redes = r[1].redes || {};
+		st.marcadas.instagram = !!(st.redes.instagram || {}).conectado;
+		st.marcadas.facebook = !!(st.redes.facebook || {}).conectado;
+		desenhar();
+		return Filuna.nativo("midia.ia", { acao: "abrir", url: "https://chatgpt.com/" }).then(esperarIA);
+	}).catch(function (e) { st.erro = e.erro || e.message; desenhar(); });
+}
+
+function esperarIA() {
+	st.fase = "abrindo"; desenhar();
+	var tentar = function (n) {
+		return naIA(JS_ESTADO).then(function (e) {
+			if (e.pronto && !e.entrar) return gerar();
+			st.fase = e.entrar ? "entrar" : "abrindo"; desenhar();
+			return pausa(3000).then(function () { return n < 400 ? tentar(n + 1) : null; });
+		});
+	};
+	return pausa(2500).then(function () { return tentar(0); });
+}
+
+function gerar() {
+	st.fase = "gerando"; st.erro = ""; desenhar();
+	var d = st.dados;
+	return Filuna.api("POST", "/midia/pedido", { produto: d.produto, material: d.material, cor: corLegivel(d.cor), formato: st.formato }).then(function (p) {
+		st.cenario = p.cenario; desenhar();
+		var imgs = [d.foto_mesa, p.logo].filter(Boolean);
+		var texto = st.pedidos++ ? "Agora outra foto do mesmo produto, mesmas regras, num cenário diferente: " + p.cenario + ". Formato " + st.formato + "." : p.texto;
+		return naIA(jsAnexarEscrever(st.pedidos > 1 ? [] : imgs, texto)).then(function (r) {
+			if (r.erro) throw { erro: "Não consegui escrever no ChatGPT: " + r.erro };
+			return enviarQuandoPronto(0);
+		});
+	}).then(function () { return esperarResposta(0); }).catch(function (e) { st.fase = "pronto"; st.erro = e.erro || e.message || String(e); desenhar(); });
+}
+
+function enviarQuandoPronto(n) {   // espera as imagens subirem para o botão de enviar liberar
+	return pausa(1500).then(function () { return naIA(JS_ENVIAR); }).then(function (r) {
+		if (r.ok) return;
+		if (n > 60) throw { erro: "O ChatGPT não liberou o envio. Confira a conversa ao lado." };
+		return enviarQuandoPronto(n + 1);
+	});
+}
+
+function esperarResposta(n) {
+	return pausa(4000).then(function () { return naIA(JS_RESPOSTA); }).then(function (r) {
+		if (!r.pronta) {
+			if (n > 75) throw { erro: "A foto está demorando. Se o ChatGPT pediu algo, responda ao lado e toque em Pegar a foto." };
+			return esperarResposta(n + 1);
+		}
+		lerTexto(r.texto || "");
+		return baixar(r.imagens[r.imagens.length - 1]);
+	});
+}
+
+function lerTexto(t) {
+	var l = /LEGENDA:\s*([\s\S]*?)(?:\n\s*HASHTAGS:|$)/i.exec(t), h = /HASHTAGS:\s*(.*)/i.exec(t);
+	if (l && !st.legenda) st.legenda = l[1].trim();
+	if (h && !st.hashtags) st.hashtags = h[1].trim();
+}
+
+function baixar(src) {
+	return naIA(jsBaixar(src)).then(function () { return pegarFoto(0); });
+}
+function pegarFoto(n) {
+	return pausa(1200).then(function () { return naIA(JS_FOTO); }).then(function (r) {
+		if (!r.foto) { if (n > 40) throw { erro: "Não consegui pegar a foto do ChatGPT." }; return pegarFoto(n + 1); }
+		if (/^erro:/.test(r.foto)) throw { erro: "Não consegui pegar a foto: " + r.foto.slice(5) };
+		return paraJpeg(r.foto).then(function (j) { st.fotos.push(j); st.sel = st.fotos.length - 1; st.fase = "pronto"; desenhar(); });
+	});
+}
+
+// O Instagram só aceita JPEG: a foto passa por um canvas.
+function paraJpeg(dataUrl) {
+	return new Promise(function (ok, falha) {
+		var im = new Image();
+		im.onload = function () {
+			var c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+			var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0);
+			ok(c.toDataURL("image/jpeg", 0.92));
+		};
+		im.onerror = function () { falha({ erro: "A foto do ChatGPT veio num formato que não abre." }); };
+		im.src = dataUrl;
+	});
+}
+
+function corLegivel(hex) {
+	var nomes = { "#FFFFFF": "branco", "#000000": "preto" };
+	return nomes[String(hex || "").toUpperCase()] || (hex ? "na cor " + hex : "");
+}
+
+function publicar() {
+	var redes = Object.keys(st.marcadas).filter(function (k) { return st.marcadas[k] && (st.redes[k] || {}).conectado; });
+	st.fase = "publicando"; st.erro = ""; desenhar();
+	var d = st.dados;
+	Filuna.api("POST", "/midia/posts", { fotos: st.fotos, legenda: st.legenda, hashtags: st.hashtags, cenario: st.cenario, produto: d.produto, impressora: d.impressora })
+		.then(function (r) {
+			if (!redes.length) { st.fase = "salvo"; desenhar(); return; }
+			return Filuna.api("POST", "/midia/posts/" + r.post.id + "/publicar", { redes: redes, foto: st.sel }).then(function (p) {
+				st.resultado = p.redes; st.fase = "publicado"; desenhar();
+			});
+		}).catch(function (e) { st.fase = "pronto"; st.erro = e.erro || e.message; desenhar(); });
+}
+
+// ---------- tela ----------
+function linhaRede(k, nome, cor, sigla) {
+	var r = st.redes[k] || {};
+	var marcada = st.marcadas[k] && r.conectado;
+	return '<div class="it"><div class="lg" style="background:' + cor + '">' + sigla + "</div><div><b>" + nome + "</b>" + (r.conta ? " · " + E(r.conta) : "") +
+		"<small>" + (r.conectado ? "conectado" : "conecte em filuna3d.com › Conexões") + '</small></div><span class="ck ' + (marcada ? "on" : "off") + '" data-rede="' + k + '">' + (marcada ? "✓" : "") + "</span></div>";
+}
+
+function desenhar() {
+	var d = st.dados, c = document.getElementById("corpo"), rod = document.getElementById("rod");
+	document.getElementById("imp").innerHTML = d.origem == "mesa" ? '<span class="chip c">peça na mesa</span>' : '<span class="chip">● imprimindo sem erros</span>';
+	document.getElementById("tit").textContent = st.fase == "pronto" || st.fase == "publicado" || st.fase == "salvo" ? "Seu post está pronto" : "Criando o seu post";
+	rod.innerHTML = "";
+	if (st.fase == "indisponivel") { c.innerHTML = '<div class="ajuda">Post nas redes sociais não está liberado para esta conta.</div>'; return; }
+	var entradas = '<div class="it"><div class="lg" style="background:var(--scene)">3D</div><div>Foto da peça fatiada<small>' + E(d.produto || "peça na mesa") + " · " + E(d.material || "") + "</small></div>" + (d.foto_mesa ? '<span class="chip">✓</span>' : '<span class="chip a">sem foto</span>') + "</div>" +
+		'<div class="it"><div class="lg" style="background:#C2185B">M</div><div>Sua marca<small>' + E((st.marca && st.marca.nome) || "configure em Meu espaço › Minha marca") + "</small></div></div>" +
+		'<div class="it"><div class="lg" style="background:#7B4BFF">★</div><div>Cenário novo, nunca repetido<small>' + E(st.cenario || "escolhido na hora") + "</small></div></div>";
+	if (st.fase == "preparando" || st.fase == "abrindo" || st.fase == "entrar" || st.fase == "gerando") {
+		var msg = { preparando: "Preparando…", abrindo: "Abrindo o seu ChatGPT ao lado…", entrar: "Entre na sua conta do ChatGPT ao lado. A Filuna usa a sua assinatura, sem crédito.",
+			gerando: "Sua IA está criando a foto. Leva cerca de um minuto." }[st.fase];
+		c.innerHTML = entradas + '<div class="ajuda" style="margin-top:6px">' + E(msg) + "</div>" + (st.fase != "entrar" ? '<div class="prog"><div></div></div>' : "") +
+			(st.erro ? '<div class="erro">' + E(st.erro) + "</div>" : "");
+		rod.innerHTML = '<button class="bt s" id="fechar">Fechar</button>' + (st.fase == "gerando" ? '<button class="bt s" id="pegar">Pegar a foto</button>' : "");
+		ligar(); return;
+	}
+	var foto = st.fotos[st.sel];
+	c.innerHTML = '<div class="foto">' + (foto ? '<img src="' + foto + '">' : '<span class="ajuda">Sem foto ainda</span>') + "</div>" +
+		(st.fotos.length > 1 ? '<div class="mini">' + st.fotos.map(function (f, i) { return '<img data-i="' + i + '" class="' + (i == st.sel ? "on" : "") + '" src="' + f + '">'; }).join("") + "</div>" : "") +
+		'<div class="fmt">' + ["1:1", "4:5", "9:16"].map(function (f) { return '<button data-f="' + f + '" class="' + (f == st.formato ? "on" : "") + '">' + f + "</button>"; }).join("") + "</div>" +
+		'<div><label class="r">Legenda (escrita pela sua IA, pode editar)</label><textarea id="leg" rows="4">' + E(st.legenda) + "</textarea></div>" +
+		'<div><label class="r">Hashtags</label><input type="text" id="hash" value="' + E(st.hashtags) + '"></div>' +
+		'<div><label class="r">Enviar para</label>' + linhaRede("instagram", "Instagram", "linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)", "IG") +
+		linhaRede("facebook", "Facebook", "#1877F2", "f") + "</div>" +
+		(st.erro ? '<div class="erro">' + E(st.erro) + "</div>" : "") +
+		(st.fase == "publicado" ? '<div class="it" style="background:var(--good-bg);border-color:transparent">' + Object.keys(st.resultado || {}).map(function (k) {
+			var r = st.resultado[k]; return "<b>" + k + "</b>: " + (r.ok ? "publicado ✓" : E(r.erro || "não publicou"));
+		}).join(" · ") + "</div>" : "") + (st.fase == "salvo" ? '<div class="ajuda">Post salvo em Meu espaço › Posts. Conecte uma rede para publicar.</div>' : "") +
+		'<div class="ajuda">Nada é publicado sem o seu toque. Fica salvo em Meu espaço › Posts.</div>';
+	var conectada = Object.keys(st.marcadas).some(function (k) { return st.marcadas[k] && (st.redes[k] || {}).conectado; });
+	rod.innerHTML = '<button class="bt s" id="outro"' + (st.fase == "publicando" ? " disabled" : "") + '>↻ Outro cenário</button>' +
+		(st.fase == "publicado" || st.fase == "salvo" ? '<button class="bt" id="fechar" style="flex:1">Fechar</button>'
+			: '<button class="bt" id="pub" style="flex:1"' + (!foto || st.fase == "publicando" ? " disabled" : "") + ">" +
+			(st.fase == "publicando" ? "Enviando…" : conectada ? "Enviar para minhas redes sociais" : "Salvar post") + "</button>");
+	ligar();
+}
+
+function ligar() {
+	var q = function (s) { return document.querySelector(s); };
+	if (q("#fechar")) q("#fechar").onclick = function () { Filuna.nativo("midia.fechar"); };
+	if (q("#pegar")) q("#pegar").onclick = function () { esperarResposta(0).catch(function (e) { st.fase = "pronto"; st.erro = e.erro; desenhar(); }); };
+	if (q("#outro")) q("#outro").onclick = function () { gerar(); };
+	if (q("#pub")) q("#pub").onclick = publicar;
+	if (q("#leg")) q("#leg").oninput = function () { st.legenda = this.value; };
+	if (q("#hash")) q("#hash").oninput = function () { st.hashtags = this.value; };
+	document.querySelectorAll("[data-i]").forEach(function (m) { m.onclick = function () { st.sel = +m.dataset.i; desenhar(); }; });
+	document.querySelectorAll("[data-f]").forEach(function (b) { b.onclick = function () { st.formato = b.dataset.f; desenhar(); }; });
+	document.querySelectorAll("[data-rede]").forEach(function (b) {
+		b.onclick = function () { var k = b.dataset.rede; if ((st.redes[k] || {}).conectado) { st.marcadas[k] = !st.marcadas[k]; desenhar(); } };
+	});
+}
+
+Filuna.iniciar().then(iniciar);
+</script>
+</body>
+</html>
