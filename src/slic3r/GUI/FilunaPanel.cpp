@@ -470,8 +470,6 @@ bool mapear_parametricos(wxWebView* b)
 
 } // namespace
 
-json filuna_imagem_da_mesa() { return plate_image(); }
-
 FilunaPanel::FilunaPanel(wxWindow* parent, const std::string& page) : wxPanel(parent, wxID_ANY)
 {
     SetBackgroundColour(wxColour(0xED, 0xEB, 0xE7));

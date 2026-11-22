@@ -80,13 +80,20 @@ function jsAnexarEscrever(imagens, texto) {
 		JS_CAMPO + "if(!ed)return {erro:'campo da conversa não achado'};ed.focus();" +
 		"if(ed.tagName=='TEXTAREA'){Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(ed,texto);ed.dispatchEvent(new Event('input',{bubbles:true}));}" +
 		"else document.execCommand('insertText',false,texto);" +
-		"window.__filuna={antes:document.querySelectorAll('[data-message-author-role=\"assistant\"],[data-message-role=\"assistant\"]').length};return {ok:true};";
+		JS_GALERIA + "window.__filuna={antesImg:galeria().length};return {ok:true};";
 }
 var JS_ENVIAR = "var b=document.querySelector('[data-testid=\"send-button\"],#composer-submit-button')||[].filter.call(document.querySelectorAll('button[aria-label]')," +
 	"function(x){return /^(Enviar|Send)( prompt| mensagem| message)?$/i.test(x.getAttribute('aria-label'));})[0];" +
 	"if(!b||b.disabled)return {ok:false};b.click();return {ok:true};";
-var JS_RESPOSTA = "var ms=document.querySelectorAll('[data-message-author-role=\"assistant\"],[data-message-role=\"assistant\"]');var f=window.__filuna||{antes:0};" +
-	"if(ms.length<=f.antes)return {pronta:false};var m=ms[ms.length-1];" +
+// Fotos geradas: galeria nova do ChatGPT (generated-image-gallery) ou imagens dentro da resposta (layout antigo).
+var JS_GALERIA = "function galeria(){return [].slice.call(document.querySelectorAll('[data-testid=\\\"generated-image-gallery\\\"] img,[data-message-author-role=\\\"assistant\\\"] img,[data-message-role=\\\"assistant\\\"] img'))" +
+	".filter(function(i){return i.naturalWidth>=400&&!/^data:/.test(i.src);});}";
+var JS_RESPOSTA = JS_GALERIA + "var f=window.__filuna||{antesImg:0};var novas=galeria().slice(f.antesImg||0).map(function(i){return i.src;});" +
+	"var rs=[].slice.call(document.querySelectorAll('[data-response-body],[data-message-author-role=\\\"assistant\\\"],[data-message-role=\\\"assistant\\\"]'));" +
+	"var comLegenda=rs.filter(function(r){return /LEGENDA:/.test(r.innerText);});var m=comLegenda[comLegenda.length-1]||rs[rs.length-1];" +
+	"var turnos=document.querySelectorAll('[data-talvt-turn-state]');var ultimo=turnos[turnos.length-1];" +
+	"var gerando=!!document.querySelector('[data-testid=\\\"stop-button\\\"],button[aria-label=\\\"Parar\\\"],button[aria-label=\\\"Stop\\\"]')||(ultimo&&ultimo.getAttribute('data-talvt-turn-state')!='complete');" +
+	"return {pronta:!gerando&&novas.length>0,gerando:gerando,imagens:novas,texto:m?m.innerText:''};";
 	"var imgs=[].slice.call(m.querySelectorAll('img')).filter(function(i){return i.naturalWidth>=400&&!/^data:/.test(i.src);}).map(function(i){return i.src;});" +
 	"var gerando=!!document.querySelector('[data-testid=\"stop-button\"],button[aria-label=\"Parar\"],button[aria-label=\"Stop\"]')||(m.hasAttribute('data-message-role')&&!m.hasAttribute('data-message-complete'));" +
 	"return {pronta:!gerando&&imgs.length>0,gerando:gerando,imagens:imgs,texto:m.innerText||''};";
@@ -127,7 +134,7 @@ function gerar() {
 	var d = st.dados;
 	return Filuna.api("POST", "/midia/pedido", { produto: d.produto, material: d.material, cor: corLegivel(d.cor), formato: st.formato }).then(function (p) {
 		st.cenario = p.cenario; desenhar();
-		var imgs = [d.foto_mesa, p.logo].filter(Boolean);
+		var imgs = (d.vistas || []).concat(p.logo ? [p.logo] : []);
 		var texto = st.pedidos++ ? "Agora outra foto do mesmo produto, mesmas regras, num cenário diferente: " + p.cenario + ". Formato " + st.formato + "." : p.texto;
 		return naIA(jsAnexarEscrever(st.pedidos > 1 ? [] : imgs, texto)).then(function (r) {
 			if (r.erro) throw { erro: "Não consegui escrever no ChatGPT: " + r.erro };
@@ -168,7 +175,7 @@ function pegarFoto(n) {
 	return pausa(1200).then(function () { return naIA(JS_FOTO); }).then(function (r) {
 		if (!r.foto) { if (n > 40) throw { erro: "Não consegui pegar a foto do ChatGPT." }; return pegarFoto(n + 1); }
 		if (/^erro:/.test(r.foto)) throw { erro: "Não consegui pegar a foto: " + r.foto.slice(5) };
-		return paraJpeg(r.foto).then(function (j) { st.fotos.push(j); st.sel = st.fotos.length - 1; st.fase = "pronto"; desenhar(); });
+		return paraJpeg(r.foto).then(function (j) { st.fotos.push(j); st.sel = st.fotos.length - 1; st.fase = "pronto"; st.erro = ""; desenhar(); });
 	});
 }
 
@@ -218,7 +225,7 @@ function desenhar() {
 	document.getElementById("tit").textContent = st.fase == "pronto" || st.fase == "publicado" || st.fase == "salvo" ? "Seu post está pronto" : "Criando o seu post";
 	rod.innerHTML = "";
 	if (st.fase == "indisponivel") { c.innerHTML = '<div class="ajuda">Post nas redes sociais não está liberado para esta conta.</div>'; return; }
-	var entradas = '<div class="it"><div class="lg" style="background:var(--scene)">3D</div><div>Foto da peça fatiada<small>' + E(d.produto || "peça na mesa") + " · " + E(d.material || "") + "</small></div>" + (d.foto_mesa ? '<span class="chip">✓</span>' : '<span class="chip a">sem foto</span>') + "</div>" +
+	var entradas = '<div class="it"><div class="lg" style="background:var(--scene)">3D</div><div>Foto da peça fatiada<small>' + E(d.produto || "peça na mesa") + " · " + E(d.material || "") + "</small></div>" + ((d.vistas || []).length ? '<span class="chip">✓ ' + d.vistas.length + ' ângulos</span>' : '<span class="chip a">sem foto</span>') + "</div>" +
 		'<div class="it"><div class="lg" style="background:#C2185B">M</div><div>Sua marca<small>' + E((st.marca && st.marca.nome) || "configure em Meu espaço › Minha marca") + "</small></div></div>" +
 		'<div class="it"><div class="lg" style="background:#7B4BFF">★</div><div>Cenário novo, nunca repetido<small>' + E(st.cenario || "escolhido na hora") + "</small></div></div>";
 	if (st.fase == "preparando" || st.fase == "abrindo" || st.fase == "entrar" || st.fase == "gerando") {

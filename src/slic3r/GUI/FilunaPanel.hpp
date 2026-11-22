@@ -16,9 +16,6 @@
 
 namespace Slic3r { namespace GUI {
 
-// A mesa atual como PNG em data URL {"imagem": …} (catálogo e Post nas redes sociais).
-nlohmann::json filuna_imagem_da_mesa();
-
 class FilunaPanel : public wxPanel
 {
 public:

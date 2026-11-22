@@ -3,6 +3,8 @@
 #include "FilunaAssistente.hpp"
 #include "FilunaDispositivos.hpp"
 #include "FilunaPanel.hpp"
+#include "GLCanvas3D.hpp"
+#include "PartPlate.hpp"
 #include "GUI.hpp"
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
@@ -13,10 +15,13 @@
 #include "Widgets/WebView.hpp"
 
 #include "libslic3r/AppConfig.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/PresetBundle.hpp"
 
 #include <boost/log/trivial.hpp>
+#include <miniz.h>
+#include <wx/base64.h>
 #include <wx/dialog.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -59,10 +64,34 @@ std::string impressora_em_uso()
     return nome.empty() ? pb->printers.get_edited_preset().name : nome;
 }
 
-// A peça na mesa agora: nome, material e cor do primeiro filamento e a imagem da mesa (referência para a IA).
+// A peça vista de 3 ângulos (isométrica, frente e lado), sem a mesa: a referência da forma para a IA. Só a miniatura de
+// cima escondia partes (uma tampa larga esconde a haste embaixo, e a IA fotografava uma placa).
+json vistas_da_peca(Plater& plater)
+{
+    json              out = json::array();
+    GLCanvas3D*       canvas = plater.get_view3D_canvas3D();
+    if (canvas == nullptr || plater.model().objects.empty())
+        return out;
+    const ThumbnailsParams params = {{}, false, true, false, true, plater.get_partplate_list().get_curr_plate_index()};
+    for (const auto angulo : {Camera::ViewAngleType::Iso, Camera::ViewAngleType::Front, Camera::ViewAngleType::Right}) {
+        ThumbnailData d;
+        canvas->render_thumbnail(d, 768, 768, params, Camera::EType::Perspective, angulo);
+        if (!d.is_valid())
+            continue;
+        size_t tamanho = 0;
+        void*  png     = tdefl_write_image_to_png_file_in_memory_ex(d.pixels.data(), d.width, d.height, 4, &tamanho, MZ_DEFAULT_LEVEL, 1);
+        if (png == nullptr)
+            continue;
+        out.push_back("data:image/png;base64," + std::string(wxBase64Encode(png, tamanho).ToUTF8()));
+        mz_free(png);
+    }
+    return out;
+}
+
+// A peça na mesa agora: nome, material e cor do primeiro filamento e as vistas da peça (referência para a IA).
 json dados_da_peca(const std::string& dev_id)
 {
-    json d = {{"dev_id", dev_id}, {"impressora", impressora_em_uso()}, {"produto", ""}, {"material", ""}, {"cor", ""}, {"foto_mesa", ""}};
+    json d = {{"dev_id", dev_id}, {"impressora", impressora_em_uso()}, {"produto", ""}, {"material", ""}, {"cor", ""}, {"vistas", json::array()}};
     Plater* plater = wxGetApp().plater();
     if (plater == nullptr)
         return d;
@@ -78,11 +107,7 @@ json dados_da_peca(const std::string& dev_id)
         if (const auto* cores = pb->project_config.option<ConfigOptionStrings>("filament_colour"); cores && !cores->values.empty())
             d["cor"] = cores->values.front();
     }
-    try {
-        d["foto_mesa"] = filuna_imagem_da_mesa().value("imagem", std::string());
-    } catch (const std::exception& e) {
-        BOOST_LOG_TRIVIAL(warning) << "Filuna post: sem imagem da mesa: " << e.what();
-    }
+    d["vistas"] = vistas_da_peca(*plater);
     return d;
 }
 
