@@ -92,13 +92,13 @@ class JanelaPost : public wxDialog
 public:
     explicit JanelaPost(json dados)
         : wxDialog(wxGetApp().mainframe, wxID_ANY, wxString::FromUTF8("Post nas redes sociais"), wxDefaultPosition,
-                   wxGetApp().mainframe->FromDIP(wxSize(1320, 840)), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
+                   wxGetApp().mainframe->FromDIP(wxSize(1440, 860)), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
         , m_dados(std::move(dados))
     {
         SetBackgroundColour(*wxWHITE);
         m_sizer = new wxBoxSizer(wxHORIZONTAL);
         m_tela  = new FilunaPanel(this, "midia.html");
-        m_tela->SetMinSize(FromDIP(wxSize(560, -1)));
+        m_tela->SetMinSize(FromDIP(wxSize(500, -1))); // o ChatGPT ao lado precisa de mais de 800 px para o layout de computador
         m_sizer->Add(m_tela, 0, wxEXPAND);
         SetSizer(m_sizer);
         Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent&) { Destroy(); });

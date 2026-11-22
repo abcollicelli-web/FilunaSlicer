@@ -65,8 +65,10 @@ function naIA(js) {
 }
 function pausa(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-var JS_ESTADO = "var ed=document.querySelector('#prompt-textarea');" +
-	"return {pronto:!!ed, entrar:!!document.querySelector('[data-testid=\"login-button\"],[data-testid=\"signup-button\"]'), url:location.href};";
+// O campo da conversa muda com a largura (no estreito vira o do celular): procura os dois.
+var JS_CAMPO = "var ed=document.querySelector('#prompt-textarea')||document.querySelector('textarea[placeholder]')||document.querySelector('[contenteditable=true]');";
+var JS_ESTADO = JS_CAMPO + "var entrar=[].some.call(document.querySelectorAll('button,a'),function(b){return /^(Entrar|Log in|Fazer login)$/i.test(b.textContent.trim())&&b.offsetParent;});" +
+	"return {pronto:!!ed, entrar:entrar, url:location.href};";
 
 // Anexa as imagens (data URLs) e escreve o pedido no campo do ChatGPT.
 function jsAnexarEscrever(imagens, texto) {
@@ -75,15 +77,18 @@ function jsAnexarEscrever(imagens, texto) {
 		"imgs.forEach(function(u,i){var b=atob(u.split(',')[1]),a=new Uint8Array(b.length);for(var k=0;k<b.length;k++)a[k]=b.charCodeAt(k);" +
 		"var tipo=u.slice(5,u.indexOf(';'));dt.items.add(new File([a],'filuna_'+i+'.'+(tipo.split('/')[1]||'png'),{type:tipo}));});" +
 		"if(inp&&imgs.length){inp.files=dt.files;inp.dispatchEvent(new Event('change',{bubbles:true}));}" +
-		"var ed=document.querySelector('#prompt-textarea');if(!ed)return {erro:'campo da conversa não achado'};" +
-		"ed.focus();document.execCommand('insertText',false,texto);" +
-		"window.__filuna={antes:document.querySelectorAll('[data-message-author-role=\"assistant\"]').length};return {ok:true};";
+		JS_CAMPO + "if(!ed)return {erro:'campo da conversa não achado'};ed.focus();" +
+		"if(ed.tagName=='TEXTAREA'){Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(ed,texto);ed.dispatchEvent(new Event('input',{bubbles:true}));}" +
+		"else document.execCommand('insertText',false,texto);" +
+		"window.__filuna={antes:document.querySelectorAll('[data-message-author-role=\"assistant\"],[data-message-role=\"assistant\"]').length};return {ok:true};";
 }
-var JS_ENVIAR = "var b=document.querySelector('[data-testid=\"send-button\"]');if(!b||b.disabled)return {ok:false};b.click();return {ok:true};";
-var JS_RESPOSTA = "var ms=document.querySelectorAll('[data-message-author-role=\"assistant\"]');var f=window.__filuna||{antes:0};" +
+var JS_ENVIAR = "var b=document.querySelector('[data-testid=\"send-button\"],#composer-submit-button')||[].filter.call(document.querySelectorAll('button[aria-label]')," +
+	"function(x){return /^(Enviar|Send)( prompt| mensagem| message)?$/i.test(x.getAttribute('aria-label'));})[0];" +
+	"if(!b||b.disabled)return {ok:false};b.click();return {ok:true};";
+var JS_RESPOSTA = "var ms=document.querySelectorAll('[data-message-author-role=\"assistant\"],[data-message-role=\"assistant\"]');var f=window.__filuna||{antes:0};" +
 	"if(ms.length<=f.antes)return {pronta:false};var m=ms[ms.length-1];" +
 	"var imgs=[].slice.call(m.querySelectorAll('img')).filter(function(i){return i.naturalWidth>=400&&!/^data:/.test(i.src);}).map(function(i){return i.src;});" +
-	"var gerando=!!document.querySelector('[data-testid=\"stop-button\"]');" +
+	"var gerando=!!document.querySelector('[data-testid=\"stop-button\"],button[aria-label=\"Parar\"],button[aria-label=\"Stop\"]')||(m.hasAttribute('data-message-role')&&!m.hasAttribute('data-message-complete'));" +
 	"return {pronta:!gerando&&imgs.length>0,gerando:gerando,imagens:imgs,texto:m.innerText||''};";
 function jsBaixar(src) {
 	return "window.__filuna=window.__filuna||{};window.__filuna.foto=null;" +
