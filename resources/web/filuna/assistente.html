@@ -156,7 +156,7 @@ function aplicarSugestao(s) {
 		.then(function () { if (s.imprimir && st.estado.fatiado) return nat("imprimir"); })
 		.then(function () {
 			var pecas = ((st.analise && st.analise.pecas) || []).map(function (p, i) {
-				return "peça " + i + " (" + p.nome + "): " + p.tamanho_mm.map(function (x) { return Math.round(x); }).join("×") + " mm, " + p.escala_porcento + "%, " + p.copias + " cópia(s)" + (p.cabe_na_mesa ? "" : ", NÃO CABE NA MESA"); });
+				return "peça " + i + " (" + p.nome + "): " + p.tamanho_mm.map(function (x) { return Math.round(x); }).join("×") + " mm, " + p.escala_porcento + "%, " + p.copias + " cópia(s)" + (p.cabe_na_mesa ? "" : maiorQueAMesa(p, st.analise.mesa_mm) ? ", NÃO CABE NA MESA" : ", FORA DA MESA (o tamanho cabe)"); });
 			var res = "Feito. " + pecas.join("; ") + (st.resumo && st.resumo.fatiado ? ". Fatiado: " + tempo(st.resumo.tempo_s) + ", " + gramas(st.resumo) : "") +
 				(st.avisos.length ? ". Avisos: " + st.avisos.map(function (a) { return a.texto; }).join(" | ") : "");
 			Filuna.api("POST", "/ia/fatiador/sugestoes/" + s.id, { estado: "aplicada", resultado: res }).catch(function () {});
@@ -209,7 +209,9 @@ function aguardarLivre() {
 	}
 	return volta();
 }
-function girar() { st.ocupado = "Girando a peça para usar menos suporte…"; desenhar(); return nat("peca.orientar").then(aguardarLivre); }
+// Com peça: só ela. Sem peça: só as da mesa aberta.
+function girar(peca) { st.ocupado = "Girando a peça para usar menos suporte…"; desenhar(); return nat("peca.orientar", { peca: peca === undefined ? -1 : peca }).then(aguardarLivre); }
+function maiorQueAMesa(p, mesa) { return !!mesa && p.tamanho_mm.some(function (v, k) { return mesa[k] > 0 && v > mesa[k] + 0.01; }); }
 function fatiar() {
 	st.ocupado = "Fatiando…"; st.erro = ""; desenhar();
 	return nat("fatiar").then(function () { return espera(800); }).then(aguardarLivre).then(lerTudo).then(function () {
@@ -302,8 +304,9 @@ function etapa2(c) {
 			: item("ok", "✓", pre + "Peça fechada", "Sem furos nem faces invertidas");
 		acoes["rep" + i] = function () { st.ocupado = "Consertando a malha…"; desenhar(); nat("modelo.reparar").then(lerTudo).then(function () { st.ocupado = ""; desenhar(); }, falha); };
 		h += p.cabe_na_mesa ? item("ok", "✓", pre + "Cabe na mesa", a.mesa_mm ? Math.round(a.mesa_mm[0]) + " × " + Math.round(a.mesa_mm[1]) + " mm" : "")
-			: item("av", "!", pre + "Não cabe na mesa", "Diminua com a ferramenta Escala (tecla S) ou deite a peça.", { t: "Deitar" }, "gir" + i);
-		acoes["gir" + i] = function () { girar().then(lerTudo).then(function () { st.ocupado = ""; desenhar(); }, falha); };
+			: maiorQueAMesa(p, a.mesa_mm) ? item("av", "!", pre + "Não cabe na mesa", "Diminua com a ferramenta Escala (tecla S) ou deite a peça.", { t: "Deitar" }, "gir" + i)
+			: item("av", "!", pre + "Fora da mesa", (p.copias > 1 ? p.copias_fora + " de " + p.copias + " cópias. " : "") + "O tamanho cabe: arraste para dentro de uma mesa.");
+		acoes["gir" + i] = function () { girar(p.indice).then(lerTudo).then(function () { st.ocupado = ""; desenhar(); }, falha); };
 	});
 	var noAr = a.pecas.some(function (p) { return p.area_no_ar_mm2 > 25; }), base = a.pecas.some(function (p) { return p.base_pequena; });
 	if (noAr && !a.com_suporte) h += item("av", "!", "Parte solta no ar", "Sem apoio, essa parte cai ou sai feia", { t: "Ligar suporte" }, "sup");

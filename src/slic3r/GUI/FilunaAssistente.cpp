@@ -197,6 +197,25 @@ json perfis_disponiveis()
             {"processos", lista(b.prints, true)}};
 }
 
+// Cópias que não estão inteiras dentro de nenhuma mesa, pela regra do fatiador. No projeto cada mesa tem a sua posição.
+int copias_fora_das_mesas(PartPlateList& mesas, const ModelObject& obj, int indice)
+{
+    if (!obj.printable)
+        return 0;
+    int fora = 0;
+    for (int j = 0; j < int(obj.instances.size()); ++j) {
+        if (!obj.instances[j]->printable)
+            continue;
+        BoundingBoxf3 caixa  = obj.instance_convex_hull_bounding_box(j);
+        bool          dentro = false;
+        for (int m = 0; m < mesas.get_plate_count() && !dentro; ++m)
+            dentro = !mesas.get_plate(m)->check_outside(indice, j, &caixa);
+        if (!dentro)
+            ++fora;
+    }
+    return fora;
+}
+
 // Conferência da peça antes de fatiar: o que dá para ver só pela malha, sem fatiar.
 json analisar_pecas()
 {
@@ -213,7 +232,8 @@ json analisar_pecas()
     const bool   com_aba     = proc.option("brim_type") != nullptr && proc.option("brim_type")->serialize() != "no_brim";
 
     json lista = json::array();
-    for (const ModelObject* obj : plater.model().objects) {
+    for (int indice = 0; indice < int(plater.model().objects.size()); ++indice) {
+        const ModelObject* obj = plater.model().objects[indice];
         if (obj->instances.empty())
             continue;
         TriangleMesh malha = obj->raw_mesh();
@@ -245,15 +265,15 @@ json analisar_pecas()
         const TriangleMeshStats  st      = obj->get_object_stl_stats();
         const BoundingBoxf3      caixa   = obj->instance_bounding_box(0);
         const double             altura  = z_max - z_min;
-        const bool cabe = (!area.defined || (caixa.min.x() >= area.min.x() - 0.01 && caixa.min.y() >= area.min.y() - 0.01 &&
-                                             caixa.max.x() <= area.max.x() + 0.01 && caixa.max.y() <= area.max.y() + 0.01)) &&
-                          (altura_max <= 0. || altura <= altura_max + 0.01);
+        const int fora = copias_fora_das_mesas(plater.get_partplate_list(), *obj, indice);
         lista.push_back({{"nome", obj->name},
+                         {"indice", indice},
+                         {"copias_fora", fora},
                          {"tamanho_mm", {caixa.size().x(), caixa.size().y(), altura}},
                          {"bordas_abertas", st.open_edges},
                          {"reparados", st.repaired_errors.edges_fixed + st.repaired_errors.degenerate_facets + st.repaired_errors.facets_removed +
                                            st.repaired_errors.facets_reversed + st.repaired_errors.backwards_edges},
-                         {"cabe_na_mesa", cabe},
+                         {"cabe_na_mesa", fora == 0},
                          {"area_no_ar_mm2", std::round(no_ar)},
                          {"area_base_mm2", std::round(base)},
                          // alta e de base estreita: tomba ou solta da mesa no meio da impressão
@@ -267,6 +287,31 @@ json analisar_pecas()
             {"com_suporte", com_suporte},
             {"com_aba", com_aba},
             {"processo", ler_processo()}};
+}
+
+// Orienta só a peça pedida ou, sem peça, só as da mesa aberta. O orientar do Orca gira o projeto inteiro quando a seleção
+// está vazia, então sem seleção confirmada nada roda.
+void orientar_pecas(Plater& plater, int peca)
+{
+    const ModelObjectPtrs& objetos = plater.model().objects;
+    PartPlate*             aberta  = plater.get_partplate_list().get_curr_plate();
+    std::vector<int>       alvo;
+    for (int i = 0; i < int(objetos.size()); ++i)
+        for (int j = 0; j < int(objetos[i]->instances.size()); ++j)
+            if (peca >= 0 ? i == peca : aberta->contain_instance(i, j)) {
+                alvo.push_back(i);
+                break;
+            }
+    Selection& selecao = plater.canvas3D()->get_selection();
+    selecao.remove_all();
+    for (const int i : alvo)
+        selecao.add_object(unsigned(i), false);
+    if (alvo.empty() || selecao.get_content().size() != alvo.size()) {
+        BOOST_LOG_TRIVIAL(warning) << "Assistente: orientar sem peça selecionada; nada foi girado";
+        return;
+    }
+    plater.set_prepare_state(Job::JobPrepareState::PREPARE_STATE_DEFAULT);
+    plater.orient();
 }
 
 // Mexe nas peças da mesa como o cliente mexeria (cada comando vira um passo do Desfazer, Ctrl+Z):
@@ -643,9 +688,16 @@ std::optional<json> filuna_assistente_acao(const std::string& acao, const json& 
         if (mesa().model().objects.empty())
             throw std::runtime_error("Coloque um modelo na mesa primeiro.");
         const bool orientar = acao == "peca.orientar";
-        wxGetApp().CallAfter([orientar] {
-            if (Plater* plater = wxGetApp().plater())
-                orientar ? plater->orient() : plater->arrange();
+        const int  peca     = d.value("peca", -1);
+        if (orientar && (peca < -1 || peca >= int(mesa().model().objects.size())))
+            throw std::runtime_error("Essa peça não está mais no projeto.");
+        wxGetApp().CallAfter([orientar, peca] {
+            if (Plater* plater = wxGetApp().plater()) {
+                if (orientar)
+                    orientar_pecas(*plater, peca);
+                else
+                    plater->arrange();
+            }
         });
         return json::object();
     }
