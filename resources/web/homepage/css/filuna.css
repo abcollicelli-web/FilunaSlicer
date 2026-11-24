@@ -346,6 +346,9 @@ body, button, input
 #FlSupLink.on { color: var(--filuna-framboesa); font-weight: 600; text-decoration: none; }
 .FlJan p.ok { color: #1B7F4B; font-size: 14px; }
 .FlSupOp { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.FlSupCat { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border: 1px solid #ECE8E2; border-radius: 10px; margin: 6px 0; cursor: pointer; }
+.FlSupCat span { display: block; color: #6B6660; font-size: 12.5px; margin-left: 4px; }
+.FlSupCat input { margin-top: 3px; }
 .FlJan #FlSupCorpo ul { font-size: 12.5px; color: var(--fg-color-label); }
 
 /* Modelos 3D do site na tela inicial (mesmos cartões de filuna3d.com/modelos-3d) */

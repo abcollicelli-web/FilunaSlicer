@@ -326,16 +326,23 @@ $(function () {
 
 /* ---- Suporte remoto: o cliente autoriza aqui, por prazo, e encerra quando quiser ----
  * Com a autorização em vigor, o suporte da Filuna pode ler os dados do Filuna Slicer deste computador e pedir
- * ações de reparo de uma lista fechada (ver ponte.js). Tudo o que for feito aparece no histórico abaixo. */
+ * ações de uma lista fechada (ver ponte.js), só nas categorias que o cliente marcou (diagnóstico sempre; conexão e
+ * reparos, impressoras e o fatiador completo só se marcar). Tudo o que for feito aparece no histórico abaixo. */
 function FlSupData(iso) { try { return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
 
 function FlSupDesenhar(r) {
 	var h = "";
 	if (r.ativa) {
+		var nomes = (r.opcoes || []).filter(function (o) { return (r.categorias || []).indexOf(o.id) >= 0; }).map(function (o) { return o.nome; });
 		h += '<p class="ok">Suporte remoto <b>autorizado</b> ' + (r.permanente ? "até você desligar" : "até " + FlEsc(FlSupData(r.expira_em))) + '.</p>' +
+			(nomes.length ? "<p>Liberado: <b>" + FlEsc(nomes.join(", ")) + "</b>.</p>" : "") +
 			'<div class="bt"><button id="FlSupEncerrar" class="sec">Encerrar agora</button></div>';
 	} else {
-		h += '<p>Escolha por quanto tempo o suporte da Filuna pode acessar o Filuna Slicer deste computador:</p><div class="FlSupOp">' +
+		h += "<p>Marque o que o suporte da Filuna pode fazer:</p>" + (r.opcoes || []).map(function (o) {
+			return '<label class="FlSupCat"><input type="checkbox" value="' + FlEsc(o.id) + '"' + (o.obrigatoria ? " checked disabled" : (o.id == "fatiador" ? "" : " checked")) + "> <b>" +
+				FlEsc(o.nome) + "</b><span>" + FlEsc(o.texto) + "</span></label>";
+		}).join("") +
+			'<p>E por quanto tempo:</p><div class="FlSupOp">' +
 			'<button data-h="1">1 hora</button><button data-h="24">24 horas</button><button data-h="168">7 dias</button>' +
 			(r.pode_permanente ? '<button data-p="1" class="sec">Até eu desligar</button>' : "") + '</div>';
 	}
@@ -349,6 +356,7 @@ function FlSupDesenhar(r) {
 	$("#FlSupLink").text(r.ativa ? "Suporte remoto: autorizado" : "Suporte remoto").toggleClass("on", !!r.ativa);
 	$("#FlSupCorpo [data-h], #FlSupCorpo [data-p]").on("click", function () {
 		var b = $(this), corpo = b.data("p") ? { permanente: true } : { horas: parseInt(b.data("h"), 10) };
+		corpo.categorias = $("#FlSupCorpo .FlSupCat input:checked").map(function () { return this.value; }).get();
 		FlChamar("POST", "/suporte/autorizar", corpo).then(FlSupCarregar).catch(function (e) { $("#FlSupCorpo").prepend('<p class="erro">' + FlEsc(e.message) + "</p>"); });
 	});
 	$("#FlSupEncerrar").on("click", function () { FlChamar("POST", "/suporte/encerrar", {}).then(FlSupCarregar).catch(function () { }); });
@@ -363,7 +371,7 @@ function FlSupCarregar() {
 $(function () {
 	$("body").append('<div id="FlSupLink" style="display:none">Suporte remoto</div>' +
 		'<div id="FlSup" class="FlJan" style="display:none"><div class="cx"><small>Suporte remoto da Filuna</small><h2>Você decide quando e por quanto tempo</h2>' +
-		'<p>Com a sua autorização, o suporte da Filuna pode <b>ler os dados do Filuna Slicer</b> deste computador (versão, impressoras, módulos, registro de erros) e <b>fazer reparos de uma lista fechada</b> (reinstalar o suporte de uma marca, refazer a conexão, atualizar o programa). O suporte <b>não vê a sua tela, não acessa seus arquivos e não roda comandos</b> no seu computador. Você pode encerrar a qualquer momento.</p>' +
+		'<p>Com a sua autorização, o suporte da Filuna pode <b>ler os dados do Filuna Slicer</b> deste computador (versão, impressoras, módulos, registro de erros) e <b>fazer só o que você marcar</b>, de uma lista fechada: conexão e reparos, controle das impressoras e o fatiador completo (perfis, ajustes, peças, fatiar e mandar imprimir). O suporte <b>não vê a sua tela, não acessa seus arquivos e não roda comandos</b> no seu computador. Você pode encerrar a qualquer momento.</p>' +
 		'<div id="FlSupCorpo"></div><div class="bt"><button id="FlSupFechar" class="sec">Fechar</button></div></div></div>');
 	$("#FlSupLink").on("click", function () { $("#FlSup").show(); FlSupCarregar(); });
 	$("#FlSupFechar").on("click", function () { $("#FlSup").hide(); });

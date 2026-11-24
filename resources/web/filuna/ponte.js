@@ -366,10 +366,27 @@ var Filuna = (function () {
 		"dispositivos.descobertas", "dispositivos.estado", "recarregar", "dispositivos.esquecer", "dispositivos.reconectar", "farm.destravar",
 		// assistência remota: rede do cliente, conexão, impressora, fatiador e impressão de teste
 		"rede.diagnostico", "rede.procurar", "dispositivos.conectar_ip", "dispositivos.selecionar", "dispositivos.comando",
-		"dispositivos.controle", "fatiador.estado", "fatiador.ajustar_impressora", "impressao.teste", "impressao.teste.estado"];
+		"dispositivos.controle", "fatiador.estado", "fatiador.ajustar_impressora", "impressao.teste", "impressao.teste.estado",
+		// fatiador completo (categoria "fatiador", só se o cliente marcou): as mesmas ações do Assistente de impressão
+		"fatiador.pecas", "fatiador.processo", "fatiador.ajustar", "fatiador.perfis", "fatiador.perfil", "fatiador.mesa", "fatiador.orientar",
+		"fatiador.arrumar", "fatiador.fatiar", "fatiador.fatiamento", "fatiador.avisos", "fatiador.imprimir"];
+	// ação do suporte → ação do programa (as do fatiador completo); as outras têm o mesmo nome
+	var SUP_NATIVO = { "fatiador.pecas": "peca.analise", "fatiador.processo": "processo.ler", "fatiador.perfis": "perfil.lista",
+		"fatiador.perfil": "perfil.trocar", "fatiador.orientar": "peca.orientar", "fatiador.arrumar": "peca.arrumar", "fatiador.fatiar": "fatiar",
+		"fatiador.avisos": "fatiamento.avisos", "fatiador.imprimir": "imprimir" };
+	// mesma regra do servidor (modulos.py suporte_categoria): o programa confere de novo antes de executar
+	function supCategoria(acao) {
+		if (acao == "fatiador.estado" || acao == "coletar" || /^diagnostico\./.test(acao) || acao == "rede.diagnostico" ||
+			["dispositivos.estado", "dispositivos.fabricantes", "dispositivos.modelos", "dispositivos.descobertas"].indexOf(acao) >= 0) return "diagnostico";
+		if (acao == "fatiador.ajustar_impressora") return "reparo";
+		if (/^fatiador\./.test(acao)) return "fatiador";
+		if (/^impressao\./.test(acao) || acao == "dispositivos.comando" || acao == "dispositivos.controle") return "impressora";
+		return "reparo";
+	}
 	// campos que o suporte pode mandar em cada ação (só texto, número e sim/não; nada de objeto ou lista)
 	var SUP_CAMPOS = ["fabricante", "modelo", "dev_id", "ip", "codigo", "serie", "nome", "material", "posicao", "cmd", "tipo", "ligar", "valor",
-		"eixo", "eixos", "distancia", "temperatura", "unidade", "slot"];
+		"eixo", "eixos", "distancia", "temperatura", "unidade", "slot", "chave", "valor_ajuste", "acao_mesa", "peca", "fator", "maior_lado_mm",
+		"graus", "quantidade"];
 	function supDados(d) {
 		var r = {};
 		SUP_CAMPOS.forEach(function (k) {
@@ -379,9 +396,24 @@ var Filuna = (function () {
 		return r;
 	}
 	function supSeguro(acao, dados) { return nativo(acao, dados).catch(function (e) { return { erro: (e && e.message) || "falhou" }; }); }
-	function supExecutar(c) {
+	function supExecutar(c, categorias) {
 		if (SUP_ACOES.indexOf(c.acao) < 0) return Promise.resolve({ erro: "ação fora da lista permitida" });
+		// servidor antigo, sem categorias: vale o que valia antes (sem o fatiador completo)
+		var cats = categorias || ["diagnostico", "reparo", "impressora"];
+		if (cats.indexOf(supCategoria(c.acao)) < 0) return Promise.resolve({ erro: "categoria não autorizada pelo cliente" });
 		var d = c.dados || {};
+		if (c.acao == "fatiador.ajustar") {
+			if (!d.chave) return Promise.resolve({ erro: "informe o ajuste (chave)" });
+			var v = {}; v[String(d.chave)] = String(d.valor_ajuste == null ? "" : d.valor_ajuste);
+			return supSeguro("processo.ajustar", { valores: v });
+		}
+		if (c.acao == "fatiador.mesa") {
+			var m = supDados(d); m.acao = m.acao_mesa; delete m.acao_mesa;
+			return supSeguro("mesa.comando", m);
+		}
+		if (c.acao == "fatiador.fatiamento")
+			return Promise.all([supSeguro("fatiamento.estado"), supSeguro("fatiamento.resumo")]).then(function (r) { return { estado: r[0], resumo: r[1] }; });
+		if (SUP_NATIVO[c.acao]) return supSeguro(SUP_NATIVO[c.acao], supDados(d));
 		if (c.acao == "recarregar") { setTimeout(function () { location.reload(); }, 1500); return Promise.resolve({ recarregando: true }); }
 		if (c.acao == "diagnostico.enviar") return supSeguro("diagnostico.enviar", { etapa: "suporte-remoto", mensagem: "Registro pedido pelo suporte", contexto: {} });
 		if (c.acao == "coletar")
@@ -398,7 +430,7 @@ var Filuna = (function () {
 			var fila = (r && r.acoes) || [], espera = r && r.ativa ? 30000 : 300000;
 			var cadeia = Promise.resolve();
 			fila.forEach(function (c) {
-				cadeia = cadeia.then(function () { return supExecutar(c); }).then(function (res) {
+				cadeia = cadeia.then(function () { return supExecutar(c, r.categorias); }).then(function (res) {
 					return rede("POST", "/suporte/resultado", { id: c.id, ok: !(res && res.erro), resultado: res }).catch(function () {});
 				});
 			});
