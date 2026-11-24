@@ -115,6 +115,7 @@ private:
     OnServerErrFn         m_on_server_err;
 
     std::atomic<bool> m_discovering{false};
+    std::atomic<bool> m_varrer_agora{false}; // start_discovery com a busca já rodando: varre na próxima volta
     std::thread       m_discovery;
     std::map<std::string, std::string> m_seen; // serial -> último JSON de descoberta
 };
