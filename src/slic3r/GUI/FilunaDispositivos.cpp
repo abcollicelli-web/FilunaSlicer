@@ -1161,7 +1161,11 @@ json estado()
         // uma vez, para aparecer no site e no app como as do assistente.
         if (c["selecionada"].get<bool>() && o->is_connected())
             FilunaAoVivo::lembrar(o); // guarda IP, agente e código para acompanhar em segundo plano depois
-        if (cfg != nullptr && c["cadastro_id"].get<std::string>().empty() && c["selecionada"].get<bool>() && o->is_connected()) {
+        // Também a acompanhada em segundo plano e ligada (a A1 e a A2L do Fernando sumiram do site e da Farm porque só a
+        // aberta era recadastrada). Excluir e esquecer param o acompanhamento, então a excluída não volta por aqui.
+        const bool ligada_ao_fundo = !c["selecionada"].get<bool>() && c.value("ao_vivo", false) && c.value("ligada", false);
+        if (cfg != nullptr && c["cadastro_id"].get<std::string>().empty() &&
+            ((c["selecionada"].get<bool>() && o->is_connected()) || ligada_ao_fundo)) {
             std::string modulo;
             for (const auto& [mid, ag] : AGENTE)
                 if (ag == o->printer_agent_id || (o->printer_agent_id == "filuna_elegoo_sdcp" && mid == "elegoo"))
