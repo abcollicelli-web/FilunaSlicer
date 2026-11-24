@@ -363,8 +363,17 @@ json card(MachineObject* o)
               {"sinc_filamentos", true}}; // a tela pode pedir "dispositivos.filamentos_projeto"
     if (DevBed* bed = o->GetBed())
         c["mesa"] = {{"atual", bed->GetBedTemp()}};
-    if (DevExtderSystem* ext = o->GetExtderSystem())
+    if (DevExtderSystem* ext = o->GetExtderSystem()) {
         c["bico"] = {{"atual", ext->GetNozzleTempCurrent(0)}, {"alvo", ext->GetNozzleTempTarget(0)}};
+        // Raio X da Impressora: qual filamento estava passando quando deu o erro
+        if (const auto atual = ext->GetCurrentExtder(); atual && !atual->GetSlotNow().slot_id.empty())
+            c["slot_ativo"] = {{"unidade", atual->GetSlotNow().ams_id}, {"slot", atual->GetSlotNow().slot_id}};
+    }
+    // Raio X da Impressora: em que camada e com que código o erro aconteceu
+    c["camada"]  = o->curr_layer;
+    c["camadas"] = o->total_layers;
+    if (o->print_error != 0)
+        c["codigo_erro"] = o->get_print_error_str();
     auto ctl = CONTROLES.find(o->printer_agent_id);
     json controles = json::array(), espera = json::array();
     {
@@ -1539,7 +1548,10 @@ void sincronizar_estado(const json& estado, const std::string& token)
                          {"progresso", c.value("progresso", 0)}, {"restante_s", c.value("restante_s", 0)},
                          {"etapa", c.value("etapa", -1)}, // etapa da impressora: o site avisa aquecendo, troca de filamento e paradas
                          {"cores", c.value("cores", json::array())}, {"camera", c.value("camera", false)},
-                         {"bico", c.value("bico", json::object())}, {"mesa", c.value("mesa", json::object())}});
+                         {"bico", c.value("bico", json::object())}, {"mesa", c.value("mesa", json::object())},
+                         // Raio X da Impressora: camada, filamento em uso e código do erro
+                         {"camada", c.value("camada", 0)}, {"camadas", c.value("camadas", 0)},
+                         {"slot_ativo", c.value("slot_ativo", json::object())}, {"codigo_erro", c.value("codigo_erro", std::string())}});
     std::thread([corpo, token] {
         Http http = Http::post(std::string(SITE) + "/api/slicer/v1/dispositivos/estado");
         http.header("Authorization", "Bearer " + token).header("Content-Type", "application/json")
