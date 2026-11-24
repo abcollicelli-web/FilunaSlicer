@@ -32,8 +32,8 @@ inline const std::vector<Motor>& motores_filuna()
         {"cad", "Filuna CAD", "1.1.0"},                   // aba Design: seleção, esboço, receita (base Orca + camada Filuna)
         {"dados", "Filuna Dados", "1.2.0"},               // banco local, fórmulas de estoque e leitor de G-code
         {"sincronizacao", "Filuna Sincronização", "1.0.0"}, // fila, enviar/receber e restauração
-        {"telas", "Filuna Telas", "1.5.0"},               // páginas web internas (Meu espaço, Estoque, Dispositivos, Farm, Modelos 3D, Assistente); 1.4 = geração com o Assistente; 1.5 = com o Post nas redes sociais (a correção 1.4 não cobre)
-        {"inicio", "Filuna Início", "1.1.0"},             // tela Início (resources/web/homepage e o que ela usa de web/include); 1.1 = suporte por categoria e card de modelo dentro do Filuna (a correção 1.0 não cobre)
+        {"telas", "Filuna Telas", "1.6.0"},               // páginas web internas (Meu espaço, Estoque, Dispositivos, Farm, Modelos 3D, Assistente); 1.4 = geração com o Assistente; 1.5 = com o Post nas redes sociais (a correção 1.4 não cobre); 1.6 = Meu espaço em grupos, Raio X central e Estoque animado
+        {"inicio", "Filuna Início", "1.2.0"},             // tela Início (resources/web/homepage e o que ela usa de web/include); 1.1 = suporte por categoria e card de modelo dentro do Filuna (a correção 1.0 não cobre); 1.2 = aviso da Store pela versão do pacote
         {"atualizacao", "Filuna Atualização", "1.2.0"},   // catálogo assinado, download, SHA-256, modo Store e correção de telas por geração
     };
     return lista;
