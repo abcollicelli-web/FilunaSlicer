@@ -210,8 +210,12 @@ int FilunaBambuLanAgent::send_message_to_printer(std::string dev_id, std::string
 bool FilunaBambuLanAgent::start_discovery(bool start, bool)
 {
     if (start) {
-        if (m_discovering.exchange(true))
+        // Já procurando (a tela pediu a busca de novo, ou a Bambu voltou a ser a marca ativa): varre a rede agora,
+        // sem esperar a próxima rodada de 20 s.
+        if (m_discovering.exchange(true)) {
+            m_varrer_agora = true;
             return true;
+        }
         m_discovery = std::thread([this] { discovery_loop(); });
         return true;
     }
@@ -251,13 +255,19 @@ void FilunaBambuLanAgent::varrer_rede()
     for (const std::string& ip : Filuna::portas_abertas(Filuna::enderecos_locais(), 8883, std::chrono::milliseconds(900))) {
         if (!m_discovering)
             return;
+        // Já identificada (série lida antes): anuncia de novo, sem refazer o TLS. Sem o SSDP (firewall, rede
+        // pública) a varredura é o único anúncio; se ela anunciasse cada IP uma vez só, a impressora excluída e
+        // procurada de novo, ou achada enquanto outra marca estava ativa (anúncio sem destino), não voltava mais.
+        std::string conhecida;
         {
             std::lock_guard<std::recursive_mutex> lock(m_mutex);
-            bool ja = false;
             for (const auto& [serial, js] : m_seen)
-                ja = ja || nlohmann::json::parse(js, nullptr, false).value("dev_ip", "") == ip;
-            if (ja)
-                continue;
+                if (nlohmann::json::parse(js, nullptr, false).value("dev_ip", "") == ip)
+                    conhecida = js;
+        }
+        if (!conhecida.empty()) {
+            anunciar(conhecida);
+            continue;
         }
         const std::string serie = Filuna::cn_do_certificado(ip, 8883);
         if (serie.size() < 10 || serie.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") != std::string::npos)
@@ -297,7 +307,7 @@ void FilunaBambuLanAgent::discovery_loop()
     char buf[2048];
     auto ultima_varredura = std::chrono::steady_clock::now() - std::chrono::seconds(15); // primeira em ~5 s
     while (m_discovering) {
-        if (std::chrono::steady_clock::now() - ultima_varredura > std::chrono::seconds(20)) {
+        if (m_varrer_agora.exchange(false) || std::chrono::steady_clock::now() - ultima_varredura > std::chrono::seconds(20)) {
             varrer_rede();
             ultima_varredura = std::chrono::steady_clock::now();
         }
