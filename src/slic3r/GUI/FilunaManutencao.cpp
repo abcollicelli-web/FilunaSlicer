@@ -1,4 +1,6 @@
 #include "FilunaManutencao.hpp"
+#include <set>
+#include <boost/algorithm/string/case_conv.hpp>
 
 #include "FilunaPanel.hpp"
 #include "GUI_App.hpp"
@@ -760,6 +762,28 @@ static void correcao_da_loja_iniciar()
 
 std::string build_local() { return identidade().value("build", std::string()); }
 
+// Código de acesso, senha e token não saem do computador no diagnóstico (a tela de conectar manda o pedido inteiro,
+// com o código da impressora, quando falha). Fica só a indicação de que veio preenchido.
+json sem_segredos(const json& j)
+{
+    static const std::set<std::string> segredos = {"codigo", "access_code", "password", "senha", "token", "codigo_acesso", "pin", "chave_api"};
+    if (j.is_object()) {
+        json r = json::object();
+        for (auto it = j.begin(); it != j.end(); ++it)
+            r[it.key()] = segredos.count(boost::to_lower_copy(it.key())) && it.value().is_string()
+                              ? json(it.value().get<std::string>().empty() ? "" : "(preenchido)")
+                              : sem_segredos(it.value());
+        return r;
+    }
+    if (j.is_array()) {
+        json r = json::array();
+        for (const auto& x : j)
+            r.push_back(sem_segredos(x));
+        return r;
+    }
+    return j;
+}
+
 void diagnostico(const std::string& etapa, const std::string& mensagem, const json& contexto)
 {
     BOOST_LOG_TRIVIAL(error) << "Filuna diagnóstico [" << etapa << "]: " << mensagem;
@@ -783,7 +807,7 @@ void diagnostico(const std::string& etapa, const std::string& mensagem, const js
     const json id = identidade();
     json corpo = {{"build", id.value("build", std::string())}, {"versao", id.value("versao", std::string())},
                   {"so", std::string(wxGetOsDescription().ToUTF8().data())}, {"etapa", etapa}, {"mensagem", mensagem},
-                  {"contexto", contexto.is_object() ? contexto : json::object()}};
+                  {"contexto", contexto.is_object() ? sem_segredos(contexto) : json::object()}};
     std::thread([corpo, token]() mutable {
         corpo["log"] = fim_do_registro(12000);
         Http http = Http::post(std::string(SITE) + "/api/slicer/v1/diagnostico");
