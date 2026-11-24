@@ -1704,6 +1704,7 @@ void DesignCanvas::set_filuna_look(std::function<void()> overlay, float right_in
 {
     m_filuna_look = true;
     m_bed.set_light_plate(true);
+    DesignSketchTool::set_light_scene(true);
     if (m_canvas == nullptr) return;
     m_canvas->set_filuna_cad_look(true);
     m_canvas->set_design_overlay(std::move(overlay));

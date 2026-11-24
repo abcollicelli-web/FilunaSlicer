@@ -6907,8 +6907,9 @@ void GLCanvas3D::_render_3d_navigator()
     style.Colors[ImGuizmo::COLOR::DIRECTION_X] = ImGuiWrapper::to_ImVec4(ColorRGBA::Y());
     style.Colors[ImGuizmo::COLOR::DIRECTION_Y] = ImGuiWrapper::to_ImVec4(ColorRGBA::Z());
     style.Colors[ImGuizmo::COLOR::DIRECTION_Z] = ImGuiWrapper::to_ImVec4(ColorRGBA::X());
-    style.Colors[ImGuizmo::COLOR::TEXT] = m_is_dark ? ImVec4(224 / 255.f, 224 / 255.f, 224 / 255.f, 1.f) : ImVec4(.2f, .2f, .2f, 1.0f);
-    style.Colors[ImGuizmo::COLOR::FACE]        = m_is_dark ? ImVec4(0.23f, 0.23f, 0.23f, 1.f) : ImVec4(0.77f, 0.77f, 0.77f, 1);
+    const bool cubo_escuro = m_is_dark && !filuna_cad_look();   // Filuna CAD: the light cube of the light scene
+    style.Colors[ImGuizmo::COLOR::TEXT] = cubo_escuro ? ImVec4(224 / 255.f, 224 / 255.f, 224 / 255.f, 1.f) : ImVec4(.2f, .2f, .2f, 1.0f);
+    style.Colors[ImGuizmo::COLOR::FACE]        = cubo_escuro ? ImVec4(0.23f, 0.23f, 0.23f, 1.f) : ImVec4(0.96f, 0.96f, 0.97f, 1);
     strcpy(style.AxisLabels[ImGuizmo::Axis::Axis_X], _u8L_CONTEXT("Y", "Axis").c_str()); // ORCA use uppercase to match text on tranform widgets
     strcpy(style.AxisLabels[ImGuizmo::Axis::Axis_Y], _u8L_CONTEXT("Z", "Axis").c_str()); // ORCA use uppercase to match text on tranform widgets
     strcpy(style.AxisLabels[ImGuizmo::Axis::Axis_Z], _u8L_CONTEXT("X", "Axis").c_str()); // ORCA use uppercase to match text on tranform widgets
@@ -8989,7 +8990,7 @@ void GLCanvas3D::_render_background()
 
     ColorRGBA background_color = m_is_dark ? DEFAULT_BG_LIGHT_COLOR_DARK : DEFAULT_BG_LIGHT_COLOR;
     ColorRGBA top_background   = background_color;
-    if (filuna_cad_look() && !m_is_dark) {   // Filuna CAD: the light, slightly graded drafting scene
+    if (filuna_cad_look()) {   // Filuna CAD: the light, slightly graded drafting scene
         background_color = ColorRGBA(0.905f, 0.905f, 0.915f, 1.0f);
         top_background   = ColorRGBA(0.955f, 0.955f, 0.962f, 1.0f);
     }
@@ -9308,7 +9309,7 @@ void GLCanvas3D::_render_cad_grid(const Transform3d& view_matrix, const Transfor
     // reads as a flat mesh with no scale to it.
     ColorRGBA minor_color(0.40f, 0.40f, 0.42f, 1.0f);
     ColorRGBA major_color(0.90f, 0.90f, 0.90f, 1.0f);
-    if (filuna_cad_look() && !m_is_dark) {   // fine lines on the light plate
+    if (filuna_cad_look()) {   // fine lines on the light plate
         minor_color = ColorRGBA(0.78f, 0.78f, 0.80f, 1.0f);
         major_color = ColorRGBA(0.66f, 0.66f, 0.69f, 1.0f);
     }

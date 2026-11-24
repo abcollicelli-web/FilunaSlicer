@@ -64,6 +64,20 @@ class TopoDS_Shape;
 namespace Slic3r {
 namespace GUI {
 
+// Filuna CAD: on the light drafting scene every bright colour of the sketch (white leaders, teal
+// dimensions, yellow selection, cyan gizmos) is darkened to the same hue, so it keeps its meaning
+// and stays readable. Off = the colours exactly as they were, for the dark scene.
+static bool g_filuna_light_scene = false;
+void DesignSketchTool::set_light_scene(bool on) { g_filuna_light_scene = on; }
+static ColorRGBA scene_col(const ColorRGBA& c)
+{
+    if (!g_filuna_light_scene) return c;
+    const float lum = 0.2126f * c.r() + 0.7152f * c.g() + 0.0722f * c.b();
+    if (lum <= 0.42f) return c;
+    const float k = 0.42f / lum;
+    return ColorRGBA(c.r() * k, c.g() * k, c.b() * k, c.a());
+}
+
 // How many chords an arc is drawn with. loop_report corrects each arc's area back to the true
 // curve using this exact number, so the two MUST agree — changing it here without updating the
 // correction silently biases every reported area.
@@ -3568,7 +3582,7 @@ static void render_ribbons(GLModel& model, GLModel::Geometry&& g, const ColorRGB
     glsafe(::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     model.reset();
     model.init_from(std::move(g));
-    model.set_color(colour);
+    model.set_color(scene_col(colour));
     model.render();
     glsafe(::glDepthMask(GL_TRUE));
     glsafe(::glDepthFunc(GL_LESS));
@@ -4230,7 +4244,7 @@ void DesignSketchTool::render_solid_sel(SolidSel kind, const std::vector<Vec3d>&
             glsafe(::glDisable(GL_DEPTH_TEST));
             m_solid_edge_model.reset();
             m_solid_edge_model.init_from(std::move(g));
-            m_solid_edge_model.set_color(cyan);
+            m_solid_edge_model.set_color(scene_col(cyan));
             m_solid_edge_model.render();
         }
     } else if (kind == SolidSel::Vertex) {
@@ -4253,7 +4267,7 @@ void DesignSketchTool::render_solid_sel(SolidSel kind, const std::vector<Vec3d>&
         glsafe(::glDisable(GL_DEPTH_TEST));
         m_solid_vertex_model.reset();
         m_solid_vertex_model.init_from(std::move(g));
-        m_solid_vertex_model.set_color(cyan);
+        m_solid_vertex_model.set_color(scene_col(cyan));
         m_solid_vertex_model.render();
     }
 }
@@ -4334,7 +4348,7 @@ void DesignSketchTool::render_view_helpers()
             fill.add_vertex((Vec3f)c[3].cast<float>()); fill.add_triangle(fb, fb+1, fb+2); fb += 3;
         }
         if (fb > 0) { GLModel fm; fm.init_from(std::move(fill));
-            fm.set_color(ColorRGBA(0.42f, 0.52f, 0.78f, 0.20f)); fm.render(); }
+            fm.set_color(scene_col(ColorRGBA(0.42f, 0.52f, 0.78f, 0.20f))); fm.render(); }
     }
 
     if (m_show_axes) {
@@ -4356,7 +4370,7 @@ void DesignSketchTool::render_view_helpers()
             g.add_vertex((Vec3f)(a + off).cast<float>()); g.add_vertex((Vec3f)(b + off).cast<float>());
             g.add_vertex((Vec3f)(b - off).cast<float>()); g.add_vertex((Vec3f)(a - off).cast<float>());
             g.add_triangle(0, 1, 2); g.add_triangle(0, 2, 3);
-            GLModel m; m.init_from(std::move(g)); m.set_color(ax.col); m.render();
+            GLModel m; m.init_from(std::move(g)); m.set_color(scene_col(ax.col)); m.render();
         }
     }
     glsafe(::glDisable(GL_BLEND));
@@ -4409,12 +4423,12 @@ void DesignSketchTool::render_datum_planes()
     glsafe(::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     if (fb > 0) {
         GLModel fm; fm.init_from(std::move(fill));
-        fm.set_color(ColorRGBA(0.62f, 0.52f, 0.95f, 0.10f));
+        fm.set_color(scene_col(ColorRGBA(0.62f, 0.52f, 0.95f, 0.10f)));
         fm.render();
     }
     if (bb > 0) {
         GLModel bm; bm.init_from(std::move(border));
-        bm.set_color(ColorRGBA(0.70f, 0.60f, 1.0f, 0.85f));
+        bm.set_color(scene_col(ColorRGBA(0.70f, 0.60f, 1.0f, 0.85f)));
         bm.render();
     }
     glsafe(::glDisable(GL_BLEND));
@@ -5001,12 +5015,12 @@ void DesignSketchTool::render_datum_gizmo()
     glsafe(::glDisable(GL_DEPTH_TEST));
     if (bb > 0) {
         GLModel m; m.init_from(std::move(border));
-        m.set_color(ColorRGBA(1.0f, 0.62f, 0.16f, 0.9f));   // CAD amber
+        m.set_color(scene_col(ColorRGBA(1.0f, 0.62f, 0.16f, 0.9f)));   // CAD amber
         m.render();
     }
     if (hb > 0) {
         GLModel m; m.init_from(std::move(handles));
-        m.set_color(ColorRGBA(1.0f, 0.72f, 0.28f, 1.0f));
+        m.set_color(scene_col(ColorRGBA(1.0f, 0.72f, 0.28f, 1.0f)));
         m.render();
     }
 
@@ -5025,7 +5039,7 @@ void DesignSketchTool::render_datum_gizmo()
             shaft.add_vertex((Vec3f)(m_dz_anchor - off).cast<float>());
             shaft.add_triangle(0, 1, 2); shaft.add_triangle(0, 2, 3);
             GLModel sm; sm.init_from(std::move(shaft));
-            sm.set_color(ColorRGBA(0.30f, 0.78f, 1.0f, 0.95f));   // cyan offset axis
+            sm.set_color(scene_col(ColorRGBA(0.30f, 0.78f, 1.0f, 0.95f)));   // cyan offset axis
             sm.render();
         }
         GLModel::Geometry tipsq; tipsq.format = { EPT::Triangles, EVL::P3 };
@@ -5035,7 +5049,7 @@ void DesignSketchTool::render_datum_gizmo()
         tipsq.add_vertex((Vec3f)t2.cast<float>()); tipsq.add_vertex((Vec3f)t3.cast<float>());
         tipsq.add_triangle(0, 1, 2); tipsq.add_triangle(0, 2, 3);
         GLModel tm; tm.init_from(std::move(tipsq));
-        tm.set_color(ColorRGBA(0.45f, 0.86f, 1.0f, 1.0f));
+        tm.set_color(scene_col(ColorRGBA(0.45f, 0.86f, 1.0f, 1.0f)));
         tm.render();
     }
 }
@@ -5204,12 +5218,12 @@ void DesignSketchTool::render_helix_gizmo()
     glsafe(::glDisable(GL_DEPTH_TEST));
     if (cb > 0) {
         GLModel m; m.init_from(std::move(curve));
-        m.set_color(ColorRGBA(1.0f, 0.62f, 0.16f, 0.9f));   // CAD amber helix curve
+        m.set_color(scene_col(ColorRGBA(1.0f, 0.62f, 0.16f, 0.9f)));   // CAD amber helix curve
         m.render();
     }
     if (!axis.vertices.empty()) {
         GLModel m; m.init_from(std::move(axis));
-        m.set_color(ColorRGBA(0.42f, 0.46f, 0.52f, 0.55f));   // dim grey axis
+        m.set_color(scene_col(ColorRGBA(0.42f, 0.46f, 0.52f, 0.55f)));   // dim grey axis
         m.render();
     }
     for (int i = 0; i < 3; ++i) {
@@ -5221,7 +5235,7 @@ void DesignSketchTool::render_helix_gizmo()
         sq.add_vertex((Vec3f)q2.cast<float>()); sq.add_vertex((Vec3f)q3.cast<float>());
         sq.add_triangle(0, 1, 2); sq.add_triangle(0, 2, 3);
         GLModel m; m.init_from(std::move(sq));
-        m.set_color(m_hx_drag == i ? hot : hcol[i]);
+        m.set_color(scene_col(m_hx_drag == i ? hot : hcol[i]));
         m.render();
     }
 }
@@ -5351,7 +5365,7 @@ void DesignSketchTool::render_rib_gizmo()
     glsafe(::glDisable(GL_DEPTH_TEST));
     if (bb > 0) {
         GLModel m; m.init_from(std::move(border));
-        m.set_color(ColorRGBA(1.0f, 0.62f, 0.16f, 0.9f));   // CAD amber slab footprint
+        m.set_color(scene_col(ColorRGBA(1.0f, 0.62f, 0.16f, 0.9f)));   // CAD amber slab footprint
         m.render();
     }
     for (int i = 0; i < 2; ++i) {
@@ -5363,7 +5377,7 @@ void DesignSketchTool::render_rib_gizmo()
         sq.add_vertex((Vec3f)q2.cast<float>()); sq.add_vertex((Vec3f)q3.cast<float>());
         sq.add_triangle(0, 1, 2); sq.add_triangle(0, 2, 3);
         GLModel m; m.init_from(std::move(sq));
-        m.set_color(m_rb_drag == i ? hot : ColorRGBA(0.30f, 0.80f, 0.34f, 1.0f));   // green
+        m.set_color(scene_col(m_rb_drag == i ? hot : ColorRGBA(0.30f, 0.80f, 0.34f, 1.0f)));   // green
         m.render();
     }
 }
@@ -5617,7 +5631,7 @@ void DesignSketchTool::render_reference_axes(const Vec3d& origin, double half)
             continue;   // seen end-on
         GLModel m;
         m.init_from(std::move(g));
-        m.set_color(colours[k]);
+        m.set_color(scene_col(colours[k]));
         m.render();
     }
 
@@ -5635,7 +5649,7 @@ void DesignSketchTool::render_reference_axes(const Vec3d& origin, double half)
             g.add_triangle(0, 1 + i, 1 + (i + 1) % kSides);
         GLModel m;
         m.init_from(std::move(g));
-        m.set_color(colour);
+        m.set_color(scene_col(colour));
         m.render();
     };
     disc(6.0, ColorRGBA(0.30f, 0.30f, 0.32f, 1.0f));   // a dark ring round
@@ -5709,7 +5723,7 @@ void DesignSketchTool::render_base_pick()
         for (unsigned int c = 1; c + 1 < piece.corners.size(); ++c) g.add_triangle(0, c, c + 1);   // convex: a fan
         GLModel m;
         m.init_from(std::move(g));
-        m.set_color(fill(i));
+        m.set_color(scene_col(fill(i)));
         m.render();
 
         // A base plane's name goes down with its last piece, so a square in front tints it as it
@@ -6292,7 +6306,7 @@ void DesignSketchTool::render_hole_gizmo()
             for (int k = 0; k < 4; ++k) g.add_vertex((Vec3f)c8[faces[f][k]].cast<float>());
             g.add_triangle(0, 1, 2); g.add_triangle(0, 2, 3);
             GLModel m; m.init_from(std::move(g));
-            m.set_color(ColorRGBA(1.0f * shade[f], 0.62f * shade[f], 0.16f * shade[f], 1.0f));
+            m.set_color(scene_col(ColorRGBA(1.0f * shade[f], 0.62f * shade[f], 0.16f * shade[f], 1.0f)));
             m.render();
         }
     }
@@ -7528,7 +7542,7 @@ void DesignSketchTool::draw_quad_strip(GLModel& model, const std::vector<Vec2d>&
     if (base > 0) {
         model.reset();
         model.init_from(std::move(g));
-        model.set_color(color);
+        model.set_color(scene_col(color));
         model.render();
     }
 }
@@ -7661,7 +7675,7 @@ void DesignSketchTool::draw_fill_holed(GLModel& model, const std::vector<Vec2d>&
     if (base == 0) return;
     model.reset();
     model.init_from(std::move(g));
-    model.set_color(color);
+    model.set_color(scene_col(color));
     model.render();
 }
 
@@ -7678,7 +7692,7 @@ void DesignSketchTool::draw_fill(GLModel& model, const std::vector<Vec2d>& poly,
         g.add_triangle(t[0], t[1], t[2]);
     model.reset();
     model.init_from(std::move(g));
-    model.set_color(color);
+    model.set_color(scene_col(color));
     model.render();
 }
 
@@ -7704,7 +7718,7 @@ void DesignSketchTool::draw_vertices(GLModel& model, const std::vector<Vec2d>& p
 
     model.reset();
     model.init_from(std::move(g));
-    model.set_color(color);
+    model.set_color(scene_col(color));
     model.render();
 }
 
@@ -7734,7 +7748,7 @@ void DesignSketchTool::draw_strokes(GLModel& model, const std::vector<std::pair<
     if (base > 0) {
         model.reset();
         model.init_from(std::move(g));
-        model.set_color(color);
+        model.set_color(scene_col(color));
         model.render();
     }
 }

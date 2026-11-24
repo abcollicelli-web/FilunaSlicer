@@ -386,7 +386,7 @@ Point Bed3D::point_projection(const Point& point) const
 
 ColorRGBA Bed3D::plate_color() const
 {
-    if (m_light_plate && !m_is_dark)
+    if (m_light_plate)
         return { 0.86f, 0.86f, 0.875f, 1.0f };
     return m_is_dark ? DEFAULT_MODEL_COLOR_DARK : DEFAULT_MODEL_COLOR;
 }

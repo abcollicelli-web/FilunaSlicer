@@ -196,6 +196,8 @@ public:
     std::function<void()> render_overlays;
     // The magnet in the Filuna CAD column: snapping on (default) or off for every gesture.
     void set_snap_enabled(bool on) { m_snap_user_off = !on; }
+    // Filuna CAD light scene: the sketch's bright colours are darkened to stay readable on it.
+    static void set_light_scene(bool on);
     bool snap_enabled() const { return !m_snap_user_off; }
 
     // Persistent committed sketches to draw even when no session is active (e.g. an
