@@ -74,4 +74,7 @@ a:hover{text-decoration:none}
 .bobina-svg .bobina-giro{transform-box:view-box;transform-origin:0 0}
 .girando .bobina-svg .bobina-giro{animation:bobina-gira 3.2s linear infinite}
 @keyframes bobina-gira{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.girando .bobina-svg .bobina-giro{animation:none}}
+.bobina-svg{overflow:visible}.bobina-svg .bobina-fio{display:none}.girando .bobina-svg .bobina-fio{display:inline}
+.girando .bobina-svg .bobina-fio-mov{animation:bobina-fio .7s linear infinite}
+@keyframes bobina-fio{to{stroke-dashoffset:-14}}
+@media (prefers-reduced-motion:reduce){.girando .bobina-svg .bobina-giro,.girando .bobina-svg .bobina-fio-mov{animation:none}}

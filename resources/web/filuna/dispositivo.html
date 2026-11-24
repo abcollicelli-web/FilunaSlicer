@@ -150,15 +150,19 @@ function carregar() {
 
 // Uma unidade por nome: cadastro deste computador e/ou impressora da Farm.
 // Pedido de outra tela (Início › Farm › cartão da impressora): "unidade:<nome>" abre essa unidade.
+// "raiox:<nome>" (Meu espaço › Impressoras) abre direto o Raio X dela.
 function abrirPedido(secao) {
-	if (!secao || secao.indexOf("unidade:") != 0) return;
-	estado.pedido = secao.slice(8).trim().toLowerCase();
+	var m = /^(unidade|raiox):(.*)$/.exec(secao || "");
+	if (!m) return;
+	estado.pedido = m[2].trim().toLowerCase();
+	estado.pedidoRaioX = m[1] == "raiox";
 }
 function aplicarPedido() {
 	if (estado.pedido == null) return;
 	var u = estado.unidades.filter(function (x) { return x.nome.trim().toLowerCase() == estado.pedido; })[0];
 	estado.pedido = null;
-	if (u) { estado.sel = u.id; estado.vista = "unidade"; }
+	if (u) { estado.sel = u.id; estado.vista = estado.pedidoRaioX ? "raiox" : "unidade"; if (estado.pedidoRaioX) RaioX.recarregar(); }
+	estado.pedidoRaioX = false;
 }
 
 function juntar() {
@@ -971,7 +975,7 @@ function camera(iid) {
 
 Filuna.ouvir("mostrar", function () { Filuna.nativo("dispositivos.observar", { ligado: true }).catch(function () {}); carregar(); });
 Filuna.ouvir("impressoras", carregar);   // cadastrada agora em "Adicionar impressora"
-Filuna.ouvir("secao", function (d) { if (/^unidade:/.test(d.secao || "")) Filuna.nativo("secao.pendente").catch(function () {}); abrirPedido(d.secao); carregar(); });
+Filuna.ouvir("secao", function (d) { if (/^(unidade|raiox):/.test(d.secao || "")) Filuna.nativo("secao.pendente").catch(function () {}); abrirPedido(d.secao); carregar(); });
 Filuna.iniciar().then(function () { return Filuna.nativo("secao.pendente").then(function (r) { abrirPedido(r.secao); }).catch(function () {}); }).then(carregar);
 setInterval(function () { if (!document.hidden && !estado.confirmar && document.activeElement.id != "busca") carregar(); }, 15000);
 </script>

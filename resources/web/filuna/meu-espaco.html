@@ -126,6 +126,39 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 .rxjan{position:fixed;inset:0;background:rgba(30,25,20,.45);display:flex;align-items:center;justify-content:center;z-index:60}
 .rxcaixa{background:#fff;border-radius:16px;padding:18px;width:min(620px,92vw);max-height:80vh;overflow:auto}.rxcaixa a{cursor:pointer;color:var(--magenta-deep)}
 .rxev{display:flex;gap:10px;border-top:1px solid var(--line);padding:10px 0}.rxev img{width:110px;height:80px;object-fit:cover;border-radius:8px}.rxpad{background:#FFF5EC;border-radius:10px;padding:8px 10px;margin-bottom:8px;color:var(--ink)}
+/* Menu em grupos e abas do grupo (redesenho 2.5.88) */
+.nav-g{display:flex;align-items:center;gap:12px}.nav-g .ic{width:19px;height:19px;flex:none;opacity:.8}.nav-g.on .ic{opacity:1}
+.nav-n{margin-left:auto;font-style:normal;background:var(--warn);color:#fff;border-radius:999px;font-size:11.5px;font-weight:800;padding:1px 8px}
+.abas-g{display:flex;gap:4px;margin:-4px 0 22px;border-bottom:1px solid var(--line);overflow-x:auto}
+.abas-g button{border:0;background:none;padding:10px 16px;font-weight:700;font-size:14px;color:var(--ink2);border-bottom:3px solid transparent;white-space:nowrap;cursor:pointer}
+.abas-g button.on{color:var(--ink);border-color:var(--magenta-deep)}.abas-g button:hover{color:var(--ink)}
+.ini-topo{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}.ini-topo .btn .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
+.ini-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}@media(max-width:1000px){.ini-kpis{grid-template-columns:1fr 1fr}}
+.ini-kpis .kp{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px}.ini-kpis span{font-size:13px;font-weight:600;color:var(--ink2)}
+.ini-kpis b{display:block;font-size:28px;font-weight:800;margin:2px 0;letter-spacing:-.02em}.ini-kpis small{color:var(--muted);font-size:12.5px}
+.ini-kpis .kp.on b{color:var(--magenta-deep)}.ini-kpis .kp.at{background:#FFF6EF;border-color:#F3C3A5;cursor:pointer}.ini-kpis .kp.at b{color:var(--warn)}
+.ini-grade{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px}@media(max-width:1100px){.ini-grade{grid-template-columns:1fr}}
+.ini-grade .col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.ini-imp,.ini-fil{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}.ini-imp{cursor:pointer}.ini-imp:hover{background:var(--side)}
+.ini-imp:last-child,.ini-fil:last-child{border-bottom:0}.ini-imp .t,.ini-fil .t{font-weight:700}.ini-imp .s,.ini-fil .s{font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.ini-fil .bar{margin-top:6px;height:6px}.pt{width:8px;height:8px;border-radius:50%;background:#CFC8BE;display:inline-block}.pt.imprimindo{background:var(--magenta-deep)}.pt.livre{background:var(--good)}.pt.erro{background:var(--warn)}
+.tag.at{background:#FFF0E6;color:var(--warn)}
+.ofi{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:18px}
+.ofi-c{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;cursor:pointer}
+.ofi-c:hover{border-color:#d9d2c8;box-shadow:0 10px 24px -16px rgba(40,30,20,.4)}.ofi-c b{font-size:15.5px}.ofi-c small{color:var(--muted);font-size:12.5px}
+.ofi-f{width:100%;aspect-ratio:4/3;border-radius:12px;background:radial-gradient(120% 90% at 50% 35%,#fff,#efeae3);display:flex;align-items:center;justify-content:center;margin-bottom:8px;color:#bdb5aa}
+.ofi-f img{width:78%;height:88%;object-fit:contain}.ofi-f .ic{width:48px;height:48px}
+.ofi-n{display:flex;gap:6px;width:100%;margin:8px 0}.ofi-n>span{flex:1;background:var(--side);border-radius:10px;padding:6px 8px;font-size:11.5px;color:var(--muted)}.ofi-n b{display:block;font-size:16px;color:var(--ink)}
+.ekpis{margin-top:14px}.ekpis>div.at{background:#FFF6EF;cursor:pointer}
+.euso{margin-top:14px;background:linear-gradient(135deg,#FFF5F9,#FFF8F0);border:1px solid #F7D3E2;border-radius:18px;padding:14px 18px}
+.euso-l{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}.euso-c{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 16px 10px 8px;min-width:280px}
+.euso-c b{display:block;font-size:15px}.euso-c small{display:block;color:var(--ink2);font-size:12.5px}.euso-c .bar{width:160px;margin:6px 0 2px;height:6px}
+.efiltros{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}
+.echips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.echips button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-weight:600;font-size:13px;color:var(--ink2);cursor:pointer}
+.echips button.on{background:var(--rose);border-color:#F2B8CF;color:var(--magenta-deep)}.esep{width:1px;height:22px;background:var(--line);margin:0 4px}
+#buscaEst{width:260px;max-width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:12px}
+.ini-foto{width:56px;height:56px;border-radius:12px;background:radial-gradient(120% 90% at 50% 35%,#fff,#efeae3);display:flex;align-items:center;justify-content:center;flex:none;color:#bdb5aa}
+.ini-foto img{width:90%;height:90%;object-fit:contain}.ini-foto .ic{width:28px;height:28px}.ini-bob{margin-left:-18px;margin-right:4px}
 </style>
 </head>
 <body>
@@ -144,8 +177,22 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 var E = Filuna.esc;
 // Menu da referência (Meu espaço, Projetos, Perfis de impressão, Filamentos, Configurações) e, abaixo, as ferramentas Filuna.
 // Configurações não ficam aqui: estão na engrenagem da barra (Configurações do programa › Filuna).
-var SECOES = [["visao", "Meu espaço"], ["modelos", "Projetos"], ["perfis", "Perfis de impressão"], ["estoque", "Filamentos"], ["historico", "Histórico"], ["painel", "Painel"]];
-var FERRAMENTAS = [["fila", "Fila da Farm"], ["reparacao", "Reparação"], ["ofertas", "Ofertas"], ["ia", "IA Filuna"], ["loja", "Minha loja"]];
+// Seis grupos no menu (antes eram 13 itens soltos); dentro de cada grupo, abas. SECOES continua sendo a lista de
+// seções que o Post nas redes (midia-espaco.js) completa com "marca" e "posts" quando a conta tem a ferramenta.
+var SECOES = [["visao", "Início"], ["modelos", "Projetos"], ["historico", "Histórico"], ["perfis", "Perfis salvos"], ["reparacao", "Reparar modelo"],
+	["estoque", "Estoque"], ["oficina", "Raio X e manutenção"], ["fila", "Fila da Farm"], ["painel", "Números"], ["ofertas", "Ofertas"], ["loja", "Minha loja"], ["ia", "IA Filuna"]];
+var GRUPOS = [
+	{ id: "inicio", nome: "Início", icone: "casa", abas: ["visao"] },
+	{ id: "projetos", nome: "Projetos", icone: "pasta", abas: ["modelos", "historico", "perfis", "reparacao"] },
+	{ id: "filamentos", nome: "Filamentos", icone: "bobina", abas: ["estoque"] },
+	{ id: "impressoras", nome: "Impressoras", icone: "impressora", abas: ["oficina", "fila"] },
+	{ id: "negocio", nome: "Negócio", icone: "grafico", abas: ["painel", "ofertas", "loja", "marca", "posts"] },
+	{ id: "ia", nome: "IA Filuna", icone: "faisca", abas: ["ia"] }
+];
+var FERRAMENTAS = []; // compatibilidade: o menu antigo tinha um segundo bloco
+function nomeSecao(id) { var x = SECOES.filter(function (s) { return s[0] == id; })[0]; return x ? x[1].replace(/^✦ /, "") : id; }
+function grupoDe(id) { return GRUPOS.filter(function (g) { return g.abas.indexOf(id) >= 0; })[0] || GRUPOS[0]; }
+function abasDoGrupo(g) { return g.abas.filter(function (a) { return SECOES.some(function (s) { return s[0] == a; }); }); }
 var st = { secao: "visao", prefs: null, catalogo: [], opcoes: {}, conversa: [] };
 try { var h = (location.hash || "").slice(1); if (h) st.secao = h; } catch (e) {}
 
@@ -153,8 +200,15 @@ function botoes(l) {
 	return l.map(function (s) { return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1]) + "</button>"; }).join("");
 }
 function menu() {
-	document.getElementById("menu").innerHTML = botoes(SECOES) + '<div class="sep"></div><div class="lbl grupo-lbl">Ferramentas Filuna</div>' + botoes(FERRAMENTAS);
-	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { abrirSecao(b.dataset.s); }; });
+	var atual = grupoDe(st.secao);
+	document.getElementById("menu").innerHTML = GRUPOS.map(function (g) {
+		var abas = abasDoGrupo(g);
+		return '<button class="nav nav-g' + (g == atual ? " on" : "") + '" data-g="' + g.id + '">' + (ICONE[g.icone] || "") + "<span>" + E(g.nome) + "</span>" +
+			(g.id == "impressoras" && st.atencao ? '<em class="nav-n">' + st.atencao + "</em>" : "") + (abas.length > 1 && g == atual ? "" : "") + "</button>";
+	}).join("");
+	document.querySelectorAll("#menu [data-g]").forEach(function (b) {
+		b.onclick = function () { var g = GRUPOS.filter(function (x) { return x.id == b.dataset.g; })[0]; abrirSecao(abasDoGrupo(g)[0]); };
+	});
 	var imp = st.local || {};
 	document.getElementById("topo").innerHTML =
 		'<button class="selcard" id="perfilAtual"><span class="av av-icone" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg></span><span style="min-width:0"><span class="n" style="display:block">' +
@@ -202,7 +256,16 @@ function prefs() {
 function desenhar() {
 	if (st.secao == "loja") { location.href = "loja.html"; return; }
 	menu();
-	({ visao: visao, estoque: estoque, historico: historico, painel: painel, perfis: perfis, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia, marca: window.midiaMarca, posts: window.midiaPosts }[st.secao] || visao)();
+	({ visao: visao, estoque: estoque, historico: historico, painel: painel, perfis: perfis, fila: fila, modelos: modelos, reparacao: reparacao, ofertas: ofertas, ia: ia,
+		oficina: oficina, marca: window.midiaMarca, posts: window.midiaPosts }[st.secao] || visao)();
+	// abas do grupo no alto da tela (Projetos › Projetos | Histórico | Perfis salvos | Reparar modelo...)
+	var abas = abasDoGrupo(grupoDe(st.secao));
+	if (abas.length > 1) {
+		el().insertAdjacentHTML("afterbegin", '<nav class="abas-g" aria-label="' + E(grupoDe(st.secao).nome) + '">' + abas.map(function (a) {
+			return '<button data-aba-s="' + a + '" class="' + (a == st.secao ? "on" : "") + '">' + E(nomeSecao(a)) + "</button>";
+		}).join("") + "</nav>");
+		el().querySelectorAll("[data-aba-s]").forEach(function (b) { b.onclick = function () { abrirSecao(b.dataset.abaS); }; });
+	}
 }
 
 var ICONE = {
@@ -216,72 +279,132 @@ var ICONE = {
 	mais: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
 	baixar: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg>',
 	engrenagem: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5M6 6l1.8 1.8M16.2 16.2 18 18M6 18l1.8-1.8M16.2 7.8 18 6"/></svg>',
-	loja: '<svg class="ic" viewBox="0 0 24 24"><path d="M4.5 9.5 6 4.5h12l1.5 5M4.5 9.5h15v10h-15zM9 19.5v-5h6v5"/></svg>'
+	loja: '<svg class="ic" viewBox="0 0 24 24"><path d="M4.5 9.5 6 4.5h12l1.5 5M4.5 9.5h15v10h-15zM9 19.5v-5h6v5"/></svg>',
+	casa: '<svg class="ic" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/></svg>',
+	impressora: '<svg class="ic" viewBox="0 0 24 24"><path d="M5 20V5.5h14V20M3.5 20h17M8 9h8M12 9v4M10 13h4v2h-4z"/></svg>',
+	grafico: '<svg class="ic" viewBox="0 0 24 24"><path d="M4 20h16M6.5 16v-4M11 16V8M15.5 16v-6M20 16V5"/></svg>',
+	faisca: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>'
 };
 var CORES_ATV = ["#7B4BFF", "#C2185B", "#2F6FE4", "#FF6B1A"];
 
 function visao() {
-	el().innerHTML = '<div class="h1">Meu espaço</div><div class="sub">Bem-vindo(a) ao seu espaço de trabalho pessoal.</div>' +
-		'<div class="me"><div class="col">' +
-		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.relogio + 'Atividade recente</span><a data-s="modelos">Ver tudo</a></div><div id="atv"><div class="carregando">Carregando…</div></div></div>' +
-		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.pasta + 'Meus projetos</span><a data-s="modelos">Ver todos os projetos</a></div><div class="bb"><div id="projs" class="projs"></div></div></div>' +
+	var nome = (st.conta && st.conta.nome) || "";
+	el().innerHTML = '<div class="ini-topo"><div><div class="h1">' + (nome ? "Olá, " + E(nome.split(" ")[0]) : "Início") + '</div><div class="sub">O que está acontecendo nas suas impressoras, filamentos e projetos.</div></div>' +
+		'<div class="linha"><button class="btn primario" id="lNovo">' + ICONE.mais + "Novo projeto</button><button class=\"btn\" id=\"lImp\">" + ICONE.baixar + "Importar modelo</button></div></div>" +
+		'<div class="ini-kpis" id="iniK"><div class="kp"><span>Imprimindo agora</span><b>—</b></div><div class="kp"><span>Filamento em estoque</span><b>—</b></div><div class="kp"><span>Estoque baixo</span><b>—</b></div><div class="kp"><span>Precisa de atenção</span><b>—</b></div></div>' +
+		'<div class="ini-grade"><div class="col">' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.impressora + 'Impressoras</span><a data-s="oficina">Raio X e manutenção</a></div><div id="iniImp"><div class="carregando" style="margin:14px 18px">Carregando…</div></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.pasta + 'Continue de onde parou</span><a data-s="modelos">Todos os projetos</a></div><div class="bb"><div id="projs" class="projs"></div></div></div>' +
 		'</div><div class="col">' +
-		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.linhas + 'Perfis salvos</span><a data-s="perfis">Gerenciar</a></div><div id="pfs"></div>' +
-		'<button class="tracejado" id="novoPerfil">+ Novo perfil</button></div>' +
-		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.bobina + 'Biblioteca de filamentos</span><a data-s="estoque">Ver estoque</a></div><div class="bb"><div id="fils" class="fils"></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.bobina + 'Filamentos</span><a data-s="estoque">Estoque</a></div><div id="iniFil"><div class="carregando" style="margin:14px 18px">Carregando…</div></div>' +
 		'<button class="tracejado" id="novaBobina">+ Adicionar filamento</button></div>' +
-		'<div class="dois2"><div class="bloco"><div class="bh"><span class="lbl">' + ICONE.pessoa + 'Status da conta</span></div><div class="bb" id="contaBox"></div></div>' +
-		'<div class="bloco"><div class="bh"><span class="lbl">Links rápidos</span></div><div class="bb"><div class="links">' +
-		'<button id="lNovo">' + ICONE.pasta + 'Novo projeto</button><button id="lImp">' + ICONE.baixar + 'Importar modelo</button>' +
-		'<button id="lConfig">' + ICONE.engrenagem + 'Configurações</button><button data-s="loja">' + ICONE.loja + 'Minha loja</button></div></div></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.linhas + 'Perfis salvos</span><a data-s="perfis">Gerenciar</a></div><div id="pfs"></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.pessoa + 'Conta</span></div><div class="bb" id="contaBox"></div></div>' +
 		"</div></div>";
 	el().querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { abrirSecao(b.dataset.s); }; });
-	document.getElementById("lConfig").onclick = function () { Filuna.nativo("preferencias.abrir"); };
 	document.getElementById("lNovo").onclick = function () { Filuna.nativo("aba.abrir", { aba: "prepare" }); };
 	document.getElementById("lImp").onclick = function () { Filuna.nativo("projeto.importar"); };
-	document.getElementById("novoPerfil").onclick = function () { Filuna.nativo("aba.abrir", { aba: "prepare" }); };
 	document.getElementById("novaBobina").onclick = function () { novaBobina(); };
+	var kp = function (k, valor, legenda, classe) {
+		var c = document.querySelectorAll("#iniK .kp")[k]; if (!c) return;
+		c.className = "kp" + (classe ? " " + classe : ""); c.querySelector("b").innerHTML = valor; if (legenda != null) c.insertAdjacentHTML("beforeend", "<small>" + legenda + "</small>");
+	};
 
 	Filuna.nativo("projetos.recentes").then(function (r) {
 		var l = r.projetos || [];
-		document.getElementById("atv").innerHTML = l.length ? l.slice(0, 4).map(function (p, k) {
-			return '<div class="atv" data-k="' + k + '"><span class="ico" style="background:' + CORES_ATV[k % 4] + '">' + ICONE.caixa + '</span><div style="min-width:0"><div class="t">Projeto “' + E(p.nome) +
-				'” aberto</div><div class="s">' + E(p.quando || "") + "</div></div></div>"; }).join("")
-			: '<div class="vazio" style="margin:14px 18px">Nenhuma atividade ainda. Abra ou importe um modelo para começar.</div>';
-		document.getElementById("projs").innerHTML = l.length ? l.slice(0, 3).map(function (p, k) {
+		document.getElementById("projs").innerHTML = l.length ? l.slice(0, 4).map(function (p, k) {
 			return '<div class="pj" data-k="' + k + '"><div class="th">' + (p.imagem ? '<img src="' + E(p.imagem) + '" alt="">' : ICONE.caixa.replace('class="ic"', 'style="width:56px;height:56px"')) +
 				'</div><div class="n">' + E(p.nome) + '</div><div class="s">' + E(p.quando || "") + "</div></div>"; }).join("")
-			: '<div class="vazio" style="grid-column:1/-1">Nenhum projeto aberto ainda.</div>';
-		el().querySelectorAll("[data-k]").forEach(function (b) { b.onclick = function () { Filuna.nativo("projeto.abrir", { caminho: l[+b.dataset.k].caminho }); }; });
-	}, function () { document.getElementById("atv").innerHTML = '<div class="vazio" style="margin:14px 18px">Abra o Filuna Slicer para ver sua atividade.</div>'; });
+			: '<div class="vazio" style="grid-column:1/-1">Nenhum projeto aberto ainda. Abra ou importe um modelo para começar.</div>';
+		el().querySelectorAll(".pj[data-k]").forEach(function (b) { b.onclick = function () { Filuna.nativo("projeto.abrir", { caminho: l[+b.dataset.k].caminho }); }; });
+	}, function () { document.getElementById("projs").innerHTML = '<div class="vazio" style="grid-column:1/-1">Abra o Filuna Slicer para ver seus projetos.</div>'; });
 
 	var pf = st.perfis || [];
-	document.getElementById("pfs").innerHTML = pf.length ? pf.slice(0, 3).map(function (p, k) {
+	document.getElementById("pfs").innerHTML = pf.length ? pf.slice(0, 3).map(function (p) {
 		return '<div class="pf"><span class="ico">' + ICONE.hex + '</span><div style="min-width:0"><div class="t">' + E(p.nome) + '</div><div class="s">' + E(p.base ? "Baseado em " + p.base : "Perfil próprio") +
 			'</div></div><span class="tag">' + (p.atual ? "Em uso" : "Personalizado") + "</span></div>"; }).join("")
-		: '<div class="vazio" style="margin:14px 18px 0">Nenhum perfil salvo. Ajuste a impressão na Preparação e clique em salvar.</div>';
+		: '<div class="vazio" style="margin:14px 18px">Nenhum perfil salvo. Ajuste a impressão na Preparação e clique em salvar.</div>';
 
-	var cx = document.getElementById("contaBox"), fs = document.getElementById("fils");
-	Filuna.nativo("estoque.listar").then(function (r) {
-		var b = (r.bobinas || []).map(bobinaParaLinha);
-		fs.innerHTML = b.length ? b.slice(0, 4).map(function (x) {
-			return '<div class="fil">' + Filuna.bobinaSVG(x.cor, 46, x.peso_inicial_g ? pctRestante(x) / 100 : null) + '<div style="min-width:0"><div class="n">' + E((x.marca ? x.marca + " " : "") + x.material) +
-				'</div><div class="s">' + E(x.cor_nome) + "</div></div></div>"; }).join("")
-			: '<div class="vazio" style="grid-column:1/-1">Nenhuma bobina cadastrada.</div>';
-	}, function (e) { fs.innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
+	// impressoras (ao vivo) + bobinas: quem está imprimindo, com a bobina girando e o fio saindo
+	Promise.all([Filuna.nativo("dispositivos.estado").catch(function () { return {}; }), Filuna.nativo("estoque.listar").catch(function () { return {}; }),
+		Filuna.temToken() ? Filuna.api("GET", "/raiox").catch(function () { return {}; }) : Promise.resolve({})]).then(function (r) {
+		var imps = (r[0].impressoras || []).filter(function (i) { return i.nome; }), bobs = (r[1].bobinas || []).map(bobinaParaLinha);
+		var rx = {}; ((r[2] || {}).impressoras || []).forEach(function (i) { rx[i.chave] = i; });
+		var ativas = bobs.filter(function (x) { return x.estado == "lacrada" || x.estado == "em_uso"; });
+		var imprimindo = imps.filter(function (i) { return i.estado == "imprimindo" || i.estado == "pausada"; });
+		var naImp = function (i) {
+			var n = i.slot_ativo && i.slot_ativo.slot !== undefined ? (+i.slot_ativo.unidade || 0) * 4 + (+i.slot_ativo.slot || 0) + 1 : 0;
+			var l = ativas.filter(function (x) { return x.na_impressora && (x.na_impressora == i.cadastro_id || x.na_impressora == i.dev_id); });
+			var sel = n ? l.filter(function (x) { return /:slot:(\d+)$/.test(x.local || "") && +RegExp.$1 == n; }) : [];
+			return sel.length ? sel : l.slice(0, 1);
+		};
+		var erros = 0; imps.forEach(function (i) { var x = rx[i.cadastro_id]; if (x) erros += x.abertos; if (i.erro) erros++; });
+		st.atencao = erros; menu();
+		var total = ativas.reduce(function (a, x) { return a + (+x.restante_g || 0); }, 0), lim = st.lim || 150;
+		var baixas = ativas.filter(function (x) { return x.restante_g < lim; });
+		kp(0, String(imprimindo.length), imps.length ? "de " + imps.length + " impressora" + (imps.length == 1 ? "" : "s") : "nenhuma conectada", imprimindo.length ? "on" : "");
+		kp(1, Filuna.gramas(total), ativas.length + " bobina" + (ativas.length == 1 ? "" : "s") + " ativa" + (ativas.length == 1 ? "" : "s"));
+		kp(2, String(baixas.length), baixas.length ? "abaixo de " + lim + " g" : "tudo em dia", baixas.length ? "at" : "");
+		kp(3, String(erros), erros ? "erro" + (erros == 1 ? "" : "s") + " para resolver no Raio X" : "nada para resolver", erros ? "at" : "");
+		document.querySelectorAll("#iniK .kp")[3].onclick = function () { abrirSecao("oficina"); };
+		document.getElementById("iniImp").innerHTML = imps.length ? imps.map(function (i, k) {
+			var b = naImp(i), x = rx[i.cadastro_id] || {}, gira = i.estado == "imprimindo";
+			var est = i.erro ? "Com erro" : { imprimindo: "Imprimindo", pausada: "Pausada", livre: "Livre", concluida: "Concluiu", desligada: "Desligada" }[i.estado] || (i.ligada ? "Ligada" : "Desligada");
+			var foto = x.capa && x.capa.foto ? "../../profiles/" + x.capa.foto.replace(/^\/static\/raiox\/capas\//, "") : "";
+			return '<div class="ini-imp" data-imp="' + k + '"><span class="ini-foto">' + (foto ? '<img alt="" src="' + E(foto) + '">' : ICONE.impressora) + "</span>" +
+				(gira && b[0] ? '<span class="bob-viva girando ini-bob">' + Filuna.bobinaSVG(b[0].cor, 46, b[0].peso_inicial_g ? pctRestante(b[0]) / 100 : null) + "</span>" : "") +
+				'<div style="min-width:0;flex:1"><div class="t">' + E(i.nome) + '</div><div class="s"><span class="pt ' + (i.erro ? "erro" : i.estado || "") + '"></span>' + E(est) +
+				(gira ? " · " + (i.progresso || 0) + "%" + (i.restante_s ? " · faltam " + Filuna.tempo(i.restante_s) : "") : "") + (b[0] && gira ? " · " + E(b[0].material + " " + b[0].cor_nome) : "") + "</div>" +
+				(gira ? '<div class="bar" style="margin-top:6px"><i style="width:' + (i.progresso || 0) + '%"></i></div>' : "") + "</div>" +
+				((x.abertos || i.erro) ? '<span class="tag at">' + (x.abertos || 1) + " erro" + ((x.abertos || 1) == 1 ? "" : "s") + "</span>" : "") + "</div>";
+		}).join("") : '<div class="vazio" style="margin:14px 18px">Nenhuma impressora conectada. <a data-aba="filuna.dispositivo">Conectar uma impressora</a></div>';
+		el().querySelectorAll("[data-imp]").forEach(function (d) { d.onclick = function () { Filuna.nativo("aba.abrir", { aba: "filuna.dispositivo", secao: "unidade:" + imps[+d.dataset.imp].nome }); }; });
+		el().querySelectorAll("#iniImp [data-aba]").forEach(function (a) { a.onclick = function () { Filuna.nativo("aba.abrir", { aba: a.dataset.aba }); }; });
+		// filamentos: os que estão imprimindo primeiro (girando), depois os que estão acabando
+		var emUso = []; imprimindo.forEach(function (i) { naImp(i).forEach(function (x) { if (emUso.indexOf(x) < 0) emUso.push(x); }); });
+		var lista = emUso.concat(baixas.filter(function (x) { return emUso.indexOf(x) < 0; })).concat(ativas.filter(function (x) { return emUso.indexOf(x) < 0 && baixas.indexOf(x) < 0; })).slice(0, 5);
+		document.getElementById("iniFil").innerHTML = lista.length ? lista.map(function (x) {
+			var gira = emUso.indexOf(x) >= 0, pct = Math.round(pctRestante(x));
+			return '<div class="ini-fil"><span class="bob-viva' + (gira ? " girando" : "") + '">' + Filuna.bobinaSVG(x.cor, 44, x.peso_inicial_g ? pct / 100 : null) + '</span><div style="min-width:0;flex:1"><div class="t">' +
+				E((x.marca ? x.marca + " " : "") + x.material + " " + x.cor_nome) + '</div><div class="s">' + (gira ? "imprimindo agora · " : "") + Filuna.gramas(x.restante_g) + " restantes</div>" +
+				'<div class="bar"><i style="width:' + pct + "%;background:" + E(corBarra(x.cor)) + '"></i></div></div><span class="tag' + (x.restante_g < lim ? " at" : "") + '">' + pct + "%</span></div>";
+		}).join("") : '<div class="vazio" style="margin:14px 18px">Nenhuma bobina cadastrada.</div>';
+	});
+
+	var cx = document.getElementById("contaBox");
 	if (!Filuna.temToken()) {
 		cx.innerHTML = '<div class="ajuda" style="margin-bottom:10px">Entre na sua conta Filuna para ver plano, estoque e Farm.</div><button class="btn primario peq" id="entrarAqui">Entrar</button>';
 		document.getElementById("entrarAqui").onclick = function () { el().innerHTML = '<div id="lg"></div>'; Filuna.telaLogin(el().querySelector("#lg"), function () { location.reload(); }); };
 		return;
 	}
 	Filuna.api("GET", "/resumo").then(function (r) {
+		var era = st.conta && st.conta.nome;
 		st.conta = r.conta; var n = document.getElementById("nomeConta"); if (n) n.textContent = r.conta.nome;
 		var f = r.farm || {};
 		cx.innerHTML = '<div class="kv"><span>Plano <b>' + E(r.conta.plano) + '</b></span><button class="btn peq" id="gerPlano">Gerenciar</button></div>' +
 			'<div class="kv"><span>Impressoras na Farm</span><b>' + (f.impressoras || 0) + (f.limite ? " / " + f.limite : "") + "</b></div>" +
 			'<div class="kv"><span>Mesas na fila</span><b>' + (f.mesas_na_fila || 0) + "</b></div>";
 		document.getElementById("gerPlano").onclick = function () { Filuna.abrirLink("https://filuna3d.com/planos"); };
+		if (!era && st.secao == "visao") { var h = el().querySelector(".ini-topo .h1"); if (h && r.conta.nome) h.textContent = "Olá, " + r.conta.nome.split(" ")[0]; }
 	}, function (e) { if (e.status == 401) Filuna.sair(); cx.innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
+}
+
+// Impressoras › Raio X e manutenção: cada impressora com os erros em aberto, as horas e as impressões; abre o Raio X.
+function oficina() {
+	el().innerHTML = titulo("Impressoras", "Raio X e manutenção", "Erros com a solução oficial, reparo passo a passo, impressões e manutenção de cada impressora. É o mesmo Raio X do site.") +
+		'<div id="r" class="carregando" style="margin-top:16px">Carregando…</div>';
+	Promise.all([Filuna.nativo("dispositivos.estado").catch(function () { return {}; }), Filuna.temToken() ? Filuna.api("GET", "/raiox").catch(function () { return {}; }) : Promise.resolve({})]).then(function (r) {
+		var imps = (r[0].impressoras || []).filter(function (i) { return i.nome; }), rx = {};
+		((r[1] || {}).impressoras || []).forEach(function (i) { rx[i.chave] = i; });
+		document.getElementById("r").outerHTML = imps.length ? '<div class="ofi">' + imps.map(function (i, k) {
+			var x = rx[i.cadastro_id] || {}, foto = x.capa && x.capa.foto ? "../../profiles/" + x.capa.foto.replace(/^\/static\/raiox\/capas\//, "") : "";
+			return '<button class="ofi-c" data-k="' + k + '"><span class="ofi-f">' + (foto ? '<img alt="" src="' + E(foto) + '">' : ICONE.impressora) + "</span><b>" + E(i.nome) + "</b><small>" + E(x.modelo || i.modelo_nome || "") + "</small>" +
+				'<span class="ofi-n"><span><b>' + (x.abertos || 0) + "</b>erros em aberto</span><span><b>" + (x.impressoes || 0) + "</b>impressões</span><span><b>" + String(x.horas || 0).replace(".", ",") + " h</b>imprimindo</span></span>" +
+				(x.abertos ? '<span class="tag at">Resolver no Raio X</span>' : '<span class="tag">Abrir o Raio X</span>') + "</button>";
+		}).join("") + "</div>" + (Filuna.temToken() ? "" : '<div class="ajuda" style="margin-top:12px">Entre na sua conta para guardar os erros, o reparo e a manutenção.</div>')
+			: '<div class="vazio" style="margin-top:16px">Nenhuma impressora conectada ainda.</div>';
+		el().querySelectorAll(".ofi-c").forEach(function (b) { b.onclick = function () { Filuna.nativo("aba.abrir", { aba: "filuna.dispositivo", secao: "raiox:" + imps[+b.dataset.k].nome }); }; });
+	});
 }
 
 function perfis() {
@@ -345,7 +468,7 @@ function estoque() {
 	Promise.all([Filuna.nativo("estoque.listar", { incluir_arquivadas: !!st.verArquivadas }), prefs().catch(function () { return {}; }), modo]).then(function (r) {
 		st.bobinas = (r[0].bobinas || []).map(bobinaParaLinha);
 		st.lim = r[1]["estoque.limite_baixo_g"] == null ? 150 : r[1]["estoque.limite_baixo_g"]; st.alerta = r[1]["estoque.alerta_baixo"] !== false;
-		st.modoEstoque = MODOS_ESTOQUE.some(function (m) { return m[0] == r[2]; }) ? r[2] : "lista";
+		st.modoEstoque = MODOS_ESTOQUE.some(function (m) { return m[0] == r[2]; }) ? r[2] : "grade";
 		marcarModo();
 		tabelaEstoque();
 		vigiarGiro();
@@ -529,6 +652,11 @@ function etiquetaBobina(x) {
 }
 
 // Cor da barra de peso: cores muito claras (branco, natural) ficam visíveis com um cinza quente.
+// nome da impressora (o local guarda o código do cadastro) e a entrada: "Bambu A1 · entrada 2"
+function nomeImpEst(x) {
+	var n = (st.nomesImp || {})[x.na_impressora], m = /:slot:(\d+)$/.exec(x.local || "");
+	return (n || "Impressora cadastrada") + (m ? " · entrada " + m[1] : "");
+}
 function corBarra(c) { var r = Filuna.corRgb(c || "#C2185B"); return (0.299 * r[0] + 0.587 * r[1] + 0.114 * r[2]) / 255 > 0.85 ? "#9A948C" : c; }
 function pctRestante(x) { return x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0; }
 // Bobina desenhada com o que resta (passos de 10%); passar o mouse, focar ou clicar mostra a porcentagem e os gramas.
@@ -544,21 +672,27 @@ var ICONE_ESTOQUE = {
 	etiqueta: '<svg class="ic" viewBox="0 0 24 24"><path d="M3.5 12.2V4.5h7.7l9.3 9.3-7.7 7.7z"/><circle cx="8" cy="9" r="1.4"/></svg>'
 };
 function tabelaEstoque() {
-	var b = (st.bobinas || []).slice(), ord = st.ordem || "nome", lim = st.lim, alerta = st.alerta, modo = st.modoEstoque || "lista";
+	var todas = (st.bobinas || []).slice(), ord = st.ordem || "nome", lim = st.lim, alerta = st.alerta, modo = st.modoEstoque || "grade";
 	var nome = function (x) { return (x.material + " " + x.cor_nome).toLowerCase(); };
-	b.sort(function (a, c) { return ord == "peso" ? a.restante_g - c.restante_g : ord == "numero" ? (a.numero < c.numero ? -1 : 1) : nome(a) < nome(c) ? -1 : nome(a) > nome(c) ? 1 : 0; });
-	var ativas = b.filter(function (x) { return x.estado == "lacrada" || x.estado == "em_uso"; });
+	todas.sort(function (a, c) { return ord == "peso" ? a.restante_g - c.restante_g : ord == "numero" ? (a.numero < c.numero ? -1 : 1) : nome(a) < nome(c) ? -1 : nome(a) > nome(c) ? 1 : 0; });
+	// filtros: onde está, estoque baixo, material e busca por texto (marca, cor, código)
+	var filtro = st.filtroEst || "todas", mat = st.matEst || "", busca = (st.buscaEst || "").toLowerCase();
+	var materiais = todas.map(function (x) { return x.material; }).filter(function (m, k, l) { return m && l.indexOf(m) == k; }).sort();
+	var b = todas.filter(function (x) {
+		if (filtro == "impressora" && !x.na_impressora) return false;
+		if (filtro == "guardadas" && x.na_impressora) return false;
+		if (filtro == "baixo" && !((x.estado == "lacrada" || x.estado == "em_uso") && x.restante_g < lim)) return false;
+		if (mat && x.material != mat) return false;
+		return !busca || [x.marca, x.material, x.cor_nome, x.numero].join(" ").toLowerCase().indexOf(busca) >= 0;
+	});
+	var ativas = todas.filter(function (x) { return x.estado == "lacrada" || x.estado == "em_uso"; });
 	var custo = function (x) { return x.preco_kg ? x.restante_g / 1000 * x.preco_kg : null; };
 	var baixo = function (x) { return alerta && (x.estado == "lacrada" || x.estado == "em_uso") && x.restante_g < lim; };
 	var naImp = ativas.filter(function (x) { return x.na_impressora; }).length, total = 0, inicial = 0, valor = 0, temValor = false, nBaixo = 0;
 	ativas.forEach(function (x) { total += x.restante_g; inicial += x.peso_inicial_g || 0; var c = custo(x); if (c != null) { valor += c; temValor = true; } if (baixo(x)) nBaixo++; });
 	var ESTADO = { lacrada: "lacrada", em_uso: "em uso", vazia: "vazia", descartada: "arquivada" };
 	var descricao = function (x) { return E((x.marca ? x.marca + " · " : "") + "Bobina " + String(x.numero).replace("-", "‑") + " · " + (ESTADO[x.estado] || x.estado)); };
-	// nome da impressora (o local guarda o código do cadastro) e a entrada: "Bambu A1 · entrada 2"
-	var nomeImp = function (x) {
-		var n = (st.nomesImp || {})[x.na_impressora], m = /:slot:(\d+)$/.exec(x.local || "");
-		return (n || "Impressora cadastrada") + (m ? " · entrada " + m[1] : "");
-	};
+	var nomeImp = nomeImpEst;
 	var local = function (x) { return x.na_impressora ? "<b>Na impressora</b><span>" + E(nomeImp(x)) + "</span>" : x.prateleira ? "<b>Guardada</b><span>" + E(x.prateleira) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>"; };
 	var peso = function (x) {
 		var pct = pctRestante(x);
@@ -591,12 +725,28 @@ function tabelaEstoque() {
 	var corpo = modo == "grade" ? '<div class="egrade">' + b.map(cartao).join("") + '</div><div class="etab epe">' + pe + "</div>"
 		: modo == "mini" ? '<div class="emini">' + b.map(mini).join("") + '</div><div class="etab epe">' + pe + "</div>"
 		: '<div class="etab"><table><tr><th>Filamento</th><th>Localização</th><th>Peso restante</th><th>Custo</th><th></th><th></th></tr>' + b.map(linha).join("") + "</table>" + pe + "</div>";
-	document.getElementById("r").outerHTML = '<div id="r">' + (b.length ? corpo +
-		'<div class="ekpis"><div><span>Bobinas ativas</span><b>' + ativas.length + "</b><small>" + naImp + " na impressora · " + (ativas.length - naImp) + " guardada(s)</small></div>" +
+	var kpis = '<div class="ekpis"><div><span>Bobinas ativas</span><b>' + ativas.length + "</b><small>" + naImp + " na impressora · " + (ativas.length - naImp) + " guardada(s)</small></div>" +
 		"<div><span>Peso total restante</span><b>" + Filuna.gramas(total) + "</b><small>de " + Filuna.gramas(inicial) + "</small></div>" +
 		"<div><span>Valor total estimado</span><b>" + (temValor ? Filuna.reais(valor) : "—") + "</b><small>" + (temValor ? "pelo preço por kg das bobinas" : "cadastre o preço por kg") + "</small></div>" +
-		"<div><span>Alerta de estoque baixo</span><b" + (nBaixo ? " style='color:var(--warn)'" : "") + ">" + (alerta ? nBaixo : "—") + "</b><small>" + (alerta ? "abaixo de " + E(lim) + " g" : "alerta desligado nas Configurações") + "</small></div></div>"
+		"<div class='" + (nBaixo ? "at" : "") + "' data-filtro-kpi='baixo'><span>Estoque baixo</span><b" + (nBaixo ? " style='color:var(--warn)'" : "") + ">" + (alerta ? nBaixo : "—") + "</b><small>" + (alerta ? "abaixo de " + E(lim) + " g" : "alerta desligado nas Configurações") + "</small></div></div>";
+	// imprimindo agora: a bobina gira e o fio sai em direção à impressora
+	var emUso = ativas.filter(function (x) { return st.giram && st.giram[x.id]; });
+	var faixa = emUso.length ? '<div class="euso"><div class="lbl">Imprimindo agora</div><div class="euso-l">' + emUso.map(function (x) {
+		var pct = Math.round(pctRestante(x));
+		return '<div class="euso-c"><span class="bob-viva girando">' + Filuna.bobinaSVG(x.cor, 96, x.peso_inicial_g ? pct / 100 : null) + '</span><div><b>' + E((x.marca ? x.marca + " " : "") + x.material + " " + x.cor_nome) +
+			"</b><small>" + E(nomeImpEst(x)) + "</small><div class='bar'><i style='width:" + pct + "%;background:" + E(corBarra(x.cor)) + "'></i></div><small>" + pct + "% · " + Filuna.gramas(x.restante_g) + " restantes</small></div></div>";
+	}).join("") + "</div></div>" : "";
+	var chips = [["todas", "Todas"], ["impressora", "Na impressora"], ["guardadas", "Guardadas"], ["baixo", "Estoque baixo"]];
+	var filtros = '<div class="efiltros"><div class="echips">' + chips.map(function (c) { return '<button data-filtro="' + c[0] + '" class="' + (filtro == c[0] ? "on" : "") + '">' + c[1] + "</button>"; }).join("") +
+		(materiais.length > 1 ? '<span class="esep"></span>' + materiais.map(function (m) { return '<button data-mat="' + E(m) + '" class="' + (mat == m ? "on" : "") + '">' + E(m) + "</button>"; }).join("") : "") +
+		'</div><input type="search" id="buscaEst" placeholder="Buscar marca, cor ou código" value="' + E(st.buscaEst || "") + '"></div>';
+	document.getElementById("r").outerHTML = '<div id="r">' + (todas.length ? kpis + faixa + filtros + (b.length ? corpo : '<div class="vazio" style="margin-top:16px">Nenhuma bobina com esse filtro.</div>')
 		: '<div class="vazio" style="margin-top:20px">Nenhuma bobina cadastrada. Use “Adicionar filamento”.</div>') + "</div>";
+	el().querySelectorAll("[data-filtro]").forEach(function (x) { x.onclick = function () { st.filtroEst = x.dataset.filtro; tabelaEstoque(); }; });
+	el().querySelectorAll("[data-filtro-kpi]").forEach(function (x) { x.onclick = function () { st.filtroEst = "baixo"; tabelaEstoque(); }; });
+	el().querySelectorAll("[data-mat]").forEach(function (x) { x.onclick = function () { st.matEst = st.matEst == x.dataset.mat ? "" : x.dataset.mat; tabelaEstoque(); }; });
+	var be = document.getElementById("buscaEst");
+	if (be) be.oninput = function () { st.buscaEst = be.value; var p = be.selectionStart; tabelaEstoque(); var n = document.getElementById("buscaEst"); n.focus(); n.setSelectionRange(p, p); };
 	var o = document.getElementById("ordem"); if (o) o.onchange = function () { st.ordem = o.value; tabelaEstoque(); };
 	var a = document.getElementById("arq"); if (a) a.onchange = function () { st.verArquivadas = a.checked; estoque(); };
 	el().querySelectorAll("[data-pesar]").forEach(function (x) { x.onclick = function () { pesarBobina(b[+x.dataset.pesar]); }; });
@@ -702,18 +852,9 @@ function painel() {
 			return "<div class='linha' style='justify-content:space-between;padding:6px 0'><span><span class='dot' style='display:inline-block;width:10px;height:10px;border-radius:50%;background:" + E(t.cor_hex || "#ccc") + "'></span> <b>" + E(nome) + "</b></span><span" + (x.alerta ? " style='color:var(--warn);font-weight:700'" : "") + ">" + E(txt) + "</span></div>";
 		}).join("") : "<div class='vazio'>Cadastre bobinas para ver a previsão.</div>";
 	}, function (e) { document.getElementById("pPrev").innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
-	Filuna.nativo("manutencao.listar").then(function (r) {
-		var l = r.impressoras || [];
-		document.getElementById("pMan").innerHTML = l.length ? l.map(function (i) {
-			return "<div style='padding:6px 0'><b>" + E(i.nome) + "</b> <span class='s'>" + i.horas.toFixed(1).replace(".", ",") + " h de impressão</span>" +
-				(i.regras.length ? i.regras.map(function (g) {
-					return "<div class='linha' style='justify-content:space-between;padding:4px 0'><span>" + E(g.nome) + " · a cada " + g.intervalo_h + " h</span><span>" + E(g.situacao) +
-						(g.situacao != "em dia" ? "" : " · faltam " + Math.max(0, g.faltam_h).toFixed(0) + " h") + " <button class='btn peq' data-man='" + E(g.id) + "'>Feita</button></span></div>";
-				}).join("") : "<div class='s'>Sem regras. <a data-nova='" + E(i.id) + "'>Adicionar limpeza do bico a cada 100 h</a></div>") + "</div>";
-		}).join("") : "<div class='vazio'>As impressoras aparecem aqui depois da primeira impressão registrada.</div>";
-		el().querySelectorAll("[data-man]").forEach(function (x) { x.onclick = function () { Filuna.nativo("manutencao.registrar", { id: x.dataset.man }).then(painel, function (e) { falha(e); }); }; });
-		el().querySelectorAll("[data-nova]").forEach(function (x) { x.onclick = function () { Filuna.nativo("manutencao.adicionar", { impressora_id: x.dataset.nova, nome: "Limpar o bico", intervalo_h: 100 }).then(painel, function (e) { falha(e); }); }; });
-	}, function (e) { document.getElementById("pMan").innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
+	// a manutenção agora é uma só, no Raio X de cada impressora (por horas, com a região na foto)
+	document.getElementById("pMan").innerHTML = '<div class="s" style="margin-bottom:10px">A manutenção por horas fica no Raio X de cada impressora, junto com os erros e o reparo.</div><button class="btn peq" id="irOficina">Abrir Raio X e manutenção</button>';
+	document.getElementById("irOficina").onclick = function () { abrirSecao("oficina"); };
 }
 
 function fila() {

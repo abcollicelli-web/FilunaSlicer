@@ -19,7 +19,7 @@
 		if (!Filuna.temToken()) return;
 		Promise.all([Filuna.api("GET", "/midia/estado"), Filuna.nativo("midia.preferencia")]).then(function (r) {
 			Filuna.nativo("midia.disponivel", { disponivel: !!r[0].disponivel });
-			if (r[0].disponivel && !ligada()) { SECOES.push(["marca", "✦ Minha marca"], ["posts", "Posts"]); menu(); }
+			if (r[0].disponivel && !ligada()) { SECOES.push(["marca", "✦ Minha marca"], ["posts", "Posts"]); if (grupoDe(st.secao).id == "negocio") desenhar(); else menu(); }
 		}).catch(function () {});
 	}
 

@@ -292,6 +292,17 @@ var Filuna = (function () {
 			}
 			filamento = cilindro(R, "url(#" + id + "f)") + voltas + ponta(R, 'fill="url(#' + id + 'f)"') + ponta(R, 'fill="none" stroke="' + fio + '" stroke-opacity=".25"');
 		}
+		// Imprimindo: o fio sai do alto do filamento enrolado e corre para a impressora (só aparece com "girando").
+		function fioSaindo() {
+			if (!R) return "";
+			// sai do alto do rolo, no trecho entre a aba de trás e a da frente que aparece, sobe por trás da aba da frente
+			// e segue para a direita, acima da bobina (o SVG deixa desenhar fora da caixa)
+			var x0 = B.cx + 10, y0 = A.cy - A.ry * R + 2;
+			var d = "M" + x0 + " " + y0.toFixed(1) + " C" + (x0 - 2) + " " + (y0 - 24).toFixed(1) + " " + (x0 + 30) + " -16 " + (x0 + 70) + " -14 S 160 -4 178 -16";
+			return '<g class="bobina-fio"><path d="' + d + '" fill="none" stroke="' + escuro + '" stroke-width="5" stroke-linecap="round"/>' +
+				'<path d="' + d + '" fill="none" stroke="' + meio + '" stroke-width="3.2" stroke-linecap="round"/>' +
+				'<path class="bobina-fio-mov" d="' + d + '" fill="none" stroke="' + claro + '" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="4 10" stroke-opacity=".9"/></g>';
+		}
 		var janelas = [0, 120, 240].map(function (g) {
 			var d = janela(g);
 			if (passo == 1) return '<path d="' + d + '" fill="url(#' + id + 'j)" stroke="#2B3050" stroke-width="3" stroke-linejoin="round"/>';
@@ -313,7 +324,7 @@ var Filuna = (function () {
 			'<ellipse cx="' + B.cx + '" cy="' + B.cy + '" rx="' + B.rx + '" ry="' + B.ry + '" fill="#2B3050"/>' +
 			'<ellipse cx="' + (B.cx + 2.5) + '" cy="' + B.cy + '" rx="' + (B.rx - 2) + '" ry="' + (B.ry - 2) + '" fill="#363C60"/>' +
 			// cubo do carretel (aparece quando falta filamento) e o filamento: cilindros entre as abas
-			(passo < 1 ? cilindro(CUBO, "#4B5380") + ponta(CUBO, 'fill="#3E4568"') : "") + filamento +
+			(passo < 1 ? cilindro(CUBO, "#4B5380") + ponta(CUBO, 'fill="#3E4568"') : "") + filamento + fioSaindo() +
 			// espessura e face da aba da frente
 			'<ellipse cx="' + (A.cx - 3) + '" cy="' + A.cy + '" rx="' + A.rx + '" ry="' + A.ry + '" fill="#252946"/>' +
 			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + A.rx + '" ry="' + A.ry + '" fill="url(#' + id + 'a)"/>' +
