@@ -772,6 +772,90 @@ json rpc(const std::string& method, const json& params)
     return json{{"ok", true}, {"resultado", r.contains("result") ? r["result"] : json()}};
 }
 
+// Extrude a sketch that is already in the document (by default the last one): what makes a circle,
+// a slot or any freehand sketch into a solid. The control surface's own extrude only takes a
+// rectangle or a polygon given inline.
+json extrude_sketch(DesignPanel* p, const json& params)
+{
+    std::string why;
+    if (p->mcp_busy(false, why)) return json{{"ok", false}, {"erro", "Design ocupado: " + why}};
+    CadDocument& doc = p->mcp_doc();
+    int s = params.value("sketch", -1);
+    if (s < 0)
+        for (int i = int(doc.features.size()) - 1; i >= 0; --i)
+            if (doc.features[i].type == CadFeatureType::Sketch) { s = i; break; }
+    if (s < 0 || s >= int(doc.features.size()) || doc.features[s].type != CadFeatureType::Sketch)
+        return json{{"ok", false}, {"erro", "não há esboço para extrudar (sketch = índice de um recurso Sketch)"}};
+    const double d = params.value("distance", 10.0);
+    if (d <= 0) return json{{"ok", false}, {"erro", "distance precisa ser maior que zero"}};
+    const std::string b = params.value("boolean", std::string("new"));
+    const BooleanMode mode = b == "union" || b == "add" ? BooleanMode::Add
+                           : b == "subtract" || b == "cut" ? BooleanMode::Cut
+                           : b == "intersect" ? BooleanMode::Intersect : BooleanMode::New;
+    doc.checkpoint();
+    const int e = doc.add_extrude(s, d, false, mode, "Extrude");
+    CadFeature& fe = doc.features[e];
+    fe.flip      = params.value("flip", false);
+    fe.taper_deg = params.value("taper", 0.0);
+    const std::string end = params.value("end", std::string("blind"));
+    if      (end == "symmetric")   fe.extrude_end = ExtrudeEnd::Symmetric;
+    else if (end == "through_all") fe.extrude_end = ExtrudeEnd::ThroughAll;
+    else                           fe.extrude_end = ExtrudeEnd::Blind;
+    const bool ok = doc.recompute();
+    if (!ok) { const std::string w = doc.error; doc.undo(); doc.error = w; }
+    p->mcp_after_change();
+    return json{{"ok", ok}, {"resultado", json{{"ok", ok}, {"sketch_index", s}, {"extrude_index", e},
+                                              {"bodies", int(doc.bodies.size())}, {"error", doc.error}}}};
+}
+
+// The control surface describes its modelling tools; the sketch session and the Filuna extras are
+// described here, so the AI gets every command it may send in one list.
+json extra_tools()
+{
+    auto par = [](const char* n, const char* t, const char* d) { return json{{"name", n}, {"type", t}, {"description", d}}; };
+    auto tool = [](const char* n, const char* s, json ps) { return json{{"name", n}, {"summary", s}, {"params", ps}}; };
+    return json::array({
+        tool("sketch_begin", "Abre um esboço num plano (XY = mesa, XZ = frente, YZ = lado). Depois: sketch_add, sketch_commit.",
+             json::array({par("plane", "string", "XY | XZ | YZ (padrão XY)")})),
+        tool("sketch_add", "Desenha no esboço aberto: 'entities' = lista de {type: line|circle|arc|point, ...}; ou um só "
+                           "(type + campos); ou 'rect' [x0,y0,x1,y1] (retângulo fechado). line: p0 [x,y], p1 [x,y]; circle: "
+                           "center [x,y], radius; arc: center, radius, start_angle, end_angle (radianos); point: p [x,y]. "
+                           "construction: true para linha de construção (não vira sólido).",
+             json::array({par("entities", "array", "lista de entidades"), par("rect", "array", "[x0, y0, x1, y1] em mm"),
+                          par("type", "string", "uma entidade só"), par("construction", "boolean", "geometria de construção")})),
+        tool("sketch_describe", "Lista o que está desenhado no esboço aberto (índices, medidas, laços fechados).", json::array()),
+        tool("sketch_select", "Seleciona entidades do esboço pelos índices (para restrições e operações).",
+             json::array({par("entities", "array", "índices")})),
+        tool("sketch_delete", "Apaga entidades do esboço (índices ou a seleção).", json::array({par("entities", "array", "índices")})),
+        tool("sketch_construction", "Liga/desliga construção nas entidades.", json::array({par("entities", "array", "índices")})),
+        tool("sketch_offset", "Desloca (offset) entidades por uma distância em mm.",
+             json::array({par("distance", "number", "mm"), par("entities", "array", "índices")})),
+        tool("sketch_mirror", "Espelha entidades por um eixo de axis_a a axis_b.",
+             json::array({par("axis_a", "array", "[x,y]"), par("axis_b", "array", "[x,y]"), par("entities", "array", "índices")})),
+        tool("sketch_set_value", "Dá a medida da seleção (comprimento da linha, raio/diâmetro, ângulo ou distância entre duas).",
+             json::array({par("value", "number", "mm ou graus")})),
+        tool("sketch_commit", "Fecha o esboço e guarda no design. Depois use extrude_sketch, revolve...", json::array()),
+        tool("sketch_cancel", "Descarta o esboço aberto.", json::array()),
+        tool("extrude_sketch", "Extruda um esboço já guardado (padrão: o último) — é assim que círculos, rasgos e desenhos "
+                               "livres viram sólido.",
+             json::array({par("sketch", "integer", "índice do recurso Sketch (padrão: o último)"), par("distance", "number", "mm"),
+                          par("boolean", "string", "new | union | subtract | intersect"),
+                          par("end", "string", "blind | symmetric | through_all"), par("flip", "boolean", "inverter o sentido"),
+                          par("taper", "number", "inclinação da parede em graus")})),
+        tool("set_variable", "Cria ou muda uma variável do design (nome = expressão, ex.: largura = 60).",
+             json::array({par("name", "string", "nome"), par("expr", "string", "expressão em mm")})),
+        tool("set_feature_expr", "Liga um campo de um recurso a uma expressão (ex.: distance = altura/2).",
+             json::array({par("feature", "integer", "índice do recurso"), par("field", "string", "campo"), par("expr", "string", "expressão")})),
+        tool("list_verbs", "Lista as ações da ferramenta que valem para a seleção atual.", json::array()),
+        tool("run_verb", "Roda uma ação da ferramenta pelo id (de list_verbs).", json::array({par("verb", "string", "id")})),
+        tool("desfazer", "Desfaz o último passo.", json::array()),
+        tool("refazer", "Refaz o passo desfeito.", json::array()),
+        tool("concluir", "Conclui o esboço ou a ferramenta que o cliente deixou aberta.", json::array()),
+        tool("cancelar", "Cancela o esboço ou a ferramenta aberta.", json::array()),
+        tool("enquadrar", "Ajusta a vista para mostrar tudo.", json::array()),
+    });
+}
+
 } // namespace
 
 void DesignPanel::filuna_toggle_ia(bool show)
@@ -829,6 +913,7 @@ std::optional<json> filuna_cad_acao(const std::string& acao, const json& d)
                 json keep = json::array();
                 for (const json& t : tools["tools"])
                     if (!blocked_for_ai(t.value("name", std::string()))) keep.push_back(t);
+                for (const json& t : extra_tools()) keep.push_back(t);
                 tools["tools"] = keep;
             }
             out["comandos"] = tools;
@@ -851,6 +936,7 @@ std::optional<json> filuna_cad_acao(const std::string& acao, const json& d)
             json r;
             if (m.empty()) r = json{{"ok", false}, {"erro", "passo sem 'metodo'"}};
             else if (blocked_for_ai(m)) r = json{{"ok", false}, {"erro", m + " não está liberado para a IA"}};
+            else if (m == "extrude_sketch") r = extrude_sketch(p, params);
             else {
                 const std::string extra = p->filuna_ia_extra(m);
                 r = extra.empty() ? rpc(m, params) : json::parse(extra);

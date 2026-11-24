@@ -28,6 +28,7 @@
 #include <wx/sizer.h>
 #include <wx/uri.h>
 #include <wx/webview.h>
+#include <wx/display.h>
 
 #include <algorithm>
 #include <cmath>
@@ -602,7 +603,12 @@ static void ia_janela_de_login(wxWebViewEvent& e)
     });
     janela->Bind(wxEVT_CLOSE_WINDOW, [janela](wxCloseEvent&) { janela->Destroy(); });
     janela->CentreOnParent();
+    // The program may sit on a monitor that is gone, or off the screen: the login must open where the
+    // customer can see it, or it reads as a frozen window.
+    if (wxDisplay::GetFromWindow(janela) == wxNOT_FOUND)
+        janela->CentreOnScreen();
     janela->Show();
+    janela->Raise();
 }
 
 void filuna_ia_preparar_navegador(wxWebView* web)
