@@ -1,6 +1,8 @@
 #ifndef slic3r_GUI_McpControl_hpp_
 #define slic3r_GUI_McpControl_hpp_
 
+#include <string>
+
 // MCP control surface: a local JSON-RPC 2.0 server, line-delimited over a Unix domain
 // socket, that lets an external MCP bridge drive and perceive the Design tab. Off unless the
 // CAD feature is enabled in Preferences AND the env var ORCA_CAD_MCP is set:
@@ -20,6 +22,11 @@ namespace Slic3r { namespace GUI {
 // Start the server thread iff ORCA_CAD_MCP is set. Safe to call once the MainFrame exists —
 // the Design panel is built on the first request. No-op when the env var is unset or on Windows.
 void start_mcp_control_if_enabled();
+
+// Filuna CAD: run one control method on the MAIN thread, on every platform — what the customer's
+// AI (Claude or ChatGPT, through the Filuna connector) uses to model. `params_json` is a JSON
+// object; the reply is a JSON-RPC 2.0 reply string ({"result":...} or {"error":...}).
+std::string filuna_cad_rpc(const std::string& method, const std::string& params_json);
 
 }} // namespace Slic3r::GUI
 

@@ -938,6 +938,7 @@ if (SLIC3R_CAD)
         GUI/CAD/DesignPanelFiluna.cpp
         GUI/CAD/FilunaCadUi.cpp
         GUI/CAD/FilunaCadUi.hpp
+        GUI/CAD/FilunaCadIa.hpp
         GUI/CAD/DesignRowList.cpp
         GUI/CAD/DesignRowList.hpp
         GUI/CAD/DesignTextDialog.cpp

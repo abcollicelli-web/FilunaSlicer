@@ -7,6 +7,9 @@
 #include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaMidia.hpp"
+#ifdef SLIC3R_CAD
+#include "CAD/FilunaCadIa.hpp"
+#endif
 #include "FilunaDispositivos.hpp"
 #include "FilunaCasa.hpp"
 #include "FilunaManutencao.hpp"
@@ -649,6 +652,11 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     // Post nas redes sociais (só com a ferramenta liberada para a conta): FilunaMidia.cpp.
     if (auto midia = filuna_midia_acao(action, d))
         return *midia;
+#ifdef SLIC3R_CAD
+    // Filuna CAD com a IA do cliente (Modelar com IA): CAD/DesignPanelFiluna.cpp.
+    if (auto cad = filuna_cad_acao(action, d))
+        return *cad;
+#endif
     AppConfig* cfg = wxGetApp().app_config;
     if (action == "config.ler") {
         const std::string key = d.value("chave", std::string());

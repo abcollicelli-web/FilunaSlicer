@@ -7,12 +7,14 @@
 #include <exception>
 #include <cstdint>
 
-#ifndef _WIN32  // POSIX Unix-domain-socket transport only (slice 1)
-
+// The handlers run on every platform: on Windows the customer's own AI drives the Design tab
+// through filuna_cad_rpc (Filuna CAD). Only the Unix-socket transport at the end is POSIX.
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>   // umask/chmod: the socket's file mode IS its access control
 #include <unistd.h>
+#endif
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -563,7 +565,7 @@ json measure(DesignPanel* panel, const json& params)
     json r{{"distance", (pa - pb).norm()}, {"point_a", vec3(pa)}, {"point_b", vec3(pb)}};
     if (hda && hdb) {
         double c = std::max(-1.0, std::min(1.0, da.normalized().dot(db.normalized())));
-        r["angle_deg"] = std::acos(c) * 180.0 / M_PI;
+        r["angle_deg"] = std::acos(c) * 180.0 / PI;
     }
     return r;
 }
@@ -2138,6 +2140,7 @@ std::string handle_on_main(const std::string& method, const json& params, const 
     }
 }
 
+#ifndef _WIN32   // the socket transport
 // Marshal a request to the main thread and block (with a timeout) for the reply.
 std::string dispatch_request(const std::string& line)
 {
@@ -2280,10 +2283,30 @@ void server_thread(std::string sock_path)
     }
 }
 
+#endif // !_WIN32: the socket transport
+
 } // namespace
+
+std::string filuna_cad_rpc(const std::string& method, const std::string& params_json)
+{
+    json params = json::object();
+    try {
+        if (!params_json.empty()) params = json::parse(params_json);
+    } catch (const std::exception& ex) {
+        return rpc_error(nullptr, -32700, std::string("parse error: ") + ex.what());
+    }
+    try {
+        return handle_on_main(method, params, json(1));
+    } catch (const std::exception& ex) {
+        return rpc_error(json(1), -32000, std::string("internal error: ") + ex.what());
+    }
+}
 
 void start_mcp_control_if_enabled()
 {
+#ifdef _WIN32
+    return;   // no socket transport on Windows; the Filuna CAD AI goes through filuna_cad_rpc
+#else
     const char* env = std::getenv("ORCA_CAD_MCP");
     if (!env || !*env) return;
     std::string path = (std::strcmp(env, "1") == 0) ? "/tmp/orca-cad-mcp.sock" : env;
@@ -2291,14 +2314,7 @@ void start_mcp_control_if_enabled()
     if (started) return;
     started = true;
     std::thread(server_thread, path).detach();
+#endif
 }
 
 }} // namespace Slic3r::GUI
-
-#else  // _WIN32
-
-namespace Slic3r { namespace GUI {
-void start_mcp_control_if_enabled() {}   // ponytail: no Windows transport yet
-}}
-
-#endif

@@ -117,6 +117,13 @@ public:
     // socket may be the first thing to touch the Design tab after a project was opened.
     void hydrate_from_model();
 
+    // Filuna CAD + the customer's AI (Claude or ChatGPT, by their own subscription): the "Modelar com
+    // IA" side panel, and the extra verbs the AI may send besides the control methods.
+    void        filuna_toggle_ia(bool show);
+    bool        filuna_ia_open() const { return m_ia_open; }
+    std::string filuna_ia_extra(const std::string& metodo);   // "" = not an extra; else a JSON reply
+    std::string filuna_mode_name() const;
+
 private:
     enum class Tool { None, Sketch, Extrude, Dressup, Hole, Thread, Shell, Revolve, Sweep, Pattern, Plane, Loft, Draft, Boolean, Cut, Insert, Axis, CoordSys, SurfaceExtrude, SurfaceRevolve, SurfaceLoft, SurfaceFill, SurfaceOffset, ThickenSurface, Transform, Mirror, Thicken, Rib, Project, DeleteFace, Helix, Mate };
     // Which numeric fields an expression can be bound to, per feature type. A member rather
@@ -157,6 +164,8 @@ private:
     bool              m_translucent{false};
     int               m_var_rect{0}, m_var_circle{0}, m_var_arc{0};   // the sketch tool variant in use
     wxStaticLine*     m_toolbar_line{nullptr};
+    wxPanel*          m_cad_ia{nullptr};       // "Modelar com IA": the page and the AI's own site
+    bool              m_ia_open{false};
     void     filuna_setup();
     void     filuna_overlay();
     void     filuna_layout(CadUiLayout& l);

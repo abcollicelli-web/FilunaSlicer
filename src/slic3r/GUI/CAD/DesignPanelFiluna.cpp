@@ -5,14 +5,20 @@
 #include "slic3r/GUI/CAD/DesignPanel.hpp"
 #include "slic3r/GUI/CAD/DesignCanvas.hpp"
 #include "slic3r/GUI/CAD/DesignOffer.hpp"
+#include "slic3r/GUI/CAD/FilunaCadIa.hpp"
 #include "slic3r/GUI/CAD/FilunaCadUi.hpp"
+#include "slic3r/GUI/CAD/McpControl.hpp"
 
 #include "libslic3r/CAD/CadDocument.hpp"
 #include "libslic3r/CAD/GeometryEngine.hpp"
 #include "libslic3r/Format/STL.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/GUI/I18N.hpp"
+#include "slic3r/GUI/FilunaAssistente.hpp"
+#include "slic3r/GUI/FilunaPanel.hpp"
+#include "slic3r/GUI/MainFrame.hpp"
 #include "slic3r/GUI/Plater.hpp"
+#include "slic3r/GUI/Widgets/WebView.hpp"
 
 #include <BRepBndLib.hxx>
 #include <BRepGProp.hxx>
@@ -21,7 +27,12 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
 
+#include <nlohmann/json.hpp>
+#include <wx/aui/framemanager.h>
 #include <wx/filedlg.h>
+#include <wx/sizer.h>
+#include <wx/uri.h>
+#include <wx/webview.h>
 #include <wx/statline.h>
 
 #include <algorithm>
@@ -387,8 +398,13 @@ void DesignPanel::filuna_layout(CadUiLayout& l)
     CadUiItem hist = item("fcad_historia", "História", nullptr, "Ctrl+Alt+H");
     hist.run = [this] { CallAfter([this] { m_side_open = !m_side_open; filuna_sync_sidebar(); }); };
     hist.on  = [this] { return m_side_open; };
-    if (l.right_mid.empty()) l.right_mid = { { modes }, { shot }, { hist } };
-    else { l.right_mid[0] = { modes }; l.right_mid[1] = { shot }; l.right_mid[2] = { hist }; }
+    CadUiItem ia = item("fcad_ia", "Modelar com IA", nullptr);
+    ia.sub = [] { return pt("Claude ou ChatGPT"); };
+    ia.run = [this] { CallAfter([this] { filuna_toggle_ia(!m_ia_open); }); };
+    ia.on  = [this] { return m_ia_open; };
+    ia.dot = true;
+    if (l.right_mid.empty()) l.right_mid = { { modes }, { shot }, { hist, ia } };
+    else { l.right_mid[0] = { modes }; l.right_mid[1] = { shot }; l.right_mid[2] = { hist, ia }; }
 
     auto choice = [&](const char* t, std::function<bool()> on, std::function<void()> f) {
         CadUiRow r; r.title = pt(t); r.active = std::move(on); r.pick = later(std::move(f)); return r;
@@ -670,6 +686,206 @@ void DesignPanel::filuna_disconnect()
     for (auto it = drop.rbegin(); it != drop.rend(); ++it) m_viewport->remove_sketch_constraint(*it);
     set_status(StatusKind::Info, drop.empty() ? pt("Nada ligado a desconectar") : pt("Desconectado"));
     m_viewport->request_repaint();
+}
+
+// --- Modelar com IA ------------------------------------------------------------------------------
+// The customer's own Claude or ChatGPT (their subscription, no API key, no credit), opened inside
+// the Design tab, models through the Filuna connector: it reads filuna_cad and sends steps with
+// filuna_cad_fazer; the page "cad-ia.html" fetches them and runs them here, one by one, through the
+// same control methods the Design tab is built on (McpControl.cpp), each an Undo step.
+namespace {
+
+using json = nlohmann::json;
+
+const char* const kBlockedForAi[] = { "import_step", "import_mesh", "validate_against" };
+
+bool blocked_for_ai(const std::string& m)
+{
+    for (const char* b : kBlockedForAi)
+        if (m == b) return true;
+    return false;
+}
+
+class FilunaCadIaPainel : public wxPanel
+{
+public:
+    explicit FilunaCadIaPainel(wxWindow* parent) : wxPanel(parent, wxID_ANY)
+    {
+        SetBackgroundColour(*wxWHITE);
+        m_tela  = new FilunaPanel(this, "cad-ia.html");
+        auto* s = new wxBoxSizer(wxVERTICAL);
+        s->Add(m_tela, 1, wxEXPAND);
+        SetSizer(s);
+        g_atual = this;
+    }
+    ~FilunaCadIaPainel() override { if (g_atual == this) g_atual = nullptr; }
+    static FilunaCadIaPainel* atual() { return g_atual; }
+
+    void abrir_ia(const wxString& url)
+    {
+        if (m_ia == nullptr) {
+            m_ia = WebView::CreateWebView(this, url);
+            if (m_ia == nullptr)
+                throw std::runtime_error("O navegador embutido não abriu neste computador.");
+            filuna_ia_preparar_navegador(m_ia);
+            GetSizer()->Add(m_ia, 1, wxEXPAND);
+        } else if (!url.empty()) {
+            m_ia->LoadURL(url);
+        }
+        GetSizer()->GetItem(m_tela)->SetProportion(0);
+        m_tela->SetMinSize(wxSize(-1, FromDIP(132)));
+        m_ia->Show();
+        m_aberta = true;
+        Layout();
+    }
+    void fechar_ia()
+    {
+        if (m_ia != nullptr) m_ia->Hide();
+        GetSizer()->GetItem(m_tela)->SetProportion(1);
+        m_tela->SetMinSize(wxSize(-1, -1));
+        m_aberta = false;
+        Layout();
+    }
+    void comando(const std::string& c)
+    {
+        if (m_ia == nullptr) return;
+        if (c == "voltar" && m_ia->CanGoBack()) m_ia->GoBack();
+        else if (c == "recarregar") m_ia->Reload();
+        else if (c == "navegador") wxLaunchDefaultBrowser(m_ia->GetCurrentURL());
+    }
+    bool aberta() const { return m_aberta; }
+
+private:
+    static inline FilunaCadIaPainel* g_atual = nullptr;
+    FilunaPanel* m_tela{nullptr};
+    wxWebView*   m_ia{nullptr};
+    bool         m_aberta{false};
+};
+
+json rpc(const std::string& method, const json& params)
+{
+    json r;
+    try { r = json::parse(filuna_cad_rpc(method, params.dump())); }
+    catch (const std::exception& ex) { return json{{"ok", false}, {"erro", ex.what()}}; }
+    if (r.contains("error"))
+        return json{{"ok", false}, {"erro", r["error"].value("message", std::string("erro"))}};
+    return json{{"ok", true}, {"resultado", r.contains("result") ? r["result"] : json()}};
+}
+
+} // namespace
+
+void DesignPanel::filuna_toggle_ia(bool show)
+{
+    if (show && m_cad_ia == nullptr) {
+        m_cad_ia = new FilunaCadIaPainel(m_form->GetParent());
+        m_aui.AddPane(m_cad_ia, wxAuiPaneInfo().Name("filuna_cad_ia").Right().Layer(2).CaptionVisible(false)
+                                    .PaneBorder(false).CloseButton(false).Floatable(false)
+                                    .BestSize(FromDIP(wxSize(440, -1))).MinSize(FromDIP(wxSize(340, -1))));
+    }
+    if (m_cad_ia == nullptr) return;
+    m_ia_open = show;
+    m_aui.GetPane(m_cad_ia).Show(show);
+    m_aui.Update();
+    if (m_viewport) m_viewport->request_repaint();
+}
+
+std::string DesignPanel::filuna_mode_name() const
+{
+    if (m_choosing_sketch_plane) return "escolhendo o plano do esboço";
+    switch (m_ui_mode) {
+    case UiMode::Sketch:    return "esboço aberto";
+    case UiMode::Constrain: return "restrições do esboço";
+    default:                return m_active != Tool::None ? "ferramenta aberta: " + filuna_tool_title().ToStdString(wxConvUTF8) : "livre";
+    }
+}
+
+std::string DesignPanel::filuna_ia_extra(const std::string& m)
+{
+    auto ok = [](const char* t) { return json{{"ok", true}, {"resultado", t}}.dump(); };
+    if (m == "desfazer") { do_undo_redo(false); return ok("desfeito"); }
+    if (m == "refazer") { do_undo_redo(true); return ok("refeito"); }
+    if (m == "enquadrar") { if (m_viewport) m_viewport->fit_view(); return ok("vista ajustada"); }
+    if (m == "novo") { clear_document(); return ok("design vazio"); }
+    if (m == "mandar_para_preparacao") { on_commit(); return ok("mandado para a Preparação"); }
+    return std::string();
+}
+
+std::optional<json> filuna_cad_acao(const std::string& acao, const json& d)
+{
+    if (acao.rfind("cad.", 0) != 0 && acao.rfind("cadia.", 0) != 0) return std::nullopt;
+    DesignPanel* p = DesignPanel::if_built();
+
+    if (acao == "cad.estado") {
+        if (p == nullptr) return json{{"aberto", false}};
+        json scene = rpc("describe_scene", json::object());
+        json out{{"aberto", true}, {"modo", p->filuna_mode_name()}, {"cena", scene.value("resultado", json())}};
+        if (d.value("com_comandos", false)) {
+            json tools = rpc("describe_tools", json::object()).value("resultado", json::object());
+            if (tools.contains("tools") && tools["tools"].is_array()) {
+                json keep = json::array();
+                for (const json& t : tools["tools"])
+                    if (!blocked_for_ai(t.value("name", std::string()))) keep.push_back(t);
+                tools["tools"] = keep;
+            }
+            out["comandos"] = tools;
+        }
+        return out;
+    }
+    if (acao == "cad.executar") {
+        p = DesignPanel::ensure();
+        if (p == nullptr) throw std::runtime_error("O Design ainda não abriu.");
+        if (wxGetApp().mainframe != nullptr && !p->IsShownOnScreen())
+            wxGetApp().mainframe->select_filuna_tab(TAB_ID_DESIGN);
+        const json cmds = d.contains("comandos") ? d["comandos"] : json::array();
+        if (!cmds.is_array() || cmds.empty()) throw std::runtime_error("Nenhum passo para fazer.");
+        if (cmds.size() > 60) throw std::runtime_error("Passos demais num pedido.");
+        json passos = json::array();
+        bool tudo   = true;
+        for (const json& c : cmds) {
+            const std::string m = c.value("metodo", std::string());
+            const json params   = c.contains("parametros") && c["parametros"].is_object() ? c["parametros"] : json::object();
+            json r;
+            if (m.empty()) r = json{{"ok", false}, {"erro", "passo sem 'metodo'"}};
+            else if (blocked_for_ai(m)) r = json{{"ok", false}, {"erro", m + " não está liberado para a IA"}};
+            else {
+                const std::string extra = p->filuna_ia_extra(m);
+                r = extra.empty() ? rpc(m, params) : json::parse(extra);
+            }
+            r["metodo"] = m;
+            // A control method can answer ok at the envelope and still report a refusal inside.
+            if (r.value("ok", false) && r["resultado"].is_object() && r["resultado"].contains("ok") && r["resultado"]["ok"].is_boolean()
+                && !r["resultado"]["ok"].get<bool>())
+                r["ok"] = false;
+            passos.push_back(r);
+            if (!r.value("ok", false)) { tudo = false; break; }
+        }
+        return json{{"ok", tudo}, {"passos", passos}, {"modo", p->filuna_mode_name()}};
+    }
+    if (acao == "cadia.abrir") {
+        const wxString url = wxString::FromUTF8(d.value("url", std::string()));
+        if (!url.StartsWith("https://") || !filuna_site_de_ia(url)) throw std::runtime_error("Endereço de IA não aceito.");
+        FilunaCadIaPainel* painel = FilunaCadIaPainel::atual();
+        if (painel == nullptr) throw std::runtime_error("Abra 'Modelar com IA' no Design primeiro.");
+        painel->abrir_ia(url);
+        return json::object();
+    }
+    if (acao == "cadia.fechar_ia") {
+        if (FilunaCadIaPainel* painel = FilunaCadIaPainel::atual()) painel->fechar_ia();
+        return json::object();
+    }
+    if (acao == "cadia.comando") {
+        if (FilunaCadIaPainel* painel = FilunaCadIaPainel::atual()) painel->comando(d.value("comando", std::string()));
+        return json::object();
+    }
+    if (acao == "cadia.painel") {   // the page's own close button
+        const bool mostrar = d.value("mostrar", false);
+        wxGetApp().CallAfter([mostrar] { if (DesignPanel* dp = DesignPanel::if_built()) dp->filuna_toggle_ia(mostrar); });
+        return json::object();
+    }
+    if (acao == "cadia.estado")
+        return json{{"aberto", p != nullptr && p->filuna_ia_open()},
+                    {"ia_aberta", FilunaCadIaPainel::atual() != nullptr && FilunaCadIaPainel::atual()->aberta()}};
+    return std::nullopt;
 }
 
 }} // namespace Slic3r::GUI
