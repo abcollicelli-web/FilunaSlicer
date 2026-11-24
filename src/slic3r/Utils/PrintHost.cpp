@@ -2,6 +2,7 @@
 #include "FilunaGCodeSafety.hpp"
 
 #include "libslic3r/Config.hpp"
+#include <map>
 #include <string>
 #include <boost/algorithm/string/predicate.hpp>
 #include "slic3r/GUI/Gizmos/GLGizmoBase.hpp"
@@ -460,6 +461,20 @@ void PrintHostJobQueue::priv::remove_source()
     source_to_remove.clear();
 }
 
+// Filuna U1: o motivo que o cliente lê quando a conferência do G-code não consegue liberar o envio.
+// O código da conferência fica entre parênteses para o suporte.
+static std::string filuna_u1_motivo(const std::string& codigo)
+{
+    static const std::map<std::string, std::string> textos = {
+        {"GCODE_EMPTY_OR_TOO_LARGE", "o G-code está vazio ou passa de 50 MB"},
+        {"INVALID_POLICY", "a regra de conferência está fora dos limites"},
+        {"UNRESOLVED_GCODE_ARC", "o G-code tem arcos (G2/G3) que a conferência não consegue medir"},
+        {"NO_PRINTED_OBJECT_GEOMETRY", "nenhuma peça impressa foi encontrada no G-code"},
+    };
+    const auto it = textos.find(codigo);
+    return it == textos.end() ? codigo : it->second + " (" + codigo + ")";
+}
+
 bool PrintHostJobQueue::upload_job(PrintHostJob &job, PrintHost::ProgressFn progress_fn, PrintHost::ErrorFn error_fn, PrintHost::InfoFn info_fn)
 {
     // Captured before upload_data is moved into upload() below.
@@ -483,43 +498,47 @@ bool PrintHostJobQueue::upload_job(PrintHostJob &job, PrintHost::ProgressFn prog
         // Never repair/alter G-code, and never auto-accept a collision.
         if (job.filuna_effective_printer_model == "Snapmaker U1") {
             if (job.upload_data.use_3mf)
-                throw std::runtime_error("Filuna U1: 3MF upload cannot be cleared by the G-code geometry gate.");
+                throw std::runtime_error("Filuna U1: não dá para enviar um 3MF, porque a conferência de segurança só lê arquivo .gcode. Envio cancelado.");
             boost::filesystem::ifstream source(job.upload_data.source_path, std::ios::binary);
             if (!source)
-                throw std::runtime_error("Filuna U1: G-code missing or unreadable; upload cancelled.");
+                throw std::runtime_error("Filuna U1: o G-code não foi encontrado ou não pôde ser lido. Envio cancelado.");
             std::ostringstream original_bytes;
             original_bytes << source.rdbuf();
             if (!source.good() && !source.eof())
-                throw std::runtime_error("Filuna U1: G-code read error; upload cancelled.");
+                throw std::runtime_error("Filuna U1: erro ao ler o G-code. Envio cancelado.");
             const Filuna::Safety::Report safety = Filuna::Safety::inspect(original_bytes.str());
             if (safety.decision == Filuna::Safety::Report::Decision::Block) {
                 std::ostringstream risk;
-                risk << "Filuna U1: G-code travel may collide with previously printed geometry.";
+                risk << "Filuna U1: um deslocamento do G-code pode bater numa parte já impressa.";
                 if (!safety.collisions.empty()) {
                     const auto& hit = safety.collisions.front();
-                    risk << " Line " << hit.line << ", layer " << hit.layer
+                    risk << " Linha " << hit.line << ", camada " << hit.layer
                          << ", X" << hit.xyz[0] << " Y" << hit.xyz[1]
-                         << " Z" << hit.xyz[2] << "; printed top Z" << hit.printed_z;
+                         << " Z" << hit.xyz[2] << "; topo já impresso em Z" << hit.printed_z;
                 }
-                risk << ". G-code unchanged; upload cancelled pending verified official comparison and informed authorization.";
+                risk << ". O G-code não foi alterado. Envio cancelado até haver comparação oficial conferida e autorização consciente.";
                 throw std::runtime_error(risk.str());
             }
             if (safety.decision == Filuna::Safety::Report::Decision::Review)
-                throw std::runtime_error("Filuna U1: geometry cannot be validated; upload cancelled: " + safety.explanation);
+                throw std::runtime_error("Filuna U1: a geometria não pôde ser conferida. Envio cancelado: " + filuna_u1_motivo(safety.explanation) + ".");
             if (safety.decision == Filuna::Safety::Report::Decision::Warn) {
                 // info_fn queues an asynchronous GUI event: it cannot obtain
                 // informed consent before upload() starts on this worker.
                 // Fail closed until an authenticated, per-file approval and
                 // audit trail exist. No OEM G-code is altered or re-exported.
                 info_fn(wxString::FromUTF8("filuna_u1_safety_warning"),
-                        wxString::FromUTF8("Travel may leave the 270 mm volume. Review the Z-hop setting and the original OEM motion. Upload is blocked until this risk can be acknowledged before transfer; G-code is unchanged."));
-                throw std::runtime_error("Filuna U1: geometry warning requires confirmation before upload; authenticated approval is not available. G-code unchanged; upload cancelled.");
+                        wxString::FromUTF8("Um deslocamento pode sair do volume de 270 mm. Revise o ajuste de Z-hop e o movimento original do fabricante. O envio fica bloqueado até ser possível confirmar esse risco antes da transferência; o G-code não foi alterado."));
+                throw std::runtime_error("Filuna U1: o aviso de geometria precisa de confirmação antes do envio, e a aprovação autenticada ainda não está disponível. O G-code não foi alterado. Envio cancelado.");
             }
         }
         success = job.printhost->upload(std::move(job.upload_data), std::move(progress_fn), error_fn, std::move(info_fn));
     } catch (const std::exception &e) {
         error = e.what();
-        error_fn(error);
+        // As mensagens do Filuna vêm em UTF-8; a do sistema pode vir na página de código local.
+        wxString texto = wxString::FromUTF8(error.c_str());
+        if (texto.empty() && !error.empty())
+            texto = wxString(error);
+        error_fn(texto);
     }
 
     {

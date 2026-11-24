@@ -26,8 +26,8 @@ class NativeSendGateContract(unittest.TestCase):
         self.assertIn('Filuna::Safety::inspect(original_bytes.str())',upload)
         self.assertLess(upload.index('Filuna::Safety::inspect(original_bytes.str())'),
                         upload.index('job.printhost->upload('))
-        self.assertIn('throw std::runtime_error("Filuna U1: geometry cannot be validated',upload)
-        self.assertIn('G-code unchanged; upload cancelled',upload)
+        self.assertIn('throw std::runtime_error("Filuna U1: a geometria não pôde ser conferida',upload)
+        self.assertIn('O G-code não foi alterado. Envio cancelado',upload)
 
     def test_03_no_postprocessing_or_external_python(self):
         upload=CPP.split('bool PrintHostJobQueue::upload_job(',1)[1]
@@ -40,7 +40,7 @@ class NativeSendGateContract(unittest.TestCase):
     def test_04_unknown_snapmaker_3mf_blocks(self):
         upload=CPP.split('bool PrintHostJobQueue::upload_job(',1)[1]
         self.assertIn('if (job.upload_data.use_3mf)',upload)
-        self.assertIn('3MF upload cannot be cleared',upload)
+        self.assertIn('não dá para enviar um 3MF',upload)
         self.assertIn('original_bytes << source.rdbuf()',upload)
 
     def test_05_the_core_is_actual_cpp_not_a_python_hook(self):
@@ -70,9 +70,9 @@ class NativeSendGateContract(unittest.TestCase):
         self.assertIn(warn,upload)
         section=upload.split(warn,1)[1].split('success = job.printhost->upload(',1)[0]
         self.assertIn('filuna_u1_safety_warning',section)
-        self.assertIn('throw std::runtime_error("Filuna U1: geometry warning requires confirmation before upload',section)
-        self.assertIn('authenticated approval is not available',section)
-        self.assertIn('G-code unchanged; upload cancelled',section)
+        self.assertIn('throw std::runtime_error("Filuna U1: o aviso de geometria precisa de confirmação antes do envio',section)
+        self.assertIn('aprovação autenticada ainda não está disponível',section)
+        self.assertIn('O G-code não foi alterado. Envio cancelado',section)
         # No success path may be entered inside the WARN branch.
         self.assertNotIn('upload_allowed = true',section)
 
