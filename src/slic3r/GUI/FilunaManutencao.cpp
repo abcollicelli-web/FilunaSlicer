@@ -1,4 +1,5 @@
 #include "FilunaManutencao.hpp"
+#include <boost/nowide/convert.hpp>
 #include <set>
 #include <boost/algorithm/string/case_conv.hpp>
 
@@ -91,6 +92,33 @@ bool via_microsoft_store()
     return loja;
 #else
     return false;
+#endif
+}
+
+// Versão do pacote da Microsoft Store instalado ("2.5.87.0"), lida do nome completo do pacote
+// (AndersonBarroso.FilunaSlicer_2.5.87.0_x64__...). Vazio fora da Store. O site compara com a publicada sem depender
+// da tabela de builds (a 2.5.86 ficou sem aviso porque a tabela não tinha ela).
+std::string versao_da_loja()
+{
+#ifdef _WIN32
+    static const std::string versao = [] {
+        using Fn = LONG(WINAPI*)(UINT32*, PWSTR);
+        const HMODULE kernel = ::GetModuleHandleW(L"kernel32.dll");
+        const auto    fn     = kernel ? reinterpret_cast<Fn>(::GetProcAddress(kernel, "GetCurrentPackageFullName")) : nullptr;
+        UINT32        n      = 0;
+        if (fn == nullptr || fn(&n, nullptr) != ERROR_INSUFFICIENT_BUFFER || n == 0 || n > 1024)
+            return std::string();
+        std::wstring nome(n, L'\0');
+        if (fn(&n, &nome[0]) != ERROR_SUCCESS)
+            return std::string();
+        const std::string completo = boost::nowide::narrow(nome.c_str());
+        const auto        a        = completo.find('_');
+        const auto        b        = a == std::string::npos ? a : completo.find('_', a + 1);
+        return b == std::string::npos ? std::string() : completo.substr(a + 1, b - a - 1);
+    }();
+    return versao;
+#else
+    return std::string();
 #endif
 }
 
@@ -207,7 +235,7 @@ void preparar_em_segundo_plano();
 void verificar_agora()
 {
     if (via_microsoft_store())
-        return situacao("loja");
+        return situacao("loja", json{{"versao_loja", versao_da_loja()}});
     const std::string token = token_atual();
     if (token.empty() || g_ocupado.exchange(true))
         return;
@@ -838,7 +866,7 @@ void iniciar()
         g_token = texto_cfg("filuna_token");
     }
     if (via_microsoft_store()) {
-        situacao("loja");
+        situacao("loja", json{{"versao_loja", versao_da_loja()}});
 #ifdef _WIN32
         correcao_da_loja_iniciar();
 #endif
