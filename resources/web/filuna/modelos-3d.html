@@ -49,7 +49,8 @@ function desenhar() {
 }
 fetch("https://filuna3d.com/api/slicer/v1/modelos3d").then(function (r) { return r.json(); }).then(function (d) { itens = d.modelos || []; desenhar(); })
 	.catch(function () { document.getElementById("g").innerHTML = '<div class="vazio">Sem conexão: os modelos do catálogo aparecem quando o computador estiver na internet.</div>'; });
-Filuna.iniciar();
+Filuna.ouvir("secao", function (d) { if (Filuna.abrirModeloPedido(d.secao)) Filuna.nativo("secao.pendente").catch(function () {}); });
+Filuna.iniciar().then(function () { return Filuna.nativo("secao.pendente"); }).then(function (r) { Filuna.abrirModeloPedido(r.secao); }).catch(function () {});
 </script>
 </body>
 </html>

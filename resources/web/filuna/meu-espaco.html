@@ -82,7 +82,7 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 .etab td{padding:18px 20px;border-bottom:1px solid var(--line);vertical-align:middle}
 .etab .fn{display:flex;gap:12px;align-items:flex-start}.etab .fn .dot{width:18px;height:18px;margin-top:3px}
 .etab .fn b{font-size:16px}.etab .fn .s{color:var(--ink2);font-size:13px;margin:2px 0 6px}
-.etab .mat{display:inline-block;background:var(--rose);color:var(--magenta-deep);font-size:11.5px;font-weight:800;border-radius:7px;padding:3px 9px}
+.etab .mat,.ecard .mat{display:inline-block;background:var(--rose);color:var(--magenta-deep);font-size:11.5px;font-weight:800;border-radius:7px;padding:3px 9px}
 .etab .loc b{display:block}.etab .loc span{color:var(--ink2);font-size:13px}
 .etab .peso .bar{width:170px;margin-bottom:8px}.etab .peso span{display:block;color:var(--ink2);font-size:12.5px}
 .etab .custo b{font-size:16px;display:block}.etab .custo span{color:var(--ink2);font-size:12.5px}
@@ -92,6 +92,36 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 @media(max-width:1000px){.ekpis{grid-template-columns:1fr 1fr}}
 .ekpis>div{padding:20px 24px;border-right:1px solid var(--line)}.ekpis>div:last-child{border-right:0}
 .ekpis span{font-size:13px;font-weight:600}.ekpis b{display:block;font-size:28px;font-weight:800;margin:4px 0}.ekpis small{color:var(--ink2);font-size:12.5px}
+/* Estoque: grade, lista e miniaturas; a bobina mostra o que resta ao passar o mouse, focar ou clicar */
+.ebarra{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}.ebarra #sinc{margin:0}
+.emodos{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.emodos button{display:flex;align-items:center;gap:6px;height:38px;padding:0 12px;border:0;border-radius:9px;background:none;color:var(--ink2);font-weight:600;font-size:13.5px}
+.emodos button:hover{color:var(--ink)}.emodos button[aria-pressed=true]{background:var(--rose);color:var(--magenta-deep)}
+.emodos .ic{width:16px;height:16px}
+.bob-viva{position:relative;display:inline-flex;flex:none;border-radius:12px;cursor:help;outline:none}
+.bob-viva:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--magenta-deep)}
+.bob-viva::after{content:attr(data-dica);position:absolute;left:0;bottom:calc(100% + 2px);background:var(--ink);color:#fff;font-size:12px;font-weight:600;line-height:1.3;padding:6px 9px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:5}
+.bob-viva:hover::after,.bob-viva:focus-visible::after,.bob-viva.aberta::after{opacity:1}
+.egrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:20px}
+.ecard{border:1px solid var(--line);border-radius:16px;background:#fff;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.ecard.baixa,.emini .it.baixa{border-color:#F5C7AE}
+.ecard .topo{display:flex;gap:12px;align-items:center}
+.ecard .bobina-svg,.emini .bobina-svg{filter:drop-shadow(0 2px 3px rgba(44,42,40,.18))}
+.ecard .topo b{font-size:15.5px}.ecard .s{color:var(--ink2);font-size:12.5px;margin:2px 0 6px}
+.ecard .loc b{display:block;font-size:13.5px}.ecard .loc span{color:var(--ink2);font-size:12.5px}
+.ecard .peso{font-size:13.5px}.ecard .peso .bar{margin-bottom:6px}.ecard .peso span{display:block;color:var(--ink2);font-size:12.5px}
+.ecard .rod{display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+.ecard .custo b{display:block;font-size:15px}.ecard .custo span{color:var(--ink2);font-size:12.5px}
+.ecard .baixo{color:var(--warn);font-weight:600;font-size:12.5px;text-align:right}
+.ecard .ac{display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px;margin-top:auto}
+.emini{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-top:20px}
+.emini .it{border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;min-width:0}
+.emini .n{font-size:12.5px;font-weight:700;line-height:1.25;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.emini .s{font-size:11.5px;color:var(--muted)}
+.emini .ac{display:flex;gap:4px;margin-top:4px}
+.emini .ac button{width:28px;height:28px;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink2);display:flex;align-items:center;justify-content:center}
+.emini .ac button:hover{border-color:var(--magenta-deep);color:var(--magenta-deep)}.emini .ac .ic{width:15px;height:15px}
+.etab.epe{margin-top:14px}
 </style>
 </head>
 <body>
@@ -231,7 +261,7 @@ function visao() {
 	Filuna.nativo("estoque.listar").then(function (r) {
 		var b = (r.bobinas || []).map(bobinaParaLinha);
 		fs.innerHTML = b.length ? b.slice(0, 4).map(function (x) {
-			return '<div class="fil">' + Filuna.bobinaSVG(x.cor, 46) + '<div style="min-width:0"><div class="n">' + E((x.marca ? x.marca + " " : "") + x.material) +
+			return '<div class="fil">' + Filuna.bobinaSVG(x.cor, 46, x.peso_inicial_g ? pctRestante(x) / 100 : null) + '<div style="min-width:0"><div class="n">' + E((x.marca ? x.marca + " " : "") + x.material) +
 				'</div><div class="s">' + E(x.cor_nome) + "</div></div></div>"; }).join("")
 			: '<div class="vazio" style="grid-column:1/-1">Nenhuma bobina cadastrada.</div>';
 	}, function (e) { fs.innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
@@ -281,17 +311,78 @@ function bobinaParaLinha(x) {
 		restante_g: x.restante_g, peso_inicial_g: x.capacidade_g, preco_kg: x.preco_centavos && x.capacidade_g ? x.preco_centavos / 100 / x.capacidade_g * 1000 : null,
 		na_impressora: imp, prateleira: /^prateleira:/.test(x.local || "") ? x.local.slice(11) : "", estado: x.estado, estimado: x.estimado, nova: x.estado == "lacrada" };
 }
+// Três jeitos de ver o estoque; a escolha fica guardada neste computador.
+var MODOS_ESTOQUE = [
+	["grade", "Grade", '<svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>'],
+	["lista", "Lista", ICONE.linhas],
+	["mini", "Miniaturas", '<svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>']
+];
+function marcarModo() {
+	el().querySelectorAll("[data-modo]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.modo == st.modoEstoque ? "true" : "false"); });
+}
 function estoque() {
 	el().innerHTML = '<div class="etop"><div><div class="h1">Estoque de filamentos</div><div class="sub">Gerencie seus filamentos, quantidades e custos. A baixa é automática ao fim de cada impressão.</div></div>' +
 		'<button class="btn primario" id="novo" style="height:46px;padding:0 20px">+ Adicionar filamento</button></div>' +
-		'<div id="sinc" class="sub" style="margin:-4px 0 12px"></div><div id="r" class="carregando">Carregando…</div>';
+		'<div class="ebarra"><div id="sinc" class="sub"></div><div class="emodos" role="group" aria-label="Ver o estoque como">' +
+		MODOS_ESTOQUE.map(function (m) { return '<button data-modo="' + m[0] + '" aria-pressed="false">' + m[2] + E(m[1]) + "</button>"; }).join("") + "</div></div>" +
+		'<div id="r" class="carregando">Carregando…</div>';
 	document.getElementById("novo").onclick = function () { novaBobina(); };
+	el().querySelectorAll("[data-modo]").forEach(function (b) {
+		b.onclick = function () {
+			st.modoEstoque = b.dataset.modo;
+			Filuna.guardarLocal("estoque.modo", st.modoEstoque);
+			marcarModo();
+			if (st.bobinas && document.getElementById("r")) tabelaEstoque();
+		};
+	});
+	marcarModo();
 	estadoSincronizacao();
-	Promise.all([Filuna.nativo("estoque.listar", { incluir_arquivadas: !!st.verArquivadas }), prefs().catch(function () { return {}; })]).then(function (r) {
+	var modo = st.modoEstoque ? Promise.resolve(st.modoEstoque) : Filuna.lerLocal("estoque.modo").catch(function () { return null; });
+	Promise.all([Filuna.nativo("estoque.listar", { incluir_arquivadas: !!st.verArquivadas }), prefs().catch(function () { return {}; }), modo]).then(function (r) {
 		st.bobinas = (r[0].bobinas || []).map(bobinaParaLinha);
 		st.lim = r[1]["estoque.limite_baixo_g"] == null ? 150 : r[1]["estoque.limite_baixo_g"]; st.alerta = r[1]["estoque.alerta_baixo"] !== false;
+		st.modoEstoque = MODOS_ESTOQUE.some(function (m) { return m[0] == r[2]; }) ? r[2] : "lista";
+		marcarModo();
 		tabelaEstoque();
+		vigiarGiro();
 	}, function (e) { document.getElementById("r").outerHTML = '<div id="r" class="erro">' + E(e.erro || e.message) + "</div>"; });
+}
+
+// Bobinas imprimindo agora: carregadas numa impressora (local "impressora:<cadastro>:slot:N") cujo estado ao vivo é
+// "imprimindo". A impressora não diz qual entrada está puxando; se um trabalho aberto confirmou as bobinas da impressão,
+// giram só elas, senão giram todas as carregadas naquela impressora.
+function bobinasImprimindo(bobinas) {
+	return Promise.all([Filuna.nativo("dispositivos.estado"), Filuna.nativo("historico.listar", { limite: 30 }).catch(function () { return {}; })]).then(function (r) {
+		var imprimindo = {}, confirmadas = {}, porImpressora = {}, giram = {};
+		(r[0].impressoras || []).forEach(function (i) {
+			if (i.estado != "imprimindo") return;
+			if (i.cadastro_id) imprimindo[i.cadastro_id] = true;
+			if (i.dev_id) imprimindo[i.dev_id] = true;
+		});
+		(r[1].trabalhos || []).forEach(function (t) { if (t.estado == "imprimindo") (t.bobinas || []).forEach(function (id) { if (id) confirmadas[id] = true; }); });
+		bobinas.forEach(function (x) { if ((x.estado == "lacrada" || x.estado == "em_uso") && x.na_impressora && imprimindo[x.na_impressora]) (porImpressora[x.na_impressora] = porImpressora[x.na_impressora] || []).push(x.id); });
+		Object.keys(porImpressora).forEach(function (k) {
+			var l = porImpressora[k], so = l.filter(function (id) { return confirmadas[id]; });
+			(so.length ? so : l).forEach(function (id) { giram[id] = true; });
+		});
+		return giram;
+	}, function () { return {}; });
+}
+var giroTimer = 0;
+function naListaEstoque() { return st.secao == "estoque" && !!document.querySelector("#tela .emodos") && !!document.getElementById("r"); }
+function vigiarGiro() {
+	clearInterval(giroTimer);
+	var ver = function () {
+		if (st.secao != "estoque" || !naListaEstoque()) { clearInterval(giroTimer); return; }
+		if (document.hidden) return;
+		bobinasImprimindo(st.bobinas || []).then(function (g) {
+			if (Object.keys(g).sort().join() == Object.keys(st.giram || {}).sort().join()) return;
+			st.giram = g;
+			if (naListaEstoque()) tabelaEstoque();
+		});
+	};
+	ver();
+	giroTimer = setInterval(ver, 15000);
 }
 // Cópia no servidor (03-SERVIDOR §4): o mesmo estoque aparece no site e no app Filuna do celular.
 function mostrarVersoes() {
@@ -389,8 +480,21 @@ function etiquetaBobina(x) {
 
 // Cor da barra de peso: cores muito claras (branco, natural) ficam visíveis com um cinza quente.
 function corBarra(c) { var r = Filuna.corRgb(c || "#C2185B"); return (0.299 * r[0] + 0.587 * r[1] + 0.114 * r[2]) / 255 > 0.85 ? "#9A948C" : c; }
+function pctRestante(x) { return x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0; }
+// Bobina desenhada com o que resta (passos de 10%); passar o mouse, focar ou clicar mostra a porcentagem e os gramas.
+function bobinaViva(x, px) {
+	var gira = !!(st.giram && st.giram[x.id]);
+	var dica = Math.round(pctRestante(x)) + "% restante · " + Filuna.gramas(x.restante_g) + (x.peso_inicial_g ? " de " + Filuna.gramas(x.peso_inicial_g) : "") +
+		(x.estimado ? " (estimado)" : "") + (gira ? " · imprimindo agora" : "");
+	return '<span class="bob-viva' + (gira ? " girando" : "") + '" tabindex="0" role="img" aria-label="' + E(dica) + '" data-dica="' + E(dica) + '">' +
+		Filuna.bobinaSVG(x.cor, px, x.peso_inicial_g ? pctRestante(x) / 100 : null) + "</span>";
+}
+var ICONE_ESTOQUE = {
+	pesar: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 4v15M7 19.5h10M5 8h14M7.5 8 4.5 14a3 3 0 0 0 6 0zM16.5 8l-3 6a3 3 0 0 0 6 0z"/></svg>',
+	etiqueta: '<svg class="ic" viewBox="0 0 24 24"><path d="M3.5 12.2V4.5h7.7l9.3 9.3-7.7 7.7z"/><circle cx="8" cy="9" r="1.4"/></svg>'
+};
 function tabelaEstoque() {
-	var b = (st.bobinas || []).slice(), ord = st.ordem || "nome", lim = st.lim, alerta = st.alerta;
+	var b = (st.bobinas || []).slice(), ord = st.ordem || "nome", lim = st.lim, alerta = st.alerta, modo = st.modoEstoque || "lista";
 	var nome = function (x) { return (x.material + " " + x.cor_nome).toLowerCase(); };
 	b.sort(function (a, c) { return ord == "peso" ? a.restante_g - c.restante_g : ord == "numero" ? (a.numero < c.numero ? -1 : 1) : nome(a) < nome(c) ? -1 : nome(a) > nome(c) ? 1 : 0; });
 	var ativas = b.filter(function (x) { return x.estado == "lacrada" || x.estado == "em_uso"; });
@@ -399,22 +503,39 @@ function tabelaEstoque() {
 	var naImp = ativas.filter(function (x) { return x.na_impressora; }).length, total = 0, inicial = 0, valor = 0, temValor = false, nBaixo = 0;
 	ativas.forEach(function (x) { total += x.restante_g; inicial += x.peso_inicial_g || 0; var c = custo(x); if (c != null) { valor += c; temValor = true; } if (baixo(x)) nBaixo++; });
 	var ESTADO = { lacrada: "lacrada", em_uso: "em uso", vazia: "vazia", descartada: "arquivada" };
-	var linhas = b.map(function (x, k) {
-		var pct = x.peso_inicial_g ? Math.max(0, Math.min(100, x.restante_g / x.peso_inicial_g * 100)) : 0, c = custo(x);
-		return "<tr><td><div class='fn'>" + Filuna.bobinaSVG(x.cor, 64) + "<div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" +
-			E((x.marca ? x.marca + " · " : "") + "Bobina " + String(x.numero).replace("-", "\u2011") + " · " + (ESTADO[x.estado] || x.estado)) + "</div><span class='mat'>" + E(x.material) + "</span></div></div></td>" +
-			"<td class='loc'>" + (x.na_impressora ? "<b>Na impressora</b><span>" + E(x.na_impressora) + "</span>" : x.prateleira ? "<b>Guardada</b><span>" + E(x.prateleira) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>") + "</td>" +
-			"<td class='peso'><div class='bar'><i style='width:" + pct + "%;background:" + E(corBarra(x.cor)) + "'></i></div>" + Filuna.gramas(x.restante_g) + " / " + Filuna.gramas(x.peso_inicial_g) +
-			"<span>" + Math.round(pct) + "% restante" + (x.estimado ? " · estimado, pese para confirmar" : "") + "</span></td>" +
-			"<td class='custo'>" + (c != null ? "<b>" + Filuna.reais(c) + "</b><span>" + Filuna.reais(x.preco_kg / 1000) + " /g</span>" : "<b>—</b><span>sem preço cadastrado</span>") + "</td>" +
-			"<td>" + (baixo(x) ? "<span class='baixo'>Estoque baixo<br>&lt; " + E(lim) + " g</span>" : "") + "</td>" +
-			"<td style='white-space:nowrap'>" + (x.estado == "descartada" ? "" : "<button class='btn peq' data-pesar='" + k + "'>Pesar</button> <button class='btn peq' data-etq='" + k + "'>Etiqueta</button> <button class='btn peq' data-arq='" + k + "'>Arquivar</button>") + "</td></tr>";
-	}).join("");
-	document.getElementById("r").outerHTML = '<div id="r">' + (b.length ?
-		'<div class="etab"><table><tr><th>Filamento</th><th>Localização</th><th>Peso restante</th><th>Custo</th><th></th><th></th></tr>' + linhas + "</table>" +
-		'<div class="pe"><span>' + ativas.length + (ativas.length == 1 ? " bobina ativa" : " bobinas ativas") + '</span><label class="linha" style="gap:8px"><input type="checkbox" id="arq"' + (st.verArquivadas ? " checked" : "") + '> Mostrar vazias e arquivadas</label>' +
+	var descricao = function (x) { return E((x.marca ? x.marca + " · " : "") + "Bobina " + String(x.numero).replace("-", "‑") + " · " + (ESTADO[x.estado] || x.estado)); };
+	var local = function (x) { return x.na_impressora ? "<b>Na impressora</b><span>" + E(x.na_impressora) + "</span>" : x.prateleira ? "<b>Guardada</b><span>" + E(x.prateleira) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>"; };
+	var peso = function (x) {
+		var pct = pctRestante(x);
+		return "<div class='bar'><i style='width:" + pct + "%;background:" + E(corBarra(x.cor)) + "'></i></div>" + Filuna.gramas(x.restante_g) + " / " + Filuna.gramas(x.peso_inicial_g) +
+			"<span>" + Math.round(pct) + "% restante" + (x.estimado ? " · estimado, pese para confirmar" : "") + "</span>";
+	};
+	var preco = function (x) { var c = custo(x); return c != null ? "<b>" + Filuna.reais(c) + "</b><span>" + Filuna.reais(x.preco_kg / 1000) + " /g</span>" : "<b>—</b><span>sem preço cadastrado</span>"; };
+	var aviso = function (x) { return baixo(x) ? "<span class='baixo'>Estoque baixo<br>&lt; " + E(lim) + " g</span>" : ""; };
+	var acoes = function (x, k) { return x.estado == "descartada" ? "" : "<button class='btn peq' data-pesar='" + k + "'>Pesar</button> <button class='btn peq' data-etq='" + k + "'>Etiqueta</button> <button class='btn peq' data-arq='" + k + "'>Arquivar</button>"; };
+	var linha = function (x, k) {
+		return "<tr><td><div class='fn'>" + bobinaViva(x, 64) + "<div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" + descricao(x) + "</div><span class='mat'>" + E(x.material) + "</span></div></div></td>" +
+			"<td class='loc'>" + local(x) + "</td><td class='peso'>" + peso(x) + "</td><td class='custo'>" + preco(x) + "</td><td>" + aviso(x) + "</td>" +
+			"<td style='white-space:nowrap'>" + acoes(x, k) + "</td></tr>";
+	};
+	var cartao = function (x, k) {
+		return "<div class='ecard" + (baixo(x) ? " baixa" : "") + "'><div class='topo'>" + bobinaViva(x, 92) + "<div style='min-width:0'><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" + descricao(x) +
+			"</div><span class='mat'>" + E(x.material) + "</span></div></div><div class='loc'>" + local(x) + "</div><div class='peso'>" + peso(x) + "</div>" +
+			"<div class='rod'><div class='custo'>" + preco(x) + "</div>" + aviso(x) + "</div>" + (x.estado == "descartada" ? "" : "<div class='ac'>" + acoes(x, k) + "</div>") + "</div>";
+	};
+	var mini = function (x, k) {
+		var titulo = x.material + " " + x.cor_nome;
+		return "<div class='it" + (baixo(x) ? " baixa" : "") + "'>" + bobinaViva(x, 60) + "<div class='n' title='" + E(titulo) + "'>" + E(titulo) + "</div><div class='s'>" + Math.round(pctRestante(x)) + "% · " + Filuna.gramas(x.restante_g) + "</div>" +
+			(x.estado == "descartada" ? "" : "<div class='ac'><button data-pesar='" + k + "' title='Pesar' aria-label='Pesar " + E(x.numero) + "'>" + ICONE_ESTOQUE.pesar + "</button><button data-etq='" + k + "' title='Etiqueta' aria-label='Etiqueta de " + E(x.numero) + "'>" + ICONE_ESTOQUE.etiqueta +
+			"</button><button data-arq='" + k + "' title='Arquivar' aria-label='Arquivar " + E(x.numero) + "'>" + ICONE.caixa + "</button></div>") + "</div>";
+	};
+	var pe = '<div class="pe"><span>' + ativas.length + (ativas.length == 1 ? " bobina ativa" : " bobinas ativas") + '</span><label class="linha" style="gap:8px"><input type="checkbox" id="arq"' + (st.verArquivadas ? " checked" : "") + "> Mostrar vazias e arquivadas</label>" +
 		'<label class="linha" style="gap:8px">Ordenar por: <select id="ordem" style="width:auto">' +
-		[["nome", "Nome"], ["peso", "Peso restante"], ["numero", "Código da bobina"]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] == ord ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></label></div></div>" +
+		[["nome", "Nome"], ["peso", "Peso restante"], ["numero", "Código da bobina"]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] == ord ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></label></div>";
+	var corpo = modo == "grade" ? '<div class="egrade">' + b.map(cartao).join("") + '</div><div class="etab epe">' + pe + "</div>"
+		: modo == "mini" ? '<div class="emini">' + b.map(mini).join("") + '</div><div class="etab epe">' + pe + "</div>"
+		: '<div class="etab"><table><tr><th>Filamento</th><th>Localização</th><th>Peso restante</th><th>Custo</th><th></th><th></th></tr>' + b.map(linha).join("") + "</table>" + pe + "</div>";
+	document.getElementById("r").outerHTML = '<div id="r">' + (b.length ? corpo +
 		'<div class="ekpis"><div><span>Bobinas ativas</span><b>' + ativas.length + "</b><small>" + naImp + " na impressora · " + (ativas.length - naImp) + " guardada(s)</small></div>" +
 		"<div><span>Peso total restante</span><b>" + Filuna.gramas(total) + "</b><small>de " + Filuna.gramas(inicial) + "</small></div>" +
 		"<div><span>Valor total estimado</span><b>" + (temValor ? Filuna.reais(valor) : "—") + "</b><small>" + (temValor ? "pelo preço por kg das bobinas" : "cadastre o preço por kg") + "</small></div>" +
@@ -425,6 +546,10 @@ function tabelaEstoque() {
 	el().querySelectorAll("[data-pesar]").forEach(function (x) { x.onclick = function () { pesarBobina(b[+x.dataset.pesar]); }; });
 	el().querySelectorAll("[data-etq]").forEach(function (x) { x.onclick = function () { etiquetaBobina(b[+x.dataset.etq]); }; });
 	el().querySelectorAll("[data-arq]").forEach(function (x) { x.onclick = function () { arquivarBobina(b[+x.dataset.arq]); }; });
+	el().querySelectorAll(".bob-viva").forEach(function (s) {
+		s.onclick = function (ev) { ev.stopPropagation(); s.classList.toggle("aberta"); };
+		s.onblur = function () { s.classList.remove("aberta"); };
+	});
 }
 
 // Histórico de impressões (02-DADOS §7): onde a impressora não avisa o fim, o fim é marcado aqui.
@@ -619,7 +744,9 @@ function ia_chat() { var c = document.getElementById("chat"); if (c) { c.innerHT
 Filuna.iniciar().then(function () {
 	return Promise.all([iniciais(), Filuna.nativo("secao.pendente").then(function (r) { if (r.secao) st.secao = r.secao; }).catch(function () {})]);
 }).then(desenhar);
-Filuna.ouvir("secao", function (d) { if (d.secao) { Filuna.nativo("secao.pendente").catch(function () {}); st.secao = d.secao; desenhar(); } });
+// Seções de outras abas ("unidade:…", "modelo:…", "/farm…", "ferramentas") também chegam aqui: não são desta tela.
+function secaoDestaTela(s) { return !!s && !/[:\/]/.test(s) && s != "ferramentas"; }
+Filuna.ouvir("secao", function (d) { if (secaoDestaTela(d.secao)) { Filuna.nativo("secao.pendente").catch(function () {}); st.secao = d.secao; desenhar(); } });
 Filuna.ouvir("preferencias", function () { st.prefs = null; if (st.secao == "estoque") desenhar(); });
 Filuna.ouvir("conexao", function () { menu(); });
 Filuna.ouvir("sincronizado", function () { if (st.secao == "estoque" || st.secao == "visao") desenhar(); });

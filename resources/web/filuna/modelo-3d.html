@@ -142,6 +142,7 @@ function ligar() {
 }
 Filuna.ouvir("modelo3d.aberto", function () { var bt = document.getElementById("btImprimir"); if (bt) { bt.disabled = false; bt.textContent = "Imprimir neste Filuna Slicer"; } msg("Modelo aberto na Preparação, pronto para imprimir.", true); });
 Filuna.ouvir("modelo3d.erro", function (d) { var bt = document.getElementById("btImprimir"); if (bt) { bt.disabled = false; bt.textContent = "Imprimir neste Filuna Slicer"; } msg("Não foi possível abrir: " + (d.erro || "erro"), false); });
+Filuna.ouvir("secao", function (d) { if (Filuna.abrirModeloPedido(d.secao)) Filuna.nativo("secao.pendente").catch(function () {}); });
 Filuna.iniciar().then(function () {
 	var url = "https://filuna3d.com/api/slicer/v1/modelos3d/" + slug + "/pagina";
 	return (Filuna.temToken() ? Filuna.api("GET", "/modelos3d/" + slug + "/pagina") : fetch(url).then(function (r) { return r.json(); }));
