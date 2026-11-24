@@ -15,6 +15,7 @@
 
 #include "FilunaMqttClient.hpp"
 #include "FilunaBambuEmmc.hpp"
+#include "FilunaGcode3mf.hpp"
 #include "FilunaFtps.hpp"
 #include "FilunaRede.hpp"
 
@@ -409,37 +410,67 @@ bool FilunaBambuLanAgent::upload_emmc(const PrintParams& p, const std::string& l
     return false;
 }
 
-int FilunaBambuLanAgent::start_local_print(PrintParams params, OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn)
+bool FilunaBambuLanAgent::enviar_arquivo(const PrintParams& params, OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, bool& emmc,
+                                         std::string& remote, std::string& nome_emmc, std::string& error)
 {
-    const std::string local  = params.filename;
-    const std::string remote = sanitize(params.dst_file.empty() ? boost::filesystem::path(local).filename().string() : params.dst_file);
-    if (update_fn)
-        update_fn(PrintingStageCreate, 0, "");
-    // Cartão (FTPS 990) ou memória interna (porta 6000). Começa pelo que o programa indicou (impressora sem cartão que
-    // imprime da memória interna: try_emmc_print) e, se falhar, tenta o outro: a Farm e a impressão de teste não sabem
-    // se há cartão.
-    std::string nome_emmc = remote;
-    if (!boost::iends_with(nome_emmc, ".gcode.3mf") && boost::iends_with(nome_emmc, ".3mf"))
+    const std::string local = params.filename;
+    remote = sanitize(params.dst_file.empty() ? boost::filesystem::path(local).filename().string() : params.dst_file);
+    // Memória interna (porta 6000) só aceita .gcode.3mf. O 3MF do projeto já é; o G-code solto da Farm, da impressão de
+    // teste e do envio direto do Filuna é empacotado como a mesa 1 (FilunaGcode3mf), como a P2S do Fernando pediu.
+    nome_emmc                = remote;
+    std::string local_emmc   = local, embrulho;
+    if (boost::iends_with(nome_emmc, ".gcode") || boost::iends_with(nome_emmc, ".gco")) {
+        nome_emmc = boost::filesystem::path(nome_emmc).stem().string() + ".gcode.3mf";
+        embrulho  = local + ".filuna.3mf";
+    } else if (!boost::iends_with(nome_emmc, ".gcode.3mf") && boost::iends_with(nome_emmc, ".3mf"))
         nome_emmc = nome_emmc.substr(0, nome_emmc.size() - 4) + ".gcode.3mf";
-    const bool  pode_emmc = boost::iends_with(nome_emmc, ".gcode.3mf");
-    std::string error, outro;
-    bool        emmc = params.try_emmc_print && pode_emmc;
-    bool        ok   = emmc ? upload_emmc(params, local, nome_emmc, update_fn, cancel_fn, error)
-                            : upload_ftps(params, local, remote, update_fn, cancel_fn, error);
+    bool pode_emmc = boost::iends_with(nome_emmc, ".gcode.3mf");
+    // Começa pelo que a impressora indicou: sem cartão (try_emmc_print, ou "sdcard": false nas mensagens dela) vai direto
+    // para a memória interna; senão o cartão. Se falhar, tenta o outro (a Farm e o teste não sabem se há cartão).
+    emmc = pode_emmc && (params.try_emmc_print || m_sem_cartao.load());
+    const auto emmc_agora = [&](std::string& erro) {
+        if (!embrulho.empty() && local_emmc == local) {
+            const std::string falha = FilunaGcode3mf::embrulhar(local, embrulho);
+            if (!falha.empty()) {
+                erro = falha;
+                return false;
+            }
+            local_emmc = embrulho;
+        }
+        return upload_emmc(params, local_emmc, nome_emmc, update_fn, cancel_fn, erro);
+    };
+    std::string outro;
+    bool        ok = emmc ? emmc_agora(error) : upload_ftps(params, local, remote, update_fn, cancel_fn, error);
     if (!ok && pode_emmc && !(cancel_fn && cancel_fn())) {
         emmc = !emmc;
-        ok   = emmc ? upload_emmc(params, local, nome_emmc, update_fn, cancel_fn, outro)
-                    : upload_ftps(params, local, remote, update_fn, cancel_fn, outro);
+        ok   = emmc ? emmc_agora(outro) : upload_ftps(params, local, remote, update_fn, cancel_fn, outro);
         if (!ok)
             error += "; " + outro;
     }
-    if (!ok) {
+    if (!embrulho.empty()) {
+        boost::system::error_code ec;
+        boost::filesystem::remove(embrulho, ec);
+    }
+    BOOST_LOG_TRIVIAL(info) << "Filuna Bambu envio " << (ok ? "ok" : "falhou") << " por " << (emmc ? "memória interna (" + nome_emmc + ")" : "cartão")
+                            << (error.empty() ? std::string() : ": " + error);
+    return ok;
+}
+
+int FilunaBambuLanAgent::start_local_print(PrintParams params, OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn)
+{
+    if (update_fn)
+        update_fn(PrintingStageCreate, 0, "");
+    bool        emmc = false;
+    std::string remote, nome_emmc, error;
+    if (!enviar_arquivo(params, update_fn, cancel_fn, emmc, remote, nome_emmc, error)) {
         if (update_fn)
             update_fn(PrintingStageERROR, BAMBU_NETWORK_ERR_FTP_UPLOAD_FAILED, error);
         return BAMBU_NETWORK_ERR_FTP_UPLOAD_FAILED;
     }
     if (update_fn)
         update_fn(PrintingStageSending, 0, "");
+    if (emmc && nome_emmc != remote && !boost::iends_with(remote, ".3mf"))
+        params.plate_index = 1; // G-code solto empacotado: é sempre a mesa 1 do arquivo
     const std::string cmd = emmc ? project_file_command(params, nome_emmc, FilunaBambuEmmc::endereco(nome_emmc)) : project_file_command(params, remote);
     if (send_message_to_printer(params.dev_id, cmd, 0, 0) != BAMBU_NETWORK_SUCCESS) {
         if (update_fn)
@@ -463,9 +494,10 @@ int FilunaBambuLanAgent::start_local_print_with_record(PrintParams params, OnUpd
 
 int FilunaBambuLanAgent::start_send_gcode_to_sdcard(PrintParams params, OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, OnWaitFn)
 {
-    const std::string remote = sanitize(params.dst_file.empty() ? boost::filesystem::path(params.filename).filename().string() : params.dst_file);
-    std::string       error;
-    if (!upload_ftps(params, params.filename, remote, update_fn, cancel_fn, error)) {
+    // "Só enviar": vai para o cartão ou, sem cartão, para a memória interna (a impressora mostra o arquivo lá).
+    bool        emmc = false;
+    std::string remote, nome_emmc, error;
+    if (!enviar_arquivo(params, update_fn, cancel_fn, emmc, remote, nome_emmc, error)) {
         if (update_fn)
             update_fn(PrintingStageERROR, BAMBU_NETWORK_ERR_FTP_UPLOAD_FAILED, error);
         return BAMBU_NETWORK_ERR_FTP_UPLOAD_FAILED;
@@ -501,6 +533,13 @@ void FilunaBambuLanAgent::dispatch_local_connect(int state, const std::string& d
 
 void FilunaBambuLanAgent::dispatch_message(const std::string& dev_id, const std::string& payload)
 {
+    // A impressora diz se tem cartão: sem ele, o próximo envio já começa pela memória interna (sem esperar o FTPS falhar).
+    if (payload.find("\"sdcard\"") != std::string::npos) {
+        if (payload.find("\"sdcard\":false") != std::string::npos || payload.find("\"sdcard\": false") != std::string::npos)
+            m_sem_cartao = true;
+        else if (payload.find("\"sdcard\":true") != std::string::npos || payload.find("\"sdcard\": true") != std::string::npos)
+            m_sem_cartao = false;
+    }
     OnMessageFn   local, cloud;
     QueueOnMainFn q;
     {

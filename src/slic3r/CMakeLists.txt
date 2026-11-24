@@ -834,6 +834,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/HexFile.cpp
     Utils/HexFile.hpp
     Utils/FilunaBambuLanAgent.cpp
+    Utils/FilunaGcode3mf.cpp
+    Utils/FilunaGcode3mf.hpp
     Utils/FilunaBambuLanAgent.hpp
     Utils/FilunaElegooCC2Agent.cpp
     Utils/FilunaAnycubicLanAgent.cpp

@@ -88,6 +88,11 @@ private:
     // Memória interna (P2S, H2D... sem cartão): porta 6000, FilunaBambuEmmc.hpp.
     bool upload_emmc(const PrintParams& params, const std::string& local_path, const std::string& remote_name,
                      OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, std::string& error);
+    // Envia para o cartão ou para a memória interna, o que a impressora aceitar. O G-code solto (Farm, impressão de
+    // teste, envio direto do Filuna) vira .gcode.3mf para a memória interna. Devolve se foi pela memória interna e,
+    // em nome_emmc, o nome com que o arquivo ficou lá.
+    bool enviar_arquivo(const PrintParams& params, OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn, bool& emmc,
+                        std::string& remote, std::string& nome_emmc, std::string& error);
     void dispatch_local_connect(int state, const std::string& dev_id, const std::string& msg);
     void dispatch_message(const std::string& dev_id, const std::string& payload);
     void discovery_loop();
@@ -118,6 +123,8 @@ private:
     std::atomic<bool> m_varrer_agora{false}; // start_discovery com a busca já rodando: varre na próxima volta
     std::thread       m_discovery;
     std::map<std::string, std::string> m_seen; // serial -> último JSON de descoberta
+    // A impressora avisou que está sem cartão ("sdcard": false): o envio já começa pela memória interna.
+    std::atomic<bool> m_sem_cartao{false};
 };
 
 } // namespace Slic3r
