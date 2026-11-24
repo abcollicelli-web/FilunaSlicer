@@ -807,6 +807,10 @@ std::string DesignPanel::filuna_ia_extra(const std::string& m)
     if (m == "enquadrar") { if (m_viewport) m_viewport->fit_view(); return ok("vista ajustada"); }
     if (m == "novo") { clear_document(); return ok("design vazio"); }
     if (m == "mandar_para_preparacao") { on_commit(); return ok("mandado para a Preparação"); }
+    // What the customer left open (a sketch, a tool card) would refuse every modelling step: the AI
+    // closes it the way the customer would, keeping it (concluir) or dropping it (cancelar).
+    if (m == "concluir") { tool_confirm(); return ok("esboço ou ferramenta concluída"); }
+    if (m == "cancelar") { tool_cancel(); return ok("esboço ou ferramenta cancelada"); }
     return std::string();
 }
 
