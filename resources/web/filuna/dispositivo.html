@@ -934,8 +934,9 @@ function daMarca(a) {
 	});
 }
 // Diagnóstico: a busca na rede terminou sem achar a impressora — vai para o servidor com marca, modelo e agente.
-function semImpressoraNaRede(a, r) {
-	Filuna.nativo("diagnostico.enviar", { etapa: "dispositivos.procurar", mensagem: "Busca na rede local terminou sem achar a impressora",
+// Aos 16 s ainda procura (a varredura da rede pode levar mais); só no fim (cerca de 4 min) é "terminou sem achar".
+function semImpressoraNaRede(a, r, fim) {
+	Filuna.nativo("diagnostico.enviar", { etapa: "dispositivos.procurar", mensagem: fim ? "Busca na rede local terminou sem achar a impressora (4 min)" : "Busca na rede local: 16 s sem achar a impressora, continua procurando",
 		contexto: { fabricante: a.marca && a.marca.id, modelo: a.modelo && a.modelo.nome, perfil: a.perfil || "", agente: (r && r.agente) || "", busca_klipper: (r && r.busca_klipper) || null } }).catch(function () {});
 }
 function pollDescobertas() {
@@ -944,7 +945,8 @@ function pollDescobertas() {
 		var achadas = r.impressoras || [];
 		if (achadas.length) { a.achadas = achadas; desenhar(); return; }
 		a.tentativas++;
-		if (a.tentativas == 8) { semImpressoraNaRede(a, r); desenhar(); }
+		if (a.tentativas == 8) { semImpressoraNaRede(a, r, false); desenhar(); }
+		if (a.tentativas == 89) semImpressoraNaRede(a, r, true);
 		if (a.tentativas < 90) setTimeout(pollDescobertas, a.tentativas < 8 ? 2000 : 3000);
 	}).catch(function () {});
 }

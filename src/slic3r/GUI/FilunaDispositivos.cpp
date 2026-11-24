@@ -868,9 +868,31 @@ bool ip_da_rede_local(const std::string& ip)
     return n[0] == 10 || (n[0] == 192 && n[1] == 168) || (n[0] == 172 && n[1] >= 16 && n[1] <= 31) || (n[0] == 169 && n[1] == 254);
 }
 
-json conectar_ip(const std::string& modulo_id, const std::string& modelo, const std::string& ip, const std::string& codigo,
+std::string cadastro_de(const std::string& dev_id);
+
+// Anycubic no Modo LAN: o número de série (cn) vem em GET http://<ip>:18910/info. Vazio se ela não respondeu.
+std::string serie_anycubic(const std::string& ip)
+{
+    std::string serie;
+    Http::get("http://" + ip + ":18910/info")
+        .timeout_connect(4)
+        .timeout_max(8)
+        .on_complete([&serie](std::string corpo, unsigned) {
+            const json j = json::parse(corpo, nullptr, false);
+            if (j.is_object() && j.contains("cn") && j["cn"].is_string())
+                serie = j["cn"].get<std::string>();
+        })
+        .perform_sync();
+    return serie.size() >= 6 && serie.size() <= 64 ? serie : std::string();
+}
+
+json conectar_ip(const std::string& modulo_id, const std::string& modelo, const std::string& ip_digitado, const std::string& codigo,
                  const std::string& nome, const std::string& serie_informada)
 {
+    // "10.0.0.43." (ponto no fim, copiado da tela) ou espaços: limpa antes de conferir (Luara, 19/11)
+    std::string ip = boost::trim_copy(ip_digitado);
+    while (!ip.empty() && (ip.back() == '.' || ip.back() == ','))
+        ip.pop_back();
     DeviceManager* dev = wxGetApp().getDeviceManager();
     if (dev == nullptr)
         return {{"erro", "Gerenciador de dispositivos indisponível."}};
@@ -891,6 +913,23 @@ json conectar_ip(const std::string& modulo_id, const std::string& modelo, const 
         if (serie.size() < 10)
             return {{"erro", "Não achei uma Bambu Lab no IP " + ip + ". Confira o IP e se o Modo LAN (Somente LAN) está ligado na impressora."}};
         m.dev_id = serie;
+    } else if (modulo_id == "anycubic") {
+        // Pelo número de série, e não pelo IP: se o roteador trocar o IP, a mesma Kobra continua com o mesmo cadastro
+        // (antes ficava "ip-10.0.0.151" e a Kobra X da Luara não respondia mais nesse endereço). Cadastro antigo pelo IP
+        // do mesmo modelo, único: passa a ser o desta série.
+        const std::string serie = serie_anycubic(ip);
+        if (!serie.empty()) {
+            m.dev_id = serie;
+            AppConfig* cfg = wxGetApp().app_config;
+            if (cfg != nullptr && cadastro_de(serie).empty()) {
+                std::vector<std::string> mesmos;
+                for (const auto& imp : filuna_db().impressoras())
+                    if (boost::iequals(imp.fabricante, "anycubic") && boost::iequals(imp.modelo, modelo))
+                        mesmos.push_back(imp.id);
+                if (mesmos.size() == 1)
+                    cfg->set(chave_vinculo(serie), mesmos.front());
+            }
+        }
     } else if (modulo_id == "flashforge") {
         // A API local da Flashforge só responde com o número de série + código de verificação. Antes o cadastro pelo
         // IP usava "ip-<ip>" no lugar da série e a impressora recusava sempre. A série vem da pergunta direta ao IP.
