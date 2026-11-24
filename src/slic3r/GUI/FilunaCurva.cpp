@@ -164,7 +164,9 @@ void avisar(const std::string& texto, const std::string& link, const fsf::path& 
     const wxString caminho = wxString::FromUTF8(gcode.string());
     nm->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::HintNotificationLevel, texto, link,
                           [caminho](wxEvtHandler*) {
-                              start_new_gcodeviewer(&caminho);
+                              // o Filuna não traz o visualizador separado da Bambu: outra janela do próprio
+                              // Filuna Slicer abre o G-code na Pré-visualização, sem mexer no projeto aberto
+                              start_new_slicer(&caminho, false);
                               return false;
                           });
 }
@@ -242,7 +244,10 @@ void depois_de_fatiar(bool ok)
         else if (curvo.cabeca.empty() || curvo.cabeca == "generic-conservative")
             motivo = "não há o modelo da cabeça desta impressora, então não dá para garantir que o bico não bate";
         else if (!curvo.verificou || curvo.batidas != 0 || curvo.folga_mm < FOLGA_MINIMA_MM)
-            motivo = (boost::format("a checagem de colisão não passou (choques %1%, folga mínima %2$.2f mm)") % curvo.batidas % curvo.folga_mm).str();
+            motivo = curvo.batidas != 0
+                         ? (boost::format("o bico bateria na peça em %1% movimentos") % curvo.batidas).str()
+                         : (boost::format("a cabeça passaria a só %1$.2f mm da peça; o mínimo seguro é %2$.1f mm. "
+                                          "Deixe uma peça só ou afaste as peças") % curvo.folga_mm % FOLGA_MINIMA_MM).str();
         else if (curvo.cobertura < AREA_MINIMA)
             motivo = (boost::format("o topo curvo cobre só %1$.0f%% da peça") % (curvo.cobertura * 100)).str();
 
