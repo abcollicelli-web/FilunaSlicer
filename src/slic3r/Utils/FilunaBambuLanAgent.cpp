@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <ctime>
 #include <sstream>
 
 #include <boost/algorithm/string.hpp>
@@ -95,7 +96,9 @@ std::string FilunaBambuLanAgent::ssdp_to_discovery_json(const std::string& d, co
 std::string FilunaBambuLanAgent::project_file_command(const PrintParams& p, const std::string& remote_name, const std::string& url)
 {
     nlohmann::json print;
-    print["sequence_id"]    = "0";
+    // Um número por pedido: repetir o mesmo (era sempre "0") pode fazer a impressora recusar (err 84033544).
+    static std::atomic<unsigned> seq{unsigned(std::time(nullptr) % 100000) * 10};
+    print["sequence_id"]    = std::to_string(++seq);
     print["command"]        = "project_file";
     print["param"]          = "Metadata/plate_" + std::to_string(std::max(1, p.plate_index)) + ".gcode";
     print["project_id"]     = "0";
@@ -472,11 +475,39 @@ int FilunaBambuLanAgent::start_local_print(PrintParams params, OnUpdateStatusFn 
     if (emmc && nome_emmc != remote && !boost::iends_with(remote, ".3mf"))
         params.plate_index = 1; // G-code solto empacotado: é sempre a mesa 1 do arquivo
     const std::string cmd = emmc ? project_file_command(params, nome_emmc, FilunaBambuEmmc::endereco(nome_emmc)) : project_file_command(params, remote);
+    const std::string seq = nlohmann::json::parse(cmd, nullptr, false)["print"].value("sequence_id", std::string());
+    {
+        std::lock_guard<std::mutex> l(m_resposta_mtx);
+        m_resposta_seq = seq;
+        m_resposta.clear();
+    }
     if (send_message_to_printer(params.dev_id, cmd, 0, 0) != BAMBU_NETWORK_SUCCESS) {
         if (update_fn)
             update_fn(PrintingStageERROR, BAMBU_NETWORK_ERR_CONNECT_FAILED, "impressora desconectada");
         return BAMBU_NETWORK_ERR_CONNECT_FAILED;
     }
+    // Espera a impressora responder ao pedido (até 15 s). Antes o envio dava certo assim que o pedido saía, mesmo se a
+    // impressora recusasse. Sem resposta no tempo (firmware que não responde), segue como antes.
+    std::string resposta;
+    {
+        std::unique_lock<std::mutex> l(m_resposta_mtx);
+        m_resposta_cv.wait_for(l, std::chrono::seconds(15), [this] { return !m_resposta.empty(); });
+        resposta = m_resposta;
+        m_resposta_seq.clear();
+    }
+    if (!resposta.empty()) {
+        const nlohmann::json r = nlohmann::json::parse(resposta, nullptr, false);
+        const std::string    resultado = r.is_object() ? boost::to_lower_copy(r.value("result", std::string())) : std::string();
+        if (resultado == "fail" || resultado == "failed") {
+            const std::string motivo = "a impressora recusou a impressão" + (r.value("reason", std::string()).empty() ? std::string() : ": " + r.value("reason", std::string())) +
+                                       (r.contains("err_code") ? " (código " + r["err_code"].dump() + ")" : std::string());
+            BOOST_LOG_TRIVIAL(error) << "Filuna Bambu: " << motivo;
+            if (update_fn)
+                update_fn(PrintingStageERROR, BAMBU_NETWORK_ERR_PRINT_LP_PUBLISH_MSG_FAILED, motivo);
+            return BAMBU_NETWORK_ERR_PRINT_LP_PUBLISH_MSG_FAILED;
+        }
+    } else
+        BOOST_LOG_TRIVIAL(warning) << "Filuna Bambu: a impressora não respondeu ao pedido de impressão em 15 s; segue";
     if (update_fn)
         update_fn(PrintingStageFinished, 0, "");
     return BAMBU_NETWORK_SUCCESS;
@@ -533,6 +564,20 @@ void FilunaBambuLanAgent::dispatch_local_connect(int state, const std::string& d
 
 void FilunaBambuLanAgent::dispatch_message(const std::string& dev_id, const std::string& payload)
 {
+    // Resposta ao pedido de impressão que está esperando (mesmo sequence_id, comando project_file).
+    if (payload.find("\"project_file\"") != std::string::npos) {
+        const nlohmann::json j = nlohmann::json::parse(payload, nullptr, false);
+        if (j.is_object() && j.contains("print") && j["print"].is_object() && j["print"].value("command", std::string()) == "project_file" &&
+            j["print"].contains("result")) {
+            std::lock_guard<std::mutex> l(m_resposta_mtx);
+            const nlohmann::json& p = j["print"];
+            const std::string     s = p.contains("sequence_id") ? (p["sequence_id"].is_string() ? p["sequence_id"].get<std::string>() : p["sequence_id"].dump()) : "";
+            if (!m_resposta_seq.empty() && (s.empty() || s == m_resposta_seq)) {
+                m_resposta = p.dump();
+                m_resposta_cv.notify_all();
+            }
+        }
+    }
     // A impressora diz se tem cartão: sem ele, o próximo envio já começa pela memória interna (sem esperar o FTPS falhar).
     if (payload.find("\"sdcard\"") != std::string::npos) {
         if (payload.find("\"sdcard\":false") != std::string::npos || payload.find("\"sdcard\": false") != std::string::npos)

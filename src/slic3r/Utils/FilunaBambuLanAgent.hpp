@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <condition_variable>
 #include <string>
 #include <thread>
 
@@ -125,6 +126,10 @@ private:
     std::map<std::string, std::string> m_seen; // serial -> último JSON de descoberta
     // A impressora avisou que está sem cartão ("sdcard": false): o envio já começa pela memória interna.
     std::atomic<bool> m_sem_cartao{false};
+    // Resposta da impressora ao pedido de impressão (project_file) que start_local_print espera.
+    std::mutex              m_resposta_mtx;
+    std::condition_variable m_resposta_cv;
+    std::string             m_resposta_seq, m_resposta;
 };
 
 } // namespace Slic3r
