@@ -350,11 +350,21 @@ function estoque() {
 		tabelaEstoque();
 		vigiarGiro();
 		errosDasBobinas();
+		nomesDasImpressoras();
 	}, function (e) { document.getElementById("r").outerHTML = '<div id="r" class="erro">' + E(e.erro || e.message) + "</div>"; });
 }
 
 // Raio X por bobina: quantos erros da impressora aconteceram com cada bobina passando (filamento preso, rompido…).
 // Vem da conta; sem conta o Estoque continua igual.
+function nomesDasImpressoras() {
+	Filuna.nativo("dispositivos.estado").then(function (r) {
+		var n = {};
+		(r.impressoras || []).forEach(function (i) { if (i.cadastro_id) n[i.cadastro_id] = i.nome || i.modelo_nome || ""; if (i.dev_id && !n[i.dev_id]) n[i.dev_id] = i.nome || ""; });
+		var mudou = JSON.stringify(n) != JSON.stringify(st.nomesImp || {});
+		st.nomesImp = n;
+		if (mudou && naListaEstoque()) tabelaEstoque();
+	}).catch(function () {});
+}
 function errosDasBobinas() {
 	if (!Filuna.temToken()) return;
 	Filuna.api("GET", "/raiox/bobinas").then(function (r) {
@@ -544,7 +554,12 @@ function tabelaEstoque() {
 	ativas.forEach(function (x) { total += x.restante_g; inicial += x.peso_inicial_g || 0; var c = custo(x); if (c != null) { valor += c; temValor = true; } if (baixo(x)) nBaixo++; });
 	var ESTADO = { lacrada: "lacrada", em_uso: "em uso", vazia: "vazia", descartada: "arquivada" };
 	var descricao = function (x) { return E((x.marca ? x.marca + " · " : "") + "Bobina " + String(x.numero).replace("-", "‑") + " · " + (ESTADO[x.estado] || x.estado)); };
-	var local = function (x) { return x.na_impressora ? "<b>Na impressora</b><span>" + E(x.na_impressora) + "</span>" : x.prateleira ? "<b>Guardada</b><span>" + E(x.prateleira) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>"; };
+	// nome da impressora (o local guarda o código do cadastro) e a entrada: "Bambu A1 · entrada 2"
+	var nomeImp = function (x) {
+		var n = (st.nomesImp || {})[x.na_impressora], m = /:slot:(\d+)$/.exec(x.local || "");
+		return (n || "Impressora cadastrada") + (m ? " · entrada " + m[1] : "");
+	};
+	var local = function (x) { return x.na_impressora ? "<b>Na impressora</b><span>" + E(nomeImp(x)) + "</span>" : x.prateleira ? "<b>Guardada</b><span>" + E(x.prateleira) + "</span>" : "<b>Guardada</b><span>Fora das impressoras</span>"; };
 	var peso = function (x) {
 		var pct = pctRestante(x);
 		return "<div class='bar'><i style='width:" + pct + "%;background:" + E(corBarra(x.cor)) + "'></i></div>" + Filuna.gramas(x.restante_g) + " / " + Filuna.gramas(x.peso_inicial_g) +
