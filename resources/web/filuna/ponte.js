@@ -265,7 +265,8 @@ var Filuna = (function () {
 		var fio = misturar(c, [0, 0, 0], lum > 0.85 ? 0.2 : 0.35);
 		var A = { cx: 96, cy: 70, rx: 46, ry: 64 };   // aba da frente
 		var B = { cx: 50, cy: 70, rx: 46, ry: 64 };   // aba de trás (mesmo tamanho, deslocada)
-		var passo = nivel == null || isNaN(nivel) ? 1 : Math.round(Math.max(0, Math.min(1, +nivel)) * 10) / 10;
+		// de 10 em 10%; o que ainda tem filamento nunca aparece vazio (45 g de 1 kg mostra 10%)
+		var passo = nivel == null || isNaN(nivel) ? 1 : +nivel > 0 ? Math.max(0.1, Math.round(Math.min(1, +nivel) * 10) / 10) : 0;
 		var CUBO = 0.3;                              // raio do cubo do carretel em relação à aba
 		var R = passo > 0 ? 0.42 + 0.42 * passo : 0; // raio do filamento enrolado: 0,84 da aba com a bobina cheia
 		var achata = A.rx / A.ry;                    // a aba é um círculo de raio A.ry visto de lado
