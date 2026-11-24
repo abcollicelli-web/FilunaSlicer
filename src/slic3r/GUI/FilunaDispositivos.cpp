@@ -372,7 +372,7 @@ json card(MachineObject* o)
     // Raio X da Impressora: em que camada e com que código o erro aconteceu
     c["camada"]  = o->curr_layer;
     c["camadas"] = o->total_layers;
-    if (o->print_error != 0)
+    if (o->print_error != 0 && unsigned(o->print_error) != 0x0300400Cu && unsigned(o->print_error) != 0x0500400Eu)
         c["codigo_erro"] = o->get_print_error_str();
     auto ctl = CONTROLES.find(o->printer_agent_id);
     json controles = json::array(), espera = json::array();
@@ -438,7 +438,9 @@ json card(MachineObject* o)
     }
     std::string err = Filuna::erro(o->get_dev_id());
     // Bambu: o erro vem no próprio relatório (print_error), com o texto oficial da Bambu quando conhecido
-    if (err.empty() && o->print_error != 0 && o->printer_agent_id == "filuna_bambu_lan") {
+    // Cancelada pelo cliente (0300-400C): não é erro da impressora, nem para o site nem para o Raio X.
+    const bool cancelada = unsigned(o->print_error) == 0x0300400Cu || unsigned(o->print_error) == 0x0500400Eu;
+    if (err.empty() && o->print_error != 0 && !cancelada && o->printer_agent_id == "filuna_bambu_lan") {
         wxString txt;
         if (HMSQuery* q = wxGetApp().get_hms_query())
             txt = q->query_print_error_msg(o, o->print_error);

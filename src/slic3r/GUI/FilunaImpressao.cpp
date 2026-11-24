@@ -1898,7 +1898,8 @@ std::vector<AmostraDe> analise_amostras()
     MachineObject* sel = dev->get_selected_machine();
     if (sel != nullptr) {
         json rel = {{"gcode_state", sel->print_status}, {"layer_num", sel->curr_layer}, {"total_layer_num", sel->total_layers},
-                    {"mc_percent", sel->mc_print_percent}, {"stg_cur", sel->stage_curr}, {"print_error", sel->print_error}};
+                    {"mc_percent", sel->mc_print_percent}, {"stg_cur", sel->stage_curr}, {"print_error", sel->print_error},
+                    {"mc_remaining_time", sel->mc_left_time > 0 ? sel->mc_left_time / 60 : -1}};
         if (DevExtderSystem* ext = sel->GetExtderSystem()) {
             rel["nozzle_temper"]        = ext->GetNozzleTempCurrent(0);
             rel["nozzle_target_temper"] = ext->GetNozzleTempTarget(0);

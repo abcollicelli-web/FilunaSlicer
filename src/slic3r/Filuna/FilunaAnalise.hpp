@@ -94,6 +94,7 @@ struct Amostra
     int         ventoinha{-1};  // % da ventoinha da peça
     int         velocidade{-1}; // nível de velocidade (Bambu: 1 silencioso, 2 normal, 3 esporte, 4 máximo)
     int         etapa{-1};      // etapa Bambu (stg_cur)
+    int         restante_s{-1}; // tempo que a impressora diz faltar (sem o plano do arquivo, dá o ritmo esperado)
     std::string erro;
 };
 

@@ -519,7 +519,15 @@ Amostra amostra_do_relatorio_bambu(const json& p, double t)
     a.ventoinha     = fan < 0 ? -1 : int(std::lround(std::min(fan, 15) / 15. * 100.));
     a.velocidade    = inteiro("spd_lvl", -1);
     a.etapa         = inteiro("stg_cur", -1);
+    const int falta = inteiro("mc_remaining_time", -1); // minutos
+    a.restante_s    = falta < 0 ? -1 : falta * 60;
     const int pe    = inteiro("print_error", 0);
+    // Cancelada pelo cliente: a Bambu termina em FAILED com o código 0300-400C ("a tarefa foi cancelada"). Não é falha
+    // da impressora nem erro para o Raio X.
+    if (gs == "FAILED" && (unsigned(pe) == 0x0300400Cu || unsigned(pe) == 0x0500400Eu)) {
+        a.estado = "cancelada";
+        return a;
+    }
     if (pe != 0) {
         char b[24];
         std::snprintf(b, sizeof(b), "%08X", unsigned(pe));
@@ -960,6 +968,12 @@ void Analise::amostra(const Amostra& a)
             limite = std::max(limite, 3. * m_plano.camadas[idx].duracao_s * fator_velocidade(m_velocidade));
         if (m_plano.valido && a.camada < 1)
             limite = std::max(limite, 0.025 * m_plano.camadas_s()); // só progresso: 1% pode levar minutos
+        // Sem o plano do arquivo: o ritmo vem do tempo que a impressora diz faltar. Numa impressão de mais de 8h20,
+        // 1% leva mais de 5 min e a camada alta pode durar mais que isso; antes virava "parada" falsa.
+        if (a.restante_s > 0 && a.progresso >= 0) {
+            const double decorrido = std::max(0., desde_inicio(a.t));
+            limite = std::max(limite, 3. * (decorrido + a.restante_s) / 100.);
+        }
         if (!m_parada_anotada && a.t - m_parado_desde > limite) {
             m_parada_anotada = true;
             Ocorrencia o;
