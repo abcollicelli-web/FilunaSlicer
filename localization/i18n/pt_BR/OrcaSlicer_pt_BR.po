@@ -37167,3 +37167,740 @@ msgstr "Fechamento do oco"
 
 msgid "Small cavities closer than this are closed."
 msgstr "Cavidades menores que isto são fechadas."
+
+# Filuna: traduções de textos que apareciam em inglês (item 7).
+
+#, boost-format
+msgid "Failed to read plugin install state: %1%"
+msgstr "Falha ao ler o estado de instalação do plugin: %1%"
+
+msgid "Don't show this tip again"
+msgstr "Não mostrar esta dica novamente"
+
+msgid "Tip: You can review and change this plugin's saved permissions in the Plugins dialog, on the Permissions tab."
+msgstr "Dica: você pode revisar e alterar as permissões salvas deste plugin na janela Plugins, na aba Permissões."
+
+#, c-format, boost-format
+msgid ""
+"Plugin \"%s\" is requesting to create the following file:\n"
+"%s\n"
+"\n"
+"This approval applies only to this operation and is not remembered."
+msgid_plural ""
+"Plugin \"%s\" is requesting to create the following files:\n"
+"%s\n"
+"\n"
+"This approval applies only to this operation and is not remembered."
+msgstr[0] ""
+"O plugin \"%s\" está solicitando a criação do seguinte arquivo:\n"
+"%s\n"
+"\n"
+"Esta aprovação vale só para esta operação e não fica salva."
+msgstr[1] ""
+"O plugin \"%s\" está solicitando a criação dos seguintes arquivos:\n"
+"%s\n"
+"\n"
+"Esta aprovação vale só para esta operação e não fica salva."
+
+#, c-format, boost-format
+msgid ""
+"Plugin \"%s\" is requesting to delete the following file:\n"
+"%s\n"
+"\n"
+"This approval applies only to this operation and is not remembered."
+msgid_plural ""
+"Plugin \"%s\" is requesting to delete the following files:\n"
+"%s\n"
+"\n"
+"This approval applies only to this operation and is not remembered."
+msgstr[0] ""
+"O plugin \"%s\" está solicitando a exclusão do seguinte arquivo:\n"
+"%s\n"
+"\n"
+"Esta aprovação vale só para esta operação e não fica salva."
+msgstr[1] ""
+"O plugin \"%s\" está solicitando a exclusão dos seguintes arquivos:\n"
+"%s\n"
+"\n"
+"Esta aprovação vale só para esta operação e não fica salva."
+
+#, c-format, boost-format
+msgid ""
+"Plugin \"%s\" tried to perform a file operation that requires permission.\n"
+"\n"
+"The operation was denied. Use an allowed location or enable Full access for this plugin if you trust it."
+msgstr ""
+"O plugin \"%s\" tentou fazer uma operação com arquivos que exige permissão.\n"
+"\n"
+"A operação foi negada. Use um local permitido ou ative o Acesso total para este plugin, se você confiar nele."
+
+#, c-format, boost-format
+msgid ""
+"Plugin \"%s\" tried to create the following file:\n"
+"%s\n"
+"\n"
+"The operation was denied. Use an allowed location or enable Full access for this plugin if you trust it."
+msgid_plural ""
+"Plugin \"%s\" tried to create the following files:\n"
+"%s\n"
+"\n"
+"The operation was denied. Use an allowed location or enable Full access for this plugin if you trust it."
+msgstr[0] ""
+"O plugin \"%s\" tentou criar o seguinte arquivo:\n"
+"%s\n"
+"\n"
+"A operação foi negada. Use um local permitido ou ative o Acesso total para este plugin, se você confiar nele."
+msgstr[1] ""
+"O plugin \"%s\" tentou criar os seguintes arquivos:\n"
+"%s\n"
+"\n"
+"A operação foi negada. Use um local permitido ou ative o Acesso total para este plugin, se você confiar nele."
+
+#, c-format, boost-format
+msgid ""
+"Plugin \"%s\" tried to delete the following file:\n"
+"%s\n"
+"\n"
+"The operation was denied. Use an allowed location or enable Full access for this plugin if you trust it."
+msgid_plural ""
+"Plugin \"%s\" tried to delete the following files:\n"
+"%s\n"
+"\n"
+"The operation was denied. Use an allowed location or enable Full access for this plugin if you trust it."
+msgstr[0] ""
+"O plugin \"%s\" tentou excluir o seguinte arquivo:\n"
+"%s\n"
+"\n"
+"A operação foi negada. Use um local permitido ou ative o Acesso total para este plugin, se você confiar nele."
+msgstr[1] ""
+"O plugin \"%s\" tentou excluir os seguintes arquivos:\n"
+"%s\n"
+"\n"
+"A operação foi negada. Use um local permitido ou ative o Acesso total para este plugin, se você confiar nele."
+
+msgid "Plugin operation denied"
+msgstr "Operação do plugin negada"
+
+msgid "For support enforcers only"
+msgstr "Só nos reforços de suporte"
+
+msgid "Support on build plate only"
+msgstr "Suporte apenas a partir da mesa"
+
+msgid "Around object"
+msgstr "Em volta da peça"
+
+msgid "Below object"
+msgstr "Embaixo da peça"
+
+msgid "Size and coordinates"
+msgstr "Tamanho e coordenadas"
+
+msgid "Move over surface"
+msgstr "Mover sobre a superfície"
+
+msgid "Loads each body of a multi-body part separately. Needed to keep the bodies' original names."
+msgstr "Carrega separadamente cada corpo de uma peça com vários corpos. Necessário para manter os nomes originais dos corpos."
+
+msgid "Load as an assembly"
+msgstr "Carregar como montagem"
+
+msgid "Load as a single object (can be split later)"
+msgstr "Carregar como um único objeto (dá para dividir depois)"
+
+msgid "The original bodies and names are kept inside the object. Use Split to parts to show them as separate parts."
+msgstr "Os corpos e nomes originais ficam guardados dentro do objeto. Use Dividir em peças para mostrá-los como peças separadas."
+
+msgid "Keep original names"
+msgstr "Manter os nomes originais"
+
+msgid "Use the body names stored in the file, when there are any. Needs Split compound for parts with several bodies."
+msgstr "Usa os nomes dos corpos gravados no arquivo, quando houver. Para peças com vários corpos, precisa da opção de dividir composto e compsolid ligada."
+
+msgid "Sort parts by name"
+msgstr "Ordenar as peças pelo nome"
+
+msgid "Sort the parts inside each imported assembly in the object list. This does not change the order used for slicing. Available when Keep original names is on."
+msgstr "Ordena as peças dentro de cada montagem importada na lista de objetos. Não muda a ordem usada no fatiamento. Disponível quando Manter os nomes originais estiver ligado."
+
+msgid "Don't ask again"
+msgstr "Não perguntar de novo"
+
+msgid "Save these choices and apply them without asking next time. You can show this dialog again in Preferences."
+msgstr "Salva estas escolhas e aplica sem perguntar da próxima vez. Você pode voltar a mostrar esta janela nas Preferências."
+
+msgid "Switch Camera View"
+msgstr "Trocar a vista da câmera"
+
+msgid "Filuna U1 - G-code safety warning"
+msgstr "Filuna U1 - aviso de segurança do G-code"
+
+msgid "Reading the printer's filament slots..."
+msgstr "Lendo os espaços de filamento da impressora…"
+
+msgid "Could not read the printer. Close this dialog and try again."
+msgstr "Não foi possível ler a impressora. Feche esta janela e tente de novo."
+
+msgid "Could not connect to the printer. Check that it is on, then reopen this dialog."
+msgstr "Não foi possível conectar à impressora. Confira se ela está ligada e abra esta janela de novo."
+
+msgid "The printer reports no CFS connected, so the print will use the external spool."
+msgstr "A impressora informa que não há CFS conectado, então a impressão vai usar o carretel externo."
+
+msgid "The printer did not report any filament slots, so the print will use the external spool."
+msgstr "A impressora não informou nenhum espaço de filamento, então a impressão vai usar o carretel externo."
+
+msgid "Filuna"
+msgstr "Filuna"
+
+msgid "Folder paths"
+msgstr "Caminhos das pastas"
+
+msgid "File import"
+msgstr "Importação de arquivos"
+
+msgid "Ask how to handle unsupported characters in imported names"
+msgstr "Perguntar o que fazer com caracteres não aceitos nos nomes importados"
+
+msgid "Show the removal or replacement choices when original names contain unsupported characters."
+msgstr "Mostra as opções de remover ou substituir quando os nomes originais têm caracteres não aceitos."
+
+msgid "3MF import"
+msgstr "Importação de 3MF"
+
+msgid "Show options when importing"
+msgstr "Mostrar opções ao importar"
+
+msgid "Show original-name and sorting options when importing a 3MF without project settings into the current project."
+msgstr "Mostra as opções de nome original e de ordenação ao importar, no projeto atual, um 3MF sem configurações de projeto."
+
+msgid "Use the body names stored in the imported file when it contains them."
+msgstr "Usa os nomes dos corpos gravados no arquivo importado, quando ele tiver."
+
+msgid "STEP import"
+msgstr "Importação de STEP"
+
+msgid "Linear deflection"
+msgstr "Deflexão linear"
+
+msgid "Angle deflection"
+msgstr "Deflexão angular"
+
+msgid "Split into multiple objects"
+msgstr "Dividir em vários objetos"
+
+msgid ""
+"If enabled, compound and compsolid shapes in imported STEP files are split into multiple objects.\n"
+"Used as the default in the import dialog, or directly when the import dialog is disabled.\n"
+"Default: enabled."
+msgstr ""
+"Se ativado, formas compound e compsolid em arquivos STEP importados são divididas em vários objetos.\n"
+"Usado como padrão na janela de importação, ou direto quando a janela de importação está desativada.\n"
+"Padrão: ativado."
+
+msgid "AMF import"
+msgstr "Importação de AMF"
+
+msgid "Show body grouping, original-name and sorting options when importing geometry into the current project."
+msgstr "Mostra as opções de agrupamento dos corpos, de nome original e de ordenação ao importar geometria no projeto atual."
+
+msgid "DRC export"
+msgstr "Exportação DRC"
+
+msgid "Speed dial"
+msgstr "Menu Rápido"
+
+msgid "Permissions"
+msgstr "Permissões"
+
+msgid "Permissions are unavailable."
+msgstr "As permissões não estão disponíveis."
+
+msgid "File system read"
+msgstr "Leitura de arquivos"
+
+msgid "File system read and write"
+msgstr "Leitura e gravação de arquivos"
+
+msgid "HTTP network"
+msgstr "Rede HTTP"
+
+msgid "Network sockets"
+msgstr "Sockets de rede"
+
+msgid "Threading"
+msgstr "Threads"
+
+msgctxt "Permission category"
+msgid "Events"
+msgstr "Eventos"
+
+msgid "Enter an absolute path on this computer. Add /* at the end to include the folder and everything below it; no other wildcard is accepted. A read/write grant can create files through open(), but it does not cover create or delete events such as os.mkdir and os.remove. Without Full access, each such event outside allowed folders needs its own approval, which is never saved. When a plugin runs in the background, these events are denied without asking."
+msgstr "Informe um caminho absoluto neste computador. Coloque /* no fim para incluir a pasta e tudo o que está dentro dela; nenhum outro curinga é aceito. Uma permissão de leitura/gravação pode criar arquivos por open(), mas não cobre eventos de criação ou exclusão como os.mkdir e os.remove. Sem o Acesso total, cada evento desses fora das pastas permitidas precisa de uma aprovação própria, que nunca fica salva. Quando um plugin roda em segundo plano, esses eventos são negados sem perguntar."
+
+msgid "C:\\path\\to\\directory\\*"
+msgstr "C:\\caminho\\da\\pasta\\*"
+
+msgid "/path/to/directory/*"
+msgstr "/caminho/da/pasta/*"
+
+msgid "Enter a full http:// or https:// URL; only its scheme and host are saved, so the grant covers every port, path, and query on that host. A network socket grant also accepts a bare host name or IP address, with or without a port, and covers every port on that host. Other schemes are not accepted. Grants in either list are checked for HTTP and socket access."
+msgstr "Informe uma URL completa com http:// ou https://; só o esquema e o host são salvos, então a permissão vale para todas as portas, caminhos e consultas desse host. Uma permissão de socket de rede também aceita só o nome do host ou o endereço IP, com ou sem porta, e vale para todas as portas desse host. Outros esquemas não são aceitos. As permissões das duas listas são verificadas para acesso HTTP e por socket."
+
+msgid "https://example.com"
+msgstr "https://exemplo.com"
+
+msgid "Enter the exact value recorded by the audit. It may be a Python representation of the command."
+msgstr "Informe o valor exato registrado pela auditoria. Pode ser uma representação em Python do comando."
+
+msgid "Exact audited value"
+msgstr "Valor exato auditado"
+
+msgid "Allow this plugin to create threads."
+msgstr "Permitir que este plugin crie threads."
+
+msgid "Enter a category and event separated by a colon, such as Socket:socket.__new__."
+msgstr "Informe a categoria e o evento separados por dois-pontos, como Socket:socket.__new__."
+
+msgid "Socket:socket.__new__"
+msgstr "Socket:socket.__new__"
+
+msgid "Full access"
+msgstr "Acesso total"
+
+msgid "File system"
+msgstr "Sistema de arquivos"
+
+msgid "Network access"
+msgstr "Acesso à rede"
+
+msgid "Execution"
+msgstr "Execução"
+
+msgid "Audit events"
+msgstr "Eventos de auditoria"
+
+msgid "Files and folders"
+msgstr "Arquivos e pastas"
+
+msgctxt "Permission access"
+msgid "Read"
+msgstr "Leitura"
+
+msgctxt "Permission access"
+msgid "Read and write"
+msgstr "Leitura e gravação"
+
+msgid "Read permissions are unavailable."
+msgstr "As permissões de leitura não estão disponíveis."
+
+msgid "Read and write permissions are unavailable."
+msgstr "As permissões de leitura e gravação não estão disponíveis."
+
+msgid "File system: Read"
+msgstr "Sistema de arquivos: Leitura"
+
+msgid "File system: Read and write"
+msgstr "Sistema de arquivos: Leitura e gravação"
+
+msgid "Full access bypasses permission checks. The plugin can read and write most files you can access; modifying startup or application files can let code run outside these checks. Direct Python access to OrcaSlicer's configuration, secret, certificate and install-state paths stays blocked, but subprocesses are not restricted."
+msgstr "O Acesso total ignora as verificações de permissão. O plugin pode ler e gravar a maioria dos arquivos que você acessa; mudar arquivos de inicialização ou do aplicativo pode permitir que código rode fora dessas verificações. O acesso direto do Python aos caminhos de configuração, segredos, certificados e estado de instalação do Filuna Slicer continua bloqueado, mas os subprocessos não são restringidos."
+
+msgid "Permission list editing is disabled while full access is on."
+msgstr "A edição da lista de permissões fica desativada enquanto o Acesso total estiver ligado."
+
+msgid "Full access status is unavailable."
+msgstr "O estado do Acesso total não está disponível."
+
+msgid "No values added."
+msgstr "Nenhum valor adicionado."
+
+msgctxt "Permission value"
+msgid "Apply"
+msgstr "Aplicar"
+
+#, c-format, boost-format
+msgid "Apply value for %s"
+msgstr "Aplicar valor de %s"
+
+msgid "Install this plugin to edit its permissions."
+msgstr "Instale este plugin para editar as permissões dele."
+
+#, c-format, boost-format
+msgid "New value for %s"
+msgstr "Novo valor de %s"
+
+#, c-format, boost-format
+msgid "Edit value for %s"
+msgstr "Editar valor de %s"
+
+msgctxt "Permission value"
+msgid "Add"
+msgstr "Adicionar"
+
+#, c-format, boost-format
+msgid "Add value to %s"
+msgstr "Adicionar valor a %s"
+
+msgctxt "Permission value"
+msgid "Remove"
+msgstr "Remover"
+
+#, c-format, boost-format
+msgid "Remove %s"
+msgstr "Remover %s"
+
+#, c-format, boost-format
+msgid ""
+"Enable full access for \"%s\"?\n"
+"\n"
+"Full access turns off permission auditing for this plugin: its file system, network, process, thread and event permissions are no longer checked. The plugin can read and write most files your user account can access, including startup scripts, SSH keys and a writable OrcaSlicer installation. Modifying startup or application files can let code run outside these checks. Direct Python access to OrcaSlicer's configuration, secret, certificate and install-state paths stays blocked, but subprocesses are not restricted. Full access is not a sandbox.\n"
+"\n"
+"Only enable this for a plugin you trust."
+msgstr ""
+"Ativar o Acesso total para \"%s\"?\n"
+"\n"
+"O Acesso total desliga a auditoria de permissões deste plugin: as permissões de arquivos, rede, processos, threads e eventos deixam de ser verificadas. O plugin pode ler e gravar a maioria dos arquivos que a sua conta de usuário acessa, incluindo scripts de inicialização, chaves SSH e uma instalação do Filuna Slicer com permissão de gravação. Mudar arquivos de inicialização ou do aplicativo pode permitir que código rode fora dessas verificações. O acesso direto do Python aos caminhos de configuração, segredos, certificados e estado de instalação do Filuna Slicer continua bloqueado, mas os subprocessos não são restringidos. O Acesso total não é uma área isolada (sandbox).\n"
+"\n"
+"Só ative isto para um plugin em que você confia."
+
+msgid "Invalid permission save request."
+msgstr "Pedido inválido para salvar as permissões."
+
+#, boost-format
+msgid "Cannot save \"%1%\": %2%"
+msgstr "Não foi possível salvar \"%1%\": %2%"
+
+msgid "Failed to save permissions."
+msgstr "Falha ao salvar as permissões."
+
+#, c-format, boost-format
+msgid "Permissions saved for \"%s\"."
+msgstr "Permissões salvas para \"%s\"."
+
+msgid "A file system permission cannot be empty."
+msgstr "Uma permissão de arquivos não pode ficar vazia."
+
+msgid "A file system permission cannot contain a null character."
+msgstr "Uma permissão de arquivos não pode conter caractere nulo."
+
+msgid "A file system permission may use \"*\" only as the final \"/*\" of a folder tree."
+msgstr "Uma permissão de arquivos só pode usar \"*\" no \"/*\" final de uma árvore de pastas."
+
+msgid "A file system permission cannot contain a \"..\" path component."
+msgstr "Uma permissão de arquivos não pode ter \"..\" no caminho."
+
+msgid "A file system permission must be an absolute path on this computer."
+msgstr "Uma permissão de arquivos precisa ser um caminho absoluto neste computador."
+
+msgid "A network permission cannot be empty."
+msgstr "Uma permissão de rede não pode ficar vazia."
+
+msgid "A network permission cannot contain control characters."
+msgstr "Uma permissão de rede não pode conter caracteres de controle."
+
+msgid "Network permissions do not support wildcards. Enter one full http:// or https:// URL."
+msgstr "Permissões de rede não aceitam curingas. Informe uma URL completa com http:// ou https://."
+
+msgid "Enter a full http:// or https:// URL with a host name or IP address. Bare domain names are not accepted."
+msgstr "Informe uma URL completa com http:// ou https:// e um nome de host ou endereço IP. Só o nome do domínio não é aceito."
+
+msgid "Only http:// and https:// URLs are supported for network permissions."
+msgstr "Permissões de rede aceitam só URLs http:// e https://."
+
+msgid "Enter a full http:// or https:// URL with a host name or IP address."
+msgstr "Informe uma URL completa com http:// ou https:// e um nome de host ou endereço IP."
+
+msgid "Network permissions cannot include a username or password. Enter a URL with only a scheme and host."
+msgstr "Permissões de rede não podem incluir usuário ou senha. Informe uma URL só com o esquema e o host."
+
+msgid "Enter a valid bracketed IPv6 address."
+msgstr "Informe um endereço IPv6 válido entre colchetes."
+
+msgid "Network permissions do not support wildcards."
+msgstr "Permissões de rede não aceitam curingas."
+
+msgid "Enter a host name or IP address, optionally with a port, or a full http:// or https:// URL."
+msgstr "Informe um nome de host ou endereço IP, com porta se quiser, ou uma URL completa com http:// ou https://."
+
+msgid "Some imported objects contain modifiers or parts with individual settings. They are shown as assemblies so that these settings remain visible."
+msgstr "Alguns objetos importados têm modificadores ou peças com configurações próprias. Eles aparecem como montagens para que essas configurações continuem visíveis."
+
+msgid "Geometry import"
+msgstr "Importação de geometria"
+
+msgid "Updates are available for your OrcaCloud plugins."
+msgstr "Há atualizações para os seus plugins do OrcaCloud."
+
+msgid "3MF geometry import options"
+msgstr "Opções de importação de geometria 3MF"
+
+msgid "AMF geometry import options"
+msgstr "Opções de importação de geometria AMF"
+
+msgid "Choose how to name and order the parts of this file."
+msgstr "Escolha como nomear e ordenar as peças deste arquivo."
+
+msgid "Choose how to load the bodies in this file."
+msgstr "Escolha como carregar os corpos deste arquivo."
+
+msgid "Load as separate objects"
+msgstr "Carregar como objetos separados"
+
+msgid "Each object in the file is loaded on its own, as OrcaSlicer always loaded AMF files."
+msgstr "Cada objeto do arquivo é carregado sozinho, como o Filuna Slicer sempre carregou os arquivos AMF."
+
+msgid "The bodies of each group in the file become parts of one object, in their relative positions."
+msgstr "Os corpos de cada grupo do arquivo viram peças de um mesmo objeto, nas posições relativas entre eles."
+
+msgid "Use the body names stored in the file, when there are any. When disabled, the usual OrcaSlicer names are used; existing project names are kept."
+msgstr "Usa os nomes dos corpos gravados no arquivo, quando houver. Desativado, são usados os nomes de costume do Filuna Slicer; os nomes que já estão no projeto são mantidos."
+
+msgid "Use these choices as defaults next time. The dialog still opens."
+msgstr "Usa estas escolhas como padrão da próxima vez. A janela continua abrindo."
+
+msgid "A name in the file is not valid Unicode. The geometry was not imported."
+msgstr "Um nome no arquivo não é Unicode válido. A geometria não foi importada."
+
+msgid "Invalid name"
+msgstr "Nome inválido"
+
+msgid "Unsupported characters in names"
+msgstr "Caracteres não aceitos nos nomes"
+
+msgid "Some original names contain characters that OrcaSlicer cannot use. Choose how to change them before importing."
+msgstr "Alguns nomes originais têm caracteres que o Filuna Slicer não pode usar. Escolha como mudá-los antes de importar."
+
+msgid "Remove unsupported characters"
+msgstr "Remover os caracteres não aceitos"
+
+msgid "Replace with:"
+msgstr "Substituir por:"
+
+msgid "Each unsupported character is replaced with this text. It may be longer than one character."
+msgstr "Cada caractere não aceito é trocado por este texto. Ele pode ter mais de um caractere."
+
+msgid "Use this rule as the default next time. The dialog still opens."
+msgstr "Usa esta regra como padrão da próxima vez. A janela continua abrindo."
+
+msgid "Save this rule and apply it without asking next time. You can show this dialog again in Preferences."
+msgstr "Salva esta regra e aplica sem perguntar da próxima vez. Você pode voltar a mostrar esta janela nas Preferências."
+
+msgid "Enter a non-empty replacement containing only supported characters, or choose removal."
+msgstr "Informe um texto de substituição não vazio, só com caracteres aceitos, ou escolha remover."
+
+#, boost-format
+msgid "%1% → %2%"
+msgstr "%1% → %2%"
+
+msgid "Choose a folder"
+msgstr "Escolha uma pasta"
+
+msgid "Custom camera source"
+msgstr "Fonte de câmera personalizada"
+
+msgid "Camera stream URL"
+msgstr "URL da transmissão da câmera"
+
+msgid "URL of an MJPEG stream or of a web page that shows the camera, for example http://192.168.1.10:8080/?action=stream"
+msgstr "URL de uma transmissão MJPEG ou de uma página web que mostra a câmera, por exemplo http://192.168.1.10:8080/?action=stream"
+
+msgid "Menu"
+msgstr "Menu"
+
+msgid "Drilling holes into model."
+msgstr "Fazendo furos na peça."
+
+msgid "Slicing model"
+msgstr "Fatiando a peça"
+
+msgid "Generating support points"
+msgstr "Gerando os pontos de suporte"
+
+msgid "Generating support tree"
+msgstr "Gerando a árvore de suporte"
+
+msgid "Generating pad"
+msgstr "Gerando a base"
+
+msgid "Slicing supports"
+msgstr "Fatiando os suportes"
+
+msgid "Merging slices and calculating statistics"
+msgstr "Juntando as camadas e calculando as estatísticas"
+
+msgid "Rasterizing layers"
+msgstr "Rasterizando as camadas"
+
+msgid "Slicing had to be stopped due to an internal error: Inconsistent slice index."
+msgstr "O fatiamento teve de parar por um erro interno: índice de camada inconsistente."
+
+msgid "Visualizing supports"
+msgstr "Mostrando os suportes"
+
+msgid "There are unprintable objects. Try to adjust support settings to make the objects printable."
+msgstr "Há peças que não podem ser impressas. Ajuste as configurações de suporte para que elas possam ser impressas."
+
+msgid "Cannot proceed without support points! Add support points or disable support generation."
+msgstr "Não é possível continuar sem pontos de suporte! Adicione pontos de suporte ou desligue a geração de suporte."
+
+msgid "Elevation is too low for object. Use the \"Pad around object\" feature to print the object without elevation."
+msgstr "A elevação está baixa demais para a peça. Use a opção \"Base em volta da peça\" para imprimir a peça sem elevação."
+
+msgid "The endings of the support pillars will be deployed on the gap between the object and the pad. 'Support base safety distance' has to be greater than the 'Pad object gap' parameter to avoid this."
+msgstr "As pontas dos pilares de suporte vão ficar no vão entre a peça e a base. A 'Folga do pé do suporte' precisa ser maior que a 'Folga entre base e peça' para evitar isso."
+
+msgid "Slicing done"
+msgstr "Fatiamento concluído"
+
+#, boost-format
+msgid "Slot %1%: the printer needs the \"%2%\" variant, which the filament does not define. Publishing the values printed with \"%3%\"."
+msgstr "Espaço %1%: a impressora precisa da variante \"%2%\", que o filamento não define. Publicando os valores impressos com \"%3%\"."
+
+msgid "Zig zag (Bambu OEM)"
+msgstr "Zigue-zague (Bambu OEM)"
+
+msgid "Automatic (OEM compatible)"
+msgstr "Automático (compatível com OEM)"
+
+msgid "OEM legacy infill anchor (QA only)"
+msgstr "Âncora de preenchimento antiga OEM (só para QA)"
+
+msgid "Use the verified OEM alignment reference for consistent infill patterns. Requires OEM module validation and G-code parity testing."
+msgstr "Usa a referência de alinhamento OEM verificada para padrões de preenchimento consistentes. Exige validação do módulo OEM e teste de paridade do G-code."
+
+msgid "Is high-temperature filament"
+msgstr "Filamento de alta temperatura"
+
+msgid "Indicates whether this filament requires high-temperature handling."
+msgstr "Indica se este filamento precisa de cuidados de alta temperatura."
+
+msgid "Emit Klipper minimum cruise ratio"
+msgstr "Gravar o minimum cruise ratio do Klipper"
+
+msgid "Wait for tool temperature after tool change"
+msgstr "Esperar a temperatura da ferramenta depois da troca de ferramenta"
+
+msgid "mm/min"
+msgstr "mm/min"
+
+msgid "Enabled filament cut retraction requires a finite distance from 10 to 18 mm."
+msgstr "A retração de corte do filamento, quando ligada, exige uma distância definida entre 10 e 18 mm."
+
+#, boost-format
+msgid "Spiral vase mode needs no sparse infill, one wall loop and no top shell layers, but the object %1% uses other values, so it will not print as a continuous spiral."
+msgstr "O modo vaso espiral precisa de preenchimento esparso zero, uma volta de parede e nenhuma camada de topo, mas a peça %1% usa outros valores, então não vai imprimir como uma espiral contínua."
+
+msgid "The mesh does not enclose any volume."
+msgstr "A malha não fecha nenhum volume."
+
+#, boost-format
+msgid "Small Area Flow Compensation: Error parsing data point in small area infill compensation model: %1%"
+msgstr "Compensação de fluxo de área pequena: erro ao ler um ponto do modelo de compensação do preenchimento de área pequena: %1%"
+
+msgid "Small Area Flow Compensation: First extrusion length for small area infill compensation model must be 0"
+msgstr "Compensação de fluxo de área pequena: o primeiro comprimento de extrusão do modelo de compensação do preenchimento de área pequena precisa ser 0"
+
+msgid "Small Area Flow Compensation: Only the first extrusion length for small area infill compensation model can be 0"
+msgstr "Compensação de fluxo de área pequena: só o primeiro comprimento de extrusão do modelo de compensação do preenchimento de área pequena pode ser 0"
+
+msgid "Small Area Flow Compensation: Extrusion lengths for subsequent points must be increasing"
+msgstr "Compensação de fluxo de área pequena: os comprimentos de extrusão dos pontos seguintes precisam ser crescentes"
+
+msgid "Small Area Flow Compensation: Flow compensation factors must strictly increase with extrusion length"
+msgstr "Compensação de fluxo de área pequena: os fatores de compensação de fluxo precisam crescer estritamente com o comprimento de extrusão"
+
+msgid "Small Area Flow Compensation: Final compensation factor for small area infill flow compensation model must be 1.0"
+msgstr "Compensação de fluxo de área pequena: o fator de compensação final do modelo de compensação de fluxo do preenchimento de área pequena precisa ser 1.0"
+
+msgid ""
+"G-code processor post-process export failed.\n"
+"Cannot open file for reading.\n"
+msgstr ""
+"Falha na exportação do pós-processamento do processador de G-code.\n"
+"Não foi possível abrir o arquivo para leitura.\n"
+
+msgid ""
+"G-code processor post-process export failed.\n"
+"Cannot open file for writing.\n"
+msgstr ""
+"Falha na exportação do pós-processamento do processador de G-code.\n"
+"Não foi possível abrir o arquivo para gravação.\n"
+
+msgid "The G-code post-processor encountered an invalid tool change, maybe from custom G-code:"
+msgstr "O pós-processador de G-code encontrou uma troca de ferramenta inválida, talvez vinda de um G-code personalizado:"
+
+msgid "Generated M104 lines may be incorrect."
+msgstr "As linhas M104 geradas podem estar incorretas."
+
+msgid ""
+"G-code processor post-process export failed.\n"
+"Error while reading from file.\n"
+msgstr ""
+"Falha na exportação do pós-processamento do processador de G-code.\n"
+"Erro ao ler o arquivo.\n"
+
+#, boost-format
+msgid ""
+"Failed to rename the output G-code file from %1% to %2%.\n"
+"Is %1% locked?"
+msgstr ""
+"Falha ao renomear o arquivo G-code de saída de %1% para %2%.\n"
+"O arquivo %1% está bloqueado?"
+
+msgid ""
+"G-code processor pre-heat injection pass failed.\n"
+"Cannot open file for reading.\n"
+msgstr ""
+"Falha na etapa de inserção do pré-aquecimento do processador de G-code.\n"
+"Não foi possível abrir o arquivo para leitura.\n"
+
+msgid ""
+"G-code processor pre-heat injection pass failed.\n"
+"Cannot open file for writing.\n"
+msgstr ""
+"Falha na etapa de inserção do pré-aquecimento do processador de G-code.\n"
+"Não foi possível abrir o arquivo para gravação.\n"
+
+msgid ""
+"G-code processor pre-heat injection pass failed.\n"
+"Error while reading from file.\n"
+msgstr ""
+"Falha na etapa de inserção do pré-aquecimento do processador de G-code.\n"
+"Erro ao ler o arquivo.\n"
+
+#, boost-format
+msgid "Line %1%: only numbers, commas and dots are allowed"
+msgstr "Linha %1%: só são permitidos números, vírgulas e pontos"
+
+#, boost-format
+msgid "Line %1%: must contain exactly 3 comma-separated values (PA, flow, acceleration)"
+msgstr "Linha %1%: precisa ter exatamente 3 valores separados por vírgula (PA, fluxo, aceleração)"
+
+#, boost-format
+msgid "Line %1%: missing PA value"
+msgstr "Linha %1%: falta o valor de PA"
+
+#, boost-format
+msgid "Line %1%: missing flow value"
+msgstr "Linha %1%: falta o valor de fluxo"
+
+#, boost-format
+msgid "Line %1%: missing acceleration value"
+msgstr "Linha %1%: falta o valor de aceleração"
+
+#, boost-format
+msgid "Line %1%: PA value must be less than 2"
+msgstr "Linha %1%: o valor de PA precisa ser menor que 2"
+
+#, boost-format
+msgid "Line %1%: flow value must be greater than PA value"
+msgstr "Linha %1%: o valor de fluxo precisa ser maior que o valor de PA"
+
+#, boost-format
+msgid "Line %1%: acceleration value must be greater than flow value"
+msgstr "Linha %1%: o valor de aceleração precisa ser maior que o valor de fluxo"
+
+#, boost-format
+msgid "Line %1%: invalid numeric value"
+msgstr "Linha %1%: valor numérico inválido"
