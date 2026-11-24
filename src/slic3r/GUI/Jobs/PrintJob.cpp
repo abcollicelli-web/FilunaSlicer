@@ -1,4 +1,5 @@
 #include "PrintJob.hpp"
+#include "slic3r/Utils/FilunaBambuLanAgent.hpp"
 #include "libslic3r/LifecycleEvents.hpp"
 #include "libslic3r/Model.hpp"
 #include "slic3r/GUI/Plater.hpp"
@@ -244,8 +245,17 @@ void PrintJob::process(Ctl &ctl)
     params.username = m_agent->default_lan_username();
     params.password = m_access_code;
 
+    // Filuna: com o agente LAN do Filuna e impressora com memória interna (P2S, H2D sem cartão), o arquivo vai direto pela
+    // porta 6000 (FilunaBambuLanAgent::upload_emmc), que já confere conexão e código e devolve o erro certo. A
+    // pré-checagem abaixo testava o túnel do plug-in fechado da Bambu e o FTPS do cartão: sem cartão e sem o plug-in as
+    // duas falham e o envio parava em "Falha ao enviar o arquivo para o armazenamento" sem nunca tentar a porta 6000.
+    const std::shared_ptr<IPrinterAgent> agente_lan = m_agent ? m_agent->get_printer_agent() : nullptr;
+    const bool envio_direto_filuna = could_emmc_print && agente_lan && agente_lan->get_agent_info().id == FILUNA_BAMBU_LAN_AGENT_ID;
+    if (envio_direto_filuna)
+        BOOST_LOG_TRIVIAL(info) << "print_job: envio direto pela memória interna (porta 6000), sem a pré-checagem do cartão";
+
     // check access code and ip address
-    if (this->connection_type == "lan" && m_print_type == "from_normal") {
+    if (this->connection_type == "lan" && m_print_type == "from_normal" && !envio_direto_filuna) {
         bool emmc_ok = false;
         bool ftp_ok = false;
         if (could_emmc_print) {
