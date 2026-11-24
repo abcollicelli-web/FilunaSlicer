@@ -1,6 +1,7 @@
 #include "Plater.hpp"
 #include "FilunaPanel.hpp"
 #include "FilunaAssistente.hpp"
+#include "FilunaCurva.hpp"
 #include "FilunaLateral.hpp"
 #include "FilunaFilamento.hpp"
 #include "slic3r/Filuna/FilunaDb.hpp"
@@ -14612,6 +14613,7 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
         return;
     }
     filuna_assistente_fatiado(evt.success()); // Filuna: rodapé e Assistente atualizam na hora
+    FilunaCurva::depois_de_fatiar(evt.success() && !evt.cancelled()); // teste da impressão em curva (só na portátil com o motor)
     //BBS: add project slice logic
     bool is_finished = !m_slice_all || (m_cur_slice_plate == (partplate_list.get_plate_count() - 1));
 
