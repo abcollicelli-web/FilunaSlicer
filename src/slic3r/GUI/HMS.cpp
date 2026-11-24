@@ -7,6 +7,7 @@
 #include "DeviceCore/DevUtil.h"
 #include "Http.hpp"
 #include <nlohmann/json.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include "libslic3r/AppConfig.hpp"
 
 #include <boost/filesystem/operations.hpp>
@@ -280,6 +281,19 @@ int HMSQuery::save_to_local(std::string lang, std::string hms_type, std::string 
     return -1;
 }
 
+// Filuna: no catálogo em português a Bambu deixou os nomes dos botões em inglês ("Resume", "Retry"…); troca pelos
+// nomes que o cliente vê nas telas em português.
+static wxString texto_hms(const std::string& intro, const std::string& lang_code)
+{
+    std::string t = intro;
+    if (lang_code.rfind("pt", 0) == 0)
+        for (const auto& [en, pt] : std::initializer_list<std::pair<const char*, const char*>>{
+                 {"\"Resume\"", "\"Retomar\""}, {"\"Retry\"", "\"Tentar de novo\""}, {"\"Stop\"", "\"Parar\""},
+                 {"\"Cancel\"", "\"Cancelar\""}, {"\"Continue\"", "\"Continuar\""}, {"\"Done\"", "\"Concluído\""}})
+            boost::replace_all(t, en, pt);
+    return wxString::FromUTF8(t);
+}
+
 std::string HMSQuery::hms_language_code()
 {
     AppConfig* config = wxGetApp().app_config;
@@ -287,12 +301,15 @@ std::string HMSQuery::hms_language_code()
         // set language code to en by default
         return "en";
     std::string lang_code = wxGetApp().app_config->get_language_code();
+    // Filuna: o português tem catálogo (hms_pt-BR_*.json no programa e no servidor da Bambu); antes caía no inglês e o
+    // cliente via os erros da impressora em inglês.
+    if (lang_code == "pt")
+        return "pt-BR";
     // Orca: the HMS host ships no catalog for these locales, so fall back to english to avoid empty texts + retries
     if (lang_code.compare("uk") == 0
         || lang_code.compare("cs") == 0
         || lang_code.compare("ru") == 0
         || lang_code.compare("tr") == 0
-        || lang_code.compare("pt") == 0
         || lang_code.compare("ko") == 0
         )
     {
@@ -400,7 +417,7 @@ wxString HMSQuery::_query_hms_msg(const std::string& dev_id_type, const std::str
                         if (boost::to_upper_copy(error_code) == long_error_code && msg_item.contains("intro"))
                         {
                             BOOST_LOG_TRIVIAL(info) << "retry without lang_code successed.";
-                            return wxString::FromUTF8(msg_item["intro"].get<std::string>());
+                            return texto_hms(msg_item["intro"].get<std::string>(), lang_code);
                         }
                     }
                 }
@@ -417,7 +434,7 @@ wxString HMSQuery::_query_hms_msg(const std::string& dev_id_type, const std::str
             const std::string& error_code = item.value("ecode", json()).get<std::string>();
             if (boost::to_upper_copy(error_code) == long_error_code && item.contains("intro"))
             {
-                return wxString::FromUTF8(item["intro"].get<std::string>());
+                return texto_hms(item["intro"].get<std::string>(), lang_code);
             }
         }
     }
@@ -476,7 +493,7 @@ wxString HMSQuery::_query_error_msg(const std::string &dev_id_type,
             for (auto item = m_hms_info_json["device_error"][lang_code].begin(); item != m_hms_info_json["device_error"][lang_code].end(); item++) {
                 if (item->contains("ecode") && boost::to_upper_copy((*item)["ecode"].get<std::string>()) == error_code) {
                     if (item->contains("intro")) {
-                        return wxString::FromUTF8((*item)["intro"].get<std::string>());
+                        return texto_hms((*item)["intro"].get<std::string>(), lang_code);
                     }
                 }
             }
@@ -489,7 +506,7 @@ wxString HMSQuery::_query_error_msg(const std::string &dev_id_type,
                     for (auto item = lang.begin(); item != lang.end(); item++) {
                         if (item->contains("ecode") && boost::to_upper_copy((*item)["ecode"].get<std::string>()) == error_code) {
                             if (item->contains("intro")) {
-                                return wxString::FromUTF8((*item)["intro"].get<std::string>());
+                                return texto_hms((*item)["intro"].get<std::string>(), lang_code);
                             }
                         }
                     }
