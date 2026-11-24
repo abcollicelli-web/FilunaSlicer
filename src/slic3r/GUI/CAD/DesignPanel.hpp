@@ -23,6 +23,7 @@
 
 #include "libslic3r/CAD/CadDocument.hpp"
 #include "slic3r/GUI/CAD/DesignInteraction.hpp"   // CadLevel: what one Esc press means
+#include "slic3r/GUI/CAD/FilunaCadUi.hpp"          // the floating tool columns
 #include "slic3r/GUI/AuiMgr.hpp"
 #include "slic3r/GUI/Lazy.hpp"
 
@@ -55,6 +56,7 @@ namespace Slic3r { namespace GUI {
 
 class DesignTextDialog;
 class DesignRowList;
+struct OfferVerb;
 
 class DesignCanvas;
 
@@ -145,6 +147,30 @@ private:
     bool confirm_enabled() const;   // would the ✓ act right now? (its greying follows this)
     void     escape();
     void update_action_bar();   // show the ✓/✗ bar iff a tool or mode is active
+
+    // --- Filuna CAD: the tools as floating columns over the view (DesignPanelFiluna.cpp) ---
+    FilunaCadUi       m_cad_ui;
+    bool              m_filuna_look{true};
+    bool              m_side_open{false};      // História / Grupos asked for the side panel
+    bool              m_isolated{false};
+    std::vector<bool> m_isolate_saved;
+    bool              m_translucent{false};
+    int               m_var_rect{0}, m_var_circle{0}, m_var_arc{0};   // the sketch tool variant in use
+    wxStaticLine*     m_toolbar_line{nullptr};
+    void     filuna_setup();
+    void     filuna_overlay();
+    void     filuna_layout(CadUiLayout& l);
+    void     filuna_sync_sidebar();
+    void     filuna_open_search();
+    bool     filuna_key(int key, bool ctrl, bool shift);
+    bool     filuna_verb_applies(const OfferVerb& v, uint32_t bit) const;
+    wxString filuna_tool_title() const;
+    void     filuna_isolate();
+    void     filuna_measure();
+    void     filuna_export_stl();
+    void     filuna_screenshot();
+    void     filuna_hv();
+    void     filuna_disconnect();
     void update_confirm_button();   // grey the ✓ to confirm_enabled()
 
     void on_shape_changed();

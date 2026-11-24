@@ -11,6 +11,8 @@
 #include "slic3r/GUI/PartPlate.hpp"   // the current plate's origin: the first view's offset
 #include "slic3r/GUI/ImGuiWrapper.hpp"
 #include "slic3r/GUI/GLToolbar.hpp"
+#include "slic3r/GUI/GUI_Utils.hpp"
+#include <wx/image.h>
 #include "slic3r/GUI/Event.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/TriangleMesh.hpp"
@@ -1095,6 +1097,10 @@ void DesignCanvas::set_on_context_menu(std::function<void(const wxPoint&)> cb)
         e.Skip();
     });
     m_canvas_widget->Bind(wxEVT_RIGHT_UP, [this](wxMouseEvent& e) {
+        if (overlay_covers && overlay_covers(float(m_ctx_press.x), float(m_ctx_press.y))) {
+            e.Skip();   // a right-click on the tool columns is not a right-click on the model
+            return;
+        }
         const wxPoint d  = e.GetPosition() - m_ctx_press;
         // Click, or navigation? A press that travelled panned or orbited; one that did not, did not.
         const bool is_click = !m_ctx_travelled && std::max(std::abs(d.x), std::abs(d.y)) <= kCadRightClickDriftPx;
@@ -1236,7 +1242,7 @@ void DesignCanvas::render_hud()
         // of the canvas, which lays them out: they follow the monitor's DPI on Windows, where `em`
         // does not, so a fixed inset in `em` let them cover the start of the line at 150%.
         // A sentence can be a sentence: it wraps to the room left of the readout chip.
-        const float  left = m_canvas->get_canvas_toolbar_right() + margin;
+        const float  left = m_filuna_look ? ds.x * 0.25f : m_canvas->get_canvas_toolbar_right() + margin;
         const ImVec4 col  = m_status_hud_colour.IsOk()
             ? ImVec4(m_status_hud_colour.Red() / 255.f, m_status_hud_colour.Green() / 255.f,
                      m_status_hud_colour.Blue() / 255.f, 1.f)
@@ -1244,8 +1250,12 @@ void DesignCanvas::render_hud()
         chip("##design_status", m_status_hud_last.ToUTF8().data(), left, 0.f,
              std::max(ds.x * 0.6f - left, 120.f * em), m_status_hud_colour.IsOk() ? &col : nullptr);
     }
-    if (!m_hud_last.empty())
-        chip("##design_readout", m_hud_last, ds.x - margin, 1.f, 0.f, &ImGuiWrapper::COL_ORCA);
+    if (!m_hud_last.empty()) {
+        if (m_filuna_look)   // the right column reaches the bottom in a sketch: the values go mid-bottom
+            chip("##design_readout", m_hud_last, ds.x * 0.75f, 1.f, 0.f, &ImGuiWrapper::COL_ORCA);
+        else
+            chip("##design_readout", m_hud_last, ds.x - margin, 1.f, 0.f, &ImGuiWrapper::COL_ORCA);
+    }
 }
 
 void DesignCanvas::set_highlight_faces(const std::vector<std::pair<int, int>>& faces)
@@ -1683,6 +1693,56 @@ void DesignCanvas::set_constraint_highlight(std::vector<int> entities)
 void DesignCanvas::set_constraint_glyphs(std::vector<SketchEntityConstraintDef> cons)
 {
     m_sketch_tool.set_constraint_glyphs(std::move(cons));
+    request_repaint();
+}
+
+}} // namespace Slic3r::GUI
+
+namespace Slic3r { namespace GUI {
+
+void DesignCanvas::set_filuna_look(std::function<void()> overlay, float right_inset)
+{
+    m_filuna_look = true;
+    m_bed.set_light_plate(true);
+    if (m_canvas == nullptr) return;
+    m_canvas->set_filuna_cad_look(true);
+    m_canvas->set_design_overlay(std::move(overlay));
+    m_canvas->set_navigator_right_inset(right_inset);
+    request_repaint();
+}
+
+void DesignCanvas::set_filuna_inset(float px)
+{
+    if (m_canvas != nullptr) m_canvas->set_navigator_right_inset(px);
+}
+
+float DesignCanvas::ui_scale() const
+{
+    float sc = m_canvas != nullptr ? m_canvas->get_scale() : 1.f;
+#ifdef WIN32
+    sc *= float(get_dpi_for_window(wxGetApp().GetTopWindow())) / float(DPI_DEFAULT);
+#endif
+    return sc;
+}
+
+void DesignCanvas::save_screenshot(const std::string& path, std::function<void(bool)> done)
+{
+    if (m_canvas == nullptr) { if (done) done(false); return; }
+    m_canvas->request_frame_capture([path, done](std::vector<unsigned char>&& px, int w, int h) {
+        bool ok = false;
+        if (w > 0 && h > 0 && px.size() >= size_t(w) * size_t(h) * 4) {
+            wxImage img(w, h);
+            unsigned char* rgb = img.GetData();
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x) {
+                    const unsigned char* p = &px[(size_t(h - 1 - y) * size_t(w) + size_t(x)) * 4];
+                    unsigned char*       q = rgb + (size_t(y) * size_t(w) + size_t(x)) * 3;
+                    q[0] = p[0]; q[1] = p[1]; q[2] = p[2];
+                }
+            ok = img.SaveFile(wxString::FromUTF8(path), wxBITMAP_TYPE_PNG);
+        }
+        if (done) wxGetApp().CallAfter([done, ok] { done(ok); });
+    });
     request_repaint();
 }
 

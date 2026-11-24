@@ -126,6 +126,7 @@ private:
     std::vector<std::vector<Vec2d>> m_extruder_shapes;
     std::vector<double> m_extruder_heights;
     bool m_is_dark = true; // Filuna: cena 3D escura desde a abertura (Direção Visual C)
+    bool m_light_plate = false;
 
 public:
     Bed3D() = default;
@@ -168,6 +169,9 @@ public:
     void render(GLCanvas3D& canvas, const Transform3d& view_matrix, const Transform3d& projection_matrix, bool bottom, float scale_factor, bool show_axes);
 
     void on_change_color_mode(bool is_dark);
+    // Filuna CAD: the Design tab's plate in the light grey of its scene, not the slicer's dark plate.
+    void set_light_plate(bool on) { m_light_plate = on; m_model.set_color(plate_color()); }
+    ColorRGBA plate_color() const;
 
 private:
     //BBS: add partplate related logic

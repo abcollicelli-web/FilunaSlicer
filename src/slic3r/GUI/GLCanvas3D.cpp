@@ -2785,6 +2785,16 @@ void GLCanvas3D::_render_frame(bool scene_dirty, bool only_init)
     _render_overlay_toolbars();
     m_frame_profiler.mark("toolbars");
 
+    if (m_frame_capture) {   // Filuna CAD screenshot: the scene without the tool columns
+        const Size cs = get_canvas_size();
+        std::vector<unsigned char> px(size_t(cs.get_width()) * size_t(cs.get_height()) * 4);
+        glsafe(::glPixelStorei(GL_PACK_ALIGNMENT, 1));
+        glsafe(::glReadPixels(0, 0, cs.get_width(), cs.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, (void*)px.data()));
+        auto cb = std::move(m_frame_capture);
+        m_frame_capture = nullptr;
+        cb(std::move(px), cs.get_width(), cs.get_height());
+    }
+
     wxGetApp().imgui()->render(draw_data);
     m_frame_profiler.mark("imgui draw");
 
@@ -6915,8 +6925,9 @@ void GLCanvas3D::_render_3d_navigator()
     sc *= (float) dpi / (float) DPI_DEFAULT;
 #endif // WIN32
 
-    const float viewManipulateLeft = 0;
-    const float viewManipulateTop  = io.DisplaySize.y;
+    const bool  cube_top_right     = filuna_cad_look();   // Filuna CAD: top right, beside the right column
+    const float viewManipulateLeft = cube_top_right ? io.DisplaySize.x - m_navigator_right_inset - NAVIGATOR_SIZE * sc : 0;
+    const float viewManipulateTop  = cube_top_right ? NAVIGATOR_SIZE * sc : io.DisplaySize.y;
     const float camDistance        = 8.f;
 
     Camera&     camera           = wxGetApp().plater()->get_camera();
@@ -6933,7 +6944,7 @@ void GLCanvas3D::_render_3d_navigator()
     }
 
     const float size  = NAVIGATOR_SIZE * sc;
-    m_canvas_toolbar_pos[0] = size;
+    m_canvas_toolbar_pos[0] = cube_top_right ? 0 : size;
     const auto result = ImGuizmo::ViewManipulate(cameraView, cameraProjection, ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::WORLD, nullptr,
                                                  camDistance, ImVec2(viewManipulateLeft, viewManipulateTop - size), ImVec2(size, size),
                                                  0x00101010);
@@ -8977,6 +8988,11 @@ void GLCanvas3D::_render_background()
     glsafe(::glDisable(GL_DEPTH_TEST));
 
     ColorRGBA background_color = m_is_dark ? DEFAULT_BG_LIGHT_COLOR_DARK : DEFAULT_BG_LIGHT_COLOR;
+    ColorRGBA top_background   = background_color;
+    if (filuna_cad_look() && !m_is_dark) {   // Filuna CAD: the light, slightly graded drafting scene
+        background_color = ColorRGBA(0.905f, 0.905f, 0.915f, 1.0f);
+        top_background   = ColorRGBA(0.955f, 0.955f, 0.962f, 1.0f);
+    }
     ColorRGBA error_background_color = m_is_dark ? ERROR_BG_LIGHT_COLOR_DARK : ERROR_BG_LIGHT_COLOR;
     const ColorRGBA bottom_color = use_error_color ? error_background_color : background_color;
 
@@ -9004,7 +9020,7 @@ void GLCanvas3D::_render_background()
     GLShaderProgram* shader = wxGetApp().get_shader("background");
     if (shader != nullptr) {
         shader->start_using();
-        shader->set_uniform("top_color", bottom_color);
+        shader->set_uniform("top_color", use_error_color ? bottom_color : top_background);
         shader->set_uniform("bottom_color", bottom_color);
         m_background.render();
         shader->stop_using();
@@ -9290,8 +9306,12 @@ void GLCanvas3D::_render_cad_grid(const Transform3d& view_matrix, const Transfor
     // For contrast with what this replaces: the plate's own grid uses LINE_TOP_DARK_COLOR, a
     // 0.43 grey, for BOTH its thin and its bold family — which is most of why the stock grid
     // reads as a flat mesh with no scale to it.
-    const ColorRGBA minor_color(0.40f, 0.40f, 0.42f, 1.0f);
-    const ColorRGBA major_color(0.90f, 0.90f, 0.90f, 1.0f);
+    ColorRGBA minor_color(0.40f, 0.40f, 0.42f, 1.0f);
+    ColorRGBA major_color(0.90f, 0.90f, 0.90f, 1.0f);
+    if (filuna_cad_look() && !m_is_dark) {   // fine lines on the light plate
+        minor_color = ColorRGBA(0.78f, 0.78f, 0.80f, 1.0f);
+        major_color = ColorRGBA(0.66f, 0.66f, 0.69f, 1.0f);
+    }
 
     glsafe(::glLineWidth(1.0f));
     m_cad_grid_minor.set_color(minor_color);
@@ -10272,7 +10292,11 @@ void GLCanvas3D::_render_overlays()
 
     _render_3d_navigator();
 
-    _render_canvas_toolbar();
+    if (filuna_cad_look()) {
+        if (m_design_overlay)
+            m_design_overlay();
+    } else
+        _render_canvas_toolbar();
 
     // Recorded by the scene pass, which a reused frame skips.
     wxGetApp().plater()->get_partplate_list().render_hover_tooltip();

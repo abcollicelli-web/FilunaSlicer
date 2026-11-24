@@ -106,6 +106,19 @@ public:
     void unbind_canvas_event_handlers();   // app close / language switch, from the plater's teardown
     void reset_canvas_volumes();
     void set_show_bed(bool b);   // view option: draw the printer bed + plate grid, or not
+    // Filuna CAD: light scene, view cube top right, and `overlay` (the floating tool columns) drawn
+    // in every frame's ImGui pass. `right_inset` = room the right column takes, for the cube.
+    void set_filuna_look(std::function<void()> overlay, float right_inset);
+    bool filuna_look() const { return m_filuna_look; }
+    float ui_scale() const;
+    void  set_filuna_inset(float px);          // room the right column takes (the view cube sits beside it)
+    void  set_snap_enabled(bool on) { m_sketch_tool.set_snap_enabled(on); }
+    bool  snap_enabled() const { return m_sketch_tool.snap_enabled(); }      // the canvas toolbar's scale: follows the monitor's DPI on Windows
+    // A screenshot of the 3D view (the model, without the tool columns), written as PNG on the next
+    // frame; `done` gets whether it was written.
+    void save_screenshot(const std::string& path, std::function<void(bool)> done);
+    // A tile or card of the overlay under this canvas point (right-click must not open the offer).
+    std::function<bool(float, float)> overlay_covers;
     // The sidebar's collapse button, as Prepare's: drawn on the edge `side` reports, it runs
     // `toggle` on a click and on Shift+Tab. Set before the first paint.
     void set_sidebar_collapse(std::function<CollapseSide()> side, std::function<void()> toggle);
@@ -422,6 +435,7 @@ private:
                                           // so an orbit that ends where it began is still an orbit
 
     Bed3D       m_bed;
+    bool        m_filuna_look{false};
     // The half of the camera swap above that is NOT on screen: the editor tabs' view while
     // Design is up, this canvas's view while it is not. Seeded in the constructor so the first
     // entry inherits the view the user was already looking at.

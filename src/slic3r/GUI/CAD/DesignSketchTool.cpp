@@ -11811,7 +11811,7 @@ bool DesignSketchTool::on_mouse_impl(wxMouseEvent& evt, GLCanvas3D& canvas)
     }
 
     if (evt.Moving()) {
-        m_snap_off = evt.ShiftDown();
+        m_snap_off = evt.ShiftDown() || m_snap_user_off;
         screen_to_plane(canvas, evt, m_cursor);
         m_has_cursor = true;
         m_cursor_locked = false;
@@ -11839,7 +11839,7 @@ bool DesignSketchTool::on_mouse_impl(wxMouseEvent& evt, GLCanvas3D& canvas)
         if (evt.LeftDown()) {
             Vec2d p;
             screen_to_plane(canvas, evt, p);
-            m_snap_off = evt.ShiftDown();
+            m_snap_off = evt.ShiftDown() || m_snap_user_off;
             bool vsnap = false;
             p = snap_vertex(canvas, evt, p, vsnap);   // snap onto an existing endpoint
             if (snap_chain_start(canvas, evt, p)) {   // clicked the previewed close target
@@ -11885,7 +11885,7 @@ bool DesignSketchTool::on_mouse_impl(wxMouseEvent& evt, GLCanvas3D& canvas)
         if (evt.LeftDown()) {
             Vec2d p;
             screen_to_plane(canvas, evt, p);
-            m_snap_off = evt.ShiftDown();
+            m_snap_off = evt.ShiftDown() || m_snap_user_off;
             bool vsnap = false;
             p = snap_vertex(canvas, evt, p, vsnap);   // snap onto an existing endpoint
             if (m_points.empty()) {     // first click = anchor
@@ -12237,7 +12237,7 @@ bool DesignSketchTool::on_mouse_impl(wxMouseEvent& evt, GLCanvas3D& canvas)
         // geometry); double-click or right-click finishes as an open spline.
         if (evt.LeftDown()) {
             Vec2d p; screen_to_plane(canvas, evt, p);
-            m_snap_off = evt.ShiftDown();
+            m_snap_off = evt.ShiftDown() || m_snap_user_off;
             bool vsnap = false;
             p = snap_vertex(canvas, evt, p, vsnap);   // poles can land on endpoints
             m_chain_dup_tol = screen_tol(canvas, evt, p, 3.0);

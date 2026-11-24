@@ -384,6 +384,13 @@ Point Bed3D::point_projection(const Point& point) const
     return m_polygon.point_projection(point);
 }*/
 
+ColorRGBA Bed3D::plate_color() const
+{
+    if (m_light_plate && !m_is_dark)
+        return { 0.86f, 0.86f, 0.875f, 1.0f };
+    return m_is_dark ? DEFAULT_MODEL_COLOR_DARK : DEFAULT_MODEL_COLOR;
+}
+
 void Bed3D::on_change_color_mode(bool is_dark)
 {
     m_is_dark = is_dark;
@@ -404,7 +411,7 @@ void Bed3D::render_internal(GLCanvas3D& canvas, const Transform3d& view_matrix, 
 
     glsafe(::glEnable(GL_DEPTH_TEST));
 
-    m_model.set_color(m_is_dark ? DEFAULT_MODEL_COLOR_DARK : DEFAULT_MODEL_COLOR);
+    m_model.set_color(plate_color());
 
     switch (m_type)
     {
@@ -703,7 +710,7 @@ void Bed3D::render_model(const Transform3d& view_matrix, const Transform3d& proj
         return;
 
     if (m_model.get_filename() != m_model_filename && m_model.init_from_file(m_model_filename)) {
-        m_model.set_color(m_is_dark ? DEFAULT_MODEL_COLOR_DARK : DEFAULT_MODEL_COLOR);
+        m_model.set_color(plate_color());
 
         update_model_offset();
 
@@ -831,7 +838,7 @@ void Bed3D::render_default(bool bottom, const Transform3d& view_matrix, const Tr
         if (m_model.get_filename().empty() && !bottom) {
             // draw background
             glsafe(::glDepthMask(GL_FALSE));
-            ColorRGBA color = m_is_dark ? DEFAULT_MODEL_COLOR_DARK : DEFAULT_MODEL_COLOR;   // ORCA add dark mode support
+            ColorRGBA color = plate_color();   // ORCA add dark mode support
             color = ColorRGBA(color[0] * 0.8f, color[1] * 0.8f,color[2] * 0.8f, color[3]);  // ORCA shift color a darker tone to fix difference between flat / gouraud_light shader
             m_triangles.set_color(color);
             m_triangles.render();

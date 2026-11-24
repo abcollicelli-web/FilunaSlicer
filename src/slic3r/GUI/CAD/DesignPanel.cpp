@@ -546,6 +546,20 @@ DesignPanel::DesignPanel(wxWindow* parent)
             set_status(_L("Nothing here has a value to type — pick a line, an arc, a circle, or two entities"));
     };
     m_keys_sketch['K'] = [this] { enter_constrain_inline(); };
+    // Filuna CAD: the constraints on Shift+letter, the keys the right column shows.
+    {
+        const std::pair<int, SketchConstraintType> cons[] = {
+            { 'A', SketchConstraintType::Parallel },   { 'P', SketchConstraintType::Perpendicular },
+            { 'T', SketchConstraintType::Tangent },    { 'N', SketchConstraintType::Coincident },
+            { 'M', SketchConstraintType::Midpoint },   { 'C', SketchConstraintType::Concentric },
+            { 'E', SketchConstraintType::EqualLength },{ 'S', SketchConstraintType::Symmetric },
+            { 'L', SketchConstraintType::Fix } };
+        for (const auto& [k, t] : cons) {
+            const SketchConstraintType type = t;
+            m_keys_sketch[k | SC_SHIFT] = [this, type] { apply_constraint(type); };
+        }
+        m_keys_sketch['V' | SC_SHIFT] = [this] { filuna_hv(); };
+    }
     // N: square up to the plane. Not a view preference but part of drawing — a sketch read at an
     // angle is a sketch whose right angles do not look like right angles, and no hand-orbit lands
     // exactly normal. Sketch map only: in Feature mode the navigator orb owns orientation.
@@ -4253,8 +4267,11 @@ DesignPanel::DesignPanel(wxWindow* parent)
         const bool sketch_mode = (m_ui_mode == UiMode::Sketch);
         // Never steal editing keys from a focused text field or an open in-canvas value field —
         // Delete/Ctrl+Z there must edit the text, not the model.
+        // Filuna CAD first: the search field and an open flyout take their keys before any map.
+        if (filuna_key(key, ctrl, e.ShiftDown())) return;
         const bool in_text = (dynamic_cast<wxTextCtrl*>(wxWindow::FindFocus()) != nullptr)
-                             || (m_viewport && m_viewport->inline_busy());
+                             || (m_viewport && m_viewport->inline_busy())
+                             || m_cad_ui.wants_keyboard();
         if (getenv("ORCA_CAD_KEYTRACE")) {
             wxWindow* fw = wxWindow::FindFocus();
             fprintf(stderr, "[KEYTRACE] key=%d ui_mode=%d is_sketching=%d in_text=%d inline_busy=%d focus=%s\n",
@@ -4399,6 +4416,11 @@ DesignPanel::DesignPanel(wxWindow* parent)
         if (!in_text && !ctrl) {
             const int up = (key >= 'a' && key <= 'z') ? key - 'a' + 'A' : key;   // normalise case
             if (sketch_mode) {
+                // Shift+letter: a constraint (Filuna CAD, as in the reference); a bare letter: a tool.
+                if (e.ShiftDown()) {
+                    auto its = m_keys_sketch.find(up | SC_SHIFT);
+                    if (its != m_keys_sketch.end()) { its->second(); return; }
+                }
                 auto it = m_keys_sketch.find(up);
                 if (it != m_keys_sketch.end()) { it->second(); return; }
             } else {
@@ -4476,7 +4498,8 @@ DesignPanel::DesignPanel(wxWindow* parent)
 
     auto* outer = new wxBoxSizer(wxVERTICAL);
     outer->Add(m_toolbar, 0, wxEXPAND);
-    outer->Add(new wxStaticLine(this, wxID_ANY), 0, wxEXPAND);
+    m_toolbar_line = new wxStaticLine(this, wxID_ANY);
+    outer->Add(m_toolbar_line, 0, wxEXPAND);
     outer->Add(body_panel, 1, wxEXPAND);
     SetSizer(outer);
 
@@ -4522,6 +4545,7 @@ DesignPanel::DesignPanel(wxWindow* parent)
     // The Origin and Bed rows from the first paint: nothing else builds them before the first
     // edit, project load or theme switch.
     refresh_pinned();
+    filuna_setup();   // Filuna CAD: floating tool columns instead of the ribbon
     build_phase("wiring");
     BOOST_LOG_TRIVIAL(info) << "Design tab build: total " << build_clock.Time() << " ms";
 }
@@ -4631,7 +4655,7 @@ void DesignPanel::set_ui_mode(UiMode m)
     // carrying the ground reference for the whole tab. The banner already says where you are;
     // taking the floor away as well only made the sketch harder to draw. The Feature tree's Bed
     // row is the one thing that governs the bed, in every mode.
-    if (m_sketch_banner != nullptr) {
+    if (m_sketch_banner != nullptr && !m_filuna_look) {   // Filuna CAD: the top pill says it
         const bool sketching = (m == UiMode::Sketch);
         if (sketching && m_sketch_banner_txt != nullptr)
             m_sketch_banner_txt->SetLabel(
@@ -5070,7 +5094,7 @@ void DesignPanel::on_import_step()
 void DesignPanel::on_import_mesh()
 {
     wxFileDialog dlg(this, _L("Import mesh"), wxEmptyString, wxEmptyString,
-                     _L("Mesh files (*.stl;*.obj)|*.stl;*.obj|All files|*.*"),
+                     _L("Mesh files (*.stl;*.3mf;*.obj)|*.stl;*.3mf;*.obj|All files|*.*"),
                      wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (dlg.ShowModal() != wxID_OK)
         return;
@@ -5093,8 +5117,22 @@ void DesignPanel::on_import_mesh()
             fail(wxString::Format(_L("Could not read the OBJ file: %s"), wxString::FromUTF8(obj_err)));
             return;
         }
+    } else if (ext == ".3mf") {
+        // Filuna CAD: a 3MF opens as one mesh, every object of it merged, at its placed position.
+        try {
+            Model model = Model::read_from_file(path, nullptr, nullptr, LoadStrategy::LoadModel);
+            for (ModelObject* o : model.objects)
+                for (ModelInstance* inst : o->instances) {
+                    TriangleMesh m = o->raw_mesh();
+                    m.transform(inst->get_matrix());
+                    mesh.merge(m);
+                }
+        } catch (const std::exception& ex) {
+            fail(wxString::Format(_L("Could not read the 3MF file: %s"), wxString::FromUTF8(ex.what())));
+            return;
+        }
     } else {
-        fail(_L("Unsupported mesh format (STL and OBJ are supported)"));
+        fail(_L("Unsupported mesh format (STL, 3MF and OBJ are supported)"));
         return;
     }
     if (mesh.its.indices.empty()) { fail(_L("The mesh contains no triangles")); return; }
@@ -12362,6 +12400,7 @@ void DesignPanel::update_undo_redo_buttons()
 
 void DesignPanel::update_action_bar()
 {
+    filuna_sync_sidebar();        // a tool's settings open the side panel; leaving it closes it
     update_undo_redo_buttons();   // mode/tool changes flip the do_undo_redo gate -> refresh greying
     update_confirm_button();      // ...and the ✓'s greying
     if (m_tb_action == nullptr || m_toolbar == nullptr) return;

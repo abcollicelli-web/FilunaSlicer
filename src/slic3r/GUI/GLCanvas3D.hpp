@@ -686,6 +686,10 @@ private:
     // place of the corner triad and the plate grid, and the plate data it reads (exclude areas,
     // the current plate's box) moved onto that bed. Default false leaves the editor tabs untouched.
     bool m_design_canvas{false};
+    bool m_filuna_cad_look{false};
+    float m_navigator_right_inset{0.f};
+    std::function<void()> m_design_overlay;
+    std::function<void(std::vector<unsigned char>&&, int, int)> m_frame_capture;
     // Design tab: draw the printer bed and its plate grid at all. Default true, so the
     // main editor is untouched; the Design tab lets the user hide it to model without a bed.
     bool m_show_bed{true};
@@ -1119,6 +1123,15 @@ public:
     void set_collapse_toolbar(GLToolbar* toolbar, std::function<CollapseSide()> side);
     void enable_plate_chrome(bool enable);
     void set_design_canvas(bool b) { m_design_canvas = b; }
+    // Filuna CAD look on the Design canvas: light scene, the view cube top right, no canvas toolbar
+    // (its tools live in the floating columns), and the columns drawn by `overlay` in this frame.
+    void set_filuna_cad_look(bool on) { m_filuna_cad_look = on; }
+    bool filuna_cad_look() const { return m_design_canvas && m_filuna_cad_look; }
+    void set_design_overlay(std::function<void()> overlay) { m_design_overlay = std::move(overlay); }
+    // Room the right column takes, so the view cube sits beside it (canvas px).
+    void set_navigator_right_inset(float px) { m_navigator_right_inset = px; }
+    // The next frame, read before the tool overlays are drawn, handed over as RGBA rows bottom-up.
+    void request_frame_capture(std::function<void(std::vector<unsigned char>&&, int, int)> cb) { m_frame_capture = std::move(cb); }
     void set_show_bed(bool b) { m_show_bed = b; }
     bool get_show_bed() const { return m_show_bed; }
     void enable_sinking_contours(bool enable) { m_sinking_contours_enabled = enable; }

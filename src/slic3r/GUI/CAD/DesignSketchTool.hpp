@@ -194,6 +194,9 @@ public:
     class SketchInlineEditor* inline_editor{nullptr};
     // The canvas's own overlays (its status and readout chips), drawn in this tool's ImGui pass.
     std::function<void()> render_overlays;
+    // The magnet in the Filuna CAD column: snapping on (default) or off for every gesture.
+    void set_snap_enabled(bool on) { m_snap_user_off = !on; }
+    bool snap_enabled() const { return !m_snap_user_off; }
 
     // Persistent committed sketches to draw even when no session is active (e.g. an
     // un-consumed sketch left visible after its extrude is removed). Each carries its
@@ -1080,6 +1083,7 @@ private:
     Vec2d               m_cursor{0,0};
     bool                m_has_cursor{false};
     bool                m_snap_off{false};      // Shift held -> suppress angle snapping
+    bool                m_snap_user_off{false}; // Filuna CAD's magnet off: as if Shift were held
     InferenceSnap       m_cursor_snap;          // last cursor inference target (for hint render)
     bool                m_cursor_locked{false}; // rubber-band segment is angle-locked
     bool                m_awaiting_length{false}; // inline value editor open -> freeze canvas
