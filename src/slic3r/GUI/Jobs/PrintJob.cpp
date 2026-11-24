@@ -37,6 +37,7 @@
 #include "slic3r/GUI/DeviceManager.hpp"
 #include "slic3r/GUI/I18N.hpp"
 #include "slic3r/GUI/Jobs/SendJob.hpp"
+#include "slic3r/GUI/FilunaManutencao.hpp"
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;
@@ -721,6 +722,10 @@ void PrintJob::process(Ctl &ctl)
         }
 
         BOOST_LOG_TRIVIAL(error) << "print_job: failed, result = " << result;
+        // Filuna: a falha do envio chega ao suporte (antes ficava só na tela do cliente).
+        if (result != BAMBU_NETWORK_ERR_CANCELED)
+            FilunaManutencao::diagnostico("impressao", "janela de envio: falha (código " + std::to_string(result) + ")",
+                                          nlohmann::json{{"ip", m_dev_ip}, {"memoria_interna", could_emmc_print}, {"conexao", connection_type}});
     } else {
         // wait for printer mqtt ready the same job id
 
