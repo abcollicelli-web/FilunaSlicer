@@ -4,11 +4,11 @@
 var RaioX = (function () {
 	var E = Filuna.esc, SITE = "https://filuna3d.com";
 	var CSS = '<style id="rxCss">.rx{display:flex;gap:26px;padding:22px 32px;flex-wrap:wrap}.rx-foto{flex:1.2;min-width:340px;position:relative;background:radial-gradient(120% 90% at 50% 35%,#fff,#efeae3);border-radius:18px;aspect-ratio:1/1;max-height:620px;overflow:hidden}' +
-		'.rx-foto img.capa{position:absolute;inset:6%;width:88%;height:88%;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 18px 30px rgba(40,30,20,.18))}' +
+		'.rx-camada{position:absolute;inset:6%}.rx-foto img.capa{position:absolute;inset:6%;width:88%;height:88%;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 18px 30px rgba(40,30,20,.18))}' +
 		'.rx-foto .semfoto{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted)}' +
 		'.rx-pin{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid #C9C1B6;color:var(--ink2);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:2}' +
 		'.rx-pin.erro{background:var(--warn);border-color:#fff;color:#fff;width:44px;height:44px;font-size:19px;animation:rxPulso 1.6s ease-out infinite}' +
-		'.rx-pin.hist{background:#FFE3D3;border-color:var(--orange);color:var(--warn)}.rx-pin.sel{outline:3px solid var(--magenta);outline-offset:2px}' +
+		'.rx-pin.hist{background:#FFE3D3;border-color:var(--orange);color:var(--warn)}.rx-pin.fora{border-style:dashed}.rx-pin.sel{outline:3px solid var(--magenta);outline-offset:2px}' +
 		'@keyframes rxPulso{0%{box-shadow:0 0 0 0 rgba(217,72,15,.55)}100%{box-shadow:0 0 0 26px rgba(217,72,15,0)}}' +
 		'@media (prefers-reduced-motion:reduce){.rx-pin.erro{animation:none}}' +
 		'.rx-leg{position:absolute;left:14px;bottom:12px;right:14px;display:flex;flex-wrap:wrap;gap:6px;z-index:3}.rx-leg span{background:rgba(255,255,255,.92);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--ink2)}' +
@@ -54,15 +54,15 @@ var RaioX = (function () {
 		r.eventos.forEach(function (e) { porRegiao[e.regiao] = (porRegiao[e.regiao] || 0) + 1; });
 		var foto = capaLocal(r.capa, u.foto);
 		var pins = Object.keys(pontos).filter(function (k) { return pontos[k]; }).map(function (k) {
-			var p = pontos[k], cls = atual && atual.regiao == k ? " erro" : porRegiao[k] ? " hist" : "";
-			return '<div class="rx-pin' + cls + (selRegiao == k ? " sel" : "") + '" data-reg="' + k + '" title="' + E((regioes[k] || "") + (porRegiao[k] ? " · " + porRegiao[k] + " erro(s)" : "")) + '" style="left:' + (+p[0]) + "%;top:" + (+p[1]) + '%">' + k + "</div>";
+			var p = pontos[k], fora = (r.capa.fora || []).indexOf(k) >= 0, cls = (atual && atual.regiao == k ? " erro" : porRegiao[k] ? " hist" : "") + (fora ? " fora" : "");
+			return '<div class="rx-pin' + cls + (selRegiao == k ? " sel" : "") + '" data-reg="' + k + '" title="' + E((regioes[k] || "") + (fora ? " (fora da foto)" : "") + (porRegiao[k] ? " · " + porRegiao[k] + " erro(s)" : "")) + '" style="left:' + (+p[0]) + "%;top:" + (+p[1]) + '%">' + k + "</div>";
 		}).join("");
 		var lista = r.eventos.filter(function (e) { return !selRegiao || e.regiao == selRegiao; });
 		var html = CSS + '<div style="padding:16px 32px 0;display:flex;justify-content:space-between"><a class="voltar" id="rxVoltar">‹ ' + E(u.nome) + "</a>" +
 			(selRegiao ? '<a class="voltar" id="rxTodas">Ver todas as regiões</a>' : "") + "</div>" +
 			'<div style="padding:6px 32px 0"><div class="lbl">Raio X da impressora</div><div class="h1">' + E(u.nome) + '</div><div class="sub">' + E(r.modelo || u.modelo || "") + "</div></div>" +
 			(erroMsg ? '<div class="aviso" style="margin:14px 32px"><span>' + E(erroMsg) + "</span></div>" : "") +
-			'<div class="rx"><div class="rx-foto">' + (foto ? '<img class="capa" alt="" src="' + E(foto) + '">' : '<div class="semfoto">Sem foto deste modelo</div>') + pins +
+			'<div class="rx"><div class="rx-foto">' + (foto ? '<img class="capa" alt="" src="' + E(foto) + '">' : '<div class="semfoto">Sem foto deste modelo</div>') + '<div class="rx-camada">' + pins + "</div>" +
 			'<div class="rx-leg">' + Object.keys(regioes).map(function (k) { return "<span><b>" + k + "</b> " + E(regioes[k]) + "</span>"; }).join("") + "</div></div>" +
 			'<div class="rx-dir">' +
 			(v.erro ? '<div class="aviso" style="background:#FDE8DF;color:#D9480F;margin:0 0 10px"><span><b>Agora:</b> ' + E(v.erro) + "</span></div>" : "") +
