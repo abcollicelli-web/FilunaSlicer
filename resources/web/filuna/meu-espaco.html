@@ -309,7 +309,7 @@ function bobinaParaLinha(x) {
 	var imp = /^impressora:/.test(x.local || "") ? x.local.split(":").slice(1, 2).join("") : "";
 	return { id: x.id, numero: x.codigo, material: t.material || "", cor: t.cor_hex || "#C2185B", cor_nome: t.cor_nome || "", marca: t.marca || "",
 		restante_g: x.restante_g, peso_inicial_g: x.capacidade_g, preco_kg: x.preco_centavos && x.capacidade_g ? x.preco_centavos / 100 / x.capacidade_g * 1000 : null,
-		na_impressora: imp, prateleira: /^prateleira:/.test(x.local || "") ? x.local.slice(11) : "", estado: x.estado, estimado: x.estimado, nova: x.estado == "lacrada" };
+		na_impressora: imp, local: x.local || "", prateleira: /^prateleira:/.test(x.local || "") ? x.local.slice(11) : "", estado: x.estado, estimado: x.estimado, nova: x.estado == "lacrada" };
 }
 // Três jeitos de ver o estoque; a escolha fica guardada neste computador.
 var MODOS_ESTOQUE = [
@@ -349,20 +349,27 @@ function estoque() {
 }
 
 // Bobinas imprimindo agora: carregadas numa impressora (local "impressora:<cadastro>:slot:N") cujo estado ao vivo é
-// "imprimindo". A impressora não diz qual entrada está puxando; se um trabalho aberto confirmou as bobinas da impressão,
-// giram só elas, senão giram todas as carregadas naquela impressora.
+// "imprimindo". Se a impressora diz qual entrada está puxando (slot_ativo), gira só a bobina daquela entrada; senão, se
+// um trabalho aberto confirmou as bobinas da impressão, giram só elas; senão giram todas as carregadas naquela impressora.
 function bobinasImprimindo(bobinas) {
 	return Promise.all([Filuna.nativo("dispositivos.estado"), Filuna.nativo("historico.listar", { limite: 30 }).catch(function () { return {}; })]).then(function (r) {
-		var imprimindo = {}, confirmadas = {}, porImpressora = {}, giram = {};
+		var imprimindo = {}, confirmadas = {}, porImpressora = {}, giram = {}, entrada = {};
 		(r[0].impressoras || []).forEach(function (i) {
 			if (i.estado != "imprimindo") return;
-			if (i.cadastro_id) imprimindo[i.cadastro_id] = true;
-			if (i.dev_id) imprimindo[i.dev_id] = true;
+			var sa = i.slot_ativo && i.slot_ativo.slot !== undefined && i.slot_ativo.slot !== "" ? (+i.slot_ativo.unidade || 0) * 4 + (+i.slot_ativo.slot || 0) + 1 : 0;
+			[i.cadastro_id, i.dev_id].forEach(function (k) { if (k) { imprimindo[k] = true; if (sa) entrada[k] = sa; } });
 		});
 		(r[1].trabalhos || []).forEach(function (t) { if (t.estado == "imprimindo") (t.bobinas || []).forEach(function (id) { if (id) confirmadas[id] = true; }); });
-		bobinas.forEach(function (x) { if ((x.estado == "lacrada" || x.estado == "em_uso") && x.na_impressora && imprimindo[x.na_impressora]) (porImpressora[x.na_impressora] = porImpressora[x.na_impressora] || []).push(x.id); });
+		var localDe = {};
+		bobinas.forEach(function (x) {
+			if ((x.estado == "lacrada" || x.estado == "em_uso") && x.na_impressora && imprimindo[x.na_impressora]) {
+				(porImpressora[x.na_impressora] = porImpressora[x.na_impressora] || []).push(x.id);
+				localDe[x.id] = x.local || "";
+			}
+		});
 		Object.keys(porImpressora).forEach(function (k) {
-			var l = porImpressora[k], so = l.filter(function (id) { return confirmadas[id]; });
+			var l = porImpressora[k], so = entrada[k] ? l.filter(function (id) { return (localDe[id] || "").slice(-(":slot:" + entrada[k]).length) == ":slot:" + entrada[k]; })
+				: l.filter(function (id) { return confirmadas[id]; });
 			(so.length ? so : l).forEach(function (id) { giram[id] = true; });
 		});
 		return giram;
