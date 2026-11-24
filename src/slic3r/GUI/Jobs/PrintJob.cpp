@@ -36,6 +36,7 @@
 #include "slic3r/GUI/DeviceManager.hpp"
 #include "slic3r/GUI/I18N.hpp"
 #include "slic3r/GUI/Jobs/SendJob.hpp"
+#include "slic3r/GUI/FilunaManutencao.hpp"
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;
@@ -245,7 +246,11 @@ void PrintJob::process(Ctl &ctl)
     params.password = m_access_code;
 
     // check access code and ip address
-    if (this->connection_type == "lan" && m_print_type == "from_normal") {
+    // Filuna: impressora que imprime pela memória interna (P2S, H2D sem armazenamento externo) e envio pelo agente do
+    // Filuna (porta 6000): esta checagem usa o túnel do plug-in fechado da Bambu e um arquivo de teste por FTPS, que
+    // falham sem armazenamento externo e barravam o envio antes de ele começar. O start_local_print já envia e reporta.
+    const bool filuna_memoria_interna = could_emmc_print && wxGetApp().app_config->get_bool("use_printer_agents");
+    if (this->connection_type == "lan" && m_print_type == "from_normal" && !filuna_memoria_interna) {
         bool emmc_ok = false;
         bool ftp_ok = false;
         if (could_emmc_print) {
@@ -711,6 +716,10 @@ void PrintJob::process(Ctl &ctl)
         }
 
         BOOST_LOG_TRIVIAL(error) << "print_job: failed, result = " << result;
+        // Filuna: a falha do envio chega ao suporte (antes ficava só na tela do cliente).
+        if (result != BAMBU_NETWORK_ERR_CANCELED)
+            FilunaManutencao::diagnostico("impressao", "janela de envio: falha (código " + std::to_string(result) + ")",
+                                          nlohmann::json{{"ip", m_dev_ip}, {"memoria_interna", could_emmc_print}, {"conexao", connection_type}});
     } else {
         // wait for printer mqtt ready the same job id
 
