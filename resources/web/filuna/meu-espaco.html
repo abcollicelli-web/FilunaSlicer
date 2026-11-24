@@ -122,6 +122,10 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 .emini .ac button{width:28px;height:28px;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink2);display:flex;align-items:center;justify-content:center}
 .emini .ac button:hover{border-color:var(--magenta-deep);color:var(--magenta-deep)}.emini .ac .ic{width:15px;height:15px}
 .etab.epe{margin-top:14px}
+.rxchip{display:inline-block;margin-top:6px;border:1px solid #F6B08A;background:#FFF0E6;color:#D9480F;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.rxjan{position:fixed;inset:0;background:rgba(30,25,20,.45);display:flex;align-items:center;justify-content:center;z-index:60}
+.rxcaixa{background:#fff;border-radius:16px;padding:18px;width:min(620px,92vw);max-height:80vh;overflow:auto}.rxcaixa a{cursor:pointer;color:var(--magenta-deep)}
+.rxev{display:flex;gap:10px;border-top:1px solid var(--line);padding:10px 0}.rxev img{width:110px;height:80px;object-fit:cover;border-radius:8px}.rxpad{background:#FFF5EC;border-radius:10px;padding:8px 10px;margin-bottom:8px;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -345,7 +349,36 @@ function estoque() {
 		marcarModo();
 		tabelaEstoque();
 		vigiarGiro();
+		errosDasBobinas();
 	}, function (e) { document.getElementById("r").outerHTML = '<div id="r" class="erro">' + E(e.erro || e.message) + "</div>"; });
+}
+
+// Raio X por bobina: quantos erros da impressora aconteceram com cada bobina passando (filamento preso, rompido…).
+// Vem da conta; sem conta o Estoque continua igual.
+function errosDasBobinas() {
+	if (!Filuna.temToken()) return;
+	Filuna.api("GET", "/raiox/bobinas").then(function (r) {
+		st.rxBob = r.bobinas || {};
+		if (Object.keys(st.rxBob).length && naListaEstoque()) tabelaEstoque();
+	}).catch(function () {});
+}
+function errosDaBobina(x) {
+	var fundo = document.createElement("div");
+	fundo.className = "rxjan";
+	fundo.innerHTML = '<div class="rxcaixa"><div style="display:flex;justify-content:space-between;gap:10px"><b>Erros com a bobina ' + E(x.numero) + " · " + E(x.material + " " + x.cor_nome) +
+		'</b><a id="rxFechar">Fechar</a></div><div id="rxLista" class="s" style="margin-top:10px">Carregando…</div></div>';
+	fundo.onclick = function (e) { if (e.target == fundo || e.target.id == "rxFechar") fundo.remove(); };
+	document.body.appendChild(fundo);
+	Filuna.api("GET", "/raiox?bobina=" + encodeURIComponent(x.id)).then(function (r) {
+		var l = r.eventos || [];
+		document.getElementById("rxLista").innerHTML = (r.padroes && r.padroes.length ? '<div class="rxpad">' + r.padroes.map(E).join("<br>") + "</div>" : "") +
+			(l.length ? l.map(function (e) {
+				var d = new Date(e.criado_em), q = isNaN(d) ? "" : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+				return '<div class="rxev">' + (e.foto_url ? '<img alt="" src="https://filuna3d.com' + E(e.foto_url) + '">' : "") + "<div><b>" + E(e.texto) + "</b><div class='s'>" + E(q) + " · " + E(e.nome) +
+					" · região " + e.regiao + " (" + E(e.regiao_nome) + ")" + (e.camada ? " · camada " + e.camada : "") + (e.z != null ? " · " + String(e.z).replace(".", ",") + " mm" : "") +
+					(e.resolvido_em ? " · resolvido" : "") + "</div></div></div>";
+			}).join("") : "Nenhum erro com esta bobina.");
+	}, function (e) { document.getElementById("rxLista").textContent = (e && e.erro) || "Não deu para ler agora."; });
 }
 
 // Bobinas imprimindo agora: carregadas numa impressora (local "impressora:<cadastro>:slot:N") cujo estado ao vivo é
@@ -518,7 +551,8 @@ function tabelaEstoque() {
 			"<span>" + Math.round(pct) + "% restante" + (x.estimado ? " · estimado, pese para confirmar" : "") + "</span>";
 	};
 	var preco = function (x) { var c = custo(x); return c != null ? "<b>" + Filuna.reais(c) + "</b><span>" + Filuna.reais(x.preco_kg / 1000) + " /g</span>" : "<b>—</b><span>sem preço cadastrado</span>"; };
-	var aviso = function (x) { return baixo(x) ? "<span class='baixo'>Estoque baixo<br>&lt; " + E(lim) + " g</span>" : ""; };
+	var rx = function (x) { var r = (st.rxBob || {})[x.id]; return r ? "<button class='rxchip' data-rx='" + E(x.id) + "' title='" + E("Último: " + r.ultimo) + "'>⚠ " + r.erros + (r.erros == 1 ? " erro" : " erros") + "</button>" : ""; };
+	var aviso = function (x) { return (baixo(x) ? "<span class='baixo'>Estoque baixo<br>&lt; " + E(lim) + " g</span>" : "") + rx(x); };
 	var acoes = function (x, k) { return x.estado == "descartada" ? "" : "<button class='btn peq' data-pesar='" + k + "'>Pesar</button> <button class='btn peq' data-etq='" + k + "'>Etiqueta</button> <button class='btn peq' data-arq='" + k + "'>Arquivar</button>"; };
 	var linha = function (x, k) {
 		return "<tr><td><div class='fn'>" + bobinaViva(x, 64) + "<div><b>" + E(x.material + " " + x.cor_nome) + "</b><div class='s'>" + descricao(x) + "</div><span class='mat'>" + E(x.material) + "</span></div></div></td>" +
@@ -532,7 +566,7 @@ function tabelaEstoque() {
 	};
 	var mini = function (x, k) {
 		var titulo = x.material + " " + x.cor_nome;
-		return "<div class='it" + (baixo(x) ? " baixa" : "") + "'>" + bobinaViva(x, 60) + "<div class='n' title='" + E(titulo) + "'>" + E(titulo) + "</div><div class='s'>" + Math.round(pctRestante(x)) + "% · " + Filuna.gramas(x.restante_g) + "</div>" +
+		return "<div class='it" + (baixo(x) ? " baixa" : "") + "'>" + bobinaViva(x, 60) + "<div class='n' title='" + E(titulo) + "'>" + E(titulo) + "</div><div class='s'>" + Math.round(pctRestante(x)) + "% · " + Filuna.gramas(x.restante_g) + "</div>" + rx(x) +
 			(x.estado == "descartada" ? "" : "<div class='ac'><button data-pesar='" + k + "' title='Pesar' aria-label='Pesar " + E(x.numero) + "'>" + ICONE_ESTOQUE.pesar + "</button><button data-etq='" + k + "' title='Etiqueta' aria-label='Etiqueta de " + E(x.numero) + "'>" + ICONE_ESTOQUE.etiqueta +
 			"</button><button data-arq='" + k + "' title='Arquivar' aria-label='Arquivar " + E(x.numero) + "'>" + ICONE.caixa + "</button></div>") + "</div>";
 	};
@@ -553,6 +587,7 @@ function tabelaEstoque() {
 	el().querySelectorAll("[data-pesar]").forEach(function (x) { x.onclick = function () { pesarBobina(b[+x.dataset.pesar]); }; });
 	el().querySelectorAll("[data-etq]").forEach(function (x) { x.onclick = function () { etiquetaBobina(b[+x.dataset.etq]); }; });
 	el().querySelectorAll("[data-arq]").forEach(function (x) { x.onclick = function () { arquivarBobina(b[+x.dataset.arq]); }; });
+	el().querySelectorAll("[data-rx]").forEach(function (x) { x.onclick = function () { errosDaBobina(b.filter(function (y) { return y.id == x.dataset.rx; })[0]); }; });
 	el().querySelectorAll(".bob-viva").forEach(function (s) {
 		s.onclick = function (ev) { ev.stopPropagation(); s.classList.toggle("aberta"); };
 		s.onblur = function () { s.classList.remove("aberta"); };
