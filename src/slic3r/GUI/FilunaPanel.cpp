@@ -2,6 +2,7 @@
 #include "slic3r/Utils/FilunaCameraUrls.hpp"
 #include <ctime>
 #include "FilunaAtualizacao.hpp"
+#include "FilunaCurva.hpp"
 #include "slic3r/Filuna/FilunaRecursos.hpp"
 #include "slic3r/Filuna/FilunaVersoes.hpp"
 #include "FilunaSync.hpp"
@@ -649,6 +650,9 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     // Post nas redes sociais (só com a ferramenta liberada para a conta): FilunaMidia.cpp.
     if (auto midia = filuna_midia_acao(action, d))
         return *midia;
+    // Demonstração da impressão em curva (só na portátil de teste): FilunaCurva.cpp.
+    if (auto curva = FilunaCurva::acao(action, d))
+        return *curva;
     AppConfig* cfg = wxGetApp().app_config;
     if (action == "config.ler") {
         const std::string key = d.value("chave", std::string());

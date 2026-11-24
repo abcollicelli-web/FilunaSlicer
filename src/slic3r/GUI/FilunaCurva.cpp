@@ -1,5 +1,7 @@
 #include "FilunaCurva.hpp"
 #include "FilunaManutencao.hpp"
+#include "FilunaPanel.hpp"
+#include "MainFrame.hpp"
 #include "GUI_App.hpp"
 #include "NotificationManager.hpp"
 #include "PartPlate.hpp"
@@ -14,6 +16,10 @@
 #include <nlohmann/json.hpp>
 #include <wx/stdpaths.h>
 #include <atomic>
+#include <cmath>
+#include <sstream>
+#include <wx/dialog.h>
+#include <wx/sizer.h>
 #include <thread>
 #ifdef _WIN32
 #include <windows.h>
@@ -152,7 +158,67 @@ std::string nome_base(const PresetCollection& col, const Preset& p)
     return base ? base->name : p.name;
 }
 
-void avisar(const std::string& texto, const std::string& link, const fsf::path& gcode)
+fsf::path pasta_curva() { return fsf::path(data_dir()) / "filuna" / "curva"; }
+
+// Trechos com extrusão do G-code (x0,y0,z0,x1,y1,z1 em centésimos de mm), na ordem em que o bico imprime.
+std::vector<long long> trechos(const fsf::path& gcode)
+{
+    std::vector<long long> s;
+    fsf::ifstream f(gcode);
+    std::string   linha;
+    double        x = 0, y = 0, z = 0;
+    while (std::getline(f, linha)) {
+        if (linha.rfind("G1 ", 0) != 0)
+            continue;
+        const auto fim = linha.find(';');
+        double nx = x, ny = y, nz = z, e = 0;
+        std::istringstream in(linha.substr(3, fim == std::string::npos ? std::string::npos : fim - 3));
+        std::string p;
+        while (in >> p) {
+            if (p.size() < 2)
+                continue;
+            const double v = std::atof(p.c_str() + 1);
+            switch (p[0]) {
+            case 'X': nx = v; break;
+            case 'Y': ny = v; break;
+            case 'Z': nz = v; break;
+            case 'E': e = v; break;
+            default: break;
+            }
+        }
+        if (e > 0 && (nx != x || ny != y || nz != z))
+            for (double v : {x, y, z, nx, ny, nz})
+                s.push_back(std::llround(v * 100));
+        x = nx, y = ny, z = nz;
+    }
+    return s;
+}
+
+// demo.js: os dois G-codes e os números, lidos pela tela curva.html (simulação do bico imprimindo).
+void gravar_demo(const json& numeros)
+{
+    const fsf::path pasta = pasta_curva();
+    json d = {{"plano", trechos(pasta / "plano.gcode")}, {"curvo", trechos(pasta / "curvo.gcode")}, {"numeros", numeros}};
+    fsf::ofstream f(pasta / "demo.js", std::ios::binary | std::ios::trunc);
+    f << "window.CURVA_DADOS=" << d.dump() << ";";
+}
+
+class JanelaCurva : public wxDialog
+{
+public:
+    JanelaCurva()
+        : wxDialog(wxGetApp().mainframe, wxID_ANY, wxString::FromUTF8("Impressão em curva - demonstração"), wxDefaultPosition,
+                   wxGetApp().mainframe->FromDIP(wxSize(1280, 800)), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
+    {
+        auto* sizer = new wxBoxSizer(wxVERTICAL);
+        sizer->Add(new FilunaPanel(this, "curva.html"), 1, wxEXPAND);
+        SetSizer(sizer);
+        Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent&) { Destroy(); });
+        CentreOnParent();
+    }
+};
+
+void avisar(const std::string& texto, const std::string& link)
 {
     NotificationManager* nm = wxGetApp().plater() ? wxGetApp().plater()->get_notification_manager() : nullptr;
     if (!nm)
@@ -161,12 +227,9 @@ void avisar(const std::string& texto, const std::string& link, const fsf::path& 
         nm->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::RegularNotificationLevel, texto);
         return;
     }
-    const wxString caminho = wxString::FromUTF8(gcode.string());
     nm->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::HintNotificationLevel, texto, link,
-                          [caminho](wxEvtHandler*) {
-                              // o Filuna não traz o visualizador separado da Bambu: outra janela do próprio
-                              // Filuna Slicer abre o G-code na Pré-visualização, sem mexer no projeto aberto
-                              start_new_slicer(&caminho, false);
+                          [](wxEvtHandler*) {
+                              (new JanelaCurva())->Show();
                               return false;
                           });
 }
@@ -211,7 +274,7 @@ void depois_de_fatiar(bool ok)
             const std::string texto = "Luna (teste): impressão em curva não indicada - não há o modelo da cabeça da " + impressora +
                                       ", então não dá para garantir que o bico não bate.";
             wxGetApp().CallAfter([texto] {
-                avisar(texto, "", {});
+                avisar(texto, "");
                 g_ocupado = false;
             });
             return;
@@ -267,15 +330,30 @@ void depois_de_fatiar(bool ok)
                                    "Topo %1$.0f%% mais liso, sem risco de o bico bater (folga mínima %2$.1f mm, %3% min a mais).")
                      % (ganho * 100) % curvo.folga_mm % int((curvo.tempo_s - plano.tempo_s) / 60)).str();
             link = "Ver a demonstração";
+            gravar_demo(json{{"ganho", int(std::lround(ganho * 100))}, {"folga", std::round(curvo.folga_mm * 100) / 100},
+                             {"minutos", int(std::lround((curvo.tempo_s - plano.tempo_s) / 60))}, {"impressora", impressora}});
         } else {
             texto = "Luna (teste): impressão em curva não indicada para esta mesa - " + motivo + ".";
         }
-        const fsf::path gcode = pasta / "curvo.gcode";
-        wxGetApp().CallAfter([texto, link, gcode] {
-            avisar(texto, link, gcode);
+        wxGetApp().CallAfter([texto, link] {
+            avisar(texto, link);
             g_ocupado = false;
         });
     }).detach();
+}
+
+std::optional<json> acao(const std::string& acao, const json&)
+{
+    if (acao != "curva.dados")
+        return std::nullopt;
+    const fsf::path arq = pasta_curva() / "demo.js";
+    boost::system::error_code ec;
+    if (!fsf::exists(arq, ec))
+        throw std::runtime_error("A demonstração ainda não foi preparada. Fatie a mesa de novo.");
+    std::string url = "file:///" + arq.generic_string(), saida;
+    for (char c : url)
+        saida += c == ' ' ? std::string("%20") : std::string(1, c);
+    return json{{"script", saida}};
 }
 
 }}} // namespace Slic3r::GUI::FilunaCurva

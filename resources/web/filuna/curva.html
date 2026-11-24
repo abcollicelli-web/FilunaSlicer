@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impressão em curva - demonstração</title>
+<style>
+  :root { --rosa: #e0186b; --fundo: #15161a; --painel: #1e2026; --texto: #f2f2f4; --suave: #a3a6b0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--fundo); color: var(--texto); font: 14px/1.4 "Segoe UI", system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; }
+  header { padding: 14px 20px 8px; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header p { margin: 4px 0 0; color: var(--suave); }
+  .numeros { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .num { background: var(--painel); border-radius: 10px; padding: 7px 12px; }
+  .num b { color: var(--rosa); font-size: 17px; margin-right: 4px; }
+  main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px; min-height: 0; }
+  .lado { position: relative; background: var(--painel); border-radius: 12px; overflow: hidden; min-height: 260px; }
+  .lado canvas { display: block; width: 100%; height: 100%; }
+  .rotulo { position: absolute; left: 12px; top: 10px; padding: 5px 10px; border-radius: 8px; background: rgba(0,0,0,.55); font-weight: 600; }
+  .lado.curva .rotulo { background: var(--rosa); }
+  .camada { position: absolute; right: 12px; top: 12px; color: var(--suave); font-variant-numeric: tabular-nums; }
+  footer { display: flex; align-items: center; gap: 12px; padding: 12px 20px 16px; flex-wrap: wrap; }
+  button { background: var(--painel); color: var(--texto); border: 1px solid #3a3d46; border-radius: 9px; padding: 8px 14px; font: inherit; cursor: pointer; }
+  button.prim { background: var(--rosa); border-color: var(--rosa); }
+  .barra { flex: 1; min-width: 160px; height: 6px; background: #2c2f37; border-radius: 3px; overflow: hidden; }
+  .barra i { display: block; height: 100%; width: 0; background: var(--rosa); }
+  .dica { color: var(--suave); font-size: 12.5px; }
+  .vazio { display: grid; place-items: center; height: 100%; color: var(--suave); text-align: center; padding: 30px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>O topo da sua peça, camada por camada</h1>
+  <p>Simulação feita com o G-code real desta mesa. À esquerda, a impressão comum, em camadas planas; à direita, a impressão em curva Filuna, em que o bico acompanha o formato do topo.</p>
+  <div class="numeros" id="numeros"></div>
+</header>
+<main id="lados">
+  <div class="lado plano"><canvas id="cPlano"></canvas><span class="rotulo">Impressão comum</span><span class="camada" id="zPlano"></span></div>
+  <div class="lado curva"><canvas id="cCurvo"></canvas><span class="rotulo">Impressão em curva Filuna</span><span class="camada" id="zCurvo"></span></div>
+</main>
+<footer>
+  <button class="prim" id="bTocar">Pausar</button>
+  <button id="bReiniciar">Recomeçar</button>
+  <button id="bPerto">Ver o topo de perto</button>
+  <div class="barra"><i id="progresso"></i></div>
+  <span class="dica">Arraste para girar, role para aproximar. As duas vistas giram juntas.</span>
+</footer>
+<script src="ponte.js"></script>
+<script src="m3d/three.js"></script>
+<script src="m3d/orbit.js"></script>
+<script>
+(function () {
+  "use strict";
+  var DURACAO = 32;                       // segundos da animação inteira
+  var LARGURA = 0.42, ALTURA = 0.2;       // filete de plástico (mm)
+
+  function carregar() {
+    function script(src) {
+      return new Promise(function (ok, falha) {
+        var s = document.createElement("script"); s.src = src;
+        s.onload = function () { ok(window.CURVA_DADOS); };
+        s.onerror = function () { falha(new Error("arquivo da demonstração não abriu")); };
+        document.head.appendChild(s);
+      });
+    }
+    if (location.search.indexOf("exemplo") >= 0) return script("curva-exemplo.js");   // teste fora do programa
+    // No Filuna Slicer: os G-codes da última análise ficam em demo.js, na pasta de dados do programa.
+    return Filuna.nativo("curva.dados").then(function (r) { return script(r.script); });
+  }
+
+  // Cada trecho de extrusão vira um filete: tampa de cima + duas laterais, seguindo o Z do bico.
+  function geometria(segs, centro, cor) {
+    var n = segs.length / 6, pos = new Float32Array(n * 18 * 3), nor = new Float32Array(n * 18 * 3), cores = new Float32Array(n * 18 * 3);
+    var base = new THREE.Color(cor), hsl = {}; base.getHSL(hsl);
+    var k = 0, fim = [];
+    function v(x, y, z, nx, ny, nz, c) {
+      pos[k] = x - centro.x; pos[k + 1] = z - centro.z; pos[k + 2] = -(y - centro.y);
+      nor[k] = nx; nor[k + 1] = nz; nor[k + 2] = -ny;
+      cores[k] = c.r; cores[k + 1] = c.g; cores[k + 2] = c.b; k += 3;
+    }
+    var lado = new THREE.Color();
+    for (var i = 0; i < n; i++) {
+      var o = i * 6, x0 = segs[o] / 100, y0 = segs[o + 1] / 100, z0 = segs[o + 2] / 100, x1 = segs[o + 3] / 100, y1 = segs[o + 4] / 100, z1 = segs[o + 5] / 100;
+      var dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy) || 1e-6, px = -dy / l * LARGURA / 2, py = dx / l * LARGURA / 2;
+      // normal da tampa: inclinada junto com o trecho (na curva o filete deita sobre o topo)
+      var dz = z1 - z0, inc = Math.atan2(dz, l), nx = -Math.sin(inc) * dx / l, ny = -Math.sin(inc) * dy / l, nz = Math.cos(inc);
+      var c = base;
+      lado.setHSL(hsl.h, hsl.s, hsl.l * 0.62);
+      var a = [x0 + px, y0 + py, z0], b = [x0 - px, y0 - py, z0], cc = [x1 - px, y1 - py, z1], d = [x1 + px, y1 + py, z1];
+      // tampa
+      v(a[0], a[1], a[2], nx, ny, nz, c); v(b[0], b[1], b[2], nx, ny, nz, c); v(cc[0], cc[1], cc[2], nx, ny, nz, c);
+      v(a[0], a[1], a[2], nx, ny, nz, c); v(cc[0], cc[1], cc[2], nx, ny, nz, c); v(d[0], d[1], d[2], nx, ny, nz, c);
+      // laterais (a altura da camada aparece como degrau no plano)
+      var sx = px / (LARGURA / 2), sy = py / (LARGURA / 2);
+      v(a[0], a[1], a[2], sx, sy, 0, lado); v(d[0], d[1], d[2], sx, sy, 0, lado); v(d[0], d[1], d[2] - ALTURA, sx, sy, 0, lado);
+      v(a[0], a[1], a[2], sx, sy, 0, lado); v(d[0], d[1], d[2] - ALTURA, sx, sy, 0, lado); v(a[0], a[1], a[2] - ALTURA, sx, sy, 0, lado);
+      v(b[0], b[1], b[2], -sx, -sy, 0, lado); v(b[0], b[1], b[2] - ALTURA, -sx, -sy, 0, lado); v(cc[0], cc[1], cc[2] - ALTURA, -sx, -sy, 0, lado);
+      v(b[0], b[1], b[2], -sx, -sy, 0, lado); v(cc[0], cc[1], cc[2] - ALTURA, -sx, -sy, 0, lado); v(cc[0], cc[1], cc[2], -sx, -sy, 0, lado);
+      fim.push(x1 - centro.x, z1 - centro.z, -(y1 - centro.y));
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(cores, 3));
+    g.setDrawRange(0, 0);
+    return { g: g, n: n, fim: fim };
+  }
+
+  function bico() {
+    var grupo = new THREE.Group(), metal = new THREE.MeshStandardMaterial({ color: 0xc9a227, metalness: 0.8, roughness: 0.3 });
+    var ponta = new THREE.Mesh(new THREE.ConeGeometry(1.4, 3, 24), metal); ponta.rotation.x = Math.PI; ponta.position.y = 1.5;
+    var corpo = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 2.5, 24), metal); corpo.position.y = 4.2;
+    var bloco = new THREE.Mesh(new THREE.BoxGeometry(14, 7, 10), new THREE.MeshStandardMaterial({ color: 0x3a3d46, roughness: 0.6 })); bloco.position.y = 9;
+    var luz = new THREE.PointLight(0xff7a3d, 0.6, 12); luz.position.y = 0.3;
+    grupo.add(ponta, corpo, bloco, luz);
+    return grupo;
+  }
+
+  function cena(canvas, dados, centro, cor) {
+    var r = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    var s = new THREE.Scene(); s.background = new THREE.Color(0x1e2026);
+    s.add(new THREE.HemisphereLight(0xffffff, 0x30323a, 0.9));
+    var sol = new THREE.DirectionalLight(0xffffff, 1.1); sol.position.set(-40, 25, 30); s.add(sol);   // luz rasante: mostra o degrau
+    var geo = geometria(dados, centro, cor);
+    s.add(new THREE.Mesh(geo.g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.05 })));
+    var mesa = new THREE.Mesh(new THREE.CircleGeometry(120, 64), new THREE.MeshStandardMaterial({ color: 0x2a2c33, roughness: 0.9 }));
+    mesa.rotation.x = -Math.PI / 2; mesa.position.y = -centro.z - 0.01; s.add(mesa);
+    var b = bico(); s.add(b);
+    return { r: r, s: s, geo: geo, bico: b, canvas: canvas };
+  }
+
+  function caixa(a, b) {
+    var m = { x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9, z1: 0 };
+    [a, b].forEach(function (s) {
+      for (var i = 0; i < s.length; i += 3) {
+        var x = s[i] / 100, y = s[i + 1] / 100, z = s[i + 2] / 100;
+        if (x < m.x0) m.x0 = x; if (x > m.x1) m.x1 = x; if (y < m.y0) m.y0 = y; if (y > m.y1) m.y1 = y; if (z > m.z1) m.z1 = z;
+      }
+    });
+    return { x: (m.x0 + m.x1) / 2, y: (m.y0 + m.y1) / 2, z: 0, raio: Math.max(m.x1 - m.x0, m.y1 - m.y0) / 2, topo: m.z1 };
+  }
+
+  carregar().then(function (d) {
+    if (!d || !d.plano || !d.curvo) throw new Error("sem dados");
+    var nums = d.numeros || {}, el = document.getElementById("numeros");
+    function num(v, t) { var s = document.createElement("span"); s.className = "num"; s.innerHTML = "<b>" + v + "</b>" + t; el.appendChild(s); }
+    if (nums.ganho != null) num(nums.ganho + "%", "topo mais liso");
+    if (nums.folga != null) num(String(nums.folga).replace(".", ",") + " mm", "folga mínima do bico, sem nenhum choque");
+    if (nums.minutos != null) num("+" + nums.minutos + " min", "no tempo de impressão");
+    if (nums.impressora) num("", nums.impressora);
+
+    var c = caixa(d.plano, d.curvo), cor = nums.cor || "#1fa89a";
+    var A = cena(document.getElementById("cPlano"), d.plano, c, cor), B = cena(document.getElementById("cCurvo"), d.curvo, c, cor);
+    var cam = [A, B].map(function () { return new THREE.PerspectiveCamera(35, 1, 0.1, 2000); });
+    var longe = new THREE.Vector3(c.raio * 2.2, c.topo * 2.2 + c.raio * 1.1, c.raio * 2.4), perto = new THREE.Vector3(c.raio * 0.9, c.topo + c.raio * 0.35, c.raio * 0.95);
+    var ctrl = [A, B].map(function (x, i) { var o = new OrbitControls(cam[i], x.canvas); o.target.set(0, c.topo * 0.45, 0); o.enableDamping = true; return o; });
+    function vista(p, alvoY) { cam.forEach(function (k, i) { k.position.copy(p); ctrl[i].target.set(0, alvoY, 0); ctrl[i].update(); }); }
+    vista(longe, c.topo * 0.45);
+    var sincronizando = false;
+    ctrl.forEach(function (o, i) {
+      o.addEventListener("change", function () {
+        if (sincronizando) return; sincronizando = true;
+        var j = 1 - i; cam[j].position.copy(cam[i].position); cam[j].quaternion.copy(cam[i].quaternion); ctrl[j].target.copy(o.target); ctrl[j].update();
+        sincronizando = false;
+      });
+    });
+
+    function medir() {
+      [A, B].forEach(function (x, i) {
+        var w = x.canvas.clientWidth, h = x.canvas.clientHeight;
+        x.r.setSize(w, h, false); cam[i].aspect = w / Math.max(1, h); cam[i].updateProjectionMatrix();
+      });
+    }
+    window.addEventListener("resize", medir); medir();
+
+    var t = 0, tocando = true, antes = performance.now(), zP = document.getElementById("zPlano"), zC = document.getElementById("zCurvo"), barra = document.getElementById("progresso");
+    // rápido nas camadas de baixo, devagar no topo, que é o que importa
+    function indice(x, p) { return Math.min(x.geo.n, Math.floor(x.geo.n * Math.pow(p, 0.55))); }
+    function passo(x, p, rot) {
+      var k = indice(x, p);
+      x.geo.g.setDrawRange(0, k * 18);
+      var f = x.geo.fim, i = Math.max(0, k - 1) * 3;
+      x.bico.position.set(f[i] || 0, (f[i + 1] || 0) + 0.05, f[i + 2] || 0);
+      x.bico.visible = p < 1;
+      rot.textContent = "altura do bico " + ((f[i + 1] || 0) + c.z).toFixed(2).replace(".", ",") + " mm";
+    }
+    function quadro(agora) {
+      var dt = Math.min(0.1, (agora - antes) / 1000); antes = agora;
+      if (tocando && t < 1) t = Math.min(1, t + dt / DURACAO);
+      passo(A, t, zP); passo(B, t, zC);
+      barra.style.width = (t * 100).toFixed(1) + "%";
+      ctrl.forEach(function (o) { o.update(); });
+      A.r.render(A.s, cam[0]); B.r.render(B.s, cam[1]);
+      requestAnimationFrame(quadro);
+    }
+    requestAnimationFrame(quadro);
+
+    var bT = document.getElementById("bTocar");
+    bT.onclick = function () { if (t >= 1) t = 0; tocando = !tocando || t === 0; bT.textContent = tocando ? "Pausar" : "Continuar"; };
+    document.getElementById("bReiniciar").onclick = function () { t = 0; tocando = true; bT.textContent = "Pausar"; };
+    var pertoAtivo = false;
+    document.getElementById("bPerto").onclick = function () {
+      pertoAtivo = !pertoAtivo;
+      vista(pertoAtivo ? perto : longe, pertoAtivo ? c.topo * 0.85 : c.topo * 0.45);
+      this.textContent = pertoAtivo ? "Ver a peça inteira" : "Ver o topo de perto";
+    };
+  }).catch(function (e) {
+    document.getElementById("lados").innerHTML = '<div class="vazio" style="grid-column: 1 / -1">Não foi possível montar a demonstração (' + (e && e.message || e) + "). Fatie a mesa de novo.</div>";
+  });
+})();
+</script>
+</body>
+</html>
