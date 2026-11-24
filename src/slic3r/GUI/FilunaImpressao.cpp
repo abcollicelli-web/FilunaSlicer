@@ -1,4 +1,5 @@
 #include "FilunaImpressao.hpp"
+#include "libslic3r/miniz_extension.hpp"
 #include "FilunaAoVivo.hpp"
 
 #include "FilunaManutencao.hpp"
@@ -893,6 +894,56 @@ bool gravar_perfil(const DynamicPrintConfig& cfg, const std::string& tipo, const
     return o.good();
 }
 
+// Perfil de filamento do material para a impressora: entre os compatíveis, o do tipo pedido (PLA, PETG...),
+// preferindo o mesmo filament_id que o programa escolheria, depois o de sistema, o "Basic" da marca e o genérico.
+// Antes só valia o filament_id da impressora da Preparação, e a P2S ficava sem PETG quando a Preparação era outra.
+const Preset* filamento_do_material(const std::string& material, const std::function<bool(const Preset&)>& compativel)
+{
+    PresetBundle* b = wxGetApp().preset_bundle;
+    if (b == nullptr || material.empty())
+        return nullptr;
+    const std::string fid = filamento_id_do_tipo(material);
+    const Preset*     melhor = nullptr;
+    int               nota   = -1;
+    for (const Preset& f : b->filaments) {
+        if (!f.is_visible || !compativel(f))
+            continue;
+        const auto* tipo = f.config.option<ConfigOptionStrings>("filament_type");
+        const bool  mesmo_id = !fid.empty() && f.filament_id == fid;
+        if (!mesmo_id && (tipo == nullptr || tipo->values.empty() || !boost::iequals(tipo->values.front(), material)))
+            continue;
+        const int n = (mesmo_id ? 100 : 0) + (f.is_system ? 20 : 0) + (f.name.find("Basic") != std::string::npos ? 6 : 0) +
+                      (boost::istarts_with(f.name, "Generic") ? 5 : 0) + (f.name.find("Support") != std::string::npos ? -30 : 0);
+        if (n > nota)
+            nota = n, melhor = &f;
+    }
+    return melhor;
+}
+
+// Quantos filamentos o projeto 3MF usa (Metadata/project_settings.config). A Farm imprime a mesa numa cor só: o
+// filamento dela vai em todos, senão o fatiador sem tela mistura o da Farm (PETG) com os do projeto (PLA) e recusa
+// pela diferença de temperatura (código -62).
+int filamentos_do_3mf(const fsf::path& arquivo)
+{
+    mz_zip_archive zip;
+    mz_zip_zero_struct(&zip);
+    if (!open_zip_reader(&zip, utf8_de(arquivo)))
+        return 0;
+    int        n   = 0;
+    const int  idx = mz_zip_reader_locate_file(&zip, "Metadata/project_settings.config", nullptr, 0);
+    size_t     tam = 0;
+    void*      p   = idx >= 0 ? mz_zip_reader_extract_to_heap(&zip, mz_uint(idx), &tam, 0) : nullptr;
+    if (p != nullptr) {
+        const json j = json::parse(std::string(static_cast<const char*>(p), tam), nullptr, false);
+        for (const char* k : {"filament_settings_id", "filament_type", "filament_colour"})
+            if (j.is_object() && j.contains(k) && j[k].is_array())
+                n = std::max(n, int(j[k].size()));
+        mz_free(p);
+    }
+    close_zip_reader(&zip);
+    return std::min(n, 32);
+}
+
 FarmPerfis farm_perfis(const std::string& material, const fsf::path& pasta)
 {
     FarmPerfis      r;
@@ -908,11 +959,7 @@ FarmPerfis farm_perfis(const std::string& material, const fsf::path& pasta)
         r.erro = "a impressora escolhida na Preparação não é a conectada";
         return r;
     }
-    const std::string fid = filamento_id_do_tipo(material);
-    const Preset*     fil = nullptr;
-    for (const Preset& f : b->filaments)
-        if (f.is_compatible && !fid.empty() && f.filament_id == fid && (fil == nullptr || f.is_system))
-            fil = &f;
+    const Preset* fil = filamento_do_material(material, [](const Preset& f) { return f.is_compatible; });
     if (fil == nullptr) {
         r.erro = "não há perfil de " + material + " para esta impressora";
         return r;
@@ -968,11 +1015,9 @@ FarmPerfis farm_perfis_ao_vivo(const std::string& material, const fsf::path& pas
         if (d < dif)
             dif = d, proc = &x;
     }
-    const std::string fid = filamento_id_do_tipo(material);
-    const Preset*     fil = nullptr;
-    for (const Preset& f : b->filaments)
-        if (f.is_system && !fid.empty() && f.filament_id == fid && is_compatible_with_printer(b->filaments.get_preset_with_vendor_profile(f), pv))
-            fil = fil == nullptr ? &f : fil;
+    const Preset* fil = filamento_do_material(material, [b, &pv](const Preset& f) {
+        return f.is_system && is_compatible_with_printer(b->filaments.get_preset_with_vendor_profile(f), pv);
+    });
     if (proc == nullptr || fil == nullptr) {
         r.erro = proc == nullptr ? "não há perfil de impressão para " + pr->name : "não há perfil de " + material + " para " + pr->name;
         return r;
@@ -1163,6 +1208,17 @@ bool cor_perto(std::string a, std::string b)
     return std::sqrt(double((r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2))) <= 60.0;
 }
 
+// A posição que vem do site conta todas as entradas do sistema de cores, as vazias também (a lista do Dispositivo:
+// unidade × 4 + espaço, de 1 em diante). m.cores só tem as ocupadas: procura pelo número global, não pela ordem.
+// Antes a A4 de uma impressora com A2 e A3 vazias virava "a mesa pede a entrada 4, e a impressora tem 2".
+const json* entrada_da_posicao(const FarmMaquina& m, int posicao)
+{
+    for (const json& e : m.cores)
+        if (e.value("global", -1) == posicao - 1)
+            return &e;
+    return nullptr;
+}
+
 // Conferência antes de imprimir uma mesa que veio do site/app: a impressora conectada tem, na entrada indicada, o
 // material e a cor da mesa? Vazio = pode imprimir; senão, o motivo (a mesa não é enviada).
 std::string farm_conferir(const json& t, const FarmMaquina& m)
@@ -1171,9 +1227,10 @@ std::string farm_conferir(const json& t, const FarmMaquina& m)
     const int         posicao  = std::max(1, inteiro(t, "posicao", 1));
     if (m.cores.empty())
         return {}; // impressora sem sistema de cores: usa o filamento que está nela (o site já conferiu pela telemetria)
-    if (posicao > int(m.cores.size()))
-        return "a mesa pede a entrada " + std::to_string(posicao) + ", e a impressora tem " + std::to_string(m.cores.size());
-    const json&       e    = m.cores[posicao - 1];
+    const json* achada = entrada_da_posicao(m, posicao);
+    if (achada == nullptr)
+        return "a entrada " + std::to_string(posicao) + " está vazia; a mesa pede " + material + " " + cor_nome;
+    const json&       e    = *achada;
     const std::string tipo = texto_de(e, "tipo"), tem = texto_de(e, "cor");
     if (tipo.empty())
         return "a entrada " + std::to_string(posicao) + " está vazia; a mesa pede " + material + " " + cor_nome;
@@ -1224,14 +1281,16 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     const fsf::path saida = pasta / "saida";
     // Marcas que imprimem o filamento N pela entrada N (Anycubic: a impressora segue a ferramenta do G-code e ignora a
     // entrada escolhida): a peça é fatiada como filamento N, o da entrada onde está a cor (entrada global + 1).
-    const int global_cor = (!m.cores.empty() && posicao <= int(m.cores.size())) ? m.cores[posicao - 1].value("global", 0) : 0;
+    const json* entrada_cor = entrada_da_posicao(m, posicao);
+    const int   global_cor  = entrada_cor != nullptr ? entrada_cor->value("global", 0) : 0;
     const int filamento_n = entrada_fixa(m.agente) ? std::max(1, std::min(16, global_cor + 1)) : 1;
     const bool projeto_3mf = ext == ".3mf"; // o fatiador sem tela não clona nem troca o filamento de um projeto 3MF
     if (projeto_3mf && filamento_n > 1)
         return "este projeto 3MF imprime pela Entrada 1 nesta impressora: coloque o " + material + " " + texto_de(t, "cor_nome") +
                " na Entrada 1 ou mande o modelo em STL";
+    const int   copias     = projeto_3mf ? std::max(1, filamentos_do_3mf(modelo)) : filamento_n;
     std::string filamentos = perf.filamento;
-    for (int k = 1; k < filamento_n; ++k)
+    for (int k = 1; k < copias; ++k)
         filamentos += ";" + perf.filamento;
     std::vector<std::string> args{"--datadir", utf8_de(pasta / "dados"), "--load-settings", perf.maquina + ";" + perf.processo,
                                   "--load-filaments", filamentos};
@@ -1274,10 +1333,13 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     // posição da cor na impressora (1 = primeira entrada informada) -> entrada global do sistema de cores
     // (na Anycubic a cor está no filamento N: as posições antes dele ficam sem entrada)
     json mapa = json::array();
-    if (!m.cores.empty() && posicao <= int(m.cores.size())) {
+    if (entrada_cor != nullptr) {
         for (int k = 1; k < filamento_n; ++k)
             mapa.push_back(-1);
         mapa.push_back(global_cor);
+        // projeto 3MF com vários filamentos, todos trocados pelo da Farm: todos saem da mesma entrada
+        for (int k = 1; projeto_3mf && k < copias; ++k)
+            mapa.push_back(global_cor);
     }
     PrintParams p                 = perf.base;
     p.filename                    = utf8_de(envio);
