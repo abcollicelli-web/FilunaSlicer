@@ -267,7 +267,7 @@ var Filuna = (function () {
 		var B = { cx: 50, cy: 70, rx: 46, ry: 64 };   // aba de trás (mesmo tamanho, deslocada)
 		var passo = nivel == null || isNaN(nivel) ? 1 : Math.round(Math.max(0, Math.min(1, +nivel)) * 10) / 10;
 		var CUBO = 0.3;                              // raio do cubo do carretel em relação à aba
-		var R = passo > 0 ? 0.38 + 0.46 * passo : 0; // raio do filamento enrolado: 0,84 da aba com a bobina cheia
+		var R = passo > 0 ? 0.42 + 0.42 * passo : 0; // raio do filamento enrolado: 0,84 da aba com a bobina cheia
 		var achata = A.rx / A.ry;                    // a aba é um círculo de raio A.ry visto de lado
 		function noCirculo(f, graus) { var t = graus * Math.PI / 180; return [A.ry * f * Math.sin(t), -A.ry * f * Math.cos(t)]; }
 		function janela(centro) {

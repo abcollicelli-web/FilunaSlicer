@@ -93,7 +93,7 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 .ekpis>div{padding:20px 24px;border-right:1px solid var(--line)}.ekpis>div:last-child{border-right:0}
 .ekpis span{font-size:13px;font-weight:600}.ekpis b{display:block;font-size:28px;font-weight:800;margin:4px 0}.ekpis small{color:var(--ink2);font-size:12.5px}
 /* Estoque: grade, lista e miniaturas; a bobina mostra o que resta ao passar o mouse, focar ou clicar */
-.eacoes{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ebarra{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}.ebarra #sinc{margin:0}
 .emodos{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:12px;background:#fff}
 .emodos button{display:flex;align-items:center;gap:6px;height:38px;padding:0 12px;border:0;border-radius:9px;background:none;color:var(--ink2);font-weight:600;font-size:13.5px}
 .emodos button:hover{color:var(--ink)}.emodos button[aria-pressed=true]{background:var(--rose);color:var(--magenta-deep)}
@@ -322,10 +322,10 @@ function marcarModo() {
 }
 function estoque() {
 	el().innerHTML = '<div class="etop"><div><div class="h1">Estoque de filamentos</div><div class="sub">Gerencie seus filamentos, quantidades e custos. A baixa é automática ao fim de cada impressão.</div></div>' +
-		'<div class="eacoes"><div class="emodos" role="group" aria-label="Ver o estoque como">' +
-		MODOS_ESTOQUE.map(function (m) { return '<button data-modo="' + m[0] + '" aria-pressed="false">' + m[2] + E(m[1]) + "</button>"; }).join("") + "</div>" +
-		'<button class="btn primario" id="novo" style="height:46px;padding:0 20px">+ Adicionar filamento</button></div></div>' +
-		'<div id="sinc" class="sub" style="margin:-4px 0 12px"></div><div id="r" class="carregando">Carregando…</div>';
+		'<button class="btn primario" id="novo" style="height:46px;padding:0 20px">+ Adicionar filamento</button></div>' +
+		'<div class="ebarra"><div id="sinc" class="sub"></div><div class="emodos" role="group" aria-label="Ver o estoque como">' +
+		MODOS_ESTOQUE.map(function (m) { return '<button data-modo="' + m[0] + '" aria-pressed="false">' + m[2] + E(m[1]) + "</button>"; }).join("") + "</div></div>" +
+		'<div id="r" class="carregando">Carregando…</div>';
 	document.getElementById("novo").onclick = function () { novaBobina(); };
 	el().querySelectorAll("[data-modo]").forEach(function (b) {
 		b.onclick = function () {
