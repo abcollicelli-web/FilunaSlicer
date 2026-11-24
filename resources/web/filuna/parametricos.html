@@ -90,7 +90,7 @@ function carregar() {
 	}, function (e) { document.getElementById("g").innerHTML = '<div class="vazio">' + E(e.erro || "Sem conexão.") + "</div>"; });
 }
 Filuna.iniciar().then(function () { return Filuna.nativo("secao.pendente").then(function (r) { if (r.secao == "ferramentas") tipo = "ferramenta"; }).catch(function () {}); }).then(carregar);
-Filuna.ouvir("secao", function (d) { Filuna.nativo("secao.pendente").catch(function () {}); escolherTipo(d.secao == "ferramentas" ? "ferramenta" : "parametrico"); });
+Filuna.ouvir("secao", function (d) { if (d.secao != "ferramentas" && d.secao != "parametricos") return; Filuna.nativo("secao.pendente").catch(function () {}); escolherTipo(d.secao == "ferramentas" ? "ferramenta" : "parametrico"); });
 Filuna.ouvir("conta", carregar);
 Filuna.ouvir("parametrico.erro", function (d) { document.getElementById("msg").innerHTML = '<div class="aviso">Não abriu: ' + E(d.erro || "erro") + "</div>"; });
 </script>

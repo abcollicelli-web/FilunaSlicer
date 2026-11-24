@@ -70,3 +70,8 @@ a:hover{text-decoration:none}
 #flConexao{position:fixed;right:16px;bottom:12px;font-size:12.5px;color:var(--ink2);background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 12px;display:none;align-items:center;gap:8px;z-index:50}
 #flConexao:before{content:"";width:8px;height:8px;border-radius:50%;background:#D9480F}
 #flConexao.ok:before{background:var(--good)}
+/* Bobina (Filuna.bobinaSVG) imprimindo agora: as janelas da aba giram como se o filamento estivesse desenrolando. */
+.bobina-svg .bobina-giro{transform-box:view-box;transform-origin:0 0}
+.girando .bobina-svg .bobina-giro{animation:bobina-gira 3.2s linear infinite}
+@keyframes bobina-gira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.girando .bobina-svg .bobina-giro{animation:none}}

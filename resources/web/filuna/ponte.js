@@ -253,9 +253,11 @@ var Filuna = (function () {
 		return [194, 24, 91];
 	}
 	function misturar(rgb, alvo, t) { return "rgb(" + rgb.map(function (v, i) { return Math.round(v + (alvo[i] - v) * t); }).join(",") + ")"; }
-	function bobinaSVG(cor, px) {
+	function bobinaSVG(cor, px, nivel) {
 		// Vista 3/4 pela frente-direita: aba de trás (só a borda aparece à esquerda), o filamento enrolado
 		// entre as abas e a aba da frente grande, perfurada, com três janelas que mostram o filamento.
+		// nivel (opcional, 0 a 1): quanto filamento resta, desenhado em passos de 10% (0 = carretel vazio; sem nivel = cheia).
+		// As janelas ficam no grupo .bobina-giro, que gira no plano da aba quando um elemento acima tem a classe "girando".
 		var id = "fb" + (++nBobina), c = corRgb(cor), lum = (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255;
 		var claro = lum > 0.85 ? "#FFFFFF" : misturar(c, [255, 255, 255], 0.5);
 		var meio = "rgb(" + c.join(",") + ")";
@@ -263,20 +265,39 @@ var Filuna = (function () {
 		var fio = misturar(c, [0, 0, 0], lum > 0.85 ? 0.2 : 0.35);
 		var A = { cx: 96, cy: 70, rx: 46, ry: 64 };   // aba da frente
 		var B = { cx: 50, cy: 70, rx: 46, ry: 64 };   // aba de trás (mesmo tamanho, deslocada)
-		var R = 0.84;                                // raio do filamento enrolado em relação à aba
-		function pt(e, f, graus) { var t = graus * Math.PI / 180; return [e.cx + e.rx * f * Math.sin(t), e.cy - e.ry * f * Math.cos(t)]; }
+		var passo = nivel == null || isNaN(nivel) ? 1 : Math.round(Math.max(0, Math.min(1, +nivel)) * 10) / 10;
+		var CUBO = 0.3;                              // raio do cubo do carretel em relação à aba
+		var R = passo > 0 ? 0.38 + 0.46 * passo : 0; // raio do filamento enrolado: 0,84 da aba com a bobina cheia
+		var achata = A.rx / A.ry;                    // a aba é um círculo de raio A.ry visto de lado
+		function noCirculo(f, graus) { var t = graus * Math.PI / 180; return [A.ry * f * Math.sin(t), -A.ry * f * Math.cos(t)]; }
 		function janela(centro) {
 			var p = [], g;
-			for (g = centro - 30; g <= centro + 30; g += 5) p.push(pt(A, 0.82, g));
-			for (g = centro + 20; g >= centro - 20; g -= 5) p.push(pt(A, 0.4, g));
+			for (g = centro - 30; g <= centro + 30; g += 5) p.push(noCirculo(0.82, g));
+			for (g = centro + 20; g >= centro - 20; g -= 5) p.push(noCirculo(0.4, g));
 			return "M" + p.map(function (q) { return q[0].toFixed(1) + " " + q[1].toFixed(1); }).join(" L") + " Z";
 		}
-		var voltas = "";
-		for (var k = 1; k < 22; k++) {
-			var y = (A.cy - A.ry * R + k * (2 * A.ry * R) / 22).toFixed(1);
-			voltas += '<line x1="' + (B.cx - 6) + '" x2="' + A.cx + '" y1="' + y + '" y2="' + y + '" stroke="' + fio + '" stroke-opacity=".18" stroke-width=".7"/>';
+		function cilindro(r, tinta) {
+			return '<path d="M' + B.cx + " " + (A.cy - A.ry * r).toFixed(1) + " H" + A.cx + " V" + (A.cy + A.ry * r).toFixed(1) + " H" + B.cx + ' Z" fill="' + tinta + '"/>';
 		}
-		var topo = A.cy - A.ry * R, base = A.cy + A.ry * R;
+		function ponta(r, tinta) {
+			return '<ellipse cx="' + B.cx + '" cy="' + A.cy + '" rx="' + (B.rx * r).toFixed(1) + '" ry="' + (A.ry * r).toFixed(1) + '" ' + tinta + "/>";
+		}
+		var filamento = "";
+		if (R) {
+			var voltas = "", n = Math.round(22 * R / 0.84);
+			for (var k = 1; k < n; k++) {
+				var y = (A.cy - A.ry * R + k * (2 * A.ry * R) / n).toFixed(1);
+				voltas += '<line x1="' + (B.cx - 6) + '" x2="' + A.cx + '" y1="' + y + '" y2="' + y + '" stroke="' + fio + '" stroke-opacity=".18" stroke-width=".7"/>';
+			}
+			filamento = cilindro(R, "url(#" + id + "f)") + voltas + ponta(R, 'fill="url(#' + id + 'f)"') + ponta(R, 'fill="none" stroke="' + fio + '" stroke-opacity=".25"');
+		}
+		var janelas = [0, 120, 240].map(function (g) {
+			var d = janela(g);
+			if (passo == 1) return '<path d="' + d + '" fill="url(#' + id + 'j)" stroke="#2B3050" stroke-width="3" stroke-linejoin="round"/>';
+			return '<path d="' + d + '" fill="#232741" stroke="none"/>' +
+				(R ? '<path d="' + d + '" fill="url(#' + id + 'j)" stroke="none" clip-path="url(#' + id + 'r)"/>' : "") +
+				'<path d="' + d + '" fill="none" stroke="#2B3050" stroke-width="3" stroke-linejoin="round"/>';
+		}).join("");
 		return '<svg class="bobina-svg" viewBox="0 0 150 140" width="' + (px || 64) + '" height="' + (px || 64) + '" aria-hidden="true">' +
 			'<defs>' +
 			'<linearGradient id="' + id + 'f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + escuro + '"/><stop offset=".18" stop-color="' + meio + '"/>' +
@@ -285,23 +306,20 @@ var Filuna = (function () {
 			'<linearGradient id="' + id + 'a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5A6390"/><stop offset=".55" stop-color="#3E4568"/><stop offset="1" stop-color="#2B3050"/></linearGradient>' +
 			'<pattern id="' + id + 'p" width="5.2" height="9" patternUnits="userSpaceOnUse"><circle cx="1.3" cy="2.2" r="1.05" fill="#1E2136"/><circle cx="3.9" cy="6.7" r="1.05" fill="#1E2136"/></pattern>' +
 			'<clipPath id="' + id + 'c"><ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.9) + '" ry="' + (A.ry * 0.9) + '"/></clipPath>' +
+			(R && passo < 1 ? '<clipPath id="' + id + 'r"><circle r="' + (A.ry * R).toFixed(1) + '"/></clipPath>' : "") +
 			'</defs>' +
 			// aba de trás: só a borda visível à esquerda
 			'<ellipse cx="' + B.cx + '" cy="' + B.cy + '" rx="' + B.rx + '" ry="' + B.ry + '" fill="#2B3050"/>' +
 			'<ellipse cx="' + (B.cx + 2.5) + '" cy="' + B.cy + '" rx="' + (B.rx - 2) + '" ry="' + (B.ry - 2) + '" fill="#363C60"/>' +
-			// filamento: cilindro entre as abas
-			'<path d="M' + B.cx + ' ' + topo.toFixed(1) + ' H' + A.cx + ' V' + base.toFixed(1) + ' H' + B.cx + ' Z" fill="url(#' + id + 'f)"/>' + voltas +
-			'<ellipse cx="' + B.cx + '" cy="' + A.cy + '" rx="' + (B.rx * R).toFixed(1) + '" ry="' + (A.ry * R).toFixed(1) + '" fill="url(#' + id + 'f)"/>' +
-			'<ellipse cx="' + B.cx + '" cy="' + A.cy + '" rx="' + (B.rx * R).toFixed(1) + '" ry="' + (A.ry * R).toFixed(1) + '" fill="none" stroke="' + fio + '" stroke-opacity=".25"/>' +
+			// cubo do carretel (aparece quando falta filamento) e o filamento: cilindros entre as abas
+			(passo < 1 ? cilindro(CUBO, "#4B5380") + ponta(CUBO, 'fill="#3E4568"') : "") + filamento +
 			// espessura e face da aba da frente
 			'<ellipse cx="' + (A.cx - 3) + '" cy="' + A.cy + '" rx="' + A.rx + '" ry="' + A.ry + '" fill="#252946"/>' +
 			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + A.rx + '" ry="' + A.ry + '" fill="url(#' + id + 'a)"/>' +
 			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.95) + '" ry="' + (A.ry * 0.95) + '" fill="none" stroke="#7079A6" stroke-opacity=".55" stroke-width="1"/>' +
 			'<g clip-path="url(#' + id + 'c)"><rect x="' + (A.cx - A.rx) + '" y="' + (A.cy - A.ry) + '" width="' + (2 * A.rx) + '" height="' + (2 * A.ry) + '" fill="url(#' + id + 'p)" opacity=".85"/></g>' +
-			// janelas mostrando o filamento
-			[0, 120, 240].map(function (g) {
-				return '<path d="' + janela(g) + '" fill="url(#' + id + 'j)" stroke="#2B3050" stroke-width="3" stroke-linejoin="round"/>';
-			}).join("") +
+			// janelas mostrando o filamento, no plano da aba (círculo achatado) para poderem girar
+			'<g transform="translate(' + A.cx + " " + A.cy + ") scale(" + achata.toFixed(4) + ' 1)"><g class="bobina-giro">' + janelas + "</g></g>" +
 			// miolo
 			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.3) + '" ry="' + (A.ry * 0.3) + '" fill="#4B5380"/>' +
 			'<ellipse cx="' + A.cx + '" cy="' + A.cy + '" rx="' + (A.rx * 0.24) + '" ry="' + (A.ry * 0.24) + '" fill="none" stroke="#6C76A3" stroke-width="1"/>' +
@@ -313,6 +331,12 @@ var Filuna = (function () {
 	function tempo(s) { s = Math.max(0, Math.round(s || 0)); var h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); if (m == 60) { h++; m = 0; } return (h ? h + "h" : "") + (m < 10 && h ? "0" : "") + m + "min"; }
 	function reais(v) { return "R$ " + Number(v || 0).toFixed(2).replace(".", ","); }
 	function num(v, casas) { return Number(v || 0).toFixed(casas == null ? 2 : casas).replace(".", ","); }
+	// Seção "modelo:<slug>" (aba.abrir de outra tela, ex.: cartão da tela inicial): abre a página do modelo.
+	function abrirModeloPedido(secao) {
+		if (!secao || secao.indexOf("modelo:") != 0) return false;
+		location.href = "modelo-3d.html?slug=" + encodeURIComponent(secao.slice(7));
+		return true;
+	}
 	function abrirLink(url) { return nativo("url.abrir", { url: url }).catch(function () { window.open(url, "_blank"); }); }
 
 	function telaLogin(el, aoEntrar, texto) {
@@ -438,5 +462,5 @@ var Filuna = (function () {
 
 	return { nativo: nativo, api: api, enviarArquivo: enviarArquivo, imagem: imagem, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
 		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
-		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, telaLogin: telaLogin };
+		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, abrirModeloPedido: abrirModeloPedido, telaLogin: telaLogin };
 })();

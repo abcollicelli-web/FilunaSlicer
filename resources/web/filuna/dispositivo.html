@@ -965,7 +965,7 @@ function camera(iid) {
 
 Filuna.ouvir("mostrar", function () { Filuna.nativo("dispositivos.observar", { ligado: true }).catch(function () {}); carregar(); });
 Filuna.ouvir("impressoras", carregar);   // cadastrada agora em "Adicionar impressora"
-Filuna.ouvir("secao", function (d) { Filuna.nativo("secao.pendente").catch(function () {}); abrirPedido(d.secao); carregar(); });
+Filuna.ouvir("secao", function (d) { if (/^unidade:/.test(d.secao || "")) Filuna.nativo("secao.pendente").catch(function () {}); abrirPedido(d.secao); carregar(); });
 Filuna.iniciar().then(function () { return Filuna.nativo("secao.pendente").then(function (r) { abrirPedido(r.secao); }).catch(function () {}); }).then(carregar);
 setInterval(function () { if (!document.hidden && !estado.confirmar && document.activeElement.id != "busca") carregar(); }, 15000);
 </script>

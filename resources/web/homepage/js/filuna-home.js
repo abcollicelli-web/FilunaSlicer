@@ -388,7 +388,8 @@ function FlM3dCarregar() {
 		});
 		$("#FlM3dGrade").html(h);
 		$("#FlM3d").show();
-		$("#FlM3dGrade .m3d-cartao").on("click", function () { var m = ms[+$(this).attr("data-k")]; if (m && m.link) OpenWikiUrl(m.link); });
+		// O cartão abre a aba Modelos 3D do Filuna já na página do modelo ("modelo:<slug>").
+		$("#FlM3dGrade .m3d-cartao").on("click", function () { var m = ms[+$(this).attr("data-k")]; if (m) FlAbrirAba("filuna.modelos", m.slug ? "modelo:" + m.slug : ""); });
 	}).catch(function () { /* sem internet: a seção simplesmente não aparece */ });
 }
 $(function () { FlM3dCarregar(); });
