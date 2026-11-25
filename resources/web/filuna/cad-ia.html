@@ -116,6 +116,7 @@ function comecar() {
 	var k = st.ia || "claude", ia = IAS[k];
 	var q = "Use o conector Filuna. Vamos modelar uma peça no meu Filuna CAD (aba Design do Filuna Slicer). Leia filuna_cad para ver o " +
 		"que já existe e a lista completa de comandos; depois modele em passos com filuna_cad_fazer e confira cada um com filuna_cad_resposta. " +
+		"Faça tudo direto no Filuna CAD: não gere OpenSCAD, STL, STEP, código nem arquivo. " +
 		"Medidas em milímetros, peça para impressão 3D. Se faltar alguma medida, me pergunte antes." +
 		(st.pedido ? " O que eu quero: " + st.pedido : " Pergunte o que eu quero modelar.");
 	publicar();
@@ -174,7 +175,8 @@ function desenhar() {
 	var ta = document.getElementById("pedido");
 	if (ta) ta.oninput = function () { st.pedido = ta.value; };
 	document.querySelectorAll("[data-ex]").forEach(function (b) { b.onclick = function () { st.pedido = EXEMPLOS[+b.dataset.ex]; desenhar(); }; });
-	document.querySelectorAll("[data-ia]").forEach(function (b) { b.onclick = function () { var k = b.dataset.ia; if (st.ia == k) abrirIA(IAS[k].inicio); else { guardarIA(k); st.erro = ""; desenhar(); } }; });
+	// "Abrir" já leva a instrução: sem ela a IA não sabe que deve modelar no Filuna CAD e escreve código (OpenSCAD).
+	document.querySelectorAll("[data-ia]").forEach(function (b) { b.onclick = function () { var k = b.dataset.ia; if (st.ia == k) comecar(); else { guardarIA(k); st.erro = ""; desenhar(); } }; });
 	on("p1", function () { abrirIA(IAS[esc].inicio); });
 	on("p2", function () { nat("texto.copiar", { texto: st.endereco }).catch(function () {}); abrirIA(IAS[esc].conectores); });
 	on("p3", function () { buscar().then(desenhar); });
