@@ -1,6 +1,7 @@
 #include <boost/asio.hpp> // no Windows o boost precisa vir antes dos cabeçalhos do wxWidgets
 #include "FilunaDispositivos.hpp"
 #include "FilunaCasa.hpp"
+#include "FilunaCasaAvisos.hpp"
 #include "FilunaAoVivo.hpp"
 
 #include "FilunaAtualizacao.hpp"
@@ -372,6 +373,7 @@ json card(MachineObject* o)
     // Raio X da Impressora: em que camada e com que código o erro aconteceu
     c["camada"]  = o->curr_layer;
     c["camadas"] = o->total_layers;
+    c["peca"]    = o->subtask_name; // Filuna Home: o aviso diz qual peça terminou
     if (o->print_error != 0 && unsigned(o->print_error) != 0x0300400Cu && unsigned(o->print_error) != 0x0500400Eu)
         c["codigo_erro"] = o->get_print_error_str();
     auto ctl = CONTROLES.find(o->printer_agent_id);
@@ -1489,6 +1491,15 @@ void monitor_iniciar()
             if (dev.empty() || !(i.value("selecionada", false) || i.value("ao_vivo", false)))
                 continue; // leitura ao vivo: a impressora ativa e as acompanhadas em segundo plano
             const std::string a = antes[dev];
+            {
+                // Filuna Home: o motor de avisos decide quais aparelhos da casa avisam (TV, luz, popup, plugins…)
+                json dados = {{"impressora", i.value("nome", std::string())}, {"peca", i.value("peca", std::string())},
+                              {"progresso", i.value("progresso", 0)}, {"erro", i.value("erro", std::string())}};
+                if ((a == "imprimindo" || a == "pausada") && (est == "concluida" || est == "livre"))
+                    FilunaCasaAvisos::evento("concluida", dados);
+                else if (a == "imprimindo" && est == "pausada" && i.value("erro", std::string()).empty())
+                    FilunaCasaAvisos::evento("pausada", dados);
+            }
             if ((a == "imprimindo" || a == "pausada") && (est == "concluida" || est == "livre")) {
                 const wxString texto = wxString::FromUTF8("Impressão concluída na " + i.value("nome", std::string("impressora")) +
                                                           ". Retire a peça e limpe a mesa.");
@@ -1540,6 +1551,8 @@ void monitor_iniciar()
                     novas += (novas.empty() ? "" : ", ") + std::to_string(n) + " (" + sig.substr(0, sig.find('|')) + ")";
                 }
                 if (!novas.empty()) {
+                    FilunaCasaAvisos::evento("filamento", {{"impressora", i.value("nome", std::string())},
+                                                           {"texto", "filamento trocado na entrada " + novas + "."}});
                     const wxString texto = wxString::FromUTF8("Filamento trocado na " + i.value("nome", std::string("impressora")) + ": entrada " + novas +
                                                               ". Abra Dispositivo para cadastrar no estoque.");
                     if (Plater* pl = wxGetApp().plater())
@@ -1551,6 +1564,8 @@ void monitor_iniciar()
             }
             const std::string err = i.value("erro", std::string());
             static std::map<std::string, std::string> erro_antes;
+            if (!err.empty() && erro_antes[dev] != err) // Filuna Home: erro novo vai para os aparelhos da casa
+                FilunaCasaAvisos::evento("erro", {{"impressora", i.value("nome", std::string())}, {"peca", i.value("peca", std::string())}, {"erro", err}});
             if (!err.empty() && erro_antes[dev] != err) { // erro novo da impressora (filamento rompido, falha…)
                 const wxString texto = wxString::FromUTF8(i.value("nome", std::string("Impressora")) + ": " + err + ".");
                 if (Plater* pl = wxGetApp().plater())
@@ -1567,6 +1582,8 @@ void monitor_iniciar()
                 sincronizar_estado(e, cfg->get("filuna_token"));
             FilunaCasa::publicar_home_assistant(e); // Filuna Home: impressoras no Home Assistant, se ligado
         }
+        if (AppConfig* cfg = wxGetApp().app_config) // tomadas esperando o bico esfriar e avisos do site (vendas, API)
+            FilunaCasaAvisos::vigiar(e, cfg->get("filuna_token"));
     });
     vigia->Start(10000);
 }

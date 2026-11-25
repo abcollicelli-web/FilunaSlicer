@@ -27,4 +27,17 @@ json acao(const json& pedido);
 // Chamada a cada leitura das impressoras: publica o estado delas no Home Assistant, se o cliente ligou.
 void publicar_home_assistant(const json& estado_impressoras);
 
+// Comandos usados pelo motor de avisos (FilunaCasaAvisos). Todos bloqueiam alguns segundos: chamar numa linha
+// própria, nunca na da tela. As chaves e senhas são lidas antes, na linha da tela, e passadas aqui.
+bool tv_lg_aviso(const std::string& ip, const std::string& chave_lg, const std::string& texto, std::string& erro);
+// protocolo: "shelly" ou "kasa"
+bool tomada_ligar(const std::string& protocolo, const std::string& ip, bool ligar, std::string& erro);
+json tomada_estado(const std::string& protocolo, const std::string& ip);
+// Mostra a cor do aviso na luz por alguns segundos e volta ao que estava. protocolo: "kasa" ou "wled".
+bool luz_aviso(const std::string& protocolo, const std::string& ip, const std::string& cor_hex, int segundos, std::string& erro);
+// Publica o aviso no MQTT do Home Assistant (gatilho "Filuna" nas automações). cfg_ha: {broker, usuario, senha}.
+bool ha_evento(const json& cfg_ha, const json& aviso, std::string& erro);
+// Chave de pareamento da TV LG guardada neste computador (linha da tela).
+std::string chave_lg(const std::string& ip);
+
 }}} // namespace Slic3r::GUI::FilunaCasa

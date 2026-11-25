@@ -12,6 +12,7 @@
 #endif
 #include "FilunaDispositivos.hpp"
 #include "FilunaCasa.hpp"
+#include "FilunaCasaAvisos.hpp"
 #include "FilunaManutencao.hpp"
 #include "FilunaImpressao.hpp"
 
@@ -950,6 +951,19 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return FilunaCasa::resultado();
     if (action == "casa.acao")
         return FilunaCasa::acao(d);
+    // motor de avisos: regras de cada aparelho, teste de conexão e histórico
+    if (action == "casa.regras")
+        return FilunaCasaAvisos::regras();
+    if (action == "casa.regra.salvar")
+        return FilunaCasaAvisos::salvar_regra(d);
+    if (action == "casa.testar")
+        return FilunaCasaAvisos::testar(d);
+    if (action == "casa.historico")
+        return FilunaCasaAvisos::historico();
+    if (action == "casa.evento") { // aviso montado na tela (prévia de um evento real, sem esperar a impressora)
+        FilunaCasaAvisos::evento(d.value("evento", std::string("mensagem")), d.value("dados", json::object()));
+        return {{"ok", true}};
+    }
     if (action == "dispositivos.conectar")
         return FD::conectar(d.value("dev_id", std::string()), d.value("codigo", std::string()));
     if (action == "dispositivos.conectar_ip")

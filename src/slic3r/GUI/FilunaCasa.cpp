@@ -31,6 +31,7 @@
 #include <atomic>
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <map>
 #include <memory>
@@ -1031,6 +1032,22 @@ void executar(json p, std::string chave_lg, json cfg_ha)
 {
     const std::string a = p.value("acao", std::string()), ip = p.value("ip", std::string());
     try {
+        if (a == "tomada.estado" || a == "tomada.testar") {
+            const std::string prot = p.value("protocolo", std::string("shelly"));
+            if (a == "tomada.estado") {
+                responder(p, tomada_estado(prot, ip));
+                return;
+            }
+            std::string erro;
+            if (!tomada_ligar(prot, ip, false, erro)) {
+                responder(p, {{"ok", false}, {"msg", erro}});
+                return;
+            }
+            std::this_thread::sleep_for(3s);
+            const bool ok = tomada_ligar(prot, ip, true, erro);
+            responder(p, {{"ok", ok}, {"msg", ok ? "A tomada desligou e ligou de novo." : erro}});
+            return;
+        }
         if (a == "shelly.estado")
             responder(p, shelly_estado(ip));
         else if (a == "shelly.ligar") {
@@ -1089,7 +1106,263 @@ void executar(json p, std::string chave_lg, json cfg_ha)
     }
 }
 
+// ---------------------------------------------------------------- comandos para o motor de avisos
+
+bool http_post_json(const std::string& url, const json& corpo, std::string& resposta, long max_s = 5)
+{
+    bool ok = false;
+    Http::post(url)
+        .header("Content-Type", "application/json")
+        .set_post_body(corpo.dump())
+        .timeout_connect(2)
+        .timeout_max(max_s)
+        .on_complete([&](std::string b, unsigned st) { resposta = std::move(b); ok = st < 400; })
+        .on_error([&](std::string b, std::string erro, unsigned) { resposta = b.empty() ? erro : b; })
+        .perform_sync();
+    return ok;
+}
+
+// Kasa na porta 9999 (TCP): 4 bytes de tamanho + JSON cifrado com o XOR encadeado.
+bool kasa_pedido(const std::string& ip, const json& pedido, json& resposta, std::string& erro)
+{
+    boost::system::error_code ec;
+    const auto                addr = net::ip::make_address(ip, ec);
+    if (ec) {
+        erro = "Endereço inválido: " + ip + ".";
+        return false;
+    }
+    const std::string corpo = kasa_cifra(pedido.dump(), false);
+    std::string       pkt(4, '\0');
+    const auto        n = static_cast<std::uint32_t>(corpo.size());
+    for (int b = 0; b < 4; ++b)
+        pkt[b] = char((n >> (24 - 8 * b)) & 0xFF);
+    pkt += corpo;
+
+    net::io_context          io;
+    tcp::socket              s(io);
+    std::string              entrada;
+    std::array<char, 4096>   buf{};
+    bool                     fim = false;
+    std::function<void()>    ler;
+    ler = [&]() {
+        s.async_read_some(net::buffer(buf), [&](beast::error_code e, std::size_t lido) {
+            entrada.append(buf.data(), lido);
+            if (entrada.size() >= 4) {
+                std::uint32_t esperado = 0;
+                for (int b = 0; b < 4; ++b)
+                    esperado = (esperado << 8) | static_cast<unsigned char>(entrada[b]);
+                if (entrada.size() >= 4 + esperado) {
+                    resposta = json::parse(kasa_cifra(entrada.substr(4, esperado), true), nullptr, false);
+                    fim      = true;
+                    return;
+                }
+            }
+            if (e) {
+                erro = "A tomada fechou a conexão.";
+                fim  = true;
+                return;
+            }
+            ler();
+        });
+    };
+    s.async_connect(tcp::endpoint(addr, 9999), [&](beast::error_code e) {
+        if (e) {
+            erro = "O aparelho não respondeu em " + ip + ".";
+            fim  = true;
+            return;
+        }
+        net::async_write(s, net::buffer(pkt), [&](beast::error_code e2, std::size_t) {
+            if (e2) {
+                erro = "Não foi possível mandar o comando.";
+                fim  = true;
+                return;
+            }
+            ler();
+        });
+    });
+    io.run_for(5s);
+    ler = nullptr;
+    if (!fim && erro.empty())
+        erro = "O aparelho não respondeu a tempo em " + ip + ".";
+    return resposta.is_object() && erro.empty();
+}
+
+// "#E0261B" -> matiz (0–360), saturação e brilho (0–100), como a lâmpada Kasa pede
+void hex_hsv(const std::string& hex, int& h, int& s, int& v)
+{
+    unsigned rgb = 0xE6007E;
+    try { rgb = static_cast<unsigned>(std::stoul(hex.size() > 1 && hex[0] == '#' ? hex.substr(1) : hex, nullptr, 16)); } catch (...) {}
+    const double r = ((rgb >> 16) & 0xFF) / 255.0, g = ((rgb >> 8) & 0xFF) / 255.0, b = (rgb & 0xFF) / 255.0;
+    const double mx = std::max({r, g, b}), mn = std::min({r, g, b}), d = mx - mn;
+    double       hh = 0;
+    if (d > 0)
+        hh = mx == r ? 60 * std::fmod((g - b) / d, 6.0) : mx == g ? 60 * ((b - r) / d + 2) : 60 * ((r - g) / d + 4);
+    if (hh < 0)
+        hh += 360;
+    h = int(hh + 0.5);
+    s = mx > 0 ? int(d / mx * 100 + 0.5) : 0;
+    v = std::max(30, int(mx * 100 + 0.5));
+}
+
+void hex_rgb(const std::string& hex, int& r, int& g, int& b)
+{
+    unsigned rgb = 0xE6007E;
+    try { rgb = static_cast<unsigned>(std::stoul(hex.size() > 1 && hex[0] == '#' ? hex.substr(1) : hex, nullptr, 16)); } catch (...) {}
+    r = (rgb >> 16) & 0xFF;
+    g = (rgb >> 8) & 0xFF;
+    b = rgb & 0xFF;
+}
+
 } // namespace
+
+bool tv_lg_aviso(const std::string& ip, const std::string& chave_lg_salva, const std::string& texto, std::string& erro)
+{
+    if (chave_lg_salva.empty()) {
+        erro = "A TV ainda não foi pareada com este computador. Abra a TV em Dispositivo › Casa e toque em Parear.";
+        return false;
+    }
+    const Lg r = lg(ip, chave_lg_salva, texto, 20);
+    if (!r.ok)
+        erro = r.erro;
+    return r.ok;
+}
+
+std::string chave_lg(const std::string& ip)
+{
+    AppConfig* cfg = wxGetApp().app_config;
+    return cfg != nullptr ? cfg->get(chave_config_lg(ip)) : std::string();
+}
+
+bool tomada_ligar(const std::string& protocolo, const std::string& ip, bool ligar, std::string& erro)
+{
+    if (protocolo == "shelly")
+        return shelly_ligar(ip, ligar, erro);
+    if (protocolo == "kasa") {
+        json r;
+        if (!kasa_pedido(ip, {{"system", {{"set_relay_state", {{"state", ligar ? 1 : 0}}}}}}, r, erro))
+            return false;
+        const int code = r.value("system", json::object()).value("set_relay_state", json::object()).value("err_code", -1);
+        if (code != 0)
+            erro = "A tomada recusou o comando.";
+        return code == 0;
+    }
+    if (protocolo == "tasmota") {
+        std::string corpo;
+        if (http_get("http://" + ip + "/cm?cmnd=Power%20" + std::string(ligar ? "On" : "Off"), corpo))
+            return true;
+        erro = "A tomada não respondeu em " + ip + ".";
+        return false;
+    }
+    erro = "Esta tomada ainda não aceita comando direto pelo Filuna.";
+    return false;
+}
+
+json tomada_estado(const std::string& protocolo, const std::string& ip)
+{
+    if (protocolo == "shelly")
+        return shelly_estado(ip);
+    if (protocolo == "kasa") {
+        json        r;
+        std::string erro;
+        if (!kasa_pedido(ip, {{"system", {{"get_sysinfo", json::object()}}}, {"emeter", {{"get_realtime", json::object()}}}}, r, erro))
+            return {{"ok", false}, {"msg", erro}};
+        const json si = r.value("system", json::object()).value("get_sysinfo", json::object());
+        json       o  = {{"ok", true}, {"ligada", si.value("relay_state", 0) == 1}};
+        const json em = r.value("emeter", json::object()).value("get_realtime", json::object());
+        if (em.value("err_code", -1) == 0)
+            o["potencia_w"] = em.contains("power_mw") ? em.value("power_mw", 0.0) / 1000.0 : em.value("power", 0.0);
+        return o;
+    }
+    if (protocolo == "tasmota") {
+        std::string corpo;
+        if (!http_get("http://" + ip + "/cm?cmnd=Status%208", corpo) || corpo.empty())
+            return {{"ok", false}, {"msg", "A tomada não respondeu em " + ip + "."}};
+        std::string p1;
+        http_get("http://" + ip + "/cm?cmnd=Power", p1);
+        const json st = json::parse(corpo, nullptr, false), pw = json::parse(p1, nullptr, false);
+        json o = {{"ok", true}, {"ligada", pw.is_object() && pw.value("POWER", std::string()) == "ON"}};
+        if (st.is_object() && st.contains("StatusSNS") && st["StatusSNS"].contains("ENERGY"))
+            o["potencia_w"] = st["StatusSNS"]["ENERGY"].value("Power", 0.0);
+        return o;
+    }
+    return {{"ok", false}, {"msg", "Esta tomada ainda não aceita comando direto pelo Filuna."}};
+}
+
+bool luz_aviso(const std::string& protocolo, const std::string& ip, const std::string& cor_hex, int segundos, std::string& erro)
+{
+    segundos = std::clamp(segundos, 2, 30);
+    if (protocolo == "kasa") {
+        const char* SV = "smartlife.iot.smartbulb.lightingservice";
+        json        antes;
+        if (!kasa_pedido(ip, {{SV, {{"get_light_state", json::object()}}}}, antes, erro))
+            return false;
+        json est = antes.value(SV, json::object()).value("get_light_state", json::object());
+        int  h = 0, s = 0, v = 100;
+        hex_hsv(cor_hex, h, s, v);
+        json r;
+        for (int vez = 0; vez < 3; ++vez) { // pisca 3 vezes na cor do aviso
+            kasa_pedido(ip, {{SV, {{"transition_light_state", {{"on_off", 1}, {"hue", h}, {"saturation", s}, {"brightness", 100}, {"color_temp", 0}, {"transition_period", 0}}}}}}, r, erro);
+            std::this_thread::sleep_for(500ms);
+            kasa_pedido(ip, {{SV, {{"transition_light_state", {{"on_off", 1}, {"brightness", 5}, {"transition_period", 0}}}}}}, r, erro);
+            std::this_thread::sleep_for(300ms);
+        }
+        kasa_pedido(ip, {{SV, {{"transition_light_state", {{"on_off", 1}, {"hue", h}, {"saturation", s}, {"brightness", 100}, {"color_temp", 0}, {"transition_period", 0}}}}}}, r, erro);
+        std::this_thread::sleep_for(std::chrono::seconds(segundos));
+        // volta ao que estava (desligada continua desligada)
+        json volta = {{"on_off", est.value("on_off", 1)}, {"transition_period", 500}};
+        const json base = est.value("on_off", 1) ? est : est.value("dft_on_state", json::object());
+        for (const char* k : {"hue", "saturation", "brightness", "color_temp"})
+            if (base.contains(k))
+                volta[k] = base[k];
+        erro.clear();
+        return kasa_pedido(ip, {{SV, {{"transition_light_state", volta}}}}, r, erro);
+    }
+    if (protocolo == "wled") {
+        std::string corpo;
+        if (!http_get("http://" + ip + "/json/state", corpo)) {
+            erro = "A luz não respondeu em " + ip + ".";
+            return false;
+        }
+        const json antes = json::parse(corpo, nullptr, false);
+        int        r = 0, g = 0, b = 0;
+        hex_rgb(cor_hex, r, g, b);
+        std::string resp;
+        // efeito 1 do WLED = piscar, na cor do aviso
+        if (!http_post_json("http://" + ip + "/json/state", {{"on", true}, {"bri", 255}, {"seg", json::array({{{"col", json::array({json::array({r, g, b})})}, {"fx", 1}, {"sx", 200}}})}}, resp)) {
+            erro = "A luz recusou o comando.";
+            return false;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(segundos));
+        if (antes.is_object()) {
+            json volta = {{"on", antes.value("on", true)}, {"bri", antes.value("bri", 128)}};
+            if (antes.contains("seg"))
+                volta["seg"] = antes["seg"];
+            http_post_json("http://" + ip + "/json/state", volta, resp);
+        }
+        return true;
+    }
+    erro = "Esta luz ainda não aceita comando direto pelo Filuna.";
+    return false;
+}
+
+bool ha_evento(const json& cfg_ha, const json& aviso, std::string& erro)
+{
+    Filuna::MqttClient cli;
+    if (!ha_conectar(cli, cfg_ha, erro))
+        return false;
+    // Gatilhos de automação: no Home Assistant aparecem como "Filuna · Impressão concluída" e os outros
+    static const std::vector<std::pair<std::string, std::string>> TIPOS = {
+        {"concluida", "Impressão concluída"}, {"erro", "Erro de impressão"}, {"pausada", "Impressão pausada"},
+        {"filamento", "Filamento trocado"}, {"venda", "Nova venda"}, {"mensagem", "Aviso do Filuna"}, {"teste", "Aviso de teste"}};
+    const json dev = {{"identifiers", {"filuna_casa"}}, {"name", "Filuna"}, {"manufacturer", "Filuna 3D"}, {"model", "Filuna Home"}};
+    for (const auto& [t, nome] : TIPOS)
+        cli.publish("homeassistant/device_automation/filuna_" + t + "/config",
+                    json({{"automation_type", "trigger"}, {"topic", "filuna/evento/" + t}, {"type", "filuna"}, {"subtype", nome}, {"device", dev}}).dump(), true);
+    cli.publish("filuna/evento/" + aviso.value("evento", std::string("mensagem")), aviso.dump(), false);
+    cli.publish("filuna/evento", aviso.dump(), false);
+    cli.close();
+    return true;
+}
 
 json procurar()
 {
