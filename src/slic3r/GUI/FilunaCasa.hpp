@@ -30,14 +30,27 @@ void publicar_home_assistant(const json& estado_impressoras);
 // Comandos usados pelo motor de avisos (FilunaCasaAvisos). Todos bloqueiam alguns segundos: chamar numa linha
 // própria, nunca na da tela. As chaves e senhas são lidas antes, na linha da tela, e passadas aqui.
 bool tv_lg_aviso(const std::string& ip, const std::string& chave_lg, const std::string& texto, std::string& erro);
-// protocolo: "shelly" ou "kasa"
+// protocolo: "shelly", "kasa", "tasmota" ou "tapo"
 bool tomada_ligar(const std::string& protocolo, const std::string& ip, bool ligar, std::string& erro);
 json tomada_estado(const std::string& protocolo, const std::string& ip);
-// Mostra a cor do aviso na luz por alguns segundos e volta ao que estava. protocolo: "kasa" ou "wled".
+// Mostra a cor do aviso na luz por alguns segundos e volta ao que estava. protocolo: "kasa", "wled" ou "tapo".
 bool luz_aviso(const std::string& protocolo, const std::string& ip, const std::string& cor_hex, int segundos, std::string& erro);
 // Publica o aviso no MQTT do Home Assistant (gatilho "Filuna" nas automações). cfg_ha: {broker, usuario, senha}.
 bool ha_evento(const json& cfg_ha, const json& aviso, std::string& erro);
 // Chave de pareamento da TV LG guardada neste computador (linha da tela).
 std::string chave_lg(const std::string& ip);
+// Outras chaves gravadas neste computador por aparelho: "filuna_casa_hue_" (usuário da ponte Hue) e "filuna_casa_tv_"
+// (token do app Filuna TV). Linha da tela.
+std::string chave_gravada(const std::string& prefixo, const std::string& ip);
+// Conta Tapo do cliente (e-mail e senha do app Tapo), usada pelo protocolo KLAP. Fica só neste computador.
+void tapo_conta(const std::string& email, const std::string& senha);
+bool tapo_tem_conta();
+bool tapo_carregar(); // linha da tela: lê a conta gravada, se ainda não carregou
+// Philips Hue: pareia pelo botão da ponte (devolve o usuário) e pisca todas as luzes na cor do aviso.
+std::string hue_parear(const std::string& ip, std::string& erro);
+bool hue_aviso(const std::string& ip, const std::string& usuario, const std::string& cor_hex, int segundos, std::string& erro);
+// App Filuna TV (Android TV, Google TV, Fire TV) na porta 8787: pareia pelo código de 6 dígitos e mostra o aviso.
+std::string tv_filuna_parear(const std::string& ip, const std::string& codigo, std::string& erro);
+bool tv_filuna_aviso(const std::string& ip, const std::string& token, const json& aviso, std::string& erro);
 
 }}} // namespace Slic3r::GUI::FilunaCasa

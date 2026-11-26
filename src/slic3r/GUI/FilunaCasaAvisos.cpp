@@ -520,9 +520,36 @@ bool plugin_pedido(const json& receita, const json& campos, const json& aviso, s
 
 struct Entrega
 {
-    std::string chave, tipo, protocolo, ip, nome, chave_lg;
+    std::string chave, tipo, protocolo, ip, nome, chave_lg, token, hue_usuario, tv_token, id_externo;
     json        plugin, campos, cfg_ha, aviso, estilo;
 };
+
+// Pedido ao site com o token deste computador: Smart Life pela nuvem da Filuna e avisos da Alexa.
+bool site_post(const std::string& token, const std::string& caminho, const json& corpo, std::string& msg)
+{
+    if (token.empty()) {
+        msg = "Entre na sua conta Filuna neste computador para usar este aparelho.";
+        return false;
+    }
+    bool ok = false;
+    Http::post(std::string(SITE) + "/api/slicer/v1" + caminho)
+        .header("Authorization", "Bearer " + token)
+        .header("Content-Type", "application/json")
+        .set_post_body(corpo.dump())
+        .timeout_connect(5)
+        .timeout_max(20)
+        .on_complete([&](std::string b, unsigned) {
+            const json j = json::parse(b, nullptr, false);
+            ok  = j.is_object() && j.value("ok", false);
+            msg = j.is_object() ? j.value("msg", std::string()) : std::string();
+        })
+        .on_error([&](std::string b, std::string e, unsigned) {
+            const json j = json::parse(b, nullptr, false);
+            msg = j.is_object() && j.contains("msg") ? j.value("msg", std::string()) : "O site da Filuna não respondeu (" + e + ").";
+        })
+        .perform_sync();
+    return ok;
+}
 
 // Prepara na linha da tela (lê chaves e senhas gravadas); entrega numa linha própria.
 Entrega preparar(const std::string& chave, const json& aparelho, const json& cfg, const json& aviso)
@@ -537,8 +564,17 @@ Entrega preparar(const std::string& chave, const json& aparelho, const json& cfg
     e.campos    = cfg.value("campos", json::object());
     e.aviso     = aviso;
     e.estilo    = cfg.value("estilo", json::object());
+    e.id_externo = aparelho.value("id_externo", std::string());
+    if (AppConfig* c = wxGetApp().app_config)
+        e.token = c->get("filuna_token");
     if (e.tipo == "tv_lg")
         e.chave_lg = FilunaCasa::chave_lg(e.ip);
+    if (e.protocolo == "hue")
+        e.hue_usuario = FilunaCasa::chave_gravada("filuna_casa_hue_", e.ip);
+    if (e.tipo == "tv_android")
+        e.tv_token = FilunaCasa::chave_gravada("filuna_casa_tv_", e.ip);
+    if (e.protocolo == "tapo")
+        FilunaCasa::tapo_carregar();
     if (e.tipo == "home_assistant")
         if (AppConfig* c = wxGetApp().app_config)
             e.cfg_ha = json::parse(c->get("filuna_casa_ha"), nullptr, false);
@@ -556,8 +592,18 @@ json entregar(const Entrega& e)
         ok = true;
     } else if (e.tipo == "tv_lg") {
         ok = FilunaCasa::tv_lg_aviso(e.ip, e.chave_lg, e.aviso.value("titulo", std::string()) + ": " + e.aviso.value("texto", std::string()), erro);
+    } else if (e.tipo == "luz" && e.protocolo == "hue") {
+        ok = FilunaCasa::hue_aviso(e.ip, e.hue_usuario, e.aviso.value("cor", std::string("#E6007E")), segundos, erro);
+    } else if (e.tipo == "luz" && e.protocolo == "tuya_nuvem") {
+        ok = site_post(e.token, "/casa/tuya/comando", {{"dispositivo", e.id_externo}, {"acao", "cor"}, {"cor", e.aviso.value("cor", std::string())}, {"segundos", segundos}}, erro);
     } else if (e.tipo == "luz") {
         ok = FilunaCasa::luz_aviso(e.protocolo, e.ip, e.aviso.value("cor", std::string("#E6007E")), segundos, erro);
+    } else if (e.tipo == "tv_android") {
+        json a = e.aviso;
+        a["estilo"] = e.estilo;
+        ok = FilunaCasa::tv_filuna_aviso(e.ip, e.tv_token, a, erro);
+    } else if (e.tipo == "alexa") {
+        ok = site_post(e.token, "/casa/alexa/aviso", {{"titulo", e.aviso.value("titulo", std::string())}, {"texto", e.aviso.value("texto", std::string())}}, erro);
     } else if (e.tipo == "home_assistant") {
         if (!e.cfg_ha.is_object() || e.cfg_ha.value("broker", std::string()).empty())
             erro = "Configure o MQTT do Home Assistant primeiro.";
@@ -567,15 +613,13 @@ json entregar(const Entrega& e)
         ok = plugin_pedido(e.plugin.value("avisar", json::object()), e.campos, e.aviso, erro);
     } else if (e.tipo == "tomada") {
         erro = "Tomadas não mostram avisos: elas desligam a impressora quando o bico esfria.";
-    } else if (e.tipo == "alexa" || e.tipo == "tv_android") {
-        erro = e.tipo == "alexa" ? "A skill Filuna da Alexa ainda não foi publicada." : "O app Filuna TV ainda não foi publicado.";
     } else {
         erro = "Este aparelho ainda não recebe avisos do Filuna.";
     }
     return {{"quando", e.aviso.value("quando", agora_iso())}, {"evento", e.aviso.value("evento", std::string())},
             {"titulo", e.aviso.value("titulo", std::string())}, {"texto", e.aviso.value("texto", std::string())},
             {"cor", e.aviso.value("cor", std::string())}, {"aparelho", e.nome}, {"chave", e.chave}, {"ok", ok},
-            {"msg", ok ? (e.tipo == "este_pc" ? "Mostrado neste computador." : "Entregue.") : erro}};
+            {"msg", ok ? (e.tipo == "este_pc" ? "Mostrado neste computador." : erro.empty() ? "Entregue." : erro) : erro}};
 }
 
 // Mesmo aviso, mesmo aparelho: no máximo um a cada 30 s (a leitura das impressoras pode repetir o estado).
@@ -594,7 +638,7 @@ bool repetido(const std::string& chave)
 
 struct Espera
 {
-    std::string chave, protocolo, ip, nome, impressora;
+    std::string chave, protocolo, ip, nome, impressora, token, id_externo;
     double      limite = 50;
     std::chrono::steady_clock::time_point desde;
 };
@@ -670,6 +714,11 @@ void evento(const std::string& tipo, const json& dados)
                     w.nome       = ap.value("nome", std::string("Tomada"));
                     w.impressora = imp;
                     w.limite     = cfg.value("limite_c", 50.0);
+                    w.id_externo = ap.value("id_externo", std::string());
+                    if (AppConfig* c = wxGetApp().app_config)
+                        w.token = c->get("filuna_token");
+                    if (w.protocolo == "tapo")
+                        FilunaCasa::tapo_carregar();
                     w.desde      = std::chrono::steady_clock::now();
                     esperas()[chave] = w;
                 }
@@ -713,7 +762,9 @@ void vigiar(const json& estado_impressoras, const std::string& token)
             const Espera copia = w;
             std::thread([copia, bico] {
                 std::string erro;
-                const bool  ok = FilunaCasa::tomada_ligar(copia.protocolo, copia.ip, false, erro);
+                const bool  ok = copia.protocolo == "tuya_nuvem" ?
+                                    site_post(copia.token, "/casa/tuya/comando", {{"dispositivo", copia.id_externo}, {"acao", "desligar"}}, erro) :
+                                    FilunaCasa::tomada_ligar(copia.protocolo, copia.ip, false, erro);
                 char        t[16];
                 std::snprintf(t, sizeof(t), "%.0f", bico);
                 registrar({{"quando", agora_iso()}, {"evento", "energia"}, {"titulo", "Tomada desligada"},

@@ -1,6 +1,7 @@
 #include <boost/asio.hpp> // no Windows o boost precisa vir antes dos cabeçalhos do wxWidgets
 #include <boost/asio/ssl.hpp>
 #include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
 #include <boost/beast/ssl.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/websocket/ssl.hpp>
@@ -22,6 +23,7 @@
 
 #include <openssl/evp.h>
 #include <openssl/pem.h>
+#include <openssl/rand.h>
 #include <openssl/rsa.h>
 
 #include <boost/log/trivial.hpp>
@@ -52,6 +54,8 @@ using tcp       = net::ip::tcp;
 using namespace std::chrono_literals;
 
 namespace {
+
+bool tapo_pedido(const std::string& ip, const json& pedido, json& resultado, std::string& erro); // KLAP, mais abaixo
 
 // ---------------------------------------------------------------- utilidades
 
@@ -140,7 +144,10 @@ struct Coleta
             return;
         std::lock_guard<std::mutex> g(m);
         auto it = por_ip.find(ip);
-        if (it == por_ip.end() || peso(a.value("tipo", std::string())) > peso(it->second.value("tipo", std::string())))
+        const auto prot = [](const json& x) { return x.value("dados", json::object()).value("protocolo", std::string()); };
+        // mesma TV anunciada pelo Google Cast e pelo app Filuna TV: vale a do app (sabe receber os avisos)
+        if (it == por_ip.end() || peso(a.value("tipo", std::string())) > peso(it->second.value("tipo", std::string())) ||
+            (peso(a.value("tipo", std::string())) == peso(it->second.value("tipo", std::string())) && !prot(a).empty() && prot(it->second).empty()))
             por_ip[ip] = std::move(a);
     }
     void multicast()
@@ -346,7 +353,7 @@ void buscar_mdns(Coleta& c)
 {
     static const std::vector<std::string> SERVICOS = {"_googlecast._tcp.local", "_androidtvremote2._tcp.local", "_amzn-wplay._tcp.local",
                                                       "_home-assistant._tcp.local", "_shelly._tcp.local", "_http._tcp.local",
-                                                      "_hue._tcp.local"};
+                                                      "_hue._tcp.local", "_filunatv._tcp.local"};
     std::string q;
     q += std::string("\0\0\0\0\0", 4); // id 0, flags 0
     q += char(SERVICOS.size() >> 8);
@@ -418,9 +425,18 @@ void buscar_mdns(Coleta& c)
                               {{"Conta", "não precisa (controle na rede da casa)"}, {"Geração", txt("gen").empty() ? "1" : txt("gen")}});
             a["dados"] = {{"protocolo", "shelly"}, {"geracao", txt("gen").empty() ? "1" : txt("gen")}};
             c.por(std::move(a));
-        } else if (i.servico == "_hue._tcp.local")
-            c.por(aparelho("hue:" + rotulo, "luz", rotulo, "Philips Hue", "ponte Hue", i.ip, "anúncio na rede (mDNS)",
-                           {{"Cores", "sim"}, {"Conta", "ponte Hue"}, {"Uso no Filuna", "pelo Home Assistant, por enquanto"}}));
+        } else if (i.servico == "_hue._tcp.local") {
+            json a = aparelho("hue:" + rotulo, "luz", rotulo, "Philips Hue", "ponte Hue", i.ip, "anúncio na rede (mDNS)",
+                              {{"Cores", "sim, todas as luzes da ponte"}, {"Conta", "não precisa (botão da ponte)"}, {"Uso no Filuna", "piscar na cor do aviso"}});
+            a["dados"] = {{"protocolo", "hue"}};
+            c.por(std::move(a));
+        } else if (i.servico == "_filunatv._tcp.local") {
+            json a = aparelho("filunatv:" + minusc(rotulo), "tv_android", txt("nome").empty() ? rotulo : txt("nome"), "Filuna TV", txt("modelo").empty() ? "app Filuna TV" : txt("modelo"),
+                              i.ip, "app Filuna TV na rede",
+                              {{"App", "Filuna TV instalado"}, {"Mostra", "aviso na tela, com cor e estilo"}, {"Pareamento", "código de 6 dígitos na TV"}});
+            a["dados"] = {{"protocolo", "filuna_tv"}};
+            c.por(std::move(a));
+        }
     }
 }
 
@@ -1048,6 +1064,39 @@ void executar(json p, std::string chave_lg, json cfg_ha)
             responder(p, {{"ok", ok}, {"msg", ok ? "A tomada desligou e ligou de novo." : erro}});
             return;
         }
+        if (a == "tapo.conta") { // testa a conta Tapo neste aparelho; a gravação fica em acao(), na linha da tela
+            json        r;
+            std::string erro;
+            const bool  ok = tapo_pedido(ip, {{"method", "get_device_info"}}, r, erro);
+            responder(p, {{"ok", ok}, {"msg", ok ? "Conta Tapo aceita. " + std::string(r.value("device_on", false) ? "O aparelho está ligado." : "O aparelho está desligado.") : erro}});
+            return;
+        }
+        if (a == "hue.parear") {
+            std::string erro;
+            const std::string u = hue_parear(ip, erro);
+            if (!u.empty())
+                wxGetApp().CallAfter([ip, u] {
+                    if (AppConfig* cfg = wxGetApp().app_config) {
+                        cfg->set("filuna_casa_hue_" + id_seguro(ip), u);
+                        cfg->save();
+                    }
+                });
+            responder(p, {{"ok", !u.empty()}, {"msg", u.empty() ? erro : "Ponte Hue pareada. O Filuna já pode piscar as luzes."}});
+            return;
+        }
+        if (a == "filunatv.parear") {
+            std::string erro;
+            const std::string t = tv_filuna_parear(ip, p.value("codigo", std::string()), erro);
+            if (!t.empty())
+                wxGetApp().CallAfter([ip, t] {
+                    if (AppConfig* cfg = wxGetApp().app_config) {
+                        cfg->set("filuna_casa_tv_" + id_seguro(ip), t);
+                        cfg->save();
+                    }
+                });
+            responder(p, {{"ok", !t.empty()}, {"msg", t.empty() ? (erro.empty() ? "Código errado. Confira os 6 dígitos na TV." : erro) : "TV pareada. Os avisos já podem aparecer nela."}});
+            return;
+        }
         if (a == "shelly.estado")
             responder(p, shelly_estado(ip));
         else if (a == "shelly.ligar") {
@@ -1213,6 +1262,162 @@ void hex_rgb(const std::string& hex, int& r, int& g, int& b)
     b = rgb & 0xFF;
 }
 
+
+// ---------------------------------------------------------------- Tapo (KLAP, firmwares novos), Hue e Filuna TV
+
+std::string digest(const EVP_MD* md, const std::string& d)
+{
+    unsigned char out[EVP_MAX_MD_SIZE];
+    unsigned int  n = 0;
+    EVP_Digest(d.data(), d.size(), out, &n, md, nullptr);
+    return std::string(reinterpret_cast<char*>(out), n);
+}
+std::string sha256s(const std::string& d) { return digest(EVP_sha256(), d); }
+
+std::string aes128cbc(const std::string& dados, const std::string& chave, const std::string& iv, bool cifrar, bool& ok)
+{
+    ok                   = false;
+    EVP_CIPHER_CTX* c    = EVP_CIPHER_CTX_new();
+    std::string     out(dados.size() + 32, '\0');
+    int             n1 = 0, n2 = 0;
+    if (c != nullptr && EVP_CipherInit_ex(c, EVP_aes_128_cbc(), nullptr, reinterpret_cast<const unsigned char*>(chave.data()),
+                                          reinterpret_cast<const unsigned char*>(iv.data()), cifrar ? 1 : 0) > 0 &&
+        EVP_CipherUpdate(c, reinterpret_cast<unsigned char*>(&out[0]), &n1, reinterpret_cast<const unsigned char*>(dados.data()), int(dados.size())) > 0 &&
+        EVP_CipherFinal_ex(c, reinterpret_cast<unsigned char*>(&out[n1]), &n2) > 0)
+        ok = true;
+    EVP_CIPHER_CTX_free(c);
+    out.resize(ok ? std::size_t(n1 + n2) : 0);
+    return out;
+}
+
+std::string be32(std::int32_t v)
+{
+    const auto u = static_cast<std::uint32_t>(v);
+    return std::string{char((u >> 24) & 0xFF), char((u >> 16) & 0xFF), char((u >> 8) & 0xFF), char(u & 0xFF)};
+}
+
+// POST binário na porta 80 com cookie (o KLAP precisa ler o Set-Cookie, que o Http do Slic3r não devolve)
+bool post_bin(const std::string& ip, const std::string& alvo, const std::string& corpo, std::string& cookie, std::string& resposta, int& status)
+{
+    namespace bh = beast::http;
+    try {
+        net::io_context         io;
+        beast::tcp_stream       s(io);
+        s.expires_after(6s);
+        s.connect(tcp::endpoint(net::ip::make_address(ip), 80));
+        bh::request<bh::string_body> req{bh::verb::post, alvo, 11};
+        req.set(bh::field::host, ip);
+        req.set(bh::field::content_type, "application/octet-stream");
+        if (!cookie.empty())
+            req.set(bh::field::cookie, cookie);
+        req.body() = corpo;
+        req.prepare_payload();
+        bh::write(s, req);
+        beast::flat_buffer               b;
+        bh::response<bh::string_body>    res;
+        bh::read(s, b, res);
+        status   = res.result_int();
+        resposta = res.body();
+        auto it  = res.find(bh::field::set_cookie);
+        if (it != res.end()) {
+            const std::string c(it->value());
+            cookie = c.substr(0, c.find(';'));
+        }
+        beast::error_code ec;
+        s.socket().shutdown(tcp::socket::shutdown_both, ec);
+        return true;
+    } catch (const std::exception&) {
+        return false;
+    }
+}
+
+std::mutex& trava_tapo()
+{
+    static std::mutex m;
+    return m;
+}
+std::pair<std::string, std::string>& conta_tapo()
+{
+    static std::pair<std::string, std::string> c;
+    return c;
+}
+
+// Um pedido KLAP: handshake1/2 com a conta Tapo do cliente, depois o pedido cifrado (AES-128-CBC) e assinado.
+bool tapo_pedido(const std::string& ip, const json& pedido, json& resultado, std::string& erro)
+{
+    std::string email, senha;
+    {
+        std::lock_guard<std::mutex> g(trava_tapo());
+        email = conta_tapo().first;
+        senha = conta_tapo().second;
+    }
+    if (email.empty() || senha.empty()) {
+        erro = "Entre com a sua conta Tapo em Dispositivo › Casa (o Filuna guarda só neste computador).";
+        return false;
+    }
+    std::string local(16, '\0');
+    RAND_bytes(reinterpret_cast<unsigned char*>(&local[0]), 16);
+    std::string cookie, r1;
+    int         st = 0;
+    if (!post_bin(ip, "/app/handshake1", local, cookie, r1, st) || st != 200 || r1.size() < 48) {
+        erro = st == 0 ? "A tomada Tapo não respondeu em " + ip + "." : "Este Tapo não aceita o protocolo KLAP (atualize o firmware pelo app Tapo).";
+        return false;
+    }
+    const std::string remoto = r1.substr(0, 16), hash_srv = r1.substr(16, 32);
+    std::string       auth;
+    for (const std::string& a : {sha256s(digest(EVP_sha1(), email) + digest(EVP_sha1(), senha)),        // KLAP v2
+                                 digest(EVP_md5(), digest(EVP_md5(), email) + digest(EVP_md5(), senha))}) // KLAP v1
+        if (sha256s(local + remoto + a) == hash_srv) {
+            auth = a;
+            break;
+        }
+    if (auth.empty()) {
+        erro = "O Tapo recusou o e-mail ou a senha da conta Tapo.";
+        return false;
+    }
+    std::string r2;
+    if (!post_bin(ip, "/app/handshake2", sha256s(remoto + local + auth), cookie, r2, st) || st != 200) {
+        erro = "O Tapo recusou a sessão.";
+        return false;
+    }
+    const std::string chave = sha256s("lsk" + local + remoto + auth).substr(0, 16);
+    const std::string ivc   = sha256s("iv" + local + remoto + auth);
+    const std::string assin = sha256s("ldk" + local + remoto + auth).substr(0, 28);
+    std::int32_t      seq   = 0;
+    for (int b = 0; b < 4; ++b)
+        seq = std::int32_t((std::uint32_t(seq) << 8) | static_cast<unsigned char>(ivc[28 + b]));
+    ++seq;
+    const std::string iv = ivc.substr(0, 12) + be32(seq);
+    bool              ok = false;
+    const std::string cif = aes128cbc(pedido.dump(), chave, iv, true, ok);
+    std::string       r3;
+    if (!ok || !post_bin(ip, "/app/request?seq=" + std::to_string(seq), sha256s(assin + be32(seq) + cif) + cif, cookie, r3, st) || st != 200 || r3.size() <= 32) {
+        erro = "O Tapo não aceitou o pedido.";
+        return false;
+    }
+    const json j = json::parse(aes128cbc(r3.substr(32), chave, iv, false, ok), nullptr, false);
+    if (!ok || !j.is_object() || j.value("error_code", -1) != 0) {
+        erro = "O Tapo respondeu com erro " + std::to_string(j.is_object() ? j.value("error_code", -1) : -1) + ".";
+        return false;
+    }
+    resultado = j.value("result", json::object());
+    return true;
+}
+
+bool http_put_json(const std::string& url, const json& corpo, std::string& resposta)
+{
+    bool ok = false;
+    Http::put(url)
+        .header("Content-Type", "application/json")
+        .set_post_body(corpo.dump())
+        .timeout_connect(2)
+        .timeout_max(5)
+        .on_complete([&](std::string b, unsigned st) { resposta = std::move(b); ok = st < 400; })
+        .on_error([&](std::string b, std::string erro, unsigned) { resposta = b.empty() ? erro : b; })
+        .perform_sync();
+    return ok;
+}
+
 } // namespace
 
 bool tv_lg_aviso(const std::string& ip, const std::string& chave_lg_salva, const std::string& texto, std::string& erro)
@@ -1225,6 +1430,24 @@ bool tv_lg_aviso(const std::string& ip, const std::string& chave_lg_salva, const
     if (!r.ok)
         erro = r.erro;
     return r.ok;
+}
+
+bool tapo_carregar()
+{
+    if (tapo_tem_conta())
+        return true;
+    AppConfig* cfg = wxGetApp().app_config;
+    const json c   = cfg != nullptr ? json::parse(cfg->get("filuna_casa_tapo"), nullptr, false) : json();
+    if (!c.is_object() || c.value("email", std::string()).empty())
+        return false;
+    tapo_conta(c.value("email", std::string()), c.value("senha", std::string()));
+    return true;
+}
+
+std::string chave_gravada(const std::string& prefixo, const std::string& ip)
+{
+    AppConfig* cfg = wxGetApp().app_config;
+    return cfg != nullptr ? cfg->get(prefixo + id_seguro(ip)) : std::string();
 }
 
 std::string chave_lg(const std::string& ip)
@@ -1245,6 +1468,10 @@ bool tomada_ligar(const std::string& protocolo, const std::string& ip, bool liga
         if (code != 0)
             erro = "A tomada recusou o comando.";
         return code == 0;
+    }
+    if (protocolo == "tapo") {
+        json r;
+        return tapo_pedido(ip, {{"method", "set_device_info"}, {"params", {{"device_on", ligar}}}}, r, erro);
     }
     if (protocolo == "tasmota") {
         std::string corpo;
@@ -1271,6 +1498,16 @@ json tomada_estado(const std::string& protocolo, const std::string& ip)
         const json em = r.value("emeter", json::object()).value("get_realtime", json::object());
         if (em.value("err_code", -1) == 0)
             o["potencia_w"] = em.contains("power_mw") ? em.value("power_mw", 0.0) / 1000.0 : em.value("power", 0.0);
+        return o;
+    }
+    if (protocolo == "tapo") {
+        json        r, en;
+        std::string erro;
+        if (!tapo_pedido(ip, {{"method", "get_device_info"}}, r, erro))
+            return {{"ok", false}, {"msg", erro}};
+        json o = {{"ok", true}, {"ligada", r.value("device_on", false)}};
+        if (tapo_pedido(ip, {{"method", "get_energy_usage"}}, en, erro) && en.contains("current_power"))
+            o["potencia_w"] = en.value("current_power", 0.0) / 1000.0;
         return o;
     }
     if (protocolo == "tasmota") {
@@ -1341,8 +1578,128 @@ bool luz_aviso(const std::string& protocolo, const std::string& ip, const std::s
         }
         return true;
     }
+    if (protocolo == "tapo") {
+        json antes;
+        if (!tapo_pedido(ip, {{"method", "get_device_info"}}, antes, erro))
+            return false;
+        int h = 0, s = 0, v = 100;
+        hex_hsv(cor_hex, h, s, v);
+        json r;
+        for (int vez = 0; vez < 3; ++vez) {
+            tapo_pedido(ip, {{"method", "set_device_info"}, {"params", {{"device_on", true}, {"hue", h}, {"saturation", s}, {"brightness", 100}, {"color_temp", 0}}}}, r, erro);
+            std::this_thread::sleep_for(500ms);
+            tapo_pedido(ip, {{"method", "set_device_info"}, {"params", {{"brightness", 5}}}}, r, erro);
+            std::this_thread::sleep_for(300ms);
+        }
+        tapo_pedido(ip, {{"method", "set_device_info"}, {"params", {{"device_on", true}, {"hue", h}, {"saturation", s}, {"brightness", 100}, {"color_temp", 0}}}}, r, erro);
+        std::this_thread::sleep_for(std::chrono::seconds(segundos));
+        json volta = {{"device_on", antes.value("device_on", true)}};
+        for (const char* k : {"hue", "saturation", "brightness", "color_temp"})
+            if (antes.contains(k))
+                volta[k] = antes[k];
+        erro.clear();
+        return tapo_pedido(ip, {{"method", "set_device_info"}, {"params", volta}}, r, erro);
+    }
     erro = "Esta luz ainda não aceita comando direto pelo Filuna.";
     return false;
+}
+
+void tapo_conta(const std::string& email, const std::string& senha)
+{
+    std::lock_guard<std::mutex> g(trava_tapo());
+    conta_tapo() = {email, senha};
+}
+
+bool tapo_tem_conta()
+{
+    std::lock_guard<std::mutex> g(trava_tapo());
+    return !conta_tapo().first.empty();
+}
+
+std::string hue_parear(const std::string& ip, std::string& erro)
+{
+    std::string resp;
+    http_post_json("http://" + ip + "/api", {{"devicetype", "filuna#slicer"}}, resp);
+    const json j = json::parse(resp, nullptr, false);
+    if (j.is_array() && !j.empty() && j[0].contains("success"))
+        return j[0]["success"].value("username", std::string());
+    erro = j.is_array() && !j.empty() && j[0].contains("error") && j[0]["error"].value("type", 0) == 101 ?
+               "Aperte o botão redondo no meio da ponte Hue e toque em Parear de novo (em até 30 segundos)." :
+               "A ponte Hue não respondeu em " + ip + ".";
+    return {};
+}
+
+bool hue_aviso(const std::string& ip, const std::string& usuario, const std::string& cor_hex, int segundos, std::string& erro)
+{
+    if (usuario.empty()) {
+        erro = "Pareie a ponte Hue com este computador primeiro.";
+        return false;
+    }
+    const std::string base = "http://" + ip + "/api/" + usuario;
+    std::string       corpo;
+    if (!http_get(base + "/lights", corpo)) {
+        erro = "A ponte Hue não respondeu em " + ip + ".";
+        return false;
+    }
+    const json luzes = json::parse(corpo, nullptr, false);
+    if (!luzes.is_object()) {
+        erro = "A ponte Hue recusou o pareamento deste computador. Pareie de novo.";
+        return false;
+    }
+    int h = 0, s = 0, v = 100;
+    hex_hsv(cor_hex, h, s, v);
+    std::string r;
+    http_put_json(base + "/groups/0/action", {{"on", true}, {"hue", h * 65535 / 360}, {"sat", s * 254 / 100}, {"bri", 254}, {"alert", "lselect"}}, r);
+    std::this_thread::sleep_for(std::chrono::seconds(std::clamp(segundos, 2, 30)));
+    for (const auto& [id, luz] : luzes.items()) { // cada luz volta como estava
+        const json st = luz.value("state", json::object());
+        json       volta = {{"on", st.value("on", false)}, {"alert", "none"}};
+        if (st.contains("bri"))
+            volta["bri"] = st["bri"];
+        const std::string modo = st.value("colormode", std::string());
+        if (modo == "ct" && st.contains("ct"))
+            volta["ct"] = st["ct"];
+        else if (modo == "xy" && st.contains("xy"))
+            volta["xy"] = st["xy"];
+        else if (modo == "hs") {
+            volta["hue"] = st.value("hue", 0);
+            volta["sat"] = st.value("sat", 0);
+        }
+        http_put_json(base + "/lights/" + id + "/state", volta, r);
+    }
+    return true;
+}
+
+std::string tv_filuna_parear(const std::string& ip, const std::string& codigo, std::string& erro)
+{
+    std::string resp;
+    if (!http_post_json("http://" + ip + ":8787/parear", {{"codigo", codigo}, {"nome", "Filuna Slicer"}}, resp)) {
+        const json e = json::parse(resp, nullptr, false);
+        erro = e.is_object() && e.contains("erro") ? e.value("erro", std::string()) : "O app Filuna TV não respondeu em " + ip + ". Abra o app na TV.";
+        return {};
+    }
+    const json j = json::parse(resp, nullptr, false);
+    return j.is_object() ? j.value("token", std::string()) : std::string();
+}
+
+bool tv_filuna_aviso(const std::string& ip, const std::string& token, const json& aviso, std::string& erro)
+{
+    if (token.empty()) {
+        erro = "Pareie a TV: abra o app Filuna TV e digite o código em Dispositivo › Casa.";
+        return false;
+    }
+    bool        ok = false;
+    std::string resp;
+    Http::post("http://" + ip + ":8787/aviso")
+        .header("Content-Type", "application/json")
+        .header("Authorization", "Bearer " + token)
+        .set_post_body(aviso.dump())
+        .timeout_connect(3)
+        .timeout_max(8)
+        .on_complete([&](std::string b, unsigned st) { resp = std::move(b); ok = st < 400; })
+        .on_error([&](std::string b, std::string e, unsigned st) { erro = st == 401 ? "A TV não reconhece mais este computador: pareie de novo." : "A TV não respondeu (" + e + ")."; })
+        .perform_sync();
+    return ok;
 }
 
 bool ha_evento(const json& cfg_ha, const json& aviso, std::string& erro)
@@ -1414,6 +1771,23 @@ json acao(const json& pedido)
         std::lock_guard<std::mutex> g(ha().m);
         ha_cfg["conectado"] = ha().cli != nullptr && ha().cli->connected();
         return ha_cfg;
+    }
+    if (a == "tapo.conta") { // conta Tapo do cliente: fica só neste computador
+        const std::string email = pedido.value("email", std::string()), senha = pedido.value("senha", std::string());
+        if (!email.empty() && !senha.empty()) {
+            if (AppConfig* cfg = wxGetApp().app_config) {
+                cfg->set("filuna_casa_tapo", json({{"email", email}, {"senha", senha}}).dump());
+                cfg->save();
+            }
+            tapo_conta(email, senha);
+        }
+    }
+    if (a == "tapo.tem_conta")
+        return {{"conta", tapo_carregar()}};
+    if (a == "hue.pareada" || a == "filunatv.pareada") {
+        AppConfig* cfg = wxGetApp().app_config;
+        const std::string k = (a == "hue.pareada" ? "filuna_casa_hue_" : "filuna_casa_tv_") + id_seguro(pedido.value("ip", std::string()));
+        return {{"pareada", cfg != nullptr && !cfg->get(k).empty()}};
     }
     if (a == "lg.pareada") {
         AppConfig* cfg = wxGetApp().app_config;

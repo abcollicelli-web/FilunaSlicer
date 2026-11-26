@@ -28,8 +28,9 @@ var FilunaCasa = (function () {
 	];
 	var EXEMPLO = { impressora: "Centauri Carbon", peca: "Suporte de celular", erro: "o filamento acabou", texto: "Pedido #1043: Chaveiro com logo, despachar até amanhã", progresso: "100" };
 	var ESTILOS = [["cartao", "Cartão no canto", "Discreto, some sozinho"], ["faixa", "Faixa no topo", "Atravessa a tela, chama atenção"], ["destaque", "Destaque no centro", "Grande; fica até você fechar"]];
-	var CONTA = { tapo: "Tapo", tuya: "Smart Life" };
-	var COMANDO_DIRETO = { shelly: 1, kasa: 1, tasmota: 1 };
+	var COMANDO_DIRETO = { shelly: 1, kasa: 1, tasmota: 1, tapo: 1, tuya_nuvem: 1 };
+	var LUZ_DIRETA = { kasa: 1, wled: 1, tapo: 1, hue: 1, tuya_nuvem: 1 };
+	var WHATS_FILUNA = "https://wa.me/393396054650?text=" + encodeURIComponent("Oi, Filuna! Quero ligar o meu app Smart Life ao Filuna Home.");
 
 	var st = { aparelhos: [], locais: [], procurando: false, procurou: false, iniciou: false, quando: 0, erro: "", janela: null, pedidos: {}, impressoras: [], hist: [] };
 
@@ -49,7 +50,7 @@ var FilunaCasa = (function () {
 	function motor(a) {
 		var t = a.tipo, p = protocolo(a);
 		if (t == "este_pc" || t == "plugin" || t == "tv_lg" || t == "home_assistant" || t == "alexa" || t == "tv_android") return t;
-		if (grupo(a) == "luz") return p == "kasa" || p == "wled" ? "luz" : "luz_conta";
+		if (grupo(a) == "luz") return LUZ_DIRETA[p] ? "luz" : "luz_conta";
 		if (grupo(a) == "tomada") return "tomada";
 		return null;
 	}
@@ -92,7 +93,7 @@ var FilunaCasa = (function () {
 			st.locais.forEach(function (l) { if (!lista.some(function (a) { return a.chave == l.chave; })) lista.push(l); });
 			st.aparelhos = lista;
 			st.daConta = true;
-			sincronizarRegras();
+			return deTuya().then(sincronizarRegras);
 		});
 	}
 
@@ -106,7 +107,21 @@ var FilunaCasa = (function () {
 	}
 
 	// O que está pronto (aqui ou configurado no site) vira regra do motor deste computador.
-	function regraDe(a) { return { tipo: motor(a), protocolo: protocolo(a), ip: a.ip || (a.config || {}).ip || "", nome: a.nome, plugin: a.plugin || (a.dados || {}).plugin || null }; }
+	function regraDe(a) { return { tipo: motor(a), protocolo: protocolo(a), ip: a.ip || (a.config || {}).ip || "", nome: a.nome, plugin: a.plugin || (a.dados || {}).plugin || null, id_externo: (a.dados || {}).tuya_id || "" }; }
+
+	// Smart Life ligado pela conta da Filuna (Tuya): a nuvem diz o que é cada aparelho e comanda; junta com a busca local
+	function deTuya() {
+		return Filuna.api("GET", "/casa/tuya/dispositivos").then(function (r) {
+			(r.dispositivos || []).forEach(function (d) {
+				var chaveT = "tuya:" + d.id, a = st.aparelhos.filter(function (x) { return x.chave == chaveT; })[0];
+				if (!a) { a = { chave: chaveT, id: chaveT, tipo: d.tipo, nome: d.nome, marca: "Smart Life", modelo: d.modelo, ip: d.ip || "", via: "Smart Life · conta ligada à Filuna", estado: "configurar", config: lerLocal(chaveT) || {}, fatos: [] }; st.aparelhos.push(a); }
+				a.tipo = d.tipo; a.nome = a.nome == "Aparelho Smart Life" ? d.nome : a.nome; a.modelo = d.modelo || a.modelo;
+				a.dados = Object.assign({}, a.dados || {}, { protocolo: "tuya_nuvem", tuya_id: d.id });
+				a.fatos = [["Conta", "Smart Life ligada à Filuna"], ["Situação", d.online ? "conectado" : "desconectado"], ["Mede consumo", d.mede_energia ? "sim" : "não"]].concat(d.tipo == "luz" ? [["Cores", d.colorida ? "sim" : "não"]] : []);
+				if ((a.config || {})._pronto) a.estado = "pronto";
+			});
+		}).catch(function () {});
+	}
 	function sincronizarRegras() {
 		st.aparelhos.forEach(function (a) {
 			if (!motor(a) || !(a.config || {})._pronto) return;
@@ -255,14 +270,14 @@ var FilunaCasa = (function () {
 			case "plugin": return ["Instalar", "Conectar", "Testar", "Personalizar", "Usar"];
 			case "impressora": return ["Reconhecida", "Tomada"];
 			case "tv_lg": return ["Reconhecida", "Parear", "Testar", "Personalizar", "Usar"];
-			case "tv_android": return ["Reconhecida", "Instalar", "Usar"];
-			case "alexa": return ["Reconhecida", "Ativar skill", "Usar"];
+			case "tv_android": return ["Reconhecida", "Instalar", "Testar", "Personalizar", "Usar"];
+			case "alexa": return ["Reconhecida", "Ativar skill", "Testar", "Usar"];
 			case "roteador": return ["Reconhecido", "Diagnóstico"];
 			case "home_assistant": return ["Reconhecido", "Conectar", "Publicar", "Testar", "Usar"];
 			case "smart_life": return ["Reconhecido", "O que é", "Conectar"].concat((a.config || {}).papel == "luz" ? ["Personalizar", "Usar"] : ["Impressora"]);
 		}
-		if (m == "tomada") return COMANDO_DIRETO[p] ? ["Reconhecida"].concat(semIp ? ["Endereço"] : []).concat(["Conectar", "Impressora", "Testar"]) : ["Reconhecida", "Conectar", "Impressora"];
-		if (m == "luz") return ["Reconhecida"].concat(semIp ? ["Endereço"] : []).concat(["Testar", "Personalizar", "Usar"]);
+		if (m == "tomada") return COMANDO_DIRETO[p] ? ["Reconhecida"].concat(semIp && p != "tuya_nuvem" ? ["Endereço"] : []).concat(["Conectar", "Impressora", "Testar"]) : ["Reconhecida", "Conectar", "Impressora"];
+		if (m == "luz") return ["Reconhecida"].concat(semIp && p != "tuya_nuvem" ? ["Endereço"] : []).concat(p == "hue" ? ["Parear"] : p == "tapo" || p == "tuya_nuvem" ? ["Conectar"] : []).concat(["Testar", "Personalizar", "Usar"]);
 		if (m == "luz_conta") return ["Reconhecida", "Conectar", "Personalizar", "Usar"];
 		return ["Reconhecida"];
 	}
@@ -292,7 +307,9 @@ var FilunaCasa = (function () {
 		var a = st.aparelhos.filter(function (x) { return x.id == id; })[0];
 		if (!a) return;
 		st.janela = { a: a, passo: 0, cfg: cfgPadrao(a), feito: { teste: !!(a.config || {})._pronto }, evPrevia: "concluida" };
-		if (a.tipo == "tv_lg" && a.ip) Filuna.nativo("casa.acao", { acao: "lg.pareada", ip: a.ip }).then(function (r) { if (st.janela && r.pareada) { st.janela.feito.parear = true; desenharJanela(); } });
+		var verPar = a.tipo == "tv_lg" ? "lg.pareada" : protocolo(a) == "hue" ? "hue.pareada" : a.tipo == "tv_android" ? "filunatv.pareada" : "";
+		if (verPar && a.ip) Filuna.nativo("casa.acao", { acao: verPar, ip: a.ip }).then(function (r) { if (st.janela && r.pareada) { st.janela.feito.parear = true; desenharJanela(); } }).catch(function () {});
+		if (protocolo(a) == "tapo") Filuna.nativo("casa.acao", { acao: "tapo.tem_conta" }).then(function (r) { st.tapoConta = !!r.conta; if (st.janela) desenharJanela(); }).catch(function () {});
 		desenharJanela();
 	}
 
@@ -397,13 +414,20 @@ var FilunaCasa = (function () {
 			return '<p class="fh-p">A Smart Life não diz pela rede se é tomada ou luz. O que é este aparelho?</p><div class="fh-papel">' +
 				'<button class="btn' + (cfg.papel != "luz" ? " primario" : "") + '" data-papel="tomada">Tomada</button><button class="btn' + (cfg.papel == "luz" ? " primario" : "") + '" data-papel="luz">Lâmpada ou luz</button></div>';
 		}
+		if (nome == "Conectar" && p == "tapo")
+			return '<p class="fh-p">Tapo de firmware novo só aceita comando com a conta do app Tapo. Digite o e-mail e a senha da sua conta Tapo: ficam guardados só neste computador e valem para todos os seus Tapo.</p>' +
+				'<label class="fh-campo">E-mail da conta Tapo<input id="fh-tapo-email" autocomplete="off" value="' + E(cfg.tapo_email || "") + '"></label>' +
+				'<label class="fh-campo">Senha da conta Tapo<input id="fh-tapo-senha" type="password" autocomplete="off" placeholder="' + (st.tapoConta ? "já guardada neste computador" : "") + '"></label>' + botao("tapo.conta", "Entrar na conta Tapo");
+		if (nome == "Conectar" && p == "tuya_nuvem")
+			return '<p class="fh-p">Este aparelho está ligado à sua conta Smart Life pela Filuna. O Filuna comanda pela nuvem da Smart Life: funciona mesmo de fora de casa.</p>' + botao("tomada.estado", "Conferir a conexão");
+		if (nome == "Conectar" && a.tipo == "smart_life")
+			return '<p class="fh-p">Aparelhos Smart Life (Positivo, Tuya e outros) são comandados pela conta do app Smart Life. A Filuna liga a sua conta em 1 minuto:</p>' +
+				'<ol class="fh-lista"><li>Chame a Filuna no WhatsApp pelo botão abaixo: mandamos um QR.</li><li>No app Smart Life, toque em <b>Eu</b> e no leitor de QR no topo, e escaneie.</li><li>Volte aqui e toque em Procurar de novo: os seus aparelhos aparecem prontos para configurar.</li></ol>' +
+				'<button class="btn primario" id="fh-whats">Chamar a Filuna no WhatsApp</button>';
 		if (nome == "Conectar" && m == "tomada" && COMANDO_DIRETO[p])
 			return '<p class="fh-p">Esta tomada aceita comando direto na rede da casa. Não precisa de conta.</p>' + botao("tomada.estado", "Conectar pela rede");
-		if (nome == "Conectar" && (grupo(a) == "tomada" || grupo(a) == "luz" || a.tipo == "smart_life")) {
-			var conta = CONTA[p] || (a.marca == "Philips Hue" ? "Hue" : "do fabricante");
-			return '<p class="fh-p">Este aparelho é comandado pela conta ' + E(conta) + ". O Filuna entra com a sua conta uma vez e guarda só a autorização, cifrada.</p>" +
-				breve("A entrada com a conta " + conta + " chega numa próxima versão do Filuna. Já dá para escolher as regras: elas passam a valer assim que a conta estiver ligada.");
-		}
+		if (nome == "Conectar" && (grupo(a) == "tomada" || grupo(a) == "luz"))
+			return '<p class="fh-p">Este aparelho é comandado pelo app do fabricante, que ainda não abriu o comando para outros programas. Use uma tomada ou luz da lista de compatíveis: Shelly, Tapo, Kasa, Tasmota, Smart Life, Philips Hue ou WLED.</p>';
 		if (nome == "Impressora") {
 			return '<label class="fh-campo">Impressora ligada nesta tomada<select data-cfg="impressora"><option value="">Escolha</option>' + opcoesImpressoras(cfg) + "</select></label>" +
 				chave("desligarFrio", "Desligar quando a impressão terminar", cfg.desligarFrio, "Só depois que o bico esfriar abaixo do limite") +
@@ -411,18 +435,21 @@ var FilunaCasa = (function () {
 				chave("remoto", "Ligar e desligar pelo celular", cfg.remoto, "Ligar não começa impressão: alguém confere a mesa antes") +
 				chave("corte", "Cortar a energia em falha grave", cfg.corte, "Desligado por padrão. Avisa antes e dá 2 minutos para cancelar");
 		}
+		if (nome == "Parear" && p == "hue")
+			return '<p class="fh-p">Aperte o botão redondo no meio da ponte Hue e, em até 30 segundos, toque em Parear. É só uma vez; o Filuna passa a piscar todas as luzes da ponte na cor do aviso.</p>' +
+				(st.janela.feito.parear ? '<p class="fh-res ok">Esta ponte já está pareada com este computador.</p>' : "") + botao("hue.parear", "Parear");
 		if (nome == "Parear")
 			return '<p class="fh-p">Ligue a TV. Quando tocar em Parear, aparece um pedido na tela da TV: aceite com o controle. É só uma vez.</p>' +
 				'<p class="fh-nota">Se o pedido não aparecer: na TV, abra Configurações › Rede e ligue <b>LG Connect Apps</b>.</p>' +
 				(st.janela.feito.parear ? '<p class="fh-res ok">Esta TV já está pareada com este computador.</p>' : "") + botao("lg.parear", st.janela.feito.parear ? "Parear de novo" : "Parear agora");
 		if (nome == "Instalar")
-			return '<ol class="fh-lista"><li>Na TV, abra a loja de apps e instale <b>Filuna TV</b>.</li><li>Abra o app: ele mostra um código de 6 dígitos.</li><li>Digite o código aqui.</li></ol>' +
-				breve("O app Filuna TV ainda não foi publicado nas lojas da Google e da Amazon. Assim que sair, o código de 6 dígitos liga esta TV.") +
-				'<label class="fh-campo">Código que aparece na TV<input inputmode="numeric" maxlength="6" placeholder="000000" data-cfg="codigo" value="' + E(cfg.codigo || "") + '" disabled></label>';
+			return '<ol class="fh-lista"><li>Na TV, instale o app <b>Filuna TV</b>: procure na loja de apps da TV ou, no Fire TV e no Google TV, instale o app <b>Downloader</b> e digite <b>filuna3d.com/casa/filuna-tv.apk</b>.</li>' +
+				'<li>Abra o Filuna TV: ele mostra um código de 6 dígitos e pede para aparecer sobre os outros apps (permita).</li><li>Digite o código aqui e toque em Parear.</li></ol>' +
+				'<label class="fh-campo">Código que aparece na TV<input id="fh-codigo-tv" inputmode="numeric" maxlength="6" placeholder="000000" value="' + E(cfg.codigo || "") + '"></label>' +
+				(st.janela.feito.parear ? '<p class="fh-res ok">Esta TV já está pareada com este computador.</p>' : "") + botao("filunatv.parear", "Parear");
 		if (nome == "Ativar skill")
-			return '<ol class="fh-lista"><li>No app Alexa, toque em Mais › Skills e jogos e procure <b>Filuna</b>.</li><li>Toque em Ativar e entre com a sua conta Filuna.</li><li>Permita as notificações quando a Alexa pedir.</li></ol>' +
-				breve("A skill Filuna ainda não foi publicada na Amazon. Os avisos escolhidos aqui ficam guardados e passam a valer quando ela sair.") +
-				'<p class="fh-nota">O Echo acende a luz amarela quando chega um aviso; os que têm tela mostram um banner. Para ouvir, diga "Alexa, quais são as minhas notificações?".</p>';
+			return '<ol class="fh-lista"><li>No app Alexa, toque em Mais › Skills e jogos e procure <b>Filuna</b>.</li><li>Toque em Ativar e entre com a sua conta Filuna (a mesma deste computador).</li><li>Permita as notificações quando a Alexa pedir.</li></ol>' +
+				'<p class="fh-nota">O Echo acende a luz amarela quando chega um aviso; os que têm tela mostram um banner. Para ouvir, diga "Alexa, quais são as minhas notificações?". Para perguntar: "Alexa, pergunte ao Filuna como estão as impressoras".</p>';
 		if (nome == "Diagnóstico") {
 			var ic = { ok: "Certo", aviso: "Atenção", ruim: "Ajustar" };
 			return (a.alerta ? '<div class="fh-alerta">' + E(a.alerta) + "</div>" : "") + '<ul class="fh-checa" id="fh-checa">' + checagensHtml(a.checagens || [], ic) + "</ul>" + botao("rede.diagnostico", "Verificar de novo");
@@ -444,7 +471,7 @@ var FilunaCasa = (function () {
 	function testarHtml(a, m) {
 		var j = st.janela;
 		if (m == "tomada") return '<p class="fh-p">Teste a tomada: ela desliga e liga de novo em 3 segundos. Faça com a impressora parada.</p>' + botao("tomada.testar", "Desligar e ligar");
-		var onde = { este_pc: "na tela deste computador", tv_lg: "na tela da TV", luz: "na luz (ela pisca na cor do aviso)", home_assistant: "no Home Assistant (Ferramentas › Eventos MQTT, tópico filuna/evento)", plugin: "no " + a.nome }[m] || "no aparelho";
+		var onde = { este_pc: "na tela deste computador", tv_lg: "na tela da TV", luz: "na luz (ela pisca na cor do aviso)", home_assistant: "no Home Assistant (Ferramentas › Eventos MQTT, tópico filuna/evento)", plugin: "no " + a.nome, tv_android: "na tela da TV", alexa: "no seu Echo (a luz amarela acende)" }[m] || "no aparelho";
 		var h = '<p class="fh-p">O Filuna manda um aviso de teste ' + E(onde) + '. Confira se chegou.</p>' + botao("teste", "Mandar aviso de teste");
 		if (j.testeOk) h += '<div class="fh-confirma"><b>Apareceu?</b><button class="btn primario" data-ok="1">Sim, apareceu</button><button class="btn" data-ok="0">Não apareceu</button></div>';
 		if (j.feito.teste) h += '<p class="fh-res ok">Conexão validada. Agora personalize os avisos.</p>';
@@ -458,7 +485,9 @@ var FilunaCasa = (function () {
 			tv_lg: "A TV precisa estar ligada (não em espera) e com LG Connect Apps ativo. Pareie de novo se você reinstalou o Filuna.",
 			luz: "Confira se a luz está ligada na tomada e no mesmo Wi-Fi do computador. Lâmpadas Kasa precisam ser coloridas (KL130, KL125) para mostrar cor.",
 			home_assistant: "No Home Assistant, abra Configurações › MQTT › Escutar um tópico, escreva filuna/# e mande o teste de novo.",
-			plugin: "Confira os dados do passo Conectar (token, número, endereço). O histórico desta tela mostra a resposta do serviço."
+			plugin: "Confira os dados do passo Conectar (token, número, endereço). O histórico desta tela mostra a resposta do serviço.",
+			tv_android: "Abra o app Filuna TV na TV e confira se ele pode aparecer sobre outros apps (Configurações › Apps › Acesso especial). A TV precisa estar na mesma rede.",
+			alexa: "No app Alexa, confira se a skill Filuna está ativada, com a conta Filuna ligada e as notificações permitidas."
 		}[m] || "Confira se o aparelho está ligado e na mesma rede.";
 	}
 
@@ -556,6 +585,8 @@ var FilunaCasa = (function () {
 			b.onclick = function () { var j = st.janela; j.testeOk = false; if (b.dataset.ok == "1") { j.feito.teste = true; j.semAviso = false; } else { j.feito.teste = false; j.semAviso = true; } desenharJanela(); };
 		});
 		f.querySelectorAll("[data-acao]").forEach(function (b) { b.onclick = function () { executar(a, b, cfg); }; });
+		var wa = f.querySelector("#fh-whats");
+		if (wa) wa.onclick = function () { Filuna.nativo("url.abrir", { url: WHATS_FILUNA }).catch(function () {}); };
 	}
 
 	function executar(a, botaoEl, cfg) {
@@ -572,7 +603,7 @@ var FilunaCasa = (function () {
 			var j = st.janela;
 			if (!j) return;
 			if (r.ok) j.feito["acao:" + acao] = true; // "teste" fica só para a confirmação "Apareceu?"
-			if (acao == "lg.parear" && r.ok) j.feito.parear = true;
+			if ((acao == "lg.parear" || acao == "hue.parear" || acao == "filunatv.parear") && r.ok) j.feito.parear = true;
 			if ((acao == "tomada.testar" || acao == "tomada.estado") && r.ok) j.feito.teste = true;
 			if (acao == "teste") { j.testeOk = !!r.ok; j.semAviso = !r.ok; desenharJanela(); var n = document.querySelector(".fh-j .fh-res"); if (n) { n.className = "fh-res " + (r.ok ? "ok" : "erro"); n.textContent = r.ok ? "Aviso mandado." : r.msg || "Não deu certo."; } }
 			if (acao == "rede.diagnostico" && r.checagens) { a.checagens = r.checagens; var ul = document.getElementById("fh-checa"); if (ul) ul.innerHTML = checagensHtml(r.checagens, { ok: "Certo", aviso: "Atenção", ruim: "Ajustar" }); }
@@ -586,6 +617,18 @@ var FilunaCasa = (function () {
 			return;
 		}
 		var c = { acao: acao, pedido: pedido, ip: a.ip || cfg.ip, protocolo: protocolo(a) };
+		if (acao == "tapo.conta") { c.email = (document.getElementById("fh-tapo-email") || {}).value || ""; c.senha = (document.getElementById("fh-tapo-senha") || {}).value || ""; cfg.tapo_email = c.email; if (c.email && c.senha) st.tapoConta = true; }
+		if (acao == "filunatv.parear") { c.codigo = ((document.getElementById("fh-codigo-tv") || {}).value || "").replace(/\D/g, ""); }
+		if (protocolo(a) == "tuya_nuvem" && (acao == "tomada.estado" || acao == "tomada.testar")) {
+			res.textContent = "Falando com a nuvem da Smart Life…";
+			var did = (a.dados || {}).tuya_id;
+			var passo = acao == "tomada.estado" ? Filuna.api("POST", "/casa/tuya/comando", { dispositivo: did, acao: "estado" }) :
+				Filuna.api("POST", "/casa/tuya/comando", { dispositivo: did, acao: "desligar" }).then(function () { return new Promise(function (ok) { setTimeout(ok, 3000); }); })
+					.then(function () { return Filuna.api("POST", "/casa/tuya/comando", { dispositivo: did, acao: "ligar" }); });
+			passo.then(function (r) { var e = {}; try { e = JSON.parse(r.msg); } catch (x) {} fim({ ok: r.ok !== false, msg: e.ligada != null ? "Respondeu: " + (e.ligada ? "ligado" : "desligado") + (e.potencia_w != null ? ", " + Math.round(e.potencia_w) + " W agora." : ".") : r.msg }); },
+				function (e) { fim({ ok: false, msg: (e && (e.msg || e.erro)) || "A Smart Life não respondeu." }); });
+			return;
+		}
 		if (acao == "mqtt.testar") { c.broker = cfg.broker; c.usuario = cfg.usuario; c.senha = (document.getElementById("fh-senha") || {}).value || ""; st.janela.senha = c.senha; }
 		if (acao == "lg.aviso") c.texto = "Filuna: aviso de teste da " + a.nome + ". Está tudo certo.";
 		res.textContent = { "lg.parear": "Chamando a TV… aceite o pedido que aparece na tela.", "rede.diagnostico": "Lendo a rede e o Wi-Fi…", "tomada.testar": "Desligando…" }[acao] || "Falando com o aparelho…";
@@ -599,13 +642,13 @@ var FilunaCasa = (function () {
 		if (a.tipo == "impressora" || a.tipo == "roteador") return a.estado == "atencao" ? "atencao" : "pronto";
 		if (a.tipo == "home_assistant") return j.feito["acao:mqtt.testar"] || j.feito.teste ? "pronto" : "configurar";
 		if (m == "tomada") return COMANDO_DIRETO[p] && j.feito.teste ? "pronto" : "configurar";
-		if (m == "este_pc" || m == "tv_lg" || m == "luz" || m == "plugin") return j.feito.teste ? "pronto" : "configurar";
+		if (m == "este_pc" || m == "tv_lg" || m == "luz" || m == "plugin" || m == "tv_android" || m == "alexa") return j.feito.teste ? "pronto" : "configurar";
 		return a.estado == "incompativel" ? "incompativel" : "configurar";
 	}
 
 	function concluir() {
 		var j = st.janela, a = j.a, cfg = JSON.parse(JSON.stringify(j.cfg)), novo = estadoFinal(a, j);
-		if (novo != "pronto" && motor(a) && ["alexa", "tv_android", "luz_conta"].indexOf(motor(a)) < 0 && !(motor(a) == "tomada" && !COMANDO_DIRETO[protocolo(a)]) &&
+		if (novo != "pronto" && motor(a) && ["luz_conta"].indexOf(motor(a)) < 0 && !(motor(a) == "tomada" && !COMANDO_DIRETO[protocolo(a)]) &&
 			!confirm("O teste de conexão ainda não foi confirmado, então " + a.nome + " fica em Configurar e não recebe avisos. Concluir assim mesmo?")) return;
 		delete cfg.senha;
 		if (a.tipo == "home_assistant")
