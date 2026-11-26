@@ -119,6 +119,7 @@ jobs:
           if ('${{ inputs.so_listar }}' -eq 'true') { Write-Host "só listar os voos: nada enviado"; exit 0 }
           $voo = "$env:VOO".Trim()
           if ($voo -notmatch '^[0-9a-fA-F-]{36}$') { throw "voo ausente ou inválido: nada enviado (este envio é só para voo de pacote)" }
-          if ($lista -notmatch [regex]::Escape($voo)) { throw "o voo $voo não aparece na lista da Store: nada enviado" }
+          # a tabela do msstore quebra o id em várias linhas: compara só os dígitos hexadecimais
+          if (($lista -replace '[^0-9a-fA-F]', '') -notmatch ($voo -replace '-', '')) { throw "o voo $voo não aparece na lista da Store: nada enviado" }
           msstore publish $env:MSIX -id $env:APP_ID -f $voo
           if ($LASTEXITCODE -ne 0) { throw "o envio falhou: se já há uma versão em certificação, espere ela sair e dispare de novo" }
