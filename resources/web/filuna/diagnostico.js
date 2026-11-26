@@ -92,13 +92,13 @@ var RaioXDiag = (function () {
 		// 2. testes
 		var pres = ts.presenca;
 		h += '<div class="dg-card"><h3>Testes guiados</h3><p>Os que aquecem ou movimentam só rodam com você ao lado da impressora. O programa limita a temperatura e desliga tudo no fim.</p>' +
-			'<div class="dg-pres' + (pres ? " ok" : "") + '">' + (pres ? "✓ Você confirmou que está ao lado da impressora (vale " + (ts.presenca_minutos || 20) + " min)." :
-				'Para testes que aquecem ou movem: <button class="btn peq primario" id="dgPresenca">Estou ao lado da impressora</button>') + "</div>" + testeHtml() +
+			(!st.dev ? "" : '<div class="dg-pres' + (pres ? " ok" : "") + '">' + (pres ? "✓ Você confirmou que está ao lado da impressora (vale " + (ts.presenca_minutos || 20) + " min)." :
+				'Para testes que aquecem ou movem: <button class="btn peq primario" id="dgPresenca">Estou ao lado da impressora</button>') + "</div>") + testeHtml() +
 			((ts.testes || []).length ? '<div class="dg-testes">' + ts.testes.map(function (t) {
 				return '<div class="dg-t' + (sug.indexOf(t.id) >= 0 ? " sug" : "") + '"><b>' + E(t.nome) + '<span class="dg-risco ' + E(t.risco) + '">' +
 					(t.risco == "leitura" ? "só lê" : t.risco == "aquece" ? "aquece" : "movimenta") + "</span></b><small>cerca de " + t.minutos + " min" + (sug.indexOf(t.id) >= 0 ? " · sugerido" : "") +
 					"</small><p>" + E(t.explicacao) + '</p><button class="btn peq" data-dg-teste="' + E(t.id) + '">Rodar</button></div>';
-			}).join("") + "</div>" : '<p class="rx-txt">Esta impressora não deixa o Filuna rodar testes pela rede.</p>') +
+			}).join("") + "</div>" : '<p class="rx-txt">' + (st.dev ? "Esta impressora não deixa o Filuna rodar testes pela rede." : "Ligue a impressora e abra o cartão dela para ver os testes.") + "</p>") +
 			((ts.guiados || []).length ? '<div style="margin-top:10px"><b>Testes pela tela da impressora</b><ul style="margin:6px 0 0 18px;font-size:13.5px">' +
 				ts.guiados.map(function (g) { return "<li>" + E(g) + "</li>"; }).join("") + "</ul></div>" : "") + "</div>";
 		// 3. acesso remoto
