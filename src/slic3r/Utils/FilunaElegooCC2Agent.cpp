@@ -6,6 +6,7 @@
 #include <atomic>
 #include <chrono>
 #include <fstream>
+#include <memory>
 #include <thread>
 #include <vector>
 
@@ -585,56 +586,102 @@ bool FilunaElegooCC2Agent::upload_http(const std::string& local, const std::stri
         std::lock_guard<std::recursive_mutex> l(m_mutex);
         ip = m_ip, code = m_code;
     }
+    // Como o ElegooLink oficial: todos os pedaços na MESMA conexão (keep-alive). Com uma conexão nova por pedaço a CC2
+    // respondia 9004 (MD5 não confere) no fim de todo arquivo de mais de 1 MB. Se ainda assim vier 9004 ou 9000
+    // (offset), o arquivo vai de novo uma vez; 429 (impressora ocupada) espera e repete o mesmo pedaço.
     try {
         net::io_context         ioc;
         net::ip::tcp::resolver  res(ioc);
-        const auto              ends = res.resolve(ip, std::to_string(m_ports.http));
+        const auto              ends  = res.resolve(ip, std::to_string(m_ports.http));
         const std::size_t       chunk = 1024 * 1024; // máximo aceito pela CC2 (SDK Elegoo-Link)
         std::vector<char>       buf(chunk);
-        std::uint64_t           off = 0;
-        int                     last = -1;
-        while (off < total || total == 0) {
-            in.read(buf.data(), std::streamsize(chunk));
-            const std::size_t n = std::size_t(in.gcount());
-            beast::tcp_stream s(ioc);
-            s.expires_after(std::chrono::seconds(180));
-            s.connect(ends);
-            http::request<http::string_body> req{http::verb::put, "/upload", 11};
-            req.set(http::field::host, ip);
-            req.set(http::field::content_type, "application/octet-stream");
-            req.set("Content-Range", "bytes " + std::to_string(off) + "-" + std::to_string(off + n - 1) + "/" + std::to_string(total));
-            req.set("X-File-Name", remote);
-            req.set("X-File-MD5", md5);
-            req.set("X-Token", code);
-            req.body().assign(buf.data(), n);
-            req.prepare_payload();
-            http::write(s, req);
-            beast::flat_buffer                b;
-            http::response<http::string_body> resp;
-            http::read(s, b, resp);
-            beast::error_code ec;
-            s.socket().shutdown(net::ip::tcp::socket::shutdown_both, ec);
-            json r = json::parse(resp.body(), nullptr, false);
-            if (resp.result_int() != 200 || (r.is_object() && r.value("error_code", 0) != 0)) {
-                error = "a impressora recusou o pedaço do arquivo (HTTP " + std::to_string(resp.result_int()) + "): " + resp.body();
-                return false;
+        for (int tentativa = 1; tentativa <= 2; ++tentativa) {
+            std::unique_ptr<beast::tcp_stream> s;
+            beast::flat_buffer                 b;
+            std::uint64_t                      off = 0;
+            int                                last = -1, codigo = 0, ocupada = 0, reaberturas = 0;
+            bool                               recusou = false;
+            while (off < total || total == 0) {
+                in.clear();
+                in.seekg(std::streamoff(off));
+                in.read(buf.data(), std::streamsize(chunk));
+                const std::size_t n = std::size_t(in.gcount());
+                if (!s) {
+                    s = std::make_unique<beast::tcp_stream>(ioc);
+                    s->expires_after(std::chrono::seconds(30));
+                    s->connect(ends);
+                    b.clear();
+                }
+                s->expires_after(std::chrono::seconds(180));
+                http::request<http::string_body> req{http::verb::put, "/upload", 11};
+                req.set(http::field::host, ip);
+                req.set(http::field::content_type, "application/octet-stream");
+                req.set("Content-Range", "bytes " + std::to_string(off) + "-" + std::to_string(off + n - 1) + "/" + std::to_string(total));
+                req.set("X-File-Name", remote);
+                req.set("X-File-MD5", md5);
+                req.set("X-Token", code);
+                req.keep_alive(true);
+                req.body().assign(buf.data(), n);
+                req.prepare_payload();
+                http::response<http::string_body> resp;
+                beast::error_code                 ec;
+                http::write(*s, req, ec);
+                if (!ec)
+                    http::read(*s, b, resp, ec);
+                if (ec) {
+                    // a impressora fechou a conexão parada: abre outra e manda o mesmo pedaço
+                    s.reset();
+                    if (++reaberturas > 3) {
+                        error = "falha no envio HTTP: " + ec.message();
+                        return false;
+                    }
+                    continue;
+                }
+                if (!resp.keep_alive()) {
+                    beast::error_code ign;
+                    s->socket().shutdown(net::ip::tcp::socket::shutdown_both, ign);
+                    s.reset();
+                }
+                if (resp.result_int() == 429 && ++ocupada <= 5) {
+                    std::this_thread::sleep_for(std::chrono::seconds(ocupada));
+                    continue;
+                }
+                json r = json::parse(resp.body(), nullptr, false);
+                codigo = r.is_object() && r.contains("error_code") && r["error_code"].is_number_integer() ? r["error_code"].get<int>() : 0;
+                if (resp.result_int() != 200 || codigo != 0) {
+                    error = (codigo == 9004 ? std::string("a impressora recebeu o arquivo, mas a conferência (MD5) não bateu (erro 9004): ")
+                                            : "a impressora recusou o pedaço do arquivo (HTTP " + std::to_string(resp.result_int()) + "): ") +
+                            resp.body();
+                    recusou = true;
+                    break;
+                }
+                off += n;
+                if (cancel_fn && cancel_fn()) {
+                    error = "envio cancelado";
+                    return false;
+                }
+                const int pct = total ? int(off * 100 / total) : 100;
+                if (update_fn && pct != last)
+                    update_fn(PrintingStageUpload, last = pct, "");
+                if (total == 0)
+                    break;
             }
-            off += n;
-            if (cancel_fn && cancel_fn()) {
-                error = "envio cancelado";
-                return false;
+            if (s) {
+                beast::error_code ign;
+                s->socket().shutdown(net::ip::tcp::socket::shutdown_both, ign);
             }
-            const int pct = total ? int(off * 100 / total) : 100;
-            if (update_fn && pct != last)
-                update_fn(PrintingStageUpload, last = pct, "");
-            if (total == 0)
-                break;
+            if (!recusou)
+                return true;
+            if ((codigo != 9004 && codigo != 9000) || tentativa == 2)
+                return false;
+            BOOST_LOG_TRIVIAL(warning) << "Filuna CC2: " << error << " — mandando o arquivo de novo";
+            std::this_thread::sleep_for(std::chrono::seconds(2));
         }
     } catch (const std::exception& e) {
         error = std::string("falha no envio HTTP: ") + e.what();
         return false;
     }
-    return true;
+    return false;
 }
 
 int FilunaElegooCC2Agent::start_local_print(PrintParams p, OnUpdateStatusFn update_fn, WasCancelledFn cancel_fn)
