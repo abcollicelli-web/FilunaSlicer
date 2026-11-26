@@ -7,6 +7,7 @@
 #include "FilunaSync.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaMidia.hpp"
+#include "FilunaIALado.hpp"
 #ifdef SLIC3R_CAD
 #include "CAD/FilunaCadIa.hpp"
 #endif
@@ -635,7 +636,8 @@ void FilunaPanel::on_script_message(wxWebViewEvent& evt)
     const std::string id     = msg.value("id", std::string());
     const std::string action = msg.value("acao", std::string());
     // Página de um paramétrico (pacote do servidor): só pode pôr a peça na mesa e voltar à lista.
-    if (param && action != "parametrico.mesa" && action != "parametrico.voltar")
+    // Pode também usar a IA ao lado (FilunaIALado.cpp): a geração sai na conta do cliente, na janela dela.
+    if (param && action != "parametrico.mesa" && action != "parametrico.voltar" && action.rfind("ia.lado.", 0) != 0)
         return;
     const json data          = msg.contains("dados") && msg["dados"].is_object() ? msg["dados"] : json::object();
     // Rede (assistência remota): testar portas e procurar na rede levam segundos; rodam fora da linha da tela, para o
@@ -688,6 +690,8 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     if (auto assistente = filuna_assistente_acao(action, d))
         return *assistente;
     // Post nas redes sociais (só com a ferramenta liberada para a conta): FilunaMidia.cpp.
+    if (auto ia = filuna_ia_lado_acao(action, d))
+        return *ia;
     if (auto midia = filuna_midia_acao(action, d))
         return *midia;
 #ifdef SLIC3R_CAD
