@@ -633,8 +633,9 @@ void executar(json pedido)
         else if (id == "consultas") {
             const json d = leitura_profunda(dev, ag, false, 15); // drivers dos motores e sensores vêm nos objetos
             r            = teste_console(dev, ag, "QUERY_ENDSTOPS", "", 20, e, false);
-            json tmc     = json::object();
-            for (const auto& [k, v] : d.value("objetos", json::object()).value("status", json::object()).items())
+            json       tmc    = json::object();
+            const json status = d.value("objetos", json::object()).value("status", json::object()); // guardado: items() aponta para ele
+            for (const auto& [k, v] : status.items())
                 if (k.rfind("tmc", 0) == 0 || k.rfind("filament_", 0) == 0 || k == "probe")
                     tmc[k] = v;
             r["sensores"] = tmc;
