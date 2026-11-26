@@ -5,7 +5,8 @@ name: Filuna Microsoft Store (pacote MSIX e envio)
 # A Microsoft não aceita um envio novo enquanto outro está em certificação: dispare depois que o anterior sair.
 #
 #   gh workflow run filuna-loja-msix.yml -f run_id=<run do build> -f versao=2.5.80.0 [-f enviar=false] [-f voo=<flightId>]
-#   Com voo, o pacote vai só para esse voo de pacote (ex.: "Teste do dono"); sem voo, vai para todos.
+#   Neste ramo o envio vai só para um voo de pacote (ex.: "Teste do dono") que a Store confirma existir; sem voo
+#   válido, nada é enviado. -f so_listar=true só mostra os voos.
 #
 # Segredos (Settings › Secrets and variables › Actions): MSSTORE_TENANT_ID, MSSTORE_SELLER_ID, MSSTORE_CLIENT_ID,
 # MSSTORE_CLIENT_SECRET — do aplicativo do Microsoft Entra ligado ao Partner Center (função Gerente).
@@ -23,8 +24,12 @@ on:
         type: boolean
         default: true
       voo:
-        description: "id do voo de pacote (msstore flights list); vazio envia para todos"
+        description: "id do voo de pacote (msstore flights list); obrigatório para enviar"
         default: ""
+      so_listar:
+        description: "só listar os voos de pacote da Store, sem enviar nada"
+        type: boolean
+        default: false
       ramo:
         description: "branch com o manifesto e os ícones (FILUNA/loja-msix)"
         default: "filuna/v1-teste-fisico"
@@ -108,6 +113,12 @@ jobs:
         run: |
           msstore reconfigure --tenantId $env:T --sellerId $env:S --clientId $env:C --clientSecret $env:CS
           if ($LASTEXITCODE -ne 0) { throw "a Store recusou as credenciais (confira os segredos MSSTORE_*)" }
+          # Trava: este caminho só envia para um voo de pacote que a Store confirma existir; nunca para todos.
+          $lista = msstore flights list $env:APP_ID 2>&1 | Out-String
+          Write-Host $lista
+          if ('${{ inputs.so_listar }}' -eq 'true') { Write-Host "só listar os voos: nada enviado"; exit 0 }
           $voo = "$env:VOO".Trim()
-          if ($voo) { msstore publish $env:MSIX -id $env:APP_ID -f $voo } else { msstore publish $env:MSIX -id $env:APP_ID }
+          if ($voo -notmatch '^[0-9a-fA-F-]{36}$') { throw "voo ausente ou inválido: nada enviado (este envio é só para voo de pacote)" }
+          if ($lista -notmatch [regex]::Escape($voo)) { throw "o voo $voo não aparece na lista da Store: nada enviado" }
+          msstore publish $env:MSIX -id $env:APP_ID -f $voo
           if ($LASTEXITCODE -ne 0) { throw "o envio falhou: se já há uma versão em certificação, espere ela sair e dispare de novo" }
