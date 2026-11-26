@@ -128,12 +128,14 @@ void desligar_tudo(const std::string& dev, const std::string& ag)
 // Leitura profunda do agente: pede e espera a resposta nova (Filuna::diag com "em" depois do pedido).
 json leitura_profunda(const std::string& dev, const std::string& ag, bool so_console, int espera_s)
 {
+    static std::atomic<long long> contador{0};
     const long long antes = agora_unix();
+    const long long numero = ++contador + antes * 1000; // o Klipper devolve este número: a resposta é deste pedido
     json            pedido;
     if (bambu(ag))
         pedido = {{"info", {{"command", "get_version"}, {"sequence_id", "0"}}}};
     else
-        pedido = {{"filuna", {{"command", "diagnostico"}, {"so_console", so_console}}}};
+        pedido = {{"filuna", {{"command", "diagnostico"}, {"so_console", so_console}, {"pedido", numero}}}};
     if (!enviar(dev, pedido))
         return json::object();
     const bool tem_resposta = moonraker(ag) || bambu(ag) || ag == "filuna_prusalink" || ag == "filuna_elegoo_sdcp";
@@ -142,11 +144,11 @@ json leitura_profunda(const std::string& dev, const std::string& ag, bool so_con
     for (int i = 0; i < espera_s * 4; ++i) {
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
         const json d = json::parse(Filuna::diag(dev), nullptr, false);
-        if (d.is_object() && d.value("em", 0LL) >= antes)
+        if (d.is_object() && (moonraker(ag) ? d.value("pedido", 0LL) == numero : d.value("em", 0LL) >= antes))
             return d;
     }
     const json d = json::parse(Filuna::diag(dev), nullptr, false);
-    return d.is_object() ? d : json::object();
+    return d.is_object() && !moonraker(ag) ? d : json::object(); // Klipper sem a resposta deste pedido: nada (não a antiga)
 }
 
 // Respostas do console do Klipper depois do comando enviado (o gcode_store guarda comandos e respostas em ordem).
@@ -303,10 +305,20 @@ bool presente(const std::string& dev)
     return it != presencas().end() && Relogio::now() - it->second < std::chrono::minutes(PRESENCA_MIN);
 }
 
+std::atomic<int>& execucao()
+{
+    static std::atomic<int> n{0};
+    return n;
+}
+
+// Só a execução atual muda o estado: a análise do site de um teste já terminado pode chegar depois de o próximo
+// começar, e não pode sobrescrever o andamento dele.
 void publicar(const json& e)
 {
     {
         std::lock_guard<std::mutex> l(mtx());
+        if (e.value("execucao", 0) != execucao().load())
+            return;
         atual() = e;
     }
     wxGetApp().CallAfter([e] { FilunaPanel::broadcast("diagnostico.teste", e); });
@@ -578,7 +590,7 @@ void executar(json pedido)
     const std::string origem = pedido.value("origem", std::string("cliente"));
     const Teste*      t      = teste_por_id(id);
     json              e      = {{"dev_id", dev}, {"teste", id}, {"nome", t->nome}, {"risco", t->risco}, {"origem", origem},
-                                {"estado", "rodando"}, {"inicio", agora_unix()}};
+                                {"estado", "rodando"}, {"inicio", agora_unix()}, {"execucao", pedido.value("execucao", 0)}};
     parar_pedido() = false;
     json c;
     try {
@@ -740,14 +752,18 @@ json testar(const json& pedido)
     const std::string est = c.value("estado", std::string());
     if (est == "imprimindo" || est == "pausada")
         return {{"erro", "A impressora está imprimindo: os testes só rodam com ela parada."}};
+    int n = 0;
     {
         std::lock_guard<std::mutex> l(mtx());
         const std::string           e = atual().value("estado", std::string());
         if (e == "rodando" || e == "esperando_presenca")
             return {{"erro", "Já há um teste em andamento: " + atual().value("nome", std::string()) + "."}};
-        atual() = {{"dev_id", dev}, {"teste", id}, {"nome", t->nome}, {"risco", t->risco}, {"estado", "rodando"}};
+        n = ++execucao();
+        atual() = {{"dev_id", dev}, {"teste", id}, {"nome", t->nome}, {"risco", t->risco}, {"estado", "rodando"}, {"execucao", n}};
     }
-    std::thread(executar, pedido).detach();
+    json p = pedido;
+    p["execucao"] = n;
+    std::thread(executar, p).detach();
     return {{"ok", true}, {"teste", id}, {"risco", t->risco},
             {"presenca", std::string(t->risco) == "leitura" || presente(dev)}};
 }
