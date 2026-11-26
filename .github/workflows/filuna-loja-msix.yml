@@ -4,7 +4,8 @@ name: Filuna Microsoft Store (pacote MSIX e envio)
 # Mesmo pacote que foi aprovado na mão: identidade AndersonBarroso.FilunaSlicer, manifesto e ícones de FILUNA/loja-msix.
 # A Microsoft não aceita um envio novo enquanto outro está em certificação: dispare depois que o anterior sair.
 #
-#   gh workflow run filuna-loja-msix.yml -f run_id=<run do build> -f versao=2.5.80.0 [-f enviar=false]
+#   gh workflow run filuna-loja-msix.yml -f run_id=<run do build> -f versao=2.5.80.0 [-f enviar=false] [-f voo=<flightId>]
+#   Com voo, o pacote vai só para esse voo de pacote (ex.: "Teste do dono"); sem voo, vai para todos.
 #
 # Segredos (Settings › Secrets and variables › Actions): MSSTORE_TENANT_ID, MSSTORE_SELLER_ID, MSSTORE_CLIENT_ID,
 # MSSTORE_CLIENT_SECRET — do aplicativo do Microsoft Entra ligado ao Partner Center (função Gerente).
@@ -21,6 +22,9 @@ on:
         description: "enviar para a Store e pedir certificação"
         type: boolean
         default: true
+      voo:
+        description: "id do voo de pacote (msstore flights list); vazio envia para todos"
+        default: ""
       ramo:
         description: "branch com o manifesto e os ícones (FILUNA/loja-msix)"
         default: "filuna/v1-teste-fisico"
@@ -100,8 +104,10 @@ jobs:
           S: ${{ secrets.MSSTORE_SELLER_ID }}
           C: ${{ secrets.MSSTORE_CLIENT_ID }}
           CS: ${{ secrets.MSSTORE_CLIENT_SECRET }}
+          VOO: ${{ inputs.voo }}
         run: |
           msstore reconfigure --tenantId $env:T --sellerId $env:S --clientId $env:C --clientSecret $env:CS
           if ($LASTEXITCODE -ne 0) { throw "a Store recusou as credenciais (confira os segredos MSSTORE_*)" }
-          msstore publish -i $env:MSIX -id $env:APP_ID
+          $voo = "$env:VOO".Trim()
+          if ($voo) { msstore publish $env:MSIX -id $env:APP_ID -f $voo } else { msstore publish $env:MSIX -id $env:APP_ID }
           if ($LASTEXITCODE -ne 0) { throw "o envio falhou: se já há uma versão em certificação, espere ela sair e dispare de novo" }
