@@ -1,12 +1,16 @@
 name: Filuna Microsoft Store (pacote MSIX e envio)
+run-name: "Store ${{ inputs.so_status && 'estado' || inputs.so_listar && 'voos' || format('{0} {1}', inputs.versao, inputs.voo != '' && format('voo {0}', inputs.voo) || 'sem voo') }}"
 # Monta o pacote MSIX da Microsoft Store a partir de um build já compilado (compilação rápida ou completa) e, quando
 # a conta da Store está ligada (segredos MSSTORE_*), envia para o Partner Center e manda para a certificação.
 # Mesmo pacote que foi aprovado na mão: identidade AndersonBarroso.FilunaSlicer, manifesto e ícones de FILUNA/loja-msix.
 # A Microsoft não aceita um envio novo enquanto outro está em certificação: dispare depois que o anterior sair.
 #
-#   gh workflow run filuna-loja-msix.yml -f run_id=<run do build> -f versao=2.5.80.0 [-f enviar=false] [-f voo=<flightId>]
+#   gh workflow run filuna-loja-msix.yml --ref filuna/loja-voo -f run_id=<run do build> -f versao=2.5.90.0 -f voo=<flightId>
 #   Neste ramo o envio vai só para um voo de pacote (ex.: "Teste do dono") que a Store confirma existir; sem voo
-#   válido, nada é enviado. -f so_listar=true só mostra os voos.
+#   válido, nada é enviado. -f so_listar=true só mostra os voos; -f so_status=true só diz o estado na Store.
+#
+# Depois do envio, o job acompanha a certificação pela API da Store e escreve uma linha "FILUNA_ESTADO {json}" a cada
+# mudança; o vigia do servidor Filuna lê essas linhas e mostra em /admin/loja (e avisa o dono no WhatsApp).
 #
 # Segredos (Settings › Secrets and variables › Actions): MSSTORE_TENANT_ID, MSSTORE_SELLER_ID, MSSTORE_CLIENT_ID,
 # MSSTORE_CLIENT_SECRET — do aplicativo do Microsoft Entra ligado ao Partner Center (função Gerente).
@@ -15,10 +19,10 @@ on:
     inputs:
       run_id:
         description: "run da compilação com o programa (artefato *-windows-exe-*)"
-        required: true
+        default: ""
       versao:
         description: "versão do pacote na Store, sempre maior que a anterior (ex.: 2.5.80.0)"
-        required: true
+        default: ""
       enviar:
         description: "enviar para a Store e pedir certificação"
         type: boolean
@@ -30,6 +34,10 @@ on:
         description: "só listar os voos de pacote da Store, sem enviar nada"
         type: boolean
         default: false
+      so_status:
+        description: "só dizer o estado na Store (do voo, se informado, e da versão pública), sem enviar nada"
+        type: boolean
+        default: false
       ramo:
         description: "branch com o manifesto e os ícones (FILUNA/loja-msix)"
         default: "filuna/v1-teste-fisico"
@@ -37,25 +45,30 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: filuna-loja-msix
+  group: ${{ (inputs.so_status || inputs.so_listar) && format('filuna-loja-consulta-{0}', github.run_id) || 'filuna-loja-msix' }}
   cancel-in-progress: false
 env:
   APP_ID: 9MV6C5DJ3201
+  CONSULTA: ${{ inputs.so_status || inputs.so_listar }}
 jobs:
   msix:
     runs-on: windows-2022
-    timeout-minutes: 90
+    timeout-minutes: 330
     steps:
       - name: Conferir a versão
+        if: env.CONSULTA != 'true'
         shell: pwsh
         run: |
           if ('${{ inputs.versao }}' -notmatch '^\d+\.\d+\.\d+\.0$') { throw "versão inválida: use quatro números terminando em .0 (ex.: 2.5.80.0)" }
+          if ('${{ inputs.run_id }}' -notmatch '^\d+$') { throw "run_id inválido" }
       - uses: actions/checkout@v4
+        if: env.CONSULTA != 'true'
         with:
           ref: ${{ inputs.ramo }}
           sparse-checkout: FILUNA/loja-msix
           persist-credentials: false
       - name: Baixar o programa compilado
+        if: env.CONSULTA != 'true'
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ inputs.run_id }}
@@ -63,6 +76,7 @@ jobs:
           pattern: "*-windows-exe-*"
           path: artefato
       - name: Montar o pacote
+        if: env.CONSULTA != 'true'
         shell: pwsh
         run: |
           $exe = Get-ChildItem artefato -Recurse -Filter FilunaSlicer.exe | Select-Object -First 1
@@ -80,8 +94,10 @@ jobs:
           & $sdk.FullName pack /d $pacote /p $saida /o /h SHA256 | Out-File makeappx.log
           if ($LASTEXITCODE -ne 0) { Get-Content makeappx.log -Tail 40; throw "makeappx falhou ($LASTEXITCODE)" }
           "MSIX=$saida" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host ("pacote: " + (Get-Item $saida).Length + " bytes")
+          $build = Get-Content (Join-Path $raiz 'filuna-build.json') -Raw -ErrorAction SilentlyContinue
+          Write-Host ("FILUNA_ESTADO " + (@{ etapa = 'pacote'; estado = 'PacoteMontado'; versao = '${{ inputs.versao }}'; build = $build; bytes = (Get-Item $saida).Length } | ConvertTo-Json -Compress))
       - uses: actions/upload-artifact@v4
+        if: env.CONSULTA != 'true'
         with:
           name: FilunaSlicer_${{ inputs.versao }}_x64_msix
           path: ${{ env.MSIX }}
@@ -99,10 +115,10 @@ jobs:
           "ligada=$([int][bool]$ok)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           if (-not $ok) { Write-Host "::notice::Conta da Store não ligada (segredos MSSTORE_*): o pacote ficou no artefato para enviar à mão no Partner Center." }
       - name: Instalar a ferramenta da Microsoft Store
-        if: inputs.enviar && steps.conta.outputs.ligada == '1'
+        if: (inputs.enviar || inputs.so_listar) && !inputs.so_status && steps.conta.outputs.ligada == '1'
         uses: microsoft/microsoft-store-apppublisher@v1.1
       - name: Enviar para a Store e pedir certificação
-        if: inputs.enviar && steps.conta.outputs.ligada == '1'
+        if: (inputs.enviar || inputs.so_listar) && !inputs.so_status && steps.conta.outputs.ligada == '1'
         shell: pwsh
         env:
           T: ${{ secrets.MSSTORE_TENANT_ID }}
@@ -123,4 +139,47 @@ jobs:
           $ids = ($lista -split "`n" | ForEach-Object { $c = $_ -split '│'; if ($c.Count -gt 3) { $c[2].Trim() } }) -join ''
           if (-not $ids.Contains($voo)) { throw "o voo $voo não aparece na lista da Store: nada enviado" }
           msstore publish $env:MSIX -id $env:APP_ID -f $voo
-          if ($LASTEXITCODE -ne 0) { throw "o envio falhou: se já há uma versão em certificação, espere ela sair e dispare de novo" }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host ("FILUNA_ESTADO " + (@{ etapa = 'envio'; estado = 'EnvioFalhou'; voo = $voo } | ConvertTo-Json -Compress))
+            throw "o envio falhou: se já há uma versão em certificação, espere ela sair e dispare de novo"
+          }
+          Write-Host ("FILUNA_ESTADO " + (@{ etapa = 'envio'; estado = 'Enviado'; voo = $voo } | ConvertTo-Json -Compress))
+      - name: Acompanhar a certificação na Store
+        if: (inputs.so_status || (inputs.enviar && !inputs.so_listar)) && steps.conta.outputs.ligada == '1'
+        shell: pwsh
+        env:
+          T: ${{ secrets.MSSTORE_TENANT_ID }}
+          C: ${{ secrets.MSSTORE_CLIENT_ID }}
+          CS: ${{ secrets.MSSTORE_CLIENT_SECRET }}
+          VOO: ${{ inputs.voo }}
+          UMA_VEZ: ${{ inputs.so_status }}
+        run: |
+          # API de envio da Store (manage.devcenter.microsoft.com): estado da submissão do voo e da versão pública.
+          $base = "https://manage.devcenter.microsoft.com/v1.0/my/applications/$env:APP_ID"
+          $finais = @('Published', 'CommitFailed', 'PreProcessingFailed', 'CertificationFailed', 'ReleaseFailed', 'PublishFailed', 'Canceled')
+          function Token { (Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$env:T/oauth2/token" -Body @{ grant_type = 'client_credentials'; client_id = $env:C; client_secret = $env:CS; resource = 'https://manage.devcenter.microsoft.com' }).access_token }
+          function Ler($tok, $caminho) { Invoke-RestMethod -Uri "$base$caminho" -Headers @{ Authorization = "Bearer $tok" } }
+          function Estado($tok) {
+            $voo = "$env:VOO".Trim()
+            if ($voo) {
+              $f = Ler $tok "/flights/$voo"
+              $sub = if ($f.pendingFlightSubmission) { $f.pendingFlightSubmission.id } else { $f.lastPublishedFlightSubmission.id }
+              $s = Ler $tok "/flights/$voo/submissions/$sub/status"
+              return @{ etapa = 'certificacao'; destino = 'voo'; voo = $voo; nome = $f.friendlyName; submissao = "$sub"; estado = "$($s.status)"; detalhes = $s.statusDetails }
+            }
+            $a = Ler $tok ""
+            $sub = if ($a.pendingApplicationSubmission) { $a.pendingApplicationSubmission.id } else { $a.lastPublishedApplicationSubmission.id }
+            $s = Ler $tok "/submissions/$sub/status"
+            return @{ etapa = 'certificacao'; destino = 'todos'; submissao = "$sub"; estado = "$($s.status)"; detalhes = $s.statusDetails }
+          }
+          $ultimo = ''
+          $fim = (Get-Date).AddMinutes(300)
+          do {
+            try { $e = Estado (Token) } catch { $e = @{ etapa = 'certificacao'; estado = 'ConsultaFalhou'; erro = "$($_.Exception.Message)" } }
+            $e.em = (Get-Date).ToUniversalTime().ToString('o')
+            $chave = "$($e.submissao)|$($e.estado)"
+            if ($chave -ne $ultimo) { Write-Host ("FILUNA_ESTADO " + ($e | ConvertTo-Json -Compress -Depth 6)); $ultimo = $chave }
+            if ($env:UMA_VEZ -eq 'true' -or $finais -contains $e.estado) { break }
+            Start-Sleep -Seconds 180
+          } while ((Get-Date) -lt $fim)
+          if ($finais -notcontains $e.estado -and $env:UMA_VEZ -ne 'true') { Write-Host "FILUNA_ESTADO {`"etapa`":`"certificacao`",`"estado`":`"AindaEmAndamento`"}" }
