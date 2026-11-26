@@ -320,7 +320,9 @@ function unidade(app, u) {
 		var nomeModelo = v.modelo_nome && v.modelo_nome != "Desconhecido" ? v.modelo_nome : (v.nome || v.modelo || "");
 		i = Object.assign({}, i, { estado: ativa ? (v.estado || "livre") : "offline", modelo: nomeModelo });
 		if (ativa && (v.estado == "imprimindo" || v.estado == "pausada") && !i.trabalho)
-			i.trabalho = { descricao: v.arquivo || "Impressão em andamento", progresso: v.progresso || 0, resta_s: v.restante_s || 0, estado: "imprimindo", cor: (v.cores && v.cores[0] && v.cores[0].cor) || "" };
+			i.trabalho = { descricao: v.arquivo || "Impressão em andamento", progresso: v.progresso || 0, resta_s: v.restante_s || 0, estado: "imprimindo",
+				// total = restante ÷ o que falta (a impressora ao vivo só manda o restante); sem progresso ainda, não mostra total
+				tempo_s: v.progresso > 0 && v.progresso < 100 && v.restante_s ? Math.round(v.restante_s / (1 - v.progresso / 100)) : 0, cor: (v.cores && v.cores[0] && v.cores[0].cor) || "" };
 	}
 	var grau = function (x) { return x == null || isNaN(x) ? "—" : Math.round(x) + " °C"; };
 	// Controles diretos (só os que o motor de rede desta marca executa de verdade)
@@ -383,7 +385,7 @@ function unidade(app, u) {
 		(t ? '<div class="titulo">' + E(t.descricao || "Pedido " + (t.pedido || "")) + '</div><div class="arq">' + E(t.arquivo || "") + (t.quantidade ? " · " + t.quantidade + " peça(s)" : "") + "</div>" +
 			'<div class="pctrow"><div class="pct">' + prog + '<small>%</small></div><div class="eta">' + Filuna.tempo(t.resta_s) + '<div class="s">restante</div></div></div>' +
 			'<div class="bar" style="margin-top:14px"><i style="width:' + prog + '%"></i></div>' +
-			'<div class="barrow"><span><span class="dot" style="width:10px;height:10px;background:' + E(t.cor || "#ccc") + '"></span> ' + E((t.material || "") + " " + (t.cor_nome || "")) + "</span><span>" + Filuna.tempo(t.tempo_s) + " total</span></div>"
+			'<div class="barrow"><span><span class="dot" style="width:10px;height:10px;background:' + E(t.cor || "#ccc") + '"></span> ' + E((t.material || "") + " " + (t.cor_nome || "")) + "</span><span>" + (t.tempo_s ? Filuna.tempo(t.tempo_s) + " total" : "") + "</span></div>"
 			: '<div class="titulo" style="color:var(--muted)">Nada imprimindo</div><div class="arq">' + (i.na_fila ? i.na_fila + " mesa(s) esperando na fila · " + Filuna.tempo(i.carga_s) : "Fila vazia") + "</div>") +
 		'<div class="passos">' + passos.map(function (p, k) { return '<div class="passo' + (k > nivel ? " off" : "") + '"><div class="d"></div>' + p + "</div>"; }).join("") + "</div>" +
 		// A Farm ainda não recebe as temperaturas da impressora: mostra "sem dado" em vez de inventar números.

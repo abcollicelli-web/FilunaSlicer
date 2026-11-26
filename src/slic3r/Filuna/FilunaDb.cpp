@@ -562,6 +562,31 @@ std::map<std::string, std::string> FilunaDb::juntar_impressoras_repetidas()
     return juntadas;
 }
 
+int FilunaDb::religar_bobinas_de_cadastros_excluidos()
+{
+    std::map<std::string, std::string> mudar; // bobina -> local novo
+    {
+        Comando c(m_db, "SELECT b.id, b.local, v.id, a.id FROM bobina b "
+                        "JOIN impressora v ON v.excluido = 1 AND b.local LIKE 'impressora:' || v.id || ':slot:%' "
+                        "JOIN impressora a ON a.excluido = 0 AND COALESCE(v.numero_serie, '') <> '' AND a.numero_serie = v.numero_serie "
+                        "WHERE b.excluido = 0 ORDER BY a.criado_em, a.id");
+        while (c.passo()) {
+            const std::string local = c.texto_em(1), velho = "impressora:" + c.texto_em(2);
+            mudar.emplace(c.texto_em(0), "impressora:" + c.texto_em(3) + local.substr(velho.size()));
+        }
+    }
+    if (mudar.empty())
+        return 0;
+    Transacao t(m_db);
+    const std::string ts = agora();
+    for (const auto& [bobina, local] : mudar) {
+        Comando(m_db, "UPDATE bobina SET local = ?2, atualizado_em = ?3 WHERE id = ?1").texto(1, bobina).texto(2, local).texto(3, ts).executar();
+        enfileirar("bobina", bobina, "upsert");
+    }
+    t.confirmar();
+    return int(mudar.size());
+}
+
 std::string FilunaDb::adicionar_regra_manutencao(const std::string& impressora_id, const std::string& nome, double intervalo_h,
                                                  double feito_ate_h)
 {

@@ -48,6 +48,9 @@ public:
     // Junta cadastros repetidos da mesma impressora (mesma série): fica o mais antigo; trabalhos, manutenção e horas
     // passam para ele e os outros saem do cadastro. Devolve {removido -> mantido}.
     std::map<std::string, std::string> juntar_impressoras_repetidas();
+    // Bobinas que ficaram no local de um cadastro excluído ("impressora:<id>:slot:N") passam para o cadastro ativo da
+    // mesma impressora (mesma série). Sem isso, recadastrar a impressora deixava o estoque dela sem baixa. Devolve quantas.
+    int religar_bobinas_de_cadastros_excluidos();
     std::string adicionar_regra_manutencao(const std::string& impressora_id, const std::string& nome, double intervalo_h,
                                            double feito_ate_h = 0.);
     double      horas_maquina(const std::string& impressora_id) const;

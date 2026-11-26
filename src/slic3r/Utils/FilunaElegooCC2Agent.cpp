@@ -102,8 +102,15 @@ json FilunaElegooCC2Agent::to_push_status(const json& s)
         gs = "INIT";
     p["gcode_state"] = gs;
     const auto ps    = s.value("print_status", json::object());
-    p["mc_percent"]  = ps.value("progress", 0);
-    p["mc_remaining_time"] = ps.value("remaining_time_sec", 0) / 60;
+    const auto num = [&ps](const char* k) { return ps.contains(k) && ps[k].is_number() ? ps[k].get<double>() : 0.; };
+    double     pct = num("progress");
+    // sem "progress" (ou zerado no meio da impressão): tempo já impresso ÷ (impresso + restante), senão as camadas
+    if (pct <= 0 && num("print_duration") > 0 && num("remaining_time_sec") > 0)
+        pct = 100. * num("print_duration") / (num("print_duration") + num("remaining_time_sec"));
+    else if (pct <= 0 && num("total_layer") > 0 && num("current_layer") > 0)
+        pct = 100. * num("current_layer") / num("total_layer");
+    p["mc_percent"]  = int(std::clamp(pct, 0., 100.));
+    p["mc_remaining_time"] = int(num("remaining_time_sec")) / 60;
     p["subtask_name"]      = ps.value("filename", std::string());
     p["gcode_file"]        = ps.value("filename", std::string());
     p["layer_num"]         = ps.value("current_layer", 0);

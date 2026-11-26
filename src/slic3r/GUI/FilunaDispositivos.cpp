@@ -1217,6 +1217,9 @@ json registrar(const std::string& nome, const std::string& modulo_id, const std:
         db.atualizar_impressora(id, nome, modulo_id, modelo, dev_id, modulo_id);
     else
         id = db.criar_impressora(nome, modulo_id, modelo, dev_id, modulo_id);
+    // recadastro (ex.: reconectar depois de "esquecer"): as bobinas que estavam nesta impressora voltam a ela
+    if (const int n = db.religar_bobinas_de_cadastros_excluidos(); n > 0)
+        BOOST_LOG_TRIVIAL(info) << "Filuna Dispositivos: " << n << " bobina(s) religadas ao cadastro " << id;
     if (AppConfig* cfg = wxGetApp().app_config; cfg != nullptr && !dev_id.empty())
         cfg->set(chave_vinculo(dev_id), id);
     filuna_sync_avisar(); // cadastro sobe para a conta (servidor → app Android) em segundos
@@ -1241,6 +1244,8 @@ json estado()
         juntou = true;
         for (const auto& [velho, fica] : filuna_db().juntar_impressoras_repetidas())
             BOOST_LOG_TRIVIAL(info) << "Filuna Dispositivos: cadastro repetido " << velho << " juntado em " << fica;
+        if (const int n = filuna_db().religar_bobinas_de_cadastros_excluidos(); n > 0)
+            BOOST_LOG_TRIVIAL(info) << "Filuna Dispositivos: " << n << " bobina(s) religadas ao cadastro ativo da impressora";
     }
     for (auto& [id, o] : todas) {
         if (o == nullptr)
@@ -1575,15 +1580,29 @@ void monitor_iniciar()
                     const auto txt = [&cr](const char* k) {
                         return cr.contains(k) ? (cr[k].is_string() ? cr[k].get<std::string>() : cr[k].dump()) : std::string();
                     };
-                    agora_f[txt("unidade") + ":" + txt("slot")] = cr.value("vazio", false) ? std::string() : txt("material") + "|" + txt("cor");
+                    // cor sem "#" e sem o alfa, em maiúsculas: "ff6a14ff" e "#FF6A14" são a mesma bobina
+                    std::string cor = txt("cor");
+                    cor.erase(std::remove(cor.begin(), cor.end(), '#'), cor.end());
+                    std::transform(cor.begin(), cor.end(), cor.begin(), [](unsigned char ch) { return char(std::toupper(ch)); });
+                    std::string mat = txt("material");
+                    std::transform(mat.begin(), mat.end(), mat.begin(), [](unsigned char ch) { return char(std::toupper(ch)); });
+                    agora_f[txt("unidade") + ":" + txt("slot")] = cr.value("vazio", false) ? std::string() : mat + "|" + cor.substr(0, 6);
                 }
+                // Durante a impressão a impressora alterna as entradas (troca de cor) e algumas, como a CC2, mudam a
+                // leitura da entrada em uso: isso não é bobina trocada. Na impressão e logo depois dela a leitura vira
+                // a nova referência, sem perguntar do estoque.
+                static std::map<std::string, bool> imprimia;
+                const bool em_impressao = est == "imprimindo" || est == "pausada";
+                const bool religar      = em_impressao || imprimia[dev];
+                imprimia[dev]           = em_impressao;
                 const bool primeira = fil_antes.find(dev) == fil_antes.end();
                 auto&      ant      = fil_antes[dev];
                 auto&      cand     = fil_cand[dev];
                 std::string novas;
                 for (const auto& [k, sig] : agora_f) {
-                    if (primeira) {
+                    if (primeira || religar) {
                         ant[k] = sig;
+                        cand.erase(k);
                         continue;
                     }
                     if (ant[k] == sig) {
@@ -1615,6 +1634,34 @@ void monitor_iniciar()
                     wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer — filamento trocado"), texto, wxGetApp().mainframe);
                     aviso.Show();
                 }
+            }
+            {
+                // Troca de cor na impressão: a impressora passou a puxar outra entrada. Avisa no Filuna (no máximo um
+                // aviso por minuto, para impressão com muitas trocas não encher a tela).
+                static std::map<std::string, int>                                   entrada_antes;
+                static std::map<std::string, std::chrono::steady_clock::time_point> aviso_cor;
+                int entrada = 0;
+                const json sa = i.value("slot_ativo", json::object());
+                if (est == "imprimindo" && sa.is_object()) {
+                    const auto n = [&sa](const char* k) {
+                        if (!sa.contains(k)) return -1;
+                        try { return sa[k].is_number() ? sa[k].get<int>() : std::stoi(sa[k].get<std::string>()); } catch (...) { return -1; }
+                    };
+                    const int u = n("unidade"), sl = n("slot");
+                    if (u >= 0 && u < 64 && sl >= 0 && sl < 16)
+                        entrada = u * 4 + sl + 1;
+                }
+                const int  ant_e = entrada_antes[dev];
+                const auto agora = std::chrono::steady_clock::now();
+                if (entrada > 0 && ant_e > 0 && entrada != ant_e && agora - aviso_cor[dev] > std::chrono::seconds(60)) {
+                    aviso_cor[dev] = agora;
+                    const wxString texto = wxString::FromUTF8(i.value("nome", std::string("Impressora")) + ": troca de cor, agora puxando a entrada " +
+                                                              std::to_string(entrada) + " (antes " + std::to_string(ant_e) + ").");
+                    if (Plater* pl = wxGetApp().plater())
+                        if (auto* nm = pl->get_notification_manager())
+                            nm->push_notification(std::string(texto.ToUTF8().data()));
+                }
+                entrada_antes[dev] = entrada;
             }
             const std::string err = i.value("erro", std::string());
             static std::map<std::string, std::string> erro_antes;
