@@ -9,8 +9,9 @@ run-name: "Store ${{ inputs.so_status && 'estado' || inputs.so_listar && 'voos' 
 #   Neste ramo o envio vai só para um voo de pacote (ex.: "Teste do dono") que a Store confirma existir; sem voo
 #   válido, nada é enviado. -f so_listar=true só mostra os voos; -f so_status=true só diz o estado na Store.
 #
-# Depois do envio, o job acompanha a certificação pela API da Store e escreve uma linha "FILUNA_ESTADO {json}" a cada
-# mudança; o vigia do servidor Filuna lê essas linhas e mostra em /admin/loja (e avisa o dono no WhatsApp).
+# Cada etapa escreve uma linha "FILUNA_ESTADO {json}" (pacote montado, enviado, estado da submissão na Store). O vigia
+# do servidor Filuna (/opt/filuna-loja/vigia.py) lê essas linhas, mostra em /admin/loja, avisa o dono no WhatsApp e,
+# enquanto a certificação não acaba, dispara uma consulta so_status (Linux, 1 min) a cada 10 min.
 #
 # Segredos (Settings › Secrets and variables › Actions): MSSTORE_TENANT_ID, MSSTORE_SELLER_ID, MSSTORE_CLIENT_ID,
 # MSSTORE_CLIENT_SECRET — do aplicativo do Microsoft Entra ligado ao Partner Center (função Gerente).
@@ -52,8 +53,8 @@ env:
   CONSULTA: ${{ inputs.so_status || inputs.so_listar }}
 jobs:
   msix:
-    runs-on: windows-2022
-    timeout-minutes: 330
+    runs-on: ${{ inputs.so_status && 'ubuntu-latest' || 'windows-2022' }}
+    timeout-minutes: 90
     steps:
       - name: Conferir a versão
         if: env.CONSULTA != 'true'
@@ -144,7 +145,7 @@ jobs:
             throw "o envio falhou: se já há uma versão em certificação, espere ela sair e dispare de novo"
           }
           Write-Host ("FILUNA_ESTADO " + (@{ etapa = 'envio'; estado = 'Enviado'; voo = $voo } | ConvertTo-Json -Compress))
-      - name: Acompanhar a certificação na Store
+      - name: Estado na Store
         if: (inputs.so_status || (inputs.enviar && !inputs.so_listar)) && steps.conta.outputs.ligada == '1'
         shell: pwsh
         env:
@@ -152,11 +153,11 @@ jobs:
           C: ${{ secrets.MSSTORE_CLIENT_ID }}
           CS: ${{ secrets.MSSTORE_CLIENT_SECRET }}
           VOO: ${{ inputs.voo }}
-          UMA_VEZ: ${{ inputs.so_status }}
         run: |
-          # API de envio da Store (manage.devcenter.microsoft.com): estado da submissão do voo e da versão pública.
+          # API de envio da Store (manage.devcenter.microsoft.com): estado da submissão do voo (com voo) ou da versão
+          # pública (sem voo). Uma leitura só: o registro do job só pode ser lido quando ele termina, então o vigia do
+          # servidor dispara uma consulta nova (so_status) a cada 10 min enquanto a certificação não acaba.
           $base = "https://manage.devcenter.microsoft.com/v1.0/my/applications/$env:APP_ID"
-          $finais = @('Published', 'CommitFailed', 'PreProcessingFailed', 'CertificationFailed', 'ReleaseFailed', 'PublishFailed', 'Canceled')
           function Token { (Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$env:T/oauth2/token" -Body @{ grant_type = 'client_credentials'; client_id = $env:C; client_secret = $env:CS; resource = 'https://manage.devcenter.microsoft.com' }).access_token }
           function Ler($tok, $caminho) { Invoke-RestMethod -Uri "$base$caminho" -Headers @{ Authorization = "Bearer $tok" } }
           function Estado($tok) {
@@ -172,14 +173,6 @@ jobs:
             $s = Ler $tok "/submissions/$sub/status"
             return @{ etapa = 'certificacao'; destino = 'todos'; submissao = "$sub"; estado = "$($s.status)"; detalhes = $s.statusDetails }
           }
-          $ultimo = ''
-          $fim = (Get-Date).AddMinutes(300)
-          do {
-            try { $e = Estado (Token) } catch { $e = @{ etapa = 'certificacao'; estado = 'ConsultaFalhou'; erro = "$($_.Exception.Message)" } }
-            $e.em = (Get-Date).ToUniversalTime().ToString('o')
-            $chave = "$($e.submissao)|$($e.estado)"
-            if ($chave -ne $ultimo) { Write-Host ("FILUNA_ESTADO " + ($e | ConvertTo-Json -Compress -Depth 6)); $ultimo = $chave }
-            if ($env:UMA_VEZ -eq 'true' -or $finais -contains $e.estado) { break }
-            Start-Sleep -Seconds 180
-          } while ((Get-Date) -lt $fim)
-          if ($finais -notcontains $e.estado -and $env:UMA_VEZ -ne 'true') { Write-Host "FILUNA_ESTADO {`"etapa`":`"certificacao`",`"estado`":`"AindaEmAndamento`"}" }
+          try { $e = Estado (Token) } catch { $e = @{ etapa = 'certificacao'; estado = 'ConsultaFalhou'; erro = "$($_.Exception.Message)" } }
+          $e.em = (Get-Date).ToUniversalTime().ToString('o')
+          Write-Host ("FILUNA_ESTADO " + ($e | ConvertTo-Json -Compress -Depth 6))
