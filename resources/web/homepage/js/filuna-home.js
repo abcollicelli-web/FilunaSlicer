@@ -401,7 +401,7 @@ function FlM3dCarregar() {
 		$("#FlM3dGrade .m3d-cartao").on("click", function () { var m = ms[+$(this).attr("data-k")]; if (m) FlAbrirAba("filuna.modelos", m.slug ? "modelo:" + m.slug : ""); });
 	}).catch(function () { /* sem internet: a seção simplesmente não aparece */ });
 }
-$(function () { FlM3dCarregar(); });
+// A faixa de Modelos 3D agora é da tela Início (filuna-inicio.js), em 2 × 2 com o resto da tela.
 
 /* ---- Rodapé da coluna da esquerda: suporte remoto, aviso de atualização e versão num bloco só ----
    O link do suporte entra no rodapé (antes ficava solto numa altura fixa e encostava nos outros) e a coluna

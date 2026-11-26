@@ -1,0 +1,126 @@
+/* Filuna — tela Início (prévia aprovada pelo dono em 26/11/2026). Tudo cabe sem rolar a partir de ~1280 × 720;
+   em janela menor a tela rola em vez de cortar. Cores da Direção Visual C (filuna.css). */
+#ContentBoard { padding: 0 !important; }
+#FlInicio { box-sizing: border-box; height: 100%; min-height: 660px; padding: 20px 28px; display: flex; flex-direction: column; gap: 16px;
+	color: var(--fg-color-text); font-family: inherit; }
+#FlInicio a { cursor: pointer; text-decoration: none; }
+#FlInicio .FiVazio { margin: 6px 0; font-size: 13px; color: var(--fg-color-label); }
+
+/* 1. saudação + as três ações (uma vez só) */
+.FiTopo { flex: none; height: 64px; display: flex; align-items: center; gap: 24px; }
+.FiOla { flex: 1; min-width: 0; }
+.FiOla h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.4px; }
+.FiOla p { margin: 4px 0 0; font-size: 14.5px; color: var(--fg-color-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiAcoes { display: flex; gap: 10px; flex: none; }
+.FiBtn { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 12px; background: var(--bg-color-sidebar);
+	border: 1px solid var(--border-color); color: var(--fg-color-text) !important; font-weight: 600; font-size: 15px; white-space: nowrap; }
+.FiBtn svg { width: 18px; height: 18px; fill: none; stroke: var(--filuna-framboesa); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.FiBtn:hover { border-color: #E3B9CB; }
+.FiBtn.primario { background: var(--main-color); border-color: var(--main-color); color: #fff !important; font-weight: 700; }
+.FiBtn.primario svg { stroke: #fff; stroke-width: 2.2; }
+.FiBtn.primario:hover { background: var(--filuna-framboesa); }
+
+/* 2. impressoras ao vivo + recentes */
+.FiMeio { flex: none; height: 178px; display: grid; grid-template-columns: minmax(0, 2.35fr) minmax(0, 1fr); gap: 16px; }
+.FiImps { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; min-width: 0; }
+.FiImps.uma { grid-template-columns: minmax(0, 1fr); }
+.FiCard { box-sizing: border-box; border-radius: 16px; background: var(--bg-color-sidebar); border: 1px solid var(--border-color); padding: 16px; min-width: 0; overflow: hidden; }
+.FiImp { display: flex; gap: 16px; color: var(--fg-color-text) !important; }
+.FiImp.ativa { border: 1.5px solid #F3B5CF; }
+.FiImpFoto { width: 96px; flex: none; border-radius: 12px; background: #2E2A27; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.FiImpFoto img { width: 100%; height: 100%; object-fit: cover; }
+.FiImpFoto svg { width: 52px; height: 60px; }
+.FiImpTxt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.FiImpCab { display: flex; align-items: center; gap: 8px; }
+.FiImpCab b { font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiPil { margin-left: auto; flex: none; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; color: var(--filuna-framboesa); background: var(--focus-bg-item); }
+.FiPil.livre { color: #1F7A46; background: #E3F3E9; }
+.FiPil.off { color: #5E5752; background: #EFE9E1; }
+.FiPil.erro { color: #B33A0B; background: #FDE8DF; }
+.FiLin { font-size: 13px; color: var(--fg-color-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiNums { display: flex; align-items: baseline; gap: 10px; margin-top: 2px; }
+.FiNums b { font-size: 26px; letter-spacing: -.5px; }
+.FiNums span { font-size: 13.5px; }
+.FiNums small { font-size: 13px; color: var(--fg-color-label); margin-left: auto; }
+.FiBarra { height: 8px; border-radius: 99px; background: #F2E6DA; overflow: hidden; }
+.FiBarra i { display: block; height: 100%; background: var(--main-color); }
+.FiCores { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--fg-color-label); min-width: 0; }
+.FiCores i { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.FiCores i.vazia { background: transparent !important; box-shadow: inset 0 0 0 1px #B7ADA2; }
+.FiCores i.ativa { outline: 2px solid var(--main-color); outline-offset: 1px; }
+.FiCores span { margin-left: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiIr { margin-top: auto; font-size: 13.5px; font-weight: 600; color: var(--filuna-framboesa); }
+.FiLivre { flex-direction: column; gap: 8px; }
+.FiRecentes { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; }
+.FiCab { display: flex; align-items: center; font-size: 14.5px; margin-bottom: 2px; }
+.FiRec { display: flex; align-items: center; gap: 10px; padding: 4px 0; color: var(--fg-color-text) !important; }
+.FiRec .ic { width: 30px; height: 30px; flex: none; border-radius: 8px; background: var(--bg-color); border: 1px solid var(--border-color); overflow: hidden;
+	display: flex; align-items: center; justify-content: center; }
+.FiRec .ic img { width: 100%; height: 100%; object-fit: cover; }
+.FiRec .ic svg { width: 16px; height: 16px; fill: none; stroke: var(--filuna-framboesa); stroke-width: 1.8; stroke-linejoin: round; }
+.FiRec .n { flex: 1; min-width: 0; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiRec .q { font-size: 12px; color: #6E665F; flex: none; }
+.FiRec:hover .n { color: var(--filuna-framboesa); }
+
+/* 3. modelos 3D | ferramentas + paramétricos (uma linha) e o estoque */
+.FiBaixo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr); gap: 20px; padding-top: 4px; border-top: 1px solid var(--border-color); }
+.FiDir { display: grid; grid-template-rows: minmax(150px, 1fr) minmax(150px, 1fr); gap: 14px; min-height: 0; }
+.FiLinha { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; min-height: 0; }
+.FiCol { display: flex; flex-direction: column; gap: 10px; min-height: 0; min-width: 0; }
+.FiCab2 { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.FiCab2 h2 { margin: 0; font-size: 18px; font-weight: 800; flex: none; }
+.FiCab2 span { font-size: 13px; color: var(--fg-color-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.FiCab2 a { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--filuna-framboesa) !important; flex: none; }
+.FiGrade { flex: 1; min-height: 0; display: grid; gap: 12px; }
+.FiG2x2 { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.FiG1x2 { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
+.FiItem { display: flex; flex-direction: column; min-height: 0; border-radius: 14px; overflow: hidden; background: var(--bg-color-sidebar);
+	border: 1px solid var(--border-color); color: var(--fg-color-text) !important; }
+.FiItem:hover { border-color: #E3B9CB; }
+.FiItem .foto { flex: 1; min-height: 0; background: #EFE7DD; display: block; overflow: hidden; }
+.FiItem .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.FiItem .txt { padding: 8px 12px 10px; }
+.FiItem .n { font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiItem .s { display: flex; gap: 8px; font-size: 12px; color: var(--fg-color-label); margin-top: 2px; white-space: nowrap; overflow: hidden; }
+.FiItem .s b { margin-left: auto; color: var(--filuna-framboesa); }
+
+/* estoque: a bobina que imprime em destaque (girando, igual ao Estoque) e as outras ao lado */
+.FiEst { flex: 1; min-height: 0; display: flex; gap: 10px; }
+#FiEstUso { width: 268px; flex: none; display: flex; }
+.FiUso { flex: 1; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
+	background: #FFF0F6; border: 1.5px solid #F3B5CF; color: var(--fg-color-text) !important; min-width: 0; }
+.FiUso.parada { background: var(--bg-color-sidebar); border: 1px solid var(--border-color); }
+.FiUso .bob { flex: none; display: flex; }
+.FiUso .t { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.FiUso .k { font-size: 11px; font-weight: 800; letter-spacing: .8px; color: var(--filuna-framboesa); }
+.FiUso .parada .k { color: var(--fg-color-label); }
+.FiUso b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiUso small { font-size: 12px; color: var(--fg-color-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiUso .FiBarra { height: 6px; margin-top: 2px; }
+/* quantas couberem na largura (no mínimo 84 px cada); as que não cabem ficam para a tela do Estoque */
+#FiEstLista { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); grid-auto-rows: 100%; gap: 8px; overflow: hidden; }
+.FiBob { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; border-radius: 12px; min-width: 0;
+	background: var(--bg-color-sidebar); border: 1px solid var(--border-color); color: var(--fg-color-text) !important; }
+.FiBob b { font-size: 12.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiBob span { font-size: 11px; color: var(--fg-color-label); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FiBob.baixa { border-color: #F0B48F; }
+
+/* bobina viva (mesmas regras do Estoque, base.css das telas Filuna) */
+.bobina-svg .bobina-giro { transform-box: view-box; transform-origin: 0 0; }
+.girando .bobina-svg .bobina-giro { animation: bobina-gira 3.2s linear infinite; }
+@keyframes bobina-gira { to { transform: rotate(360deg); } }
+.bobina-svg { overflow: visible; } .bobina-svg .bobina-fio { display: none; } .girando .bobina-svg .bobina-fio { display: inline; }
+.girando .bobina-svg .bobina-fio-mov { animation: bobina-fio .7s linear infinite; }
+@keyframes bobina-fio { to { stroke-dashoffset: -14; } }
+@media (prefers-reduced-motion: reduce) { .girando .bobina-svg .bobina-giro, .girando .bobina-svg .bobina-fio-mov { animation: none; } }
+
+/* janela estreita: as ações quebram, a faixa de baixo empilha e a tela rola */
+@media (max-width: 1180px) {
+	.FiTopo { height: auto; flex-wrap: wrap; }
+	.FiMeio { height: auto; grid-template-columns: minmax(0, 1fr); }
+	.FiImps { grid-template-columns: minmax(0, 1fr); }
+	.FiBaixo { grid-template-columns: minmax(0, 1fr); }
+	#FlInicio { height: auto; }
+	.FiG2x2 { grid-template-rows: 200px 200px; }
+	.FiDir { grid-template-rows: 220px 170px; }
+}

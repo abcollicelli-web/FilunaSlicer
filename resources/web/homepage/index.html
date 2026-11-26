@@ -20,6 +20,9 @@
 	
 <script type="text/javascript" src="js/home.js"></script>
 <script type="text/javascript" src="js/filuna-home.js"></script>
+<script type="text/javascript" src="../filuna/ponte.js"></script>	<!-- o desenho da bobina é o mesmo do Estoque -->
+<script type="text/javascript" src="js/filuna-inicio.js"></script>
+<link rel="stylesheet" type="text/css" href="./css/filuna-inicio.css" />
 </head>
 <body class="thin-scroll" onLoad="OnInit()">
 <div id="LeftBoard">
@@ -185,60 +188,42 @@
 	<div id="FlBobinas" class="FlTabela"></div>
 </div>
 <div id="ContentBoard" class="thin-scroll" board="recent">
-    <div style="height: 14px;"></div>	
-	<!-- Filuna (prancha HOME-01): destaque do topo -->
-	<div id="FlDestaque">
-		<div class="FlDestTxt"><span>Preparação de impressão</span><b>Comece uma impressão</b>
-			<p>Abra um modelo, fatie e envie para a impressora conectada no Dispositivo.</p></div>
-		<div class="FlDestBot">
-			<a class="FlDestBtn primario" onClick="OnClickNewProject()">Novo projeto</a>
-			<a class="FlDestBtn" onClick="OnClickOpenProject()">Abrir projeto</a>
-			<a class="FlDestBtn" onClick="FlAbrirAba('filuna.dispositivo')">Impressoras</a>
-		</div>
-	</div>
-	<div id="MenuArea">
-<!--		<div class="MenuItem" onClick="OnClickModelDepot()">
-			<div class="MenuIcon"><img src="img/i6.png"></div>
-			<div>
-				<div class="trans TextS1" tid="t90">3D Model</div>
-				<div class="MenuDesc trans"  tid="t91">Download 3D Models</div>
+	<!-- Filuna: tela Início (prévia aprovada pelo dono em 26/11/2026). Tudo cabe sem rolar: as três ações, as impressoras
+	     ao vivo, os recentes, Modelos 3D, Ferramentas, Paramétricos e o Estoque com a bobina que está imprimindo girando.
+	     Os dados: impressoras e estoque deste computador (filuna_nativo, só leitura), catálogo e recursos do site. -->
+	<div id="FlInicio">
+		<section class="FiTopo">
+			<div class="FiOla"><h1 id="FiOla">Olá</h1><p id="FiResumo">Abra um modelo, fatie e envie para a impressora.</p></div>
+			<div class="FiAcoes">
+				<a class="FiBtn primario" onClick="OnClickNewProject()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Novo projeto</a>
+				<a class="FiBtn" onClick="OnClickOpenProject()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/></svg>Abrir projeto</a>
+				<a class="FiBtn" onClick="FiImportar()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg>Importar STL / 3MF</a>
 			</div>
-		</div>	-->	
-		<div class="MenuItem" onClick="OnClickNewProject()">
-			<div class="MenuIcon"><img src="img/i4.png"></div>
-			<div>
-				<div class="TextS1" data-i18n="new_project">New Project</div>
-				<div class="MenuDesc" data-i18n="create_new_project">Create new project</div>
+		</section>
+		<section class="FiMeio">
+			<div id="FiImps" class="FiImps"></div>
+			<div class="FiCard FiRecentes"><div class="FiCab"><b>Recentes</b></div><div id="FiRecLista"><p class="FiVazio">Nenhum projeto aberto ainda.</p></div></div>
+		</section>
+		<section class="FiBaixo">
+			<div class="FiCol">
+				<div class="FiCab2"><h2>Modelos 3D</h2><span>fatiados e conferidos, com preço de venda</span><a onClick="FlAbrirAba('filuna.modelos')">Ver todos →</a></div>
+				<div id="FiM3d" class="FiGrade FiG2x2"></div>
 			</div>
-		</div>
-		<div class="MenuItem" onClick="OnClickOpenProject()">
-			<div class="MenuIcon"><img src="img/i5.png"></div>
-			<div>
-				<div class="TextS1" data-i18n="open_project">Open Project</div>
-				<div class="MenuDesc">3mf</div>
+			<div class="FiDir">
+				<div class="FiLinha">
+					<div class="FiCol"><div class="FiCab2"><h2>Ferramentas</h2><a onClick="FlAbrirAba('filuna.parametricos', 'ferramentas')">Ver todas →</a></div><div id="FiFerr" class="FiGrade FiG1x2"></div></div>
+					<div class="FiCol"><div class="FiCab2"><h2>Paramétricos</h2><a onClick="FlAbrirAba('filuna.parametricos')">Ver todos →</a></div><div id="FiParam" class="FiGrade FiG1x2"></div></div>
+				</div>
+				<div class="FiCol">
+					<div class="FiCab2"><h2>Estoque</h2><span id="FiEstResumo"></span><a onClick="FlAbrirAba('filuna.espaco', 'estoque')">Ver estoque →</a></div>
+					<div class="FiEst"><div id="FiEstUso"></div><div id="FiEstLista"></div></div>
+				</div>
 			</div>
-		</div>		
-	</div>
-	
-	<!-- Filuna: modelos 3D do site, no mesmo visual dos cartões do site -->
-	<div id="FlM3d" style="display:none">
-		<div class="FlM3dCab"><h2>Modelos 3D</h2><span>Fatiados e conferidos pela Filuna. Tempo, filamento e quanto vender antes de imprimir.</span></div>
-		<div id="FlM3dGrade" class="m3d-grade"></div>
-	</div>
-
-	<!-- Filuna (prancha HOME-01): terceira faixa da tela inicial -->
-	<div id="FlFerr">
-		<div class="FlM3dCab"><h2>Ferramentas</h2></div>
-		<div class="FlFerrGrade">
-			<a class="FlFerrItem" onClick="OpenWikiUrl('https://filuna3d.com/calculadora')"><b>Preço de venda</b><span>Custo, margem e quanto cobrar pela peça</span></a>
-			<a class="FlFerrItem" onClick="FlAbrirAba('filuna.espaco', 'reparacao')"><b>Reparar modelo</b><span>Conserta arquivos 3D com defeito</span></a>
-			<a class="FlFerrItem" onClick="FlAbrirAba('filuna.espaco', 'estoque')"><b>Estoque de filamento</b><span>Bobinas, peso restante e etiquetas</span></a>
-			<a class="FlFerrItem" onClick="FlAbrirAba('filuna.espaco', 'ia')"><b>IA Filuna</b><span>Tire dúvidas de impressão</span></a>
-		</div>
+		</section>
 	</div>
 
 	<div id="DebugText"></div>	
-	<div id="RecentFileArea">
+	<div id="RecentFileArea" style="display:none"><!-- lista antiga: o home.js ainda a preenche; a Início mostra os 3 últimos -->
 		<div id="RecentTitleBlock">
 		    <div id="RecentTitle" class="Content-Title TextS1" data-i18n="recently_opened">Recently opened</div>
 			<div id="RecentClearAllBtn" class="ButtonStyleRegular ButtonTypeWindow" onClick="OnDeleteAllRecentFiles()" data-i18n="clear_all">Clear all</div>

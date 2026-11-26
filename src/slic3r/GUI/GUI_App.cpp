@@ -17,6 +17,8 @@
 #include "WebViewDialog.hpp"
 #include "FilunaImpressao.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaDados.hpp"
+#include "FilunaDispositivos.hpp"
 #include "FilunaAtualizacao.hpp"
 #include "FilunaManutencao.hpp"
 #include "FilunaSync.hpp"
@@ -5614,6 +5616,40 @@ std::string GUI_App::handle_web_request(std::string cmd)
             if (command_str == "filuna_aba") {
                 const std::string tab = root.get<std::string>("aba", ""), section = root.get<std::string>("secao", "");
                 CallAfter([tab, section] { FilunaPanel::open_tab(tab, section); });
+                return "";
+            }
+            // Filuna: a tela inicial mostra impressoras ao vivo, o estoque (com a bobina que está imprimindo) e o histórico.
+            // Só estas três leituras; nada que mude impressora, estoque ou conta passa por aqui.
+            if (command_str == "filuna_importar") { // botão "Importar STL / 3MF" da tela inicial (o mesmo de Projeto)
+                CallAfter([this] {
+                    if (mainframe != nullptr)
+                        mainframe->select_filuna_tab(TAB_ID_PREPARE);
+                    if (Plater* p = plater())
+                        p->add_file();
+                });
+                return "";
+            }
+            if (command_str == "filuna_nativo") {
+                const std::string id = root.get<std::string>("id", ""), acao = root.get<std::string>("acao", "");
+                CallAfter([id, acao] {
+                    nlohmann::json r;
+                    bool           ok = true;
+                    try {
+                        if (acao == "dispositivos.estado")
+                            r = FilunaDispositivos::estado();
+                        else if (acao == "estoque.listar" || acao == "historico.listar") {
+                            const auto d = filuna_dados_acao(acao, acao == "historico.listar" ? nlohmann::json{{"limite", 30}} : nlohmann::json::object());
+                            r = d ? *d : nlohmann::json::object();
+                        } else
+                            throw std::runtime_error("ação não permitida na tela inicial");
+                    } catch (const std::exception& e) {
+                        ok = false;
+                        r  = {{"erro", e.what()}};
+                    }
+                    if (WebViewPanel* home = WebViewPanel::if_built())
+                        home->RunScript(wxString::FromUTF8("if (window.FlNativoResposta) FlNativoResposta(" + nlohmann::json(id).dump() + "," +
+                                                           (ok ? "true" : "false") + "," + r.dump() + ");"));
+                });
                 return "";
             }
             static const std::unordered_set<std::string> stealth_blocked_info_commands = {
