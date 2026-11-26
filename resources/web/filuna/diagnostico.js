@@ -190,6 +190,18 @@ var RaioXDiag = (function () {
 		});
 	}
 
-	return { html: html, ligar: ligar, contar: function () { return st.painel ? (st.painel.alertas || []).filter(function (a) { return !a.visto_em; }).length : 0; },
+	// A aba só aparece depois que o dono libera no site (ou para administradores): o mesmo programa pode chegar aos
+	// clientes antes da liberação.
+	var lib = { valor: null, pedindo: false };
+	function visivel(redesenhar) {
+		if (lib.valor === null && !lib.pedindo && Filuna.temToken()) {
+			lib.pedindo = true;
+			Filuna.api("GET", "/raiox/diagnostico/liberado").then(function (r) { lib.valor = !!(r && r.liberado); }, function () { lib.valor = false; })
+				.then(function () { lib.pedindo = false; if (lib.valor) redesenhar(); });
+		}
+		return !!lib.valor;
+	}
+
+	return { html: html, ligar: ligar, visivel: visivel, contar: function () { return st.painel ? (st.painel.alertas || []).filter(function (a) { return !a.visto_em; }).length : 0; },
 		recarregar: function () { st.painel = null; st.testes = null; st.leitura = null; st.carregado = false; st.erro = ""; } };
 })();
