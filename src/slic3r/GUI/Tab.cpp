@@ -7750,7 +7750,15 @@ bool Tab::select_preset(
         apply_config_from_cache();
 
         // Orca: update presets for the selected printer
-        if (m_type == Preset::TYPE_PRINTER && wxGetApp().app_config->get_bool("remember_printer_config")) {
+        // Filuna: com peça na mesa, os filamentos são do projeto. "Lembrar a configuração da impressora" trocava a lista
+        // inteira (preset, cor, quantidade e mapa de cada filamento) pela última usada nessa impressora, e o projeto
+        // ficava com as cores embaralhadas. Nesse caso os filamentos ficam e cada um só ganha o preset equivalente da
+        // impressora nova (o update_compatible acima já escolheu pelo mesmo material).
+        const Plater *plater_atual    = wxGetApp().plater();
+        const bool    projeto_na_mesa = plater_atual != nullptr && !plater_atual->model().objects.empty();
+        if (m_type == Preset::TYPE_PRINTER && projeto_na_mesa && wxGetApp().app_config->get_bool("remember_printer_config"))
+            BOOST_LOG_TRIVIAL(info) << "select preset: projeto com peças, filamentos e cores do projeto mantidos ao trocar a impressora";
+        if (m_type == Preset::TYPE_PRINTER && !projeto_na_mesa && wxGetApp().app_config->get_bool("remember_printer_config")) {
             m_preset_bundle->update_selections(*wxGetApp().app_config);
             wxGetApp().plater()->sidebar().on_filament_count_change(m_preset_bundle->filament_presets.size());
         }
