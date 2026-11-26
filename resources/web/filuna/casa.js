@@ -90,7 +90,10 @@ var FilunaCasa = (function () {
 				return a;
 			});
 			// o que só existe neste computador (Este computador, serviços ainda não enviados) continua na lista
-			st.locais.forEach(function (l) { if (!lista.some(function (a) { return a.chave == l.chave; })) lista.push(l); });
+			// mesma coisa da conta e deste computador: pela chave (ou, de conta antiga sem chave, por tipo, nome e endereço)
+			var igual = function (a, l) { return a.chave ? a.chave == l.chave : a.tipo == l.tipo && a.nome == l.nome && (a.ip || "") == (l.ip || ""); };
+			lista.forEach(function (a) { if (!a.chave) { var l = st.locais.filter(function (x) { return igual(a, x); })[0]; if (l) a.chave = l.chave; } });
+			st.locais.forEach(function (l) { if (!lista.some(function (a) { return igual(a, l); })) lista.push(l); });
 			st.aparelhos = lista;
 			st.daConta = true;
 			return deTuya().then(sincronizarRegras);
