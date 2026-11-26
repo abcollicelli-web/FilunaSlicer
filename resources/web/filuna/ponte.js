@@ -405,13 +405,17 @@ var Filuna = (function () {
 		"dispositivos.controle", "fatiador.estado", "fatiador.ajustar_impressora", "impressao.teste", "impressao.teste.estado",
 		// fatiador completo (categoria "fatiador", só se o cliente marcou): as mesmas ações do Assistente de impressão
 		"fatiador.pecas", "fatiador.processo", "fatiador.ajustar", "fatiador.perfis", "fatiador.perfil", "fatiador.mesa", "fatiador.orientar",
-		"fatiador.arrumar", "fatiador.fatiar", "fatiador.fatiamento", "fatiador.avisos", "fatiador.imprimir"];
+		"fatiador.arrumar", "fatiador.fatiar", "fatiador.fatiamento", "fatiador.avisos", "fatiador.imprimir",
+		// Raio X do equipamento: leitura completa, catálogo, testes (os que aquecem/movem esperam o cliente confirmar
+		// presença NESTA tela; "diagnostico.presenca" nunca vem de fora), andamento e parar
+		"diagnostico.ler", "diagnostico.testes", "diagnostico.testar", "diagnostico.teste.estado", "diagnostico.parar"];
 	// ação do suporte → ação do programa (as do fatiador completo); as outras têm o mesmo nome
 	var SUP_NATIVO = { "fatiador.pecas": "peca.analise", "fatiador.processo": "processo.ler", "fatiador.perfis": "perfil.lista",
 		"fatiador.perfil": "perfil.trocar", "fatiador.orientar": "peca.orientar", "fatiador.arrumar": "peca.arrumar", "fatiador.fatiar": "fatiar",
 		"fatiador.avisos": "fatiamento.avisos", "fatiador.imprimir": "imprimir" };
 	// mesma regra do servidor (modulos.py suporte_categoria): o programa confere de novo antes de executar
 	function supCategoria(acao) {
+		if (acao == "diagnostico.testar") return "impressora"; // teste físico: só com a categoria Impressora
 		if (acao == "fatiador.estado" || acao == "coletar" || /^diagnostico\./.test(acao) || acao == "rede.diagnostico" ||
 			["dispositivos.estado", "dispositivos.fabricantes", "dispositivos.modelos", "dispositivos.descobertas"].indexOf(acao) >= 0) return "diagnostico";
 		if (acao == "fatiador.ajustar_impressora") return "reparo";
@@ -422,7 +426,7 @@ var Filuna = (function () {
 	// campos que o suporte pode mandar em cada ação (só texto, número e sim/não; nada de objeto ou lista)
 	var SUP_CAMPOS = ["fabricante", "modelo", "dev_id", "ip", "codigo", "serie", "nome", "material", "posicao", "cmd", "tipo", "ligar", "valor",
 		"eixo", "eixos", "distancia", "temperatura", "unidade", "slot", "chave", "valor_ajuste", "acao_mesa", "peca", "fator", "maior_lado_mm",
-		"graus", "quantidade"];
+		"graus", "quantidade", "teste"];
 	function supDados(d) {
 		var r = {};
 		SUP_CAMPOS.forEach(function (k) {
@@ -458,6 +462,10 @@ var Filuna = (function () {
 				return { programa: r[0], marcas: r[1], impressoras: r[2], rede_local: r[3], preferencias: r[4],
 					tela: location.pathname.split("/").pop(), sistema: navigator.userAgent, hora: new Date().toISOString() };
 			});
+		if (c.acao == "diagnostico.ler" || c.acao == "diagnostico.testar") {
+			var dd = supDados(d); dd.origem = "suporte";
+			return supSeguro(c.acao, dd);
+		}
 		return supSeguro(c.acao, supDados(d));
 	}
 	function supCiclo() {

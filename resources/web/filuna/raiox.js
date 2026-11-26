@@ -200,10 +200,10 @@ var RaioX = (function () {
 			'<div class="rx-num"><div><b>' + c.impressoes + "</b><span>impressões</span></div><div><b>" + num(c.horas) + " h</b><span>imprimindo</span></div><div><b>" + c.abertos + "</b><span>erro(s) em aberto</span></div>" +
 			'<div class="' + (venc ? "at" : "") + '"><b>' + (venc || "✓") + "</b><span>" + (venc ? "manutenção vencida" : "manutenção em dia") + "</span></div></div>" +
 			(c.padroes && c.padroes.length ? '<div class="rx-pad"><b>O que se repete</b><ul>' + c.padroes.map(function (p) { return "<li>" + E(p) + "</li>"; }).join("") + "</ul></div>" : "") + "</div></div>" +
-			'<div class="rx-abas">' + [["erros", "Erros", c.abertos], ["reparo", "Reparo", c.caso ? 1 : 0], ["impressoes", "Impressões", c.alertas.length], ["manutencao", "Manutenção", venc]].map(function (a) {
+			'<div class="rx-abas">' + [["erros", "Erros", c.abertos], ["reparo", "Reparo", c.caso ? 1 : 0], ["diagnostico", "Diagnóstico", typeof RaioXDiag != "undefined" ? RaioXDiag.contar() : 0], ["impressoes", "Impressões", c.alertas.length], ["manutencao", "Manutenção", venc]].map(function (a) {
 				return '<button data-aba="' + a[0] + '" class="' + (st.aba == a[0] ? "on" : "") + '">' + a[1] + (a[2] ? "<em>" + a[2] + "</em>" : "") + "</button>";
 			}).join("") + "</div>" +
-			'<div class="rx-sec">' + (st.aba == "reparo" ? abaReparo(c) : st.aba == "impressoes" ? abaImpressoes(c) : st.aba == "manutencao" ? abaManutencao(c) : abaErros(c)) + "</div></div>";
+			'<div class="rx-sec">' + (st.aba == "reparo" ? abaReparo(c) : st.aba == "diagnostico" && typeof RaioXDiag != "undefined" ? RaioXDiag.html(u, st.chave) : st.aba == "impressoes" ? abaImpressoes(c) : st.aba == "manutencao" ? abaManutencao(c) : abaErros(c)) + "</div></div>";
 		app.innerHTML = html;
 		ligar(app, u, voltar, redesenhar);
 	}
@@ -223,6 +223,7 @@ var RaioX = (function () {
 		app.querySelectorAll("[data-res]").forEach(function (b) {
 			b.onclick = function () { var s = q('[data-sol="' + b.dataset.res + '"]'); b.disabled = true; acao("/raiox/" + encodeURIComponent(b.dataset.res) + "/resolver", { solucao: s ? s.value : "" }, redesenhar, u); };
 		});
+		if (c && st.aba == "diagnostico" && typeof RaioXDiag != "undefined") RaioXDiag.ligar(app, u, st.chave, redesenhar);
 		app.querySelectorAll("[data-manut]").forEach(function (b) { b.onclick = function () { b.disabled = true; acao("/raiox/manutencao", { chave: st.chave, item: b.dataset.manut }, redesenhar, u); }; });
 		if (c && c.caso) {
 			app.querySelectorAll("[data-passo]").forEach(function (b) { b.onclick = function () { b.disabled = true; acao("/raiox/reparo/" + encodeURIComponent(c.caso.id) + "/passo", { passo: +b.dataset.passo, feito: b.dataset.feito == "1" }, redesenhar, u); }; });
@@ -241,6 +242,7 @@ var RaioX = (function () {
 
 	return { desenhar: desenhar, recarregar: function () {
 		st.c = null; st.erro = ""; st.aba = ""; st.regiao = null;
+		if (typeof RaioXDiag != "undefined") RaioXDiag.recarregar();
 		st.busca = { q: "", achados: null, erro: "", buscando: false };
 		st.conversa = { caso: "", msgs: null, erro: "", enviando: false, rascunho: "" };
 	} };

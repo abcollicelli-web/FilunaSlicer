@@ -187,7 +187,7 @@ json registrar(const json& corpo)
         return {{"aviso", "Entre na sua conta Filuna para guardar o diagnóstico no Raio X."}};
     json        resposta = json::object();
     std::string falha;
-    Http        http = Http::post(std::string(SITE) + "/api/slicer/v1/diagnostico/registrar");
+    Http        http = Http::post(std::string(SITE) + "/api/slicer/v1/raiox/diagnostico/registrar");
     http.header("Authorization", "Bearer " + tk)
         .header("Content-Type", "application/json")
         .set_post_body(corpo.dump(-1, ' ', false, json::error_handler_t::replace))
