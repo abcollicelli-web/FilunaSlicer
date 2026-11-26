@@ -12,6 +12,7 @@
 #include "CAD/FilunaCadIa.hpp"
 #endif
 #include "FilunaDispositivos.hpp"
+#include "FilunaDiagnostico.hpp"
 #include "FilunaCasa.hpp"
 #include "FilunaCasaAvisos.hpp"
 #include "FilunaManutencao.hpp"
@@ -642,12 +643,22 @@ void FilunaPanel::on_script_message(wxWebViewEvent& evt)
     const json data          = msg.contains("dados") && msg["dados"].is_object() ? msg["dados"] : json::object();
     // Rede (assistência remota): testar portas e procurar na rede levam segundos; rodam fora da linha da tela, para o
     // programa do cliente não congelar, e respondem quando terminam (se esta tela ainda estiver aberta).
-    if (action == "rede.diagnostico" || action == "rede.procurar") {
+    // Raio X do equipamento: leitura e testes esperam a impressora (e leem o estado pela linha da tela), então também
+    // rodam fora dela. teste.estado, parar e presenca respondem na hora (mais abaixo).
+    if (action == "rede.diagnostico" || action == "rede.procurar" || action == "diagnostico.ler" || action == "diagnostico.testes" ||
+        action == "diagnostico.testar") {
         FilunaPanel* eu = this;
         std::thread([eu, id, action, data] {
             json r;
             bool ok = true;
             try {
+                if (action == "diagnostico.ler")
+                    r = FilunaDiagnostico::ler(data.value("dev_id", std::string()), data.value("origem", std::string("cliente")));
+                else if (action == "diagnostico.testes")
+                    r = FilunaDiagnostico::testes(data.value("dev_id", std::string()));
+                else if (action == "diagnostico.testar")
+                    r = FilunaDiagnostico::testar(data);
+                else
                 r = action == "rede.procurar" ? FilunaDispositivos::rede_procurar()
                                               : FilunaDispositivos::rede_diagnostico(data.value("ip", std::string()), data.value("fabricante", std::string()));
             } catch (const std::exception& e) {
@@ -993,6 +1004,13 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     if (action == "casa.acao")
         return FilunaCasa::acao(d);
     // motor de avisos: regras de cada aparelho, teste de conexão e histórico
+    // Raio X do equipamento: andamento do teste, interromper e a confirmação de presença (só a tela do programa pede)
+    if (action == "diagnostico.teste.estado")
+        return FilunaDiagnostico::teste_estado();
+    if (action == "diagnostico.parar")
+        return FilunaDiagnostico::parar();
+    if (action == "diagnostico.presenca")
+        return FilunaDiagnostico::presenca(d.value("dev_id", std::string()));
     if (action == "casa.regras")
         return FilunaCasaAvisos::regras();
     if (action == "casa.regra.salvar")
