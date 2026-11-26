@@ -447,6 +447,83 @@ json pick_images(wxWindow* parent)
 // do pacote: põe o botão de voltar e troca o "baixar STL" do gerador por "colocar na mesa da Preparação".
 boost::filesystem::path pasta_parametricos() { return boost::filesystem::path(data_dir()) / "filuna" / "parametricos"; }
 
+// Cor de cada extrusora escolhida no paramétrico, gravada no 3MF em Metadata/filuna_filamentos.json:
+// {"versao":1,"filamentos":[{"extrusora":1,"cor":"#RRGGBB"}, ...]}. Sem o arquivo, devolve vazio.
+std::map<int, std::string> cores_do_parametrico(const wxMemoryBuffer& bin)
+{
+    std::map<int, std::string> cores;
+    mz_zip_archive             zip;
+    mz_zip_zero_struct(&zip);
+    if (!mz_zip_reader_init_mem(&zip, bin.GetData(), bin.GetDataLen(), 0))
+        return cores;
+    size_t tam   = 0;
+    void*  dados = mz_zip_reader_extract_file_to_heap(&zip, "Metadata/filuna_filamentos.json", &tam, 0);
+    mz_zip_reader_end(&zip);
+    if (dados == nullptr)
+        return cores;
+    const json j = json::parse(std::string(static_cast<const char*>(dados), tam), nullptr, false);
+    mz_free(dados);
+    if (!j.is_object() || !j.contains("filamentos") || !j["filamentos"].is_array())
+        return cores;
+    static const std::regex hex("^#[0-9A-Fa-f]{6}$");
+    for (const json& f : j["filamentos"]) {
+        if (!f.is_object() || !f.contains("extrusora") || !f["extrusora"].is_number_integer() || !f.contains("cor") || !f["cor"].is_string())
+            continue;
+        const int   n   = f["extrusora"].get<int>();
+        std::string cor = f["cor"].get<std::string>();
+        if (n < 1 || n > int(MAXIMUM_EXTRUDER_NUMBER) || !std::regex_match(cor, hex))
+            continue;
+        for (char& c : cor)
+            c = char(std::toupper((unsigned char) c));
+        cores.emplace(n, cor);
+    }
+    return cores;
+}
+
+// Põe nos filamentos da Preparação as cores do paramétrico, criando os filamentos que faltam, para a peça aparecer
+// e ser mapeada na impressora com as cores que o cliente escolheu. Roda antes de carregar a peça: assim nenhuma
+// parte cai numa extrusora que ainda não existe.
+void aplicar_cores_parametrico(const std::map<int, std::string>& cores)
+{
+    PresetBundle* bundle = wxGetApp().preset_bundle;
+    Plater*       plater = wxGetApp().plater();
+    if (bundle == nullptr || plater == nullptr || cores.empty())
+        return;
+    const size_t precisa = size_t(cores.rbegin()->first);
+    while (bundle->num_physical_filaments() < precisa && bundle->filament_presets.size() < MAXIMUM_EXTRUDER_NUMBER) {
+        const size_t antes = bundle->num_physical_filaments();
+        const auto   cor   = cores.find(int(antes + 1));
+        plater->sidebar().add_custom_filament(wxColour(wxString::FromUTF8(cor != cores.end() ? cor->second : std::string("#FFFFFF"))));
+        if (bundle->num_physical_filaments() == antes)
+            break;
+    }
+    DynamicPrintConfig* cfg   = &bundle->project_config;
+    auto*               cor   = static_cast<ConfigOptionStrings*>(cfg->option("filament_colour")->clone());
+    auto*               multi = static_cast<ConfigOptionStrings*>(cfg->option("filament_multi_colour")->clone());
+    auto*               tipo  = static_cast<ConfigOptionStrings*>(cfg->option("filament_colour_type")->clone());
+    const size_t        total = bundle->num_physical_filaments();
+    for (const auto& [n, hex] : cores) {
+        const size_t i = size_t(n - 1);
+        if (i >= total)
+            continue;
+        for (ConfigOptionStrings* opt : {cor, multi, tipo})
+            if (opt->values.size() <= i)
+                opt->values.resize(i + 1);
+        cor->values[i]   = hex;
+        multi->values[i] = hex;
+        tipo->values[i]  = "1";
+    }
+    DynamicPrintConfig novo = *cfg;
+    novo.set_key_value("filament_colour", cor);
+    novo.set_key_value("filament_multi_colour", multi);
+    novo.set_key_value("filament_colour_type", tipo);
+    cfg->apply(novo);
+    plater->update_project_dirty_from_presets();
+    bundle->export_selections(*wxGetApp().app_config);
+    plater->sidebar().update_all_preset_comboboxes();
+    plater->on_config_change(novo);
+}
+
 const char* const ROTEIRO_PARAMETRICO = R"JS((function () {
   if (location.hostname !== "parametricos.filuna.local" && !/\/filuna\/parametricos\//.test(decodeURIComponent(location.href).replace(/\\/g, "/"))) return;
   function env(acao, d) { try { window.wx.postMessage(JSON.stringify({ filuna: 1, id: "pm" + Date.now(), acao: acao, dados: d || {} })); } catch (e) {} }
@@ -834,12 +911,14 @@ json FilunaPanel::handle(const std::string& action, const json& d)
             if (!o.good())
                 throw std::runtime_error("Não gravou a peça gerada.");
         }
-        CallAfter([arq] {
+        std::map<int, std::string> cores = cores_do_parametrico(bin);
+        CallAfter([arq, cores] {
             Plater* plater = wxGetApp().plater();
             if (plater == nullptr)
                 return;
             if (MainFrame* frame = wxGetApp().mainframe)
                 frame->select_filuna_tab(TAB_ID_PREPARE);
+            aplicar_cores_parametrico(cores);
             plater->load_files(std::vector<boost::filesystem::path>{arq}, LoadStrategy::LoadModel);
         });
         return json::object();
