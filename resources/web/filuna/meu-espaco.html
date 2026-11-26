@@ -180,7 +180,7 @@ var E = Filuna.esc;
 // Seis grupos no menu (antes eram 13 itens soltos); dentro de cada grupo, abas. SECOES continua sendo a lista de
 // seções que o Post nas redes (midia-espaco.js) completa com "marca" e "posts" quando a conta tem a ferramenta.
 var SECOES = [["visao", "Início"], ["modelos", "Projetos"], ["historico", "Histórico"], ["perfis", "Perfis salvos"], ["reparacao", "Reparar modelo"],
-	["estoque", "Estoque"], ["oficina", "Raio X e manutenção"], ["fila", "Fila da Farm"], ["painel", "Números"], ["ofertas", "Ofertas"], ["loja", "Minha loja"], ["ia", "IA Filuna"]];
+	["estoque", "Estoque"], ["oficina", "Assistência técnica"], ["fila", "Fila da Farm"], ["painel", "Números"], ["ofertas", "Ofertas"], ["loja", "Minha loja"], ["ia", "IA Filuna"]];
 var GRUPOS = [
 	{ id: "inicio", nome: "Início", icone: "casa", abas: ["visao"] },
 	{ id: "projetos", nome: "Projetos", icone: "pasta", abas: ["modelos", "historico", "perfis", "reparacao"] },
@@ -293,7 +293,7 @@ function visao() {
 		'<div class="linha"><button class="btn primario" id="lNovo">' + ICONE.mais + "Novo projeto</button><button class=\"btn\" id=\"lImp\">" + ICONE.baixar + "Importar modelo</button></div></div>" +
 		'<div class="ini-kpis" id="iniK"><div class="kp"><span>Imprimindo agora</span><b>—</b></div><div class="kp"><span>Filamento em estoque</span><b>—</b></div><div class="kp"><span>Estoque baixo</span><b>—</b></div><div class="kp"><span>Precisa de atenção</span><b>—</b></div></div>' +
 		'<div class="ini-grade"><div class="col">' +
-		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.impressora + 'Impressoras</span><a data-s="oficina">Raio X e manutenção</a></div><div id="iniImp"><div class="carregando" style="margin:14px 18px">Carregando…</div></div></div>' +
+		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.impressora + 'Impressoras</span><a data-s="oficina">Assistência técnica</a></div><div id="iniImp"><div class="carregando" style="margin:14px 18px">Carregando…</div></div></div>' +
 		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.pasta + 'Continue de onde parou</span><a data-s="modelos">Todos os projetos</a></div><div class="bb"><div id="projs" class="projs"></div></div></div>' +
 		'</div><div class="col">' +
 		'<div class="bloco"><div class="bh"><span class="lbl">' + ICONE.bobina + 'Filamentos</span><a data-s="estoque">Estoque</a></div><div id="iniFil"><div class="carregando" style="margin:14px 18px">Carregando…</div></div>' +
@@ -391,7 +391,7 @@ function visao() {
 
 // Impressoras › Raio X e manutenção: cada impressora com os erros em aberto, as horas e as impressões; abre o Raio X.
 function oficina() {
-	el().innerHTML = titulo("Impressoras", "Raio X e manutenção", "Erros com a solução oficial, reparo passo a passo, impressões e manutenção de cada impressora. É o mesmo Raio X do site.") +
+	el().innerHTML = titulo("Impressoras", "Assistência técnica", "O Raio X de cada impressora: erros com a solução oficial, reparo passo a passo com a Filuna, impressões e manutenção. É a mesma Assistência técnica do site.") +
 		'<div id="r" class="carregando" style="margin-top:16px">Carregando…</div>';
 	Promise.all([Filuna.nativo("dispositivos.estado").catch(function () { return {}; }), Filuna.temToken() ? Filuna.api("GET", "/raiox").catch(function () { return {}; }) : Promise.resolve({})]).then(function (r) {
 		var imps = (r[0].impressoras || []).filter(function (i) { return i.nome; }), rx = {};
@@ -853,7 +853,7 @@ function painel() {
 		}).join("") : "<div class='vazio'>Cadastre bobinas para ver a previsão.</div>";
 	}, function (e) { document.getElementById("pPrev").innerHTML = '<div class="erro">' + E(e.erro || e.message) + "</div>"; });
 	// a manutenção agora é uma só, no Raio X de cada impressora (por horas, com a região na foto)
-	document.getElementById("pMan").innerHTML = '<div class="s" style="margin-bottom:10px">A manutenção por horas fica no Raio X de cada impressora, junto com os erros e o reparo.</div><button class="btn peq" id="irOficina">Abrir Raio X e manutenção</button>';
+	document.getElementById("pMan").innerHTML = '<div class="s" style="margin-bottom:10px">A manutenção por horas fica no Raio X de cada impressora, junto com os erros e o reparo.</div><button class="btn peq" id="irOficina">Abrir a Assistência técnica</button>';
 	document.getElementById("irOficina").onclick = function () { abrirSecao("oficina"); };
 }
 

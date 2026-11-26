@@ -1,6 +1,7 @@
-// Raio X (tela Dispositivo): a central da impressora, a mesma do site (/conta/raiox). Foto real do modelo com o número
-// de cada região, o estado de agora, e as abas Erros (com a ficha oficial do erro), Reparo (passos da marca, um por um),
-// Impressões (alertas e relatórios da análise) e Manutenção (por horas). Um sistema só: resolver aqui resolve no site.
+// Assistência técnica › Raio X (tela Dispositivo): a central da impressora, a mesma do site (/conta/raiox). Foto real do
+// modelo com o número de cada região, o estado de agora, a busca de qualquer código de erro, e as abas Erros (com a ficha
+// oficial do erro), Reparo (passos da marca, um por um, e a conversa com a Filuna sobre o erro), Impressões (alertas e
+// relatórios da análise) e Manutenção (por horas). Um sistema só: resolver aqui resolve no site.
 var RaioX = (function () {
 	var E = Filuna.esc, SITE = "https://filuna3d.com";
 	var CSS = '<style id="rxCss">' +
@@ -39,8 +40,16 @@ var RaioX = (function () {
 		'.rx-manut{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:8px}.rx-manut>div{flex:1}' +
 		'.rx-manut i{display:block;height:6px;background:var(--side);border-radius:99px;margin-top:6px;overflow:hidden}.rx-manut s{display:block;height:100%;background:var(--good);border-radius:99px}' +
 		'.rx-manut.perto s{background:var(--orange)}.rx-manut.vencida s{background:var(--warn)}.rx-manut.vencida{background:#FFF6EF;border-color:#F3C3A5}' +
+		'.rx-busca{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}.rx-busca input{flex:1;min-width:200px;max-width:340px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}' +
+		'.rx-achados{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 12px}.rx-achado{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.rx-achado:first-child{border-top:0}.rx-achado>div{flex:1;min-width:0}' +
+		'.rx-chat{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}.rx-chat-cab{padding:10px 14px;border-bottom:1px solid var(--line)}.rx-chat-cab small{display:block;color:var(--muted);font-size:12px}' +
+		'.rx-chat-msgs{display:flex;flex-direction:column;gap:8px;padding:12px 14px;max-height:360px;overflow-y:auto}.rx-msg{font-size:14px;line-height:1.5;padding:9px 12px;border-radius:14px;max-width:85%;white-space:pre-wrap;overflow-wrap:anywhere}' +
+		'.rx-msg.filuna{background:var(--side);align-self:flex-start;border-top-left-radius:4px}.rx-msg.cliente{background:var(--ink);color:#fff;align-self:flex-end;border-top-right-radius:4px}.rx-msg.sistema{align-self:center;background:none;color:var(--muted);font-size:12px;text-align:center}' +
+		'.rx-chat-campo{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}.rx-chat-campo textarea{flex:1;resize:none;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;min-height:38px}' +
 		'.rx-zoom{position:fixed;inset:0;background:rgba(20,18,16,.82);display:flex;align-items:center;justify-content:center;z-index:50;cursor:zoom-out}.rx-zoom img{max-width:92vw;max-height:88vh;border-radius:12px}</style>';
-	var st = { c: null, chave: "", carregando: false, erro: "", aba: "", regiao: null };
+	var st = { c: null, chave: "", carregando: false, erro: "", aba: "", regiao: null,
+		busca: { q: "", achados: null, erro: "", buscando: false },
+		conversa: { caso: "", msgs: null, erro: "", enviando: false, rascunho: "" } };
 
 	function quando(iso) { try { return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
 	function cor(c) { c = String(c || ""); return /^#?[0-9a-f]{6}/i.test(c) ? "#" + c.replace("#", "").slice(0, 6) : "#ccc"; }
@@ -103,7 +112,53 @@ var RaioX = (function () {
 				var feito = (cs.passos_feitos || []).indexOf(k) >= 0;
 				return '<li class="' + (feito ? "feito" : "") + '"><button data-passo="' + k + '" data-feito="' + (feito ? 0 : 1) + '">' + (feito ? "✓" : k + 1) + "</button><div><b>" + E(p.t) + "</b>" + (p.d ? "<p>" + E(p.d) + "</p>" : "") + "</div></li>";
 			}).join("") + "</ol>" : "") +
-			'<div class="rx-acoes"><button class="btn peq" id="rxConversa">Conversar com a Filuna sobre este erro</button><button class="btn primario peq" id="rxResolvido">Resolvido</button></div></div>';
+			'<div class="rx-acoes"><button class="btn primario peq" id="rxResolvido">Resolvido</button></div></div>' + conversaHtml(cs);
+	}
+	function conversaHtml(cs) {
+		var cv = st.conversa;
+		if (cv.caso != cs.id) { cv.caso = cs.id; cv.msgs = null; cv.erro = ""; cv.rascunho = ""; }
+		var corpo = cv.msgs == null ? '<p class="rx-txt">' + (cv.erro ? E(cv.erro) : "Carregando a conversa…") + "</p>" : cv.msgs.map(function (m) {
+			return '<div class="rx-msg ' + E(m.papel) + '">' + E(m.texto) + "</div>";
+		}).join("") + (cv.enviando ? '<div class="rx-msg filuna">Pensando…</div>' : "") + (cv.erro && cv.msgs ? '<div class="rx-msg sistema">' + E(cv.erro) + "</div>" : "");
+		return '<div class="rx-chat"><div class="rx-chat-cab"><b>Filuna</b><small>acompanha este erro até resolver · o guia oficial da marca, em português</small></div>' +
+			'<div class="rx-chat-msgs" id="rxMsgs">' + corpo + "</div>" +
+			'<form class="rx-chat-campo" id="rxChatForm"><textarea id="rxChatQ" rows="1" maxlength="1200" placeholder="Conte o que viu ou pergunte à Filuna">' + E(cv.rascunho) + "</textarea>" +
+			'<button class="btn primario peq"' + (cv.enviando ? " disabled" : "") + ">Enviar</button></form></div>";
+	}
+	function carregarConversa(redesenhar) {
+		var cv = st.conversa, cid = cv.caso;
+		if (cv.carregando) return;
+		cv.carregando = true;
+		Filuna.api("GET", "/raiox/reparo/" + encodeURIComponent(cid) + "/conversa").then(function (r) {
+			if (cv.caso == cid) { cv.msgs = (r.caso && r.caso.mensagens) || []; cv.erro = ""; }
+		}, function (e) { if (cv.caso == cid) cv.erro = (e && e.erro) || "Não deu para abrir a conversa agora."; }).then(function () { cv.carregando = false; redesenhar(); });
+	}
+	function enviarConversa(texto, redesenhar) {
+		var cv = st.conversa, cid = cv.caso;
+		texto = String(texto || "").trim();
+		if (!texto || cv.enviando || cv.msgs == null) return;
+		cv.msgs.push({ papel: "cliente", texto: texto }); cv.rascunho = ""; cv.enviando = true; cv.erro = ""; cv.foco = true; redesenhar();
+		Filuna.api("POST", "/raiox/reparo/" + encodeURIComponent(cid) + "/mensagem", { texto: texto }).then(function (r) {
+			if (cv.caso == cid) cv.msgs.push({ papel: "filuna", texto: r.resposta || "" });
+		}, function (e) { if (cv.caso == cid) cv.erro = (e && e.erro) || "Sem conexão. Tente de novo."; }).then(function () { cv.enviando = false; redesenhar(); });
+	}
+	function buscaHtml() {
+		var b = st.busca;
+		var lista = b.erro ? '<div class="rx-achados"><p class="rx-txt">' + E(b.erro) + "</p></div>" : b.achados == null ? "" : '<div class="rx-achados">' + (b.achados.length ? b.achados.map(function (a) {
+			return '<div class="rx-achado"><div><b>' + E(a.codigo) + " · " + E(a.titulo) + '</b><div class="rx-m">' + E(a.marca_nome || "") + "</div></div>" +
+				'<button class="btn primario peq" data-reparo="' + E(a.id) + '">Resolver nesta impressora</button></div>';
+		}).join("") : '<p class="rx-txt">Nenhum código encontrado. Confira como está escrito na tela da impressora.</p>') + "</div>";
+		return '<form class="rx-busca" id="rxBusca"><input id="rxBuscaQ" maxlength="120" spellcheck="false" placeholder="Código que apareceu na tela" value="' + E(b.q) + '">' +
+			'<button class="btn peq"' + (b.buscando ? " disabled" : "") + ">" + (b.buscando ? "Procurando…" : "Procurar") + "</button></form>" + lista;
+	}
+	function buscar(q, redesenhar) {
+		var b = st.busca;
+		b.q = String(q || "").trim();
+		if (!b.q) { b.achados = null; b.erro = ""; redesenhar(); return; }
+		b.buscando = true; redesenhar();
+		Filuna.api("GET", "/raiox/busca?q=" + encodeURIComponent(b.q) + "&chave=" + encodeURIComponent(st.chave)).then(function (r) { b.achados = r.resultados || []; b.erro = ""; },
+			function (e) { b.achados = null; b.erro = e && e.status == 402 ? "A assistência técnica é dos planos pagos." : (e && e.erro) || "Não deu para procurar agora."; })
+			.then(function () { b.buscando = false; redesenhar(); });
 	}
 	function abaImpressoes(c) {
 		return '<div class="rx-duas"><div><b>Alertas durante a impressão</b><div style="margin-top:8px">' + (c.alertas.length ? c.alertas.map(function (a) {
@@ -124,7 +179,7 @@ var RaioX = (function () {
 		if (!st.c && !st.erro) { app.innerHTML = CSS + '<div class="rx">Carregando o Raio X…</div>'; carregar(u, redesenhar); return; }
 		var c = st.c;
 		var topo = '<div class="rx"><div class="rx-volta"><a class="voltar" id="rxVoltar">‹ ' + E(u.nome) + "</a>" + (c ? '<a class="voltar" id="rxSite">Abrir no site</a>' : "") + "</div>" +
-			'<div class="lbl" style="margin-top:8px">Raio X</div><h1>' + E(u.nome) + '</h1><div class="rx-sub">' + E((c && c.modelo) || u.modelo || "") + "</div>";
+			'<div class="lbl" style="margin-top:8px">Assistência técnica · Raio X</div><h1>' + E(u.nome) + '</h1><div class="rx-sub">' + E((c && c.modelo) || u.modelo || "") + "</div>";
 		if (!c) { app.innerHTML = CSS + topo + '<div class="aviso" style="margin-top:14px"><span>' + E(st.erro) + "</span></div></div>"; ligar(app, u, voltar, redesenhar); return; }
 		var ag = c.agora || {}, pontos = (c.capa && c.capa.regioes) || {}, fora = (c.capa && c.capa.fora) || [], regioes = c.regioes || {};
 		var abertos = {}, vencida = {};
@@ -137,7 +192,7 @@ var RaioX = (function () {
 		}).join("");
 		var venc = c.manutencao.filter(function (m) { return m.situacao == "vencida"; }).length;
 		var estado = ag.erro ? "erro" : ag.estado || "desligada";
-		var html = CSS + topo + (st.erro ? '<div class="aviso" style="margin-top:12px"><span>' + E(st.erro) + "</span></div>" : "") +
+		var html = CSS + topo + (st.erro ? '<div class="aviso" style="margin-top:12px"><span>' + E(st.erro) + "</span></div>" : "") + buscaHtml() +
 			'<div class="rx-grade"><div class="rx-card"><div class="rx-foto">' + (foto ? '<img alt="" src="' + E(foto) + '">' : '<div class="rx-sem">Sem foto deste modelo</div>') + '<div class="rx-camada">' + pins + "</div></div>" +
 			'<div class="rx-leg">' + Object.keys(regioes).map(function (k) { return "<span><b>" + k + "</b>" + E(regioes[k]) + "</span>"; }).join("") + "</div></div>" +
 			'<div class="rx-card"><div class="rx-estado ' + estado + '"><i></i><b>' + (ag.erro ? "Com erro agora" : ag.estado == "imprimindo" ? "Imprimindo · " + (ag.progresso || 0) + "%" : ag.ligada ? "Ligada e livre" : "Desligada") + "</b>" + (ag.visto_em ? "<small>visto " + quando(ag.visto_em) + "</small>" : "") + "</div>" +
@@ -163,7 +218,8 @@ var RaioX = (function () {
 			im.onclick = function () { var z = document.createElement("div"); z.className = "rx-zoom"; z.innerHTML = '<img alt="" src="' + E(im.dataset.zoom) + '">'; z.onclick = function () { z.remove(); }; document.body.appendChild(z); };
 		});
 		app.querySelectorAll("[data-url]").forEach(function (l) { l.onclick = function () { Filuna.nativo("url.abrir", { url: l.dataset.url }); }; });
-		app.querySelectorAll("[data-reparo]").forEach(function (b) { b.onclick = function () { b.disabled = true; st.aba = "reparo"; acao("/raiox/reparo", { chave: st.chave, erro_id: b.dataset.reparo }, redesenhar, u); }; });
+		app.querySelectorAll("[data-reparo]").forEach(function (b) { b.onclick = function () { b.disabled = true; st.aba = "reparo"; st.busca.achados = null; acao("/raiox/reparo", { chave: st.chave, erro_id: b.dataset.reparo }, redesenhar, u); }; });
+		var fb = q("#rxBusca"); if (fb) fb.onsubmit = function (ev) { ev.preventDefault(); buscar(q("#rxBuscaQ").value, redesenhar); };
 		app.querySelectorAll("[data-res]").forEach(function (b) {
 			b.onclick = function () { var s = q('[data-sol="' + b.dataset.res + '"]'); b.disabled = true; acao("/raiox/" + encodeURIComponent(b.dataset.res) + "/resolver", { solucao: s ? s.value : "" }, redesenhar, u); };
 		});
@@ -171,9 +227,21 @@ var RaioX = (function () {
 		if (c && c.caso) {
 			app.querySelectorAll("[data-passo]").forEach(function (b) { b.onclick = function () { b.disabled = true; acao("/raiox/reparo/" + encodeURIComponent(c.caso.id) + "/passo", { passo: +b.dataset.passo, feito: b.dataset.feito == "1" }, redesenhar, u); }; });
 			var r = q("#rxResolvido"); if (r) r.onclick = function () { r.disabled = true; acao("/raiox/reparo/" + encodeURIComponent(c.caso.id) + "/encerrar", { resolvido: true }, redesenhar, u); };
-			var cv = q("#rxConversa"); if (cv) cv.onclick = function () { Filuna.nativo("url.abrir", { url: SITE + "/assistencia/" + encodeURIComponent(c.caso.marca) + "/" + encodeURIComponent(String(c.caso.codigo).replace(/ /g, "-")) }); };
+			var msgs = q("#rxMsgs"), campo = q("#rxChatQ"), form = q("#rxChatForm");
+			if (msgs) msgs.scrollTop = msgs.scrollHeight;
+			if (form && campo) {
+				campo.oninput = function () { st.conversa.rascunho = campo.value; };
+				campo.onkeydown = function (ev) { if (ev.key == "Enter" && !ev.shiftKey) { ev.preventDefault(); enviarConversa(campo.value, redesenhar); } };
+				form.onsubmit = function (ev) { ev.preventDefault(); enviarConversa(campo.value, redesenhar); };
+				if (st.conversa.foco) campo.focus();
+			}
+			if (st.aba == "reparo" && st.conversa.msgs == null && !st.conversa.erro) carregarConversa(redesenhar);
 		}
 	}
 
-	return { desenhar: desenhar, recarregar: function () { st.c = null; st.erro = ""; st.aba = ""; st.regiao = null; } };
+	return { desenhar: desenhar, recarregar: function () {
+		st.c = null; st.erro = ""; st.aba = ""; st.regiao = null;
+		st.busca = { q: "", achados: null, erro: "", buscando: false };
+		st.conversa = { caso: "", msgs: null, erro: "", enviando: false, rascunho: "" };
+	} };
 })();
