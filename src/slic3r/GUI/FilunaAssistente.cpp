@@ -191,7 +191,7 @@ json perfis_disponiveis()
         return l;
     };
     return {{"impressora_atual", b.printers.get_edited_preset().name},
-            {"filamento_atual", b.filaments.get_edited_preset().name},
+            {"filamento_atual", filuna_filamento_da_peca().name},
             {"processo_atual", b.prints.get_edited_preset().name},
             {"impressoras", lista(b.printers, false)},
             {"filamentos", lista(b.filaments, true)},

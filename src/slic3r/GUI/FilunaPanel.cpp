@@ -146,13 +146,50 @@ json printer_info()
     return r;
 }
 
+} // namespace
+
+// O filamento que a peça usa de verdade: o da extrusora da primeira peça da mesa atual (cada entrada da lista de
+// filamentos da lateral é uma extrusora). Antes o Assistente mostrava o perfil aberto para edição na aba de
+// filamento, que com AMS (vários filamentos) é o último clicado: a peça em PLA aparecia como PETG.
+const Preset& filuna_filamento_da_peca()
+{
+    PresetBundle& b     = *wxGetApp().preset_bundle;
+    int           usada = -1;
+    if (Plater* plater = wxGetApp().plater()) {
+        PartPlate* mesa = plater->get_partplate_list().get_curr_plate();
+        const auto& objetos = plater->model().objects;
+        for (int i = 0; usada < 0 && i < int(objetos.size()); ++i) {
+            const ModelObject* o = objetos[i];
+            if (o == nullptr || !o->printable || o->instances.empty() || (mesa != nullptr && !mesa->contain_instance(i, 0)))
+                continue;
+            for (const ModelVolume* v : o->volumes)
+                if (v->is_model_part()) {
+                    usada = std::max(1, v->extruder_id()) - 1;
+                    break;
+                }
+        }
+    }
+    if (usada < 0)
+        usada = 0;
+    if (usada < int(b.filament_presets.size())) {
+        const std::string& nome = b.filament_presets[usada];
+        if (b.filaments.get_selected_preset_name() == nome)
+            return b.filaments.get_edited_preset(); // com os ajustes ainda não salvos
+        if (const Preset* p = b.filaments.find_preset(nome))
+            return *p;
+    }
+    return b.filaments.get_edited_preset();
+}
+
+namespace {
+
 json filament_info()
 {
     json r = printer_info();
     PresetBundle* bundle = wxGetApp().preset_bundle;
     if (bundle == nullptr)
         return r;
-    const Preset& filament = bundle->filaments.get_edited_preset();
+    const Preset& filament = filuna_filamento_da_peca();
     const DynamicPrintConfig& f = filament.config;
     r["filamento"]                     = filament.label(false);
     r["material"]                      = first_string(f, "filament_type");
