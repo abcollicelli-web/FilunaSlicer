@@ -571,7 +571,7 @@ var FilunaCasa = (function () {
 			res.textContent = r.msg || (r.ok ? (r.ligada != null ? "Tomada respondeu: " + (r.ligada ? "ligada" : "desligada") + (r.potencia_w != null ? ", " + Math.round(r.potencia_w) + " W agora." : ".") : "Pronto.") : "Não deu certo.");
 			var j = st.janela;
 			if (!j) return;
-			if (r.ok) j.feito[acao] = true;
+			if (r.ok) j.feito["acao:" + acao] = true; // "teste" fica só para a confirmação "Apareceu?"
 			if (acao == "lg.parear" && r.ok) j.feito.parear = true;
 			if ((acao == "tomada.testar" || acao == "tomada.estado") && r.ok) j.feito.teste = true;
 			if (acao == "teste") { j.testeOk = !!r.ok; j.semAviso = !r.ok; desenharJanela(); var n = document.querySelector(".fh-j .fh-res"); if (n) { n.className = "fh-res " + (r.ok ? "ok" : "erro"); n.textContent = r.ok ? "Aviso mandado." : r.msg || "Não deu certo."; } }
@@ -597,7 +597,7 @@ var FilunaCasa = (function () {
 	function estadoFinal(a, j) {
 		var m = motor(a), p = protocolo(a);
 		if (a.tipo == "impressora" || a.tipo == "roteador") return a.estado == "atencao" ? "atencao" : "pronto";
-		if (a.tipo == "home_assistant") return j.feito["mqtt.testar"] || j.feito.teste ? "pronto" : "configurar";
+		if (a.tipo == "home_assistant") return j.feito["acao:mqtt.testar"] || j.feito.teste ? "pronto" : "configurar";
 		if (m == "tomada") return COMANDO_DIRETO[p] && j.feito.teste ? "pronto" : "configurar";
 		if (m == "este_pc" || m == "tv_lg" || m == "luz" || m == "plugin") return j.feito.teste ? "pronto" : "configurar";
 		return a.estado == "incompativel" ? "incompativel" : "configurar";
