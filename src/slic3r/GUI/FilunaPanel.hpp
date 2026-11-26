@@ -14,7 +14,12 @@
 #include <wx/string.h>
 #include <wx/webview.h>
 
-namespace Slic3r { namespace GUI {
+namespace Slic3r {
+class Preset;
+namespace GUI {
+
+// O perfil de filamento que a peça da mesa atual usa (a entrada da extrusora dela), não o aberto para edição.
+const Preset& filuna_filamento_da_peca();
 
 class FilunaPanel : public wxPanel
 {
