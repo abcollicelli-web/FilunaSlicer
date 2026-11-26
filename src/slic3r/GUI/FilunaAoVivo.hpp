@@ -46,6 +46,9 @@ int imprimir(const std::string& dev_id, PrintParams p, std::string& erro);
 // "pausar", "retomar" ou "cancelar" a impressão desta impressora; ou um ajuste: "gcode:M104 S230" (uma linha de
 // G-code: temperatura, ventoinha) e "velocidade:1".."velocidade:4". 0 = comando aceito.
 int comando(const std::string& dev_id, const std::string& acao);
+// Manda um pedido JSON (formato dos agentes) direto pelo conector desta impressora acompanhada. 0 = aceito.
+// Usado pelo diagnóstico ({"filuna":{"command":"diagnostico"}}, ajustes de teste).
+int enviar(const std::string& dev_id, const std::string& json_str);
 
 }} // namespace GUI::FilunaAoVivo
 } // namespace Slic3r

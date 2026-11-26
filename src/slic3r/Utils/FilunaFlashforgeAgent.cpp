@@ -300,6 +300,7 @@ void FilunaFlashforgeAgent::poll_loop()
             falhas = 0;
             const json ps = to_push_status(r);
             Filuna::set_erro(sn, ps["print"].value("filuna_erro", std::string()));
+            Filuna::set_bruto(sn, r.dump()); // Raio X: /detail inteiro (horas e filamento acumulados, porta, TVOC…)
             dispatch(ps.dump());
         } else if (++falhas == 5) {
             dispatch_connect(ConnectStatusLost, err);

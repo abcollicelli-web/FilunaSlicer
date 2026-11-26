@@ -312,6 +312,7 @@ void FilunaElegooCC2Agent::on_mqtt(const std::string& topic, const std::string& 
             Filuna::set_erro(m_sn, cods.empty() ? std::string() : "A impressora informou um erro (código " + cods + ")");
         }
     }
+    Filuna::set_bruto(m_sn, snapshot.dump()); // Raio X: relatório da CC2 inteiro
     dispatch(to_push_status(snapshot).dump());
 }
 

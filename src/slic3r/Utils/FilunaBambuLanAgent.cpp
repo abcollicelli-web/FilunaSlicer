@@ -19,6 +19,9 @@
 #include "FilunaGcode3mf.hpp"
 #include "FilunaFtps.hpp"
 #include "FilunaRede.hpp"
+#include "FilunaCameraUrls.hpp"
+#include <map>
+#include <mutex>
 
 namespace Slic3r {
 
@@ -576,6 +579,27 @@ void FilunaBambuLanAgent::dispatch_message(const std::string& dev_id, const std:
                 m_resposta = p.dump();
                 m_resposta_cv.notify_all();
             }
+        }
+    }
+    // Raio X: relatório completo (push_status juntos, pois a P1/A1 só manda o que mudou) e versões dos módulos
+    if (payload.find("\"push_status\"") != std::string::npos || payload.find("\"get_version\"") != std::string::npos) {
+        const nlohmann::json j = nlohmann::json::parse(payload, nullptr, false);
+        if (j.is_object() && j.contains("print") && j["print"].is_object() && j["print"].value("command", std::string()) == "push_status") {
+            static std::mutex                            mtx;
+            static std::map<std::string, nlohmann::json> juntos;
+            std::lock_guard<std::mutex>                  l(mtx);
+            nlohmann::json&                              r = juntos[dev_id];
+            if (!r.is_object())
+                r = nlohmann::json::object();
+            r.merge_patch(j["print"]);
+            Filuna::set_bruto(dev_id, r.dump());
+        } else if (j.is_object() && j.contains("info") && j["info"].is_object() && j["info"].value("command", std::string()) == "get_version") {
+            nlohmann::json d = nlohmann::json::parse(Filuna::diag(dev_id), nullptr, false);
+            if (!d.is_object())
+                d = nlohmann::json::object();
+            d["versoes"] = j["info"].value("module", nlohmann::json::array());
+            d["em"]      = (long long) std::time(nullptr);
+            Filuna::set_diag(dev_id, d.dump());
         }
     }
     // A impressora diz se tem cartão: sem ele, o próximo envio já começa pela memória interna (sem esperar o FTPS falhar).

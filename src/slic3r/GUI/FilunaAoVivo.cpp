@@ -219,8 +219,8 @@ void gerente()
                     desligar(m);
                     m.proxima_tentativa = agora;
                 }
-                // Bambu só manda o que mudou: um relatório completo a cada 2 min mantém o estado certo
-                if (m.agente && m.conectada && m.acesso.agente == "filuna_bambu_lan" && agora - m.ultimo_pushall > std::chrono::minutes(2)) {
+                // Bambu só manda o que mudou: um relatório completo a cada 4 min mantém o estado certo (a comunidade pede no máximo 1 a cada 5 min na P1P; menos que o limite de 5 min sem mensagem)
+                if (m.agente && m.conectada && m.acesso.agente == "filuna_bambu_lan" && agora - m.ultimo_pushall > std::chrono::minutes(4)) {
                     m.ultimo_pushall = agora;
                     pedir_tudo.emplace_back(m.agente, dev);
                 }
@@ -407,6 +407,19 @@ int imprimir(const std::string& dev_id, PrintParams p, std::string& erro)
         erro = e.what();
     }
     return r;
+}
+
+int enviar(const std::string& dev_id, const std::string& json_str)
+{
+    std::shared_ptr<IPrinterAgent> ag = agente_ligado(dev_id);
+    if (!ag)
+        return -1;
+    try {
+        return ag->send_message_to_printer(dev_id, json_str, 1, 0);
+    } catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(warning) << "Filuna ao vivo: envio para " << dev_id << ": " << e.what();
+        return -1;
+    }
 }
 
 int comando(const std::string& dev_id, const std::string& acao)

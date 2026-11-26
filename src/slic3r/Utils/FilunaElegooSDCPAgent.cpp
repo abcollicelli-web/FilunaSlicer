@@ -3,6 +3,7 @@
 #include "FilunaRede.hpp"
 
 #include <chrono>
+#include <ctime>
 #include <deque>
 #include <fstream>
 #include <random>
@@ -308,7 +309,27 @@ int FilunaElegooSDCPAgent::conectar(const PrinterConnectionParams& p, bool silen
                 dev = m_mainboard;
             }
             Filuna::set_erro(dev, ps["print"].value("filuna_erro", std::string()));
+            Filuna::set_bruto(dev, snap.dump()); // Raio X: relatório SDCP inteiro
             dispatch(ps.dump());
+        } else if ((topic.rfind("sdcp/attributes/", 0) == 0 && j.contains("Attributes")) ||
+                   (topic.rfind("sdcp/response/", 0) == 0 && j.contains("Data") && j["Data"].is_object() &&
+                    j["Data"].value("Cmd", -1) == 320)) {
+            // Raio X: atributos da impressora (firmware, placa, recursos) e histórico de tarefas com o motivo da falha
+            std::string dev;
+            json        d;
+            {
+                std::lock_guard<std::recursive_mutex> l(m_mutex);
+                dev = m_mainboard;
+                d   = json::parse(Filuna::diag(dev), nullptr, false);
+            }
+            if (!d.is_object())
+                d = json::object();
+            if (j.contains("Attributes"))
+                d["atributos"] = j["Attributes"];
+            else
+                d["historico"] = j["Data"].value("Data", json::object());
+            d["em"] = (long long) std::time(nullptr);
+            Filuna::set_diag(dev, d.dump());
         }
     };
     w->on_closed = [this](const std::string& why) {
@@ -374,6 +395,12 @@ int FilunaElegooSDCPAgent::send_message_to_printer(std::string, std::string json
         return BAMBU_NETWORK_ERR_INVALID_HANDLE;
     if (cmd.contains("pushing"))
         return send_cmd(0, json::object()) ? BAMBU_NETWORK_SUCCESS : BAMBU_NETWORK_ERR_CONNECT_FAILED;
+    if (cmd.contains("filuna") && cmd["filuna"].is_object() && cmd["filuna"].value("command", std::string()) == "diagnostico") {
+        // Raio X: atributos (1) e histórico de tarefas (320); as respostas chegam pelo on_text
+        const bool ok = send_cmd(1, json::object());
+        send_cmd(320, json::object());
+        return ok ? BAMBU_NETWORK_SUCCESS : BAMBU_NETWORK_ERR_CONNECT_FAILED;
+    }
     const std::string c = cmd.contains("print") ? cmd["print"].value("command", std::string()) : std::string();
     int               n = c == "pause" ? 129 : c == "stop" ? 130 : c == "resume" ? 131 : -1;
     if (n < 0)

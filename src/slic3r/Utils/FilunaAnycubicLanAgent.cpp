@@ -687,6 +687,7 @@ void FilunaAnycubicLanAgent::on_mqtt(const std::string& topic, const std::string
         if (!aj.empty())
             Filuna::set_ajustes(m_s.serie, aj.dump());
     }
+    Filuna::set_bruto(m_s.serie, retrato.dump()); // Raio X: relatórios do Modo LAN juntos (info, print, ACE, ventiladores)
     dispatch(to_push_status(retrato).dump());
 }
 

@@ -65,6 +65,9 @@
 #include <cstdint>
 #include <cstring>
 #include <cctype>
+#include <cmath>
+#include <ctime>
+#include <thread>
 #include <ios>
 #include <functional>
 #include <exception>
@@ -1221,6 +1224,75 @@ int MoonrakerPrinterAgent::handle_request(const std::string& dev_id, const std::
         return BAMBU_NETWORK_ERR_INVALID_RESULT;
     }
 
+    // Filuna Raio X: leitura profunda pedida pelo diagnóstico ({"filuna":{"command":"diagnostico"}}). Lê tudo o que o
+    // Moonraker expõe para diagnosticar (sem mexer na impressora) e guarda em Filuna::set_diag.
+    if (json.contains("filuna") && json["filuna"].is_object() && json["filuna"].value("command", std::string()) == "diagnostico") {
+        const std::string base = device_info.base_url, key = device_info.api_key, dev = device_info.dev_id.empty() ? dev_id : device_info.dev_id;
+        const bool        so_console = json["filuna"].value("so_console", false);
+        std::thread([this, base, key, dev, so_console] {
+            const auto     nunca = [] { return false; };
+            nlohmann::json out   = nlohmann::json::object();
+            auto           ler   = [&](const std::string& caminho, const char* chave) {
+                nlohmann::json v;
+                std::string    e;
+                if (get_json(join_url(base, caminho), key, nunca, v, e))
+                    out[chave] = v.contains("result") ? v["result"] : v;
+                else
+                    out[chave] = {{"erro", e}};
+            };
+            ler("/server/gcode_store?count=80", "console");
+            if (!so_console) {
+                nlohmann::json lista;
+                std::string    e;
+                std::string    consulta;
+                if (get_json(join_url(base, "/printer/objects/list"), key, nunca, lista, e) && lista.contains("result")) {
+                    static const char* const PREFIXOS[] = {"extruder", "heater_bed", "heater_generic", "fan", "heater_fan", "controller_fan",
+                                                           "temperature_fan", "temperature_sensor", "fan_generic", "tmc", "mcu", "system_stats",
+                                                           "webhooks", "print_stats", "toolhead", "bed_mesh", "probe", "bltouch",
+                                                           "filament_switch_sensor", "filament_motion_sensor", "idle_timeout", "gcode_move",
+                                                           "z_tilt", "quad_gantry_level", "screws_tilt_adjust", "virtual_sdcard", "display_status"};
+                    for (const auto& n : lista["result"].value("objects", nlohmann::json::array())) {
+                        if (!n.is_string())
+                            continue;
+                        const std::string s = n.get<std::string>();
+                        for (const char* p : PREFIXOS)
+                            if (s.rfind(p, 0) == 0) {
+                                consulta += (consulta.empty() ? "" : "&") + Http::url_encode(s);
+                                break;
+                            }
+                    }
+                    out["objetos_disponiveis"] = lista["result"].value("objects", nlohmann::json::array());
+                }
+                consulta += std::string(consulta.empty() ? "" : "&") + "configfile=warnings,save_config_pending";
+                ler("/printer/objects/query?" + consulta, "objetos");
+                ler("/printer/info", "klipper");
+                ler("/server/info", "moonraker");
+                ler("/machine/system_info", "sistema");
+                ler("/machine/proc_stats", "processos");
+                ler("/server/history/totals", "totais");
+                ler("/server/history/list?limit=10&order=desc", "historico");
+                // fim do klippy.log (onde ficam o motivo de cada desligamento e os avisos das placas)
+                std::string log;
+                auto        http = Http::get(join_url(base, "/server/files/klippy.log"));
+                if (!key.empty())
+                    http.header("X-Api-Key", key);
+                http.header("Range", "bytes=-60000")
+                    .timeout_connect(5)
+                    .timeout_max(20)
+                    .on_complete([&](std::string body, unsigned status) {
+                        if (status == 200 || status == 206)
+                            log = body.size() > 60000 ? body.substr(body.size() - 60000) : body;
+                    })
+                    .perform_sync();
+                if (!log.empty())
+                    out["klippy_log"] = log;
+            }
+            out["em"] = (long long) std::time(nullptr);
+            Filuna::set_diag(dev, out.dump());
+        }).detach();
+        return BAMBU_NETWORK_SUCCESS;
+    }
+
     // Handle info commands
     if (json.contains("info") && json["info"].contains("command")) {
         const auto& command = json["info"]["command"];
@@ -1896,6 +1968,18 @@ void MoonrakerPrinterAgent::run_status_stream(std::string dev_id, std::string ba
                         }
                     }
                 }
+                // Filuna Raio X: o que mostra a saúde da máquina ao longo do tempo (estado do Klipper com a mensagem do
+                // erro, carga do computador, placas, coolers com rotação medida, sensores de temperatura e de filamento)
+                for (const auto& name : this->available_objects) {
+                    static const char* const PREFIXOS[] = {"webhooks", "system_stats", "mcu", "heater_fan", "controller_fan",
+                                                           "temperature_fan", "temperature_sensor", "fan_generic", "heater_generic",
+                                                           "filament_switch_sensor", "filament_motion_sensor"};
+                    for (const char* p : PREFIXOS)
+                        if (name.rfind(p, 0) == 0) {
+                            subscribe_objects.insert(name);
+                            break;
+                        }
+                }
             } else {
                 subscribe_objects.insert("extruder");
                 subscribe_objects.insert("heater_bed");
@@ -2188,6 +2272,54 @@ nlohmann::json MoonrakerPrinterAgent::build_print_payload_locked() const
     // Only set if real mapping from Moonraker error strings to HMS codes is defined
     payload["print"]["mc_print_error_code"] = 0;
     payload["print"]["print_error"]         = 0;
+
+    // Filuna Raio X: o código fica 0 (a tela do Orca abriria a janela genérica), mas o texto do erro do Klipper vai
+    // para a tela, os avisos e o site. Antes o erro das impressoras Klipper nunca chegava ao Raio X.
+    if (!device_info.dev_id.empty()) {
+        std::string msg;
+        const nlohmann::json wh = status_cache.value("webhooks", nlohmann::json::object());
+        const std::string    ws = wh.value("state", std::string());
+        if (ws == "shutdown" || ws == "error")
+            msg = wh.value("state_message", std::string());
+        if (msg.empty() && status_cache.contains("print_stats") && status_cache["print_stats"].is_object() &&
+            status_cache["print_stats"].value("state", std::string()) == "error")
+            msg = status_cache["print_stats"].value("message", std::string());
+        while (!msg.empty() && (msg.back() == '\n' || msg.back() == ' '))
+            msg.pop_back();
+        if (msg.size() > 300)
+            msg = msg.substr(0, 300);
+        Filuna::set_erro(device_info.dev_id, msg.empty() ? std::string() : "Klipper: " + msg);
+        Filuna::set_bruto(device_info.dev_id, status_cache.dump());
+        // medidas para o histórico: potência dos aquecedores (0-1), rotação medida dos coolers, sensores e placas
+        nlohmann::json ex = nlohmann::json::object();
+        for (const auto& it : status_cache.items()) {
+            if (!it.value().is_object())
+                continue;
+            const std::string& k = it.key();
+            const auto&        v = it.value();
+            if ((k.rfind("extruder", 0) == 0 || k == "heater_bed" || k.rfind("heater_generic", 0) == 0) && v.contains("power") &&
+                v["power"].is_number())
+                ex["potencia"][k] = std::round(v["power"].get<double>() * 1000.0) / 1000.0;
+            if (v.contains("rpm") && v["rpm"].is_number())
+                ex["rpm"][k] = v["rpm"].get<double>();
+            if ((k.rfind("temperature_sensor", 0) == 0 || k.rfind("temperature_fan", 0) == 0) && v.contains("temperature") &&
+                v["temperature"].is_number())
+                ex["sensores"][k] = std::round(v["temperature"].get<double>() * 10.0) / 10.0;
+            if (k.rfind("mcu", 0) == 0 && v.contains("last_stats") && v["last_stats"].is_object()) {
+                const auto& ls = v["last_stats"];
+                ex["placas"][k] = {{"retransmissoes", ls.value("bytes_retransmit", 0)}, {"invalidos", ls.value("bytes_invalid", 0)},
+                                   {"carga", ls.value("mcu_task_avg", 0.0)}};
+            }
+            if (k.rfind("filament_", 0) == 0 && v.contains("filament_detected"))
+                ex["filamento"][k] = v.value("filament_detected", false);
+        }
+        if (status_cache.contains("system_stats") && status_cache["system_stats"].is_object())
+            ex["sistema"] = {{"carga", status_cache["system_stats"].value("sysload", 0.0)},
+                             {"memoria_livre", status_cache["system_stats"].value("memavail", 0)}};
+        if (!ws.empty())
+            ex["klipper"] = ws;
+        Filuna::set_extra(device_info.dev_id, ex.dump());
+    }
 
     // Map homed axes to bit field: X=bit0, Y=bit1, Z=bit2
     // WARNING: Apart from the storage state below, this clears the support flags (bit 3+)

@@ -19,6 +19,7 @@
 #include "DeviceCore/DevFilaSystem.h"
 #include "DeviceCore/DevFan.h"
 #include "DeviceCore/DevLamp.h"
+#include "DeviceCore/DevHMS.h"
 #include "DeviceCore/DevDefs.h"
 #include "libslic3r/AppConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
@@ -42,6 +43,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cctype>
+#include <cmath>
 #include <chrono>
 #include <map>
 #include <mutex>
@@ -353,6 +355,57 @@ json cores_de(MachineObject* o)
     return cores;
 }
 
+// Raio X do equipamento: tudo o que a impressora informa além do básico, para o histórico e o diagnóstico.
+// Junta o que o agente da marca mediu (Filuna::extra: potência, rotação, placas no Klipper) com o que o relatório
+// já traz no MachineObject (câmara, alvo da mesa, Wi-Fi, coolers, caixas de filamento, HMS, firmware).
+json extra_de(MachineObject* o)
+{
+    json ex = json::parse(Filuna::extra(o->get_dev_id()), nullptr, false);
+    if (!ex.is_object())
+        ex = json::object();
+    if (DevBed* bed = o->GetBed())
+        ex["mesa_alvo"] = bed->GetBedTempTarget();
+    if (o->chamber_temp > -100.0f && o->chamber_temp != 0.0f)
+        ex["camara"] = std::round(o->chamber_temp * 10.0f) / 10.0f;
+    if (!o->wifi_signal.empty())
+        ex["wifi"] = o->wifi_signal;
+    const std::string& ag = o->printer_agent_id;
+    if ((ag == "filuna_bambu_lan" || ag == "bbl") && o->GetFan() != nullptr) {
+        DevFan* f = o->GetFan();
+        ex["coolers"] = {{"peca", f->GetCoolingFanSpeed()}, {"hotend", f->GetHeatBreakFanSpeed()}, {"auxiliar", f->GetBigFan1Speed()},
+                         {"camara", f->GetBigFan2Speed()}};
+    }
+    if (auto fila = o->GetFilaSystem()) {
+        json caixas = json::array();
+        for (auto& [ams_id, ams] : fila->GetAmsList()) {
+            if (ams == nullptr)
+                continue;
+            json cx = {{"unidade", ams_id}};
+            if (ams->GetCurrentTemperature() > -100.0f && ams->GetCurrentTemperature() < 200.0f)
+                cx["temperatura"] = std::round(ams->GetCurrentTemperature() * 10.0f) / 10.0f;
+            if (ams->GetHumidityPercent() >= 0)
+                cx["umidade"] = ams->GetHumidityPercent();
+            else if (o->is_support_ams_humidity)
+                cx["umidade_nivel"] = ams->GetHumidityLevel(); // 1 (seco) a 5 (úmido) no AMS da Bambu
+            if (cx.size() > 1)
+                caixas.push_back(cx);
+        }
+        if (!caixas.empty())
+            ex["caixas"] = caixas;
+    }
+    if (DevHMS* hms = o->GetHMS()) {
+        json lista = json::array();
+        for (const auto& it : hms->GetHMSItems())
+            lista.push_back({{"codigo", it.get_long_error_code()}, {"nivel", int(it.get_level())}});
+        if (!lista.empty())
+            ex["hms"] = lista;
+    }
+    const std::string fw = o->get_ota_version();
+    if (!fw.empty())
+        ex["firmware"] = fw;
+    return ex;
+}
+
 json card(MachineObject* o)
 {
     json c = {{"dev_id", o->get_dev_id()}, {"nome", o->get_dev_name()}, {"ip", o->get_dev_ip()}, {"modelo", o->printer_type},
@@ -461,6 +514,7 @@ json card(MachineObject* o)
     const json arqs = json::parse(Filuna::arquivos(o->get_dev_id()), nullptr, false);
     if (arqs.is_array() && !arqs.empty())
         c["arquivos"] = arqs; // últimos arquivos guardados na impressora
+    c["extra"] = extra_de(o);
     return c;
 }
 
@@ -1613,7 +1667,11 @@ void sincronizar_estado(const json& estado, const std::string& token)
                          {"bico", c.value("bico", json::object())}, {"mesa", c.value("mesa", json::object())},
                          // Raio X da Impressora: camada, filamento em uso e código do erro
                          {"camada", c.value("camada", 0)}, {"camadas", c.value("camadas", 0)},
-                         {"slot_ativo", c.value("slot_ativo", json::object())}, {"codigo_erro", c.value("codigo_erro", std::string())}});
+                         {"slot_ativo", c.value("slot_ativo", json::object())}, {"codigo_erro", c.value("codigo_erro", std::string())},
+                         // Raio X do equipamento: coolers/velocidade como a impressora informa e as medidas extras
+                         // (câmara, alvo da mesa, umidade das caixas, HMS, firmware, potência e rotação no Klipper)
+                         {"ajustes", c.value("ajustes", json::object())}, {"extra", c.value("extra", json::object())},
+                         {"agente", c.value("agente", std::string())}});
     std::thread([corpo, token] {
         Http http = Http::post(std::string(SITE) + "/api/slicer/v1/dispositivos/estado");
         http.header("Authorization", "Bearer " + token).header("Content-Type", "application/json")

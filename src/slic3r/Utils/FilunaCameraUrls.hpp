@@ -105,4 +105,58 @@ inline std::string mesa(const std::string& dev_id)
     return it == mesa_map().end() ? std::string() : it->second;
 }
 
+// Diagnóstico remoto (Raio X do equipamento), em JSON:
+// - bruto: último relatório da impressora no formato da própria marca, guardado por cada agente;
+// - extra: medidas extras normalizadas para o histórico (potência dos aquecedores, rotação, câmara, umidade…);
+// - diag: leitura profunda que o agente faz quando o diagnóstico pede ({"filuna":{"command":"diagnostico"}}),
+//   com "em" (segundos unix) para quem pediu saber que a resposta é nova.
+inline std::map<std::string, std::string>& bruto_map()
+{
+    static std::map<std::string, std::string> m;
+    return m;
+}
+inline void set_bruto(const std::string& dev_id, const std::string& relatorio_json)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    bruto_map()[dev_id] = relatorio_json;
+}
+inline std::string bruto(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    auto it = bruto_map().find(dev_id);
+    return it == bruto_map().end() ? std::string() : it->second;
+}
+inline std::map<std::string, std::string>& extra_map()
+{
+    static std::map<std::string, std::string> m;
+    return m;
+}
+inline void set_extra(const std::string& dev_id, const std::string& extra_json)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    extra_map()[dev_id] = extra_json;
+}
+inline std::string extra(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    auto it = extra_map().find(dev_id);
+    return it == extra_map().end() ? std::string() : it->second;
+}
+inline std::map<std::string, std::string>& diag_map()
+{
+    static std::map<std::string, std::string> m;
+    return m;
+}
+inline void set_diag(const std::string& dev_id, const std::string& leitura_json)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    diag_map()[dev_id] = leitura_json;
+}
+inline std::string diag(const std::string& dev_id)
+{
+    std::lock_guard<std::mutex> g(camera_urls_mutex());
+    auto it = diag_map().find(dev_id);
+    return it == diag_map().end() ? std::string() : it->second;
+}
+
 }} // namespace Slic3r::Filuna

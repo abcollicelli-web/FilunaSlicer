@@ -3,6 +3,8 @@
 
 #include <chrono>
 #include <cstdio>
+#include <ctime>
+#include <thread>
 #include <fstream>
 #include <regex>
 
@@ -212,6 +214,7 @@ void FilunaPrusaLinkAgent::poll_loop()
                 dev = m_dev_id;
             }
             Filuna::set_erro(dev, ps["print"].value("filuna_erro", std::string()));
+            Filuna::set_bruto(dev, j.dump()); // Raio X: /api/v1/status inteiro
             dispatch(ps.dump());
         } else if (++falhas == 5)
             dispatch_connect(ConnectStatusLost, "sem resposta da PrusaLink");
@@ -275,6 +278,26 @@ int FilunaPrusaLinkAgent::send_message_to_printer(std::string, std::string json_
     }
     std::string r;
     int         code = 0;
+    // Raio X: leitura profunda pedida pelo diagnóstico (identificação, versão, impressora completa e armazenamento)
+    if (cmd.contains("filuna") && cmd["filuna"].is_object() && cmd["filuna"].value("command", std::string()) == "diagnostico") {
+        std::thread([this] {
+            json out = json::object();
+            for (const char* p : {"/api/v1/info", "/api/version", "/api/printer", "/api/v1/storage"}) {
+                std::string b;
+                const int   c = call("GET", p, "", b);
+                json        v = json::parse(b, nullptr, false);
+                out[p]        = c == 200 && !v.is_discarded() ? v : json{{"http", c}};
+            }
+            out["em"] = (long long) std::time(nullptr);
+            std::string dev;
+            {
+                std::lock_guard<std::recursive_mutex> l(m_mutex);
+                dev = m_dev_id;
+            }
+            Filuna::set_diag(dev, out.dump());
+        }).detach();
+        return BAMBU_NETWORK_SUCCESS;
+    }
     const std::string job = "/api/v1/job/" + std::to_string(id);
     if (c == "pause")
         code = call("PUT", job + "/pause", "", r);
