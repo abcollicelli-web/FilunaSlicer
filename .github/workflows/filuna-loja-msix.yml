@@ -1,13 +1,14 @@
 name: Filuna Microsoft Store (pacote MSIX e envio)
-run-name: "Store ${{ inputs.so_status && 'estado' || inputs.so_listar && 'voos' || format('{0} {1}', inputs.versao, inputs.voo != '' && format('voo {0}', inputs.voo) || 'sem voo') }}"
+run-name: "Store ${{ inputs.so_status && 'estado' || inputs.so_listar && 'voos' || format('{0} {1}', inputs.versao, inputs.voo != '' && format('voo {0}', inputs.voo) || inputs.todos && 'todos' || 'sem voo') }}"
 # Monta o pacote MSIX da Microsoft Store a partir de um build já compilado (compilação rápida ou completa) e, quando
 # a conta da Store está ligada (segredos MSSTORE_*), envia para o Partner Center e manda para a certificação.
 # Mesmo pacote que foi aprovado na mão: identidade AndersonBarroso.FilunaSlicer, manifesto e ícones de FILUNA/loja-msix.
 # A Microsoft não aceita um envio novo enquanto outro está em certificação: dispare depois que o anterior sair.
 #
 #   gh workflow run filuna-loja-msix.yml --ref filuna/loja-voo -f run_id=<run do build> -f versao=2.5.90.0 -f voo=<flightId>
-#   Neste ramo o envio vai só para um voo de pacote (ex.: "Teste do dono") que a Store confirma existir; sem voo
-#   válido, nada é enviado. -f so_listar=true só mostra os voos; -f so_status=true só diz o estado na Store.
+#   Neste ramo o envio vai para um voo de pacote (ex.: "Teste do dono") que a Store confirma existir; para todos os
+#   clientes só com -f todos=true (e sem voo). Sem nenhum dos dois, nada é enviado.
+#   -f so_listar=true só mostra os voos; -f so_status=true só diz o estado na Store.
 #
 # Cada etapa escreve uma linha "FILUNA_ESTADO {json}" (pacote montado, enviado, estado da submissão na Store). O vigia
 # do servidor Filuna (/opt/filuna-loja/vigia.py) lê essas linhas, mostra em /admin/loja, avisa o dono no WhatsApp e,
@@ -31,6 +32,10 @@ on:
       voo:
         description: "id do voo de pacote (msstore flights list); obrigatório para enviar"
         default: ""
+      todos:
+        description: "enviar para TODOS os clientes (sem voo); só com a ordem do dono"
+        type: boolean
+        default: false
       so_listar:
         description: "só listar os voos de pacote da Store, sem enviar nada"
         type: boolean
@@ -135,11 +140,18 @@ jobs:
           Write-Host $lista
           if ('${{ inputs.so_listar }}' -eq 'true') { Write-Host "só listar os voos: nada enviado"; exit 0 }
           $voo = "$env:VOO".Trim()
-          if ($voo -notmatch '^[0-9a-fA-F-]{36}$') { throw "voo ausente ou inválido: nada enviado (este envio é só para voo de pacote)" }
-          # a tabela do msstore quebra o id em várias linhas: junta só a coluna FlightId e procura o id inteiro nela
-          $ids = ($lista -split "`n" | ForEach-Object { $c = $_ -split '│'; if ($c.Count -gt 3) { $c[2].Trim() } }) -join ''
-          if (-not $ids.Contains($voo)) { throw "o voo $voo não aparece na lista da Store: nada enviado" }
-          msstore publish $env:MSIX -id $env:APP_ID -f $voo
+          if ('${{ inputs.todos }}' -eq 'true') {
+            # para todos os clientes: só pedido explícito (-f todos=true) e nunca junto com um voo. O msstore apaga a
+            # submissão pendente (rascunho) e cria outra a partir da última publicada.
+            if ($voo) { throw "peça voo OU todos, não os dois: nada enviado" }
+            msstore publish $env:MSIX -id $env:APP_ID
+          } else {
+            if ($voo -notmatch '^[0-9a-fA-F-]{36}$') { throw "voo ausente ou inválido: nada enviado (sem -f todos=true o envio é só para voo de pacote)" }
+            # a tabela do msstore quebra o id em várias linhas: junta só a coluna FlightId e procura o id inteiro nela
+            $ids = ($lista -split "`n" | ForEach-Object { $c = $_ -split '│'; if ($c.Count -gt 3) { $c[2].Trim() } }) -join ''
+            if (-not $ids.Contains($voo)) { throw "o voo $voo não aparece na lista da Store: nada enviado" }
+            msstore publish $env:MSIX -id $env:APP_ID -f $voo
+          }
           if ($LASTEXITCODE -ne 0) {
             Write-Host ("FILUNA_ESTADO " + (@{ etapa = 'envio'; estado = 'EnvioFalhou'; voo = $voo } | ConvertTo-Json -Compress))
             throw "o envio falhou: se já há uma versão em certificação, espere ela sair e dispare de novo"
