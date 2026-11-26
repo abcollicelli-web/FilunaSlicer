@@ -259,7 +259,7 @@ public:
 
     AvisoJanela(const json& aviso, const json& estilo)
         : wxFrame(nullptr, wxID_ANY, "Filuna", wxDefaultPosition, wxDefaultSize,
-                  wxFRAME_NO_TASKBAR | wxSTAY_ON_TOP | wxBORDER_NONE | wxFRAME_TOOL_WINDOW)
+                  wxFRAME_NO_TASKBAR | wxSTAY_ON_TOP | wxBORDER_NONE | wxFRAME_TOOL_WINDOW | wxFRAME_SHAPED)
         , m_aviso(aviso)
         , m_modelo(estilo.value("modelo", std::string("cartao")))
         , m_tema(estilo.value("tema", std::string("claro")))
@@ -280,6 +280,12 @@ public:
         } else {
             const wxSize t(FromDIP(400), FromDIP(132));
             SetSize(area.GetRight() - t.x - m, area.GetBottom() - (t.y + m) * (indice + 1), t.x, t.y);
+        }
+        if (m_modelo != "faixa") { // cantos arredondados de verdade (sem o retângulo preto em volta)
+            const wxSize t   = GetClientSize();
+            wxGraphicsPath caminho = wxGraphicsRenderer::GetDefaultRenderer()->CreatePath();
+            caminho.AddRoundedRectangle(0, 0, t.x, t.y, FromDIP(m_modelo == "destaque" ? 18 : 14));
+            SetShape(caminho);
         }
         Bind(wxEVT_PAINT, &AvisoJanela::pintar, this);
         Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent&) { fechar(); });
