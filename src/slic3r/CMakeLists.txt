@@ -522,9 +522,11 @@ set(SLIC3R_GUI_SOURCES
     GUI/FilunaAssistente.cpp
     GUI/FilunaAssistente.hpp
     GUI/FilunaMidia.cpp
+    GUI/FilunaNovidades.cpp
     GUI/FilunaIALado.cpp
     GUI/FilunaIALado.hpp
     GUI/FilunaMidia.hpp
+    GUI/FilunaNovidades.hpp
     GUI/FilunaImpressao.hpp
     GUI/FilunaLoja.hpp
     GUI/FilunaManutencao.hpp

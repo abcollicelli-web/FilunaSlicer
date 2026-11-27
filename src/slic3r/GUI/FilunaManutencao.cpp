@@ -859,6 +859,7 @@ static void correcao_da_loja_iniciar()
 #endif
 
 std::string build_local() { return identidade().value("build", std::string()); }
+std::string versao_do_pacote() { return versao_da_loja(); }
 
 // Código de acesso, senha e token não saem do computador no diagnóstico (a tela de conectar manda o pedido inteiro,
 // com o código da impressora, quando falha). Fica só a indicação de que veio preenchido.

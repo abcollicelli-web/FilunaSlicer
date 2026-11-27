@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Novidades</title>
+<!-- Cartão "O que há de novo" (pedido do dono, 27/11/2026). Aparece uma vez na primeira abertura depois de uma
+     atualização e pelo menu Ajuda / Início. Os textos chegam do programa (novidades.json embutido ou o que o site
+     trocou em Admin › Novidades); esta tela só desenha. -->
+<style>
+:root{--papel:#F6F2EB;--cartao:#FFFFFF;--linha:#EAE3D8;--tinta:#2A2622;--tinta2:#6E675F;--suave:#A59D93;
+--magenta:#E0186B;--magenta-esc:#B8125A;--magenta-bg:#FCE4EE;--violeta:#6D4AE8;--violeta-bg:#ECE7FD}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--papel);color:var(--tinta);font-family:'Inter','Segoe UI',system-ui,sans-serif;
+-webkit-font-smoothing:antialiased;font-size:14px;user-select:none;-webkit-user-select:none;cursor:default}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pagina{display:flex;flex-direction:column;height:100%}
+.rolagem{flex:1;overflow:auto;padding:28px 28px 8px}
+.rolagem::-webkit-scrollbar{width:8px}.rolagem::-webkit-scrollbar-thumb{background:#DDD4C8;border-radius:8px}
+
+.topo{position:relative;border-radius:22px;padding:26px 26px 24px;overflow:hidden;color:#fff;
+background:linear-gradient(125deg,var(--magenta) 0%,#B4207F 48%,var(--violeta) 100%);box-shadow:0 14px 34px rgba(109,74,232,.18)}
+.topo:before,.topo:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12)}
+.topo:before{width:220px;height:220px;right:-60px;top:-90px}
+.topo:after{width:120px;height:120px;right:90px;bottom:-70px;background:rgba(255,255,255,.08)}
+.selo{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+background:rgba(255,255,255,.18);padding:5px 11px;border-radius:20px;position:relative}
+.selo svg{width:14px;height:14px}
+.topo h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin-top:14px;position:relative}
+.topo p{font-size:14.5px;line-height:1.5;margin-top:6px;max-width:440px;opacity:.92;position:relative}
+
+.versao{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--suave);margin:24px 4px 10px}
+.lista{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+.versao+.lista{margin-top:0}
+.item{display:flex;gap:16px;align-items:flex-start;background:var(--cartao);border:1px solid var(--linha);border-radius:18px;padding:18px;
+box-shadow:0 1px 0 #EFE9E0;opacity:0;transform:translateY(8px);animation:entra .45s ease forwards}
+.icone{width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;
+background:var(--magenta-bg);color:var(--magenta)}
+.item:nth-child(even) .icone{background:var(--violeta-bg);color:var(--violeta)}
+.icone svg{width:24px;height:24px}
+.texto{flex:1;min-width:0}
+.texto h2{font-size:15.5px;font-weight:700;letter-spacing:-.01em;line-height:1.3}
+.texto p{font-size:13.5px;line-height:1.55;color:var(--tinta2);margin-top:4px}
+.experimentar{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;font-weight:700;color:var(--magenta-esc);
+padding:6px 12px;border-radius:10px;background:var(--magenta-bg);transition:background .15s}
+.experimentar:hover{background:#F9D2E2}
+.experimentar svg{width:15px;height:15px}
+.vazio{margin-top:18px;background:var(--cartao);border:1px dashed var(--linha);border-radius:18px;padding:28px;text-align:center;color:var(--tinta2)}
+
+.rodape{display:flex;justify-content:flex-end;gap:10px;padding:14px 28px 20px;background:linear-gradient(to bottom,rgba(246,242,235,0),var(--papel) 30%)}
+.botao{height:42px;padding:0 20px;border-radius:12px;font-size:14px;font-weight:700}
+.botao.leve{color:var(--tinta2);border:1px solid var(--linha);background:var(--cartao)}
+.botao.leve:hover{border-color:#D9CFC2}
+.botao.forte{background:var(--magenta);color:#fff;box-shadow:0 6px 16px rgba(224,24,107,.25)}
+.botao.forte:hover{background:var(--magenta-esc)}
+@keyframes entra{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.item{animation:none;opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="pagina">
+	<div class="rolagem">
+		<header class="topo">
+			<span class="selo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg><span id="selo"></span></span>
+			<h1 id="titulo"></h1>
+			<p id="sub"></p>
+		</header>
+		<main id="conteudo"></main>
+	</div>
+	<footer class="rodape">
+		<button class="botao leve" id="depois" hidden></button>
+		<button class="botao forte" id="entendi"></button>
+	</footer>
+</div>
+<script src="ponte.js"></script>
+<script>
+var TEXTOS = {
+	pt: { selo: "Novidades", titulo: "O que há de novo", sub: "Preparamos algumas novidades para você aproveitar ainda mais o Filuna.",
+		subMenu: "Veja o que chegou nas últimas versões do Filuna.", versao: "Versão ", experimentar: "Experimentar",
+		depois: "Ver depois", entendi: "Entendi", vazio: "Por enquanto não há novidades para mostrar." },
+	en: { selo: "New in Filuna", titulo: "What's new", sub: "We have a few new things to help you get even more out of Filuna.",
+		subMenu: "See what arrived in the latest Filuna versions.", versao: "Version ", experimentar: "Try it",
+		depois: "Later", entendi: "Got it", vazio: "Nothing new to show right now." }
+};
+var ICONES = {
+	ia: '<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/><path d="M5 16l.6 1.4L7 18l-1.4.6L5 20l-.6-1.4L3 18l1.4-.6z"/>',
+	cores: '<circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.3"/><circle cx="12" cy="7.5" r="1.3"/><circle cx="15.5" cy="10" r="1.3"/><path d="M12 21c-1.5 0-2-1-2-2s1-2 2.5-2H14a3 3 0 0 0 3-3"/>',
+	atualizar: '<path d="M20 12a8 8 0 0 1-14.3 4.9"/><path d="M4 12A8 8 0 0 1 18.3 7.1"/><path d="M18.5 3v4.3h-4.3"/><path d="M5.5 21v-4.3h4.3"/>',
+	mundo: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>',
+	inicio: '<rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4"/><path d="M8 14h3M8 17h6"/>',
+	impressora: '<rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 8h16"/><path d="M10 8v3h4V8"/><path d="M8 17h8"/><path d="M12 11v3"/>',
+	loja: '<path d="M4 9l1.5-5h13L20 9"/><path d="M4 9h16v1.5a3 3 0 0 1-5.3 1.9 3 3 0 0 1-5.4 0A3 3 0 0 1 4 10.5z"/><path d="M5.5 13v7.5h13V13"/><path d="M10 20.5v-4h4v4"/>',
+	estrela: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>'
+};
+var dados = { versoes: [], idioma: "pt" }, T = TEXTOS.pt;
+
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function svg(nome) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONES[nome] || ICONES.estrela) + "</svg>"; }
+function textoDo(item) { return item[dados.idioma] || item.pt || item.en || {}; }
+
+function desenharItem(item, n) {
+	var t = textoDo(item), abrir = item.abrir && item.abrir.aba ? item.abrir : null;
+	if (!t.titulo) return "";
+	return '<article class="item" style="animation-delay:' + (n * 60) + 'ms"><div class="icone">' + svg(item.icone) + '</div><div class="texto"><h2>' + esc(t.titulo) +
+		"</h2>" + (t.texto ? "<p>" + esc(t.texto) + "</p>" : "") +
+		(abrir ? '<button class="experimentar" data-aba="' + esc(abrir.aba) + '" data-secao="' + esc(abrir.secao || "") + '">' + esc(t.botao || T.experimentar) +
+			'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>' : "") + "</div></article>";
+}
+
+function desenhar() {
+	T = TEXTOS[dados.idioma] || TEXTOS.pt;
+	document.documentElement.lang = dados.idioma == "en" ? "en" : "pt-BR";
+	document.getElementById("selo").textContent = T.selo;
+	document.getElementById("titulo").textContent = T.titulo;
+	document.getElementById("sub").textContent = dados.modo == "menu" ? T.subMenu : T.sub;
+	var depois = document.getElementById("depois");
+	depois.textContent = T.depois;
+	depois.hidden = !dados.pode_adiar;
+	document.getElementById("entendi").textContent = T.entendi;
+	var versoes = dados.versoes || [], varias = versoes.length > 1, n = 0;
+	var html = versoes.map(function (v) {
+		var itens = (v.itens || []).map(function (it) { return desenharItem(it, n++); }).join("");
+		return itens ? (varias ? '<div class="versao">' + esc(T.versao + v.versao) + "</div>" : "") + '<div class="lista">' + itens + "</div>" : "";
+	}).join("");
+	var conteudo = document.getElementById("conteudo");
+	conteudo.innerHTML = html || '<div class="vazio">' + esc(T.vazio) + "</div>";
+	conteudo.querySelectorAll(".experimentar").forEach(function (b) {
+		b.onclick = function () {
+			Filuna.nativo("aba.abrir", { aba: b.dataset.aba, secao: b.dataset.secao }).catch(function () {});
+			fechar(false);
+		};
+	});
+}
+
+function fechar(depois) { Filuna.nativo("novidades.fechar", { depois: !!depois }).catch(function () {}); }
+
+document.getElementById("entendi").onclick = function () { fechar(false); };
+document.getElementById("depois").onclick = function () { fechar(true); };
+document.addEventListener("keydown", function (e) { if (e.key == "Escape") fechar(false); });
+
+Filuna.nativo("novidades.dados").then(function (d) { dados = d || dados; desenhar(); }, function () { desenhar(); });
+</script>
+</body>
+</html>

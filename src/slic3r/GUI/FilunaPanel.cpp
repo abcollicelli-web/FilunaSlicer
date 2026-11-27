@@ -17,6 +17,7 @@
 #include "FilunaCasaAvisos.hpp"
 #include "FilunaManutencao.hpp"
 #include "FilunaImpressao.hpp"
+#include "FilunaNovidades.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -681,6 +682,10 @@ void FilunaPanel::open_tab(const std::string& tab, const std::string& section)
     MainFrame* frame = wxGetApp().mainframe;
     if (frame == nullptr)
         return;
+    if (tab == "novidades") { // "O que há de novo" (Início e telas Filuna): cartão das novidades da versão
+        FilunaNovidades::mostrar();
+        return;
+    }
     pending_section() = section;
     frame->select_filuna_tab(tab);
     if (!section.empty())
@@ -798,6 +803,8 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return *ia;
     if (auto midia = filuna_midia_acao(action, d))
         return *midia;
+    if (auto novidades = FilunaNovidades::acao(action, d)) // cartão das novidades da versão: FilunaNovidades.cpp
+        return *novidades;
 #ifdef SLIC3R_CAD
     // Filuna CAD com a IA do cliente (Modelar com IA): CAD/DesignPanelFiluna.cpp.
     if (auto cad = filuna_cad_acao(action, d))
