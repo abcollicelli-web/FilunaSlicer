@@ -6,18 +6,33 @@
 <title>Minha loja</title>
 <link rel="stylesheet" href="base.css">
 <style>
-.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin:16px 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin:16px 0}
 .kpi{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--side)}.kpi b{display:block;font-size:26px;margin-top:4px}
+.kpi.alerta{border-color:var(--magenta);background:var(--rose)}.kpi .ajuda{display:block}
 table.l{width:100%;border-collapse:collapse}table.l td,table.l th{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:13.5px;vertical-align:middle}
 table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-table.l img{width:46px;height:46px;border-radius:9px;object-fit:cover;background:#F6F2EC}
-table.l input{width:96px;padding:6px 8px}
+table.l input{width:86px;padding:6px 8px}
+.foto{width:48px;height:48px;border-radius:10px;object-fit:cover;background:#F6F2EC;border:1px solid var(--line);flex:none;display:block}
+.it{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.it:last-child{border-bottom:0}
+.it .tx{flex:1;min-width:0}.it .tx b{display:block;font-weight:600;overflow-wrap:anywhere}.it .tx span{display:block;color:var(--ink2);font-size:12.5px}
+.atraso{color:var(--warn)!important;font-weight:700}
 .perg{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
-.perg .t{font-weight:600}.perg textarea{margin-top:8px}
+.perg textarea,.chat textarea{width:100%;margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical}
 .lojaC{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;margin-bottom:10px}
 .lojaC .n{font-weight:700;font-size:16px}
 .slogan{background:linear-gradient(120deg,var(--rose),#FFF0E6);border-radius:16px;padding:16px 18px;margin:16px 0}
 .slogan b{font-size:17px}
+.filtro{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.filtro input{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
+.filtro select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+.chip{font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--ink2)}.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.balao{max-width:82%;padding:9px 12px;border-radius:12px;background:#F4F0EA;margin:6px 0}.balao.meu{margin-left:auto;background:var(--rose)}.balao small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+.termo{display:flex;gap:5px;margin:8px 0}.termo i{flex:1;height:10px;border-radius:5px;opacity:.25}.termo i.on{opacity:1;height:14px;margin-top:-2px}
+.fil{font-size:12.5px;padding:8px 10px;border-radius:10px;background:#F4F0EA;margin-top:8px}.fil.falta{background:var(--warn-bg);color:var(--warn)}
+.bolinha{display:inline-flex;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--magenta-deep);color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;margin-left:auto}
+.fundo{position:fixed;inset:0;background:rgba(30,25,20,.35);display:flex;align-items:center;justify-content:center;z-index:50}
+.fundo .card{max-width:420px;width:92%;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+@media (max-width:900px){.duas{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -26,34 +41,71 @@ table.l input{width:96px;padding:6px 8px}
 		<button class="nav" id="voltar" style="color:var(--ink2);margin-bottom:8px">‹ Meu espaço</button>
 		<div class="lbl" style="padding:0 6px 8px">Minha loja</div>
 		<div id="menu"></div>
-		<div style="margin-top:auto" class="ajuda">Tudo das suas lojas aqui: anúncios, vendas, perguntas e etiquetas. Para anunciar, use a aba Projeto.</div>
+		<div style="margin-top:auto" class="ajuda">Anúncios, vendas, envios, perguntas e mensagens do Mercado Livre direto da sua conta. Para anunciar uma peça, use a aba Projeto.</div>
 	</div>
 	<div class="principal" id="tela"><div class="carregando">Carregando…</div></div>
 </div></div></div>
 <script src="ponte.js"></script>
 <script>
-var E = Filuna.esc;
-var SECOES = [["visao", "Visão geral"], ["anuncios", "Anúncios"], ["vendas", "Vendas"], ["perguntas", "Perguntas"], ["lojas", "Lojas conectadas"]];
-var st = { secao: "visao", ml: null, lojas: [], msg: "", erro: "" };
+var E = Filuna.esc, R = Filuna.reais;
+var SECOES = [["visao", "Visão geral"], ["anuncios", "Anúncios"], ["vendas", "Vendas"], ["enviar", "A enviar"], ["perguntas", "Perguntas"],
+	["mensagens", "Mensagens"], ["reputacao", "Reputação"], ["avisos", "Avisos"], ["lojas", "Lojas conectadas"]];
+var st = { secao: "visao", ml: null, lojas: [], msg: "", erro: "", filtro: { status: "todos", q: "", ordem: "" }, pack: "", conversa: null, ultimoAviso: 0 };
 
+function el() { return document.getElementById("tela"); }
+function contagem(s) {
+	var m = st.ml || {};
+	if (s == "perguntas") return (m.perguntas || []).length;
+	if (s == "enviar") return (m.a_enviar || []).length;
+	if (s == "mensagens") return Object.keys(m.mensagens_nao_lidas || {}).reduce(function (t, k) { return t + m.mensagens_nao_lidas[k]; }, 0);
+	if (s == "avisos") return m.avisos_novos || 0;
+	return 0;
+}
 function menu() {
 	document.getElementById("menu").innerHTML = SECOES.map(function (s) {
-		var n = s[0] == "perguntas" && st.ml && st.ml.perguntas ? " (" + st.ml.perguntas.length + ")" : "";
-		return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1] + n) + "</button>"; }).join("");
-	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; st.msg = st.erro = ""; desenhar(); }; });
+		var n = contagem(s[0]);
+		return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1]) + (n ? '<span class="bolinha">' + n + "</span>" : "") + "</button>"; }).join("");
+	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { ir(b.dataset.s); }; });
 }
-function el() { return document.getElementById("tela"); }
-function cab(l, t, s) { return '<div class="lbl">' + E(l) + '</div><div class="h1" style="margin-top:6px">' + E(t) + "</div>" + (s ? '<div class="sub">' + E(s) + "</div>" : "") +
-	(st.msg ? '<div class="okmsg">' + E(st.msg) + "</div>" : "") + (st.erro ? '<div class="erro">' + E(st.erro) + "</div>" : ""); }
+function ir(s) { st.secao = s; st.msg = st.erro = ""; if (s == "avisos" && st.ml && st.ml.avisos_novos) marcarAvisos(); desenhar(); }
+function cab(l, t, s) {
+	return '<div class="entre"><div><div class="lbl">' + E(l) + '</div><div class="h1" style="margin-top:6px">' + E(t) + "</div>" + (s ? '<div class="sub">' + E(s) + "</div>" : "") + "</div>" +
+		(st.ml && st.ml.conectada ? '<button class="btn peq" id="atualizar">Atualizar</button>' : "") + "</div>" +
+		(st.msg ? '<div class="okmsg">' + E(st.msg) + "</div>" : "") + (st.erro ? '<div class="erro">' + E(st.erro) + "</div>" : "") +
+		(st.ml && st.ml.erro ? '<div class="erro">' + E(st.ml.erro) + (st.ml.reconectar ? ' <a id="reconectar">Conectar de novo</a>' : "") + "</div>" : "");
+}
+function foto(u) { return u ? '<img class="foto" src="' + E(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '<span class="foto"></span>'; }
+function pill(s, t) { return '<span class="pill' + ({ active: " ok", paid: " ok", paused: " alerta", cancelled: " alerta" }[s] || "") + '">' + E(t) + "</span>"; }
+function vazio(t) { return '<div class="vazio">' + E(t) + "</div>"; }
+function card(titulo, corpo, link) { return '<div class="card" style="margin-top:14px"><div class="ch"><span class="lbl">' + E(titulo) + "</span>" + (link ? '<a data-s="' + link[0] + '">' + E(link[1]) + "</a>" : "") + "</div>" + corpo + "</div>"; }
 
-function carregar() {
-	if (!Filuna.temToken()) { menu(); el().innerHTML = '<div id="lg"></div>'; Filuna.telaLogin(el().querySelector("#lg"), carregar, "Entre para ver suas lojas, anúncios e vendas."); return; }
-	el().innerHTML = '<div class="carregando">Buscando suas lojas…</div>';
+function confirmar(texto) {
+	return new Promise(function (ok) {
+		var f = document.createElement("div");
+		f.className = "fundo";
+		f.innerHTML = '<div class="card"><div style="font-weight:700;font-size:15px;margin-bottom:8px">Confirmar no Mercado Livre</div><div class="sub" style="margin-bottom:14px">' + E(texto) +
+			'</div><div class="linha" style="justify-content:flex-end"><button class="btn peq" data-r="0">Cancelar</button><button class="btn primario peq" data-r="1">Confirmar</button></div></div>';
+		document.body.appendChild(f);
+		f.querySelectorAll("[data-r]").forEach(function (b) { b.onclick = function () { f.remove(); ok(b.dataset.r == "1"); }; });
+	});
+}
+function resultado(p, okmsg) {
+	return p.then(function (r) { st.erro = ""; st.msg = r && r._pendente ? "Sem conexão agora: a mudança vai ao Mercado Livre quando a internet voltar." : okmsg; return r; },
+		function (e) { st.msg = ""; st.erro = e.erro || "Não deu certo. Tente de novo."; throw e; });
+}
+
+function carregar(atualizar) {
+	if (!Filuna.temToken()) { menu(); el().innerHTML = '<div id="lg"></div>'; Filuna.telaLogin(el().querySelector("#lg"), carregar, "Entre para ver sua loja, anúncios e vendas."); return; }
+	if (!st.ml) el().innerHTML = '<div class="carregando">Buscando sua loja no Mercado Livre…</div>';
 	Filuna.api("GET", "/lojas").then(function (r) {
 		st.lojas = r.lojas || [];
 		var ml = st.lojas.filter(function (l) { return l.id == "mercadolivre"; })[0];
 		if (!ml || !ml.conectada) { st.ml = { conectada: false }; desenhar(); return; }
-		return Filuna.api("GET", "/lojas/mercadolivre").then(function (d) { st.ml = d; desenhar(); });
+		return Filuna.api("GET", "/lojas/mercadolivre" + (atualizar ? "?atualizar=1" : "")).then(function (d) {
+			st.ml = d;
+			st.ultimoAviso = (d.avisos || []).reduce(function (m, a) { return Math.max(m, a.id); }, st.ultimoAviso);
+			desenhar();
+		});
 	}).catch(function (e) { if (e.status == 401) { Filuna.sair().then(carregar); return; } st.erro = e.erro; st.ml = st.ml || { conectada: false }; desenhar(); });
 }
 
@@ -61,94 +113,250 @@ function desenhar() {
 	menu();
 	if (!st.ml) return;
 	if (!st.ml.conectada && st.secao != "lojas") return semLoja();
-	({ visao: visao, anuncios: anuncios, vendas: vendas, perguntas: perguntas, lojas: lojas }[st.secao])();
+	({ visao: visao, anuncios: anuncios, vendas: vendas, enviar: enviar, perguntas: perguntas, mensagens: mensagens, reputacao: reputacao, avisos: avisos, lojas: lojas }[st.secao])();
+	el().querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { ir(b.dataset.s); }; });
+	var at = el().querySelector("#atualizar");
+	if (at) at.onclick = function () { at.disabled = true; st.msg = st.erro = ""; carregar(true); };
+	var rc = el().querySelector("#reconectar");
+	if (rc) rc.onclick = function () { conectarML(); };
+	el().querySelectorAll("[data-link]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(b.dataset.link); }; });
+	ligarEtiquetas();
 }
 
 function semLoja() {
-	el().innerHTML = cab("Minha loja", "Conecte sua loja", "Com a loja conectada, o Filuna mostra seus anúncios, vendas, perguntas e etiquetas — e você publica seus produtos do catálogo com um clique.") +
+	el().innerHTML = cab("Minha loja", "Conecte sua loja do Mercado Livre", "Com a conta conectada, o Filuna mostra seus anúncios com foto, as vendas, o que falta enviar, as perguntas e a reputação — e você publica peças do catálogo com um clique.") +
 		'<div class="slogan"><b>Filuna — tudo para o seu 3D em um só lugar.</b><div class="sub">Fatiar, imprimir, calcular o preço, anunciar e vender, sem trocar de programa.</div></div>' + listaLojas();
 	ligarLojas();
 }
 
-function visao() {
-	var m = st.ml, ativos = m.anuncios.filter(function (a) { return a.status == "active"; }).length;
-	var vendidos = m.anuncios.reduce(function (s, a) { return s + (a.vendidos || 0); }, 0);
-	var pagos = m.pedidos.filter(function (p) { return p.status == "paid"; });
-	el().innerHTML = cab("Mercado Livre · " + (m.conta || ""), "Minha loja", "Atualizado agora, direto da sua conta.") +
-		'<div class="kpis"><div class="kpi"><span class="ajuda">Anúncios ativos</span><b>' + ativos + '</b></div><div class="kpi"><span class="ajuda">Pausados</span><b>' + (m.anuncios.length - ativos) + "</b></div>" +
-		'<div class="kpi"><span class="ajuda">Vendidos (total)</span><b>' + vendidos + '</b></div><div class="kpi"><span class="ajuda">Vendas recentes</span><b>' + pagos.length + "</b></div>" +
-		'<div class="kpi"><span class="ajuda">Perguntas sem resposta</span><b style="color:' + (m.perguntas.length ? "var(--warn)" : "inherit") + '">' + m.perguntas.length + "</b></div></div>" +
-		'<div class="card"><div class="ch"><span class="lbl">Últimas vendas</span><a data-s="vendas">Ver todas</a></div>' + tabelaVendas(m.pedidos.slice(0, 5)) + "</div>" +
-		(m.perguntas.length ? '<div class="card" style="margin-top:14px"><div class="ch"><span class="lbl">Perguntas esperando você</span><a data-s="perguntas">Responder</a></div>' +
-			m.perguntas.slice(0, 3).map(function (q) { return '<div class="perg"><div class="t">' + E(q.texto) + '</div><div class="ajuda">' + E(titulo(q.item)) + "</div></div>"; }).join("") + "</div>" : "");
-	el().querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; desenhar(); }; });
-	ligarEtiquetas();
+function linhaEnvio(p) {
+	var e = p.envio_info || {};
+	return '<div class="it">' + foto(p.foto) + '<div class="tx"><b>' + E(p.titulo) + "</b><span>" + E(p.comprador) + " · " + R(p.valor) + " · venda " + E(p.id) + "</span>" +
+		'<span class="' + (e.atrasado ? "atraso" : "") + '">Despachar ' + E(e.prazo_txt || "sem prazo informado") + " · " + E(e.substatus_texto || e.status_texto || "") + (e.atrasado ? " · atrasado" : "") + "</span>" +
+		(p.produto_filuna ? "<span>Peça do seu catálogo: " + E(p.produto_filuna) + ' · <a data-farm="1">Produzir no Farm</a></span>' : "") + "</div>" +
+		'<div class="linha">' + (e.etiqueta ? '<button class="btn primario peq" data-etq="' + E(e.id) + '">Etiqueta</button><button class="btn peq" data-etq="' + E(e.id) + '" data-fmt="zpl" title="Impressora térmica">ZPL</button>' : "") +
+		'<button class="btn peq" data-msg="' + E(p.pack_id) + '">Mensagem</button></div></div>';
+}
+function filamento() {
+	return (st.ml.filamento || []).map(function (f) {
+		return '<div class="fil' + (f.falta ? " falta" : "") + '">' + E(f.material) + ": as peças a enviar pedem " + f.precisa_g + " g; no estoque há " + f.tem_g + " g." + (f.falta ? " Hora de repor." : "") + "</div>"; }).join("");
 }
 
-function titulo(item) { var a = st.ml.anuncios.filter(function (x) { return x.id == item; })[0]; return a ? a.titulo : item; }
+function visao() {
+	var m = st.ml, an = m.anuncios || [], met = m.metricas || {}, rep = m.reputacao || {}, fila = m.a_enviar || [];
+	var ativos = an.filter(function (a) { return a.status == "active"; }).length, pausados = an.filter(function (a) { return a.status == "paused"; }).length;
+	var atrasados = fila.filter(function (p) { return (p.envio_info || {}).atrasado; }).length, msgs = contagem("mensagens");
+	function k(rot, val, sub, alerta) { return '<div class="kpi' + (alerta ? " alerta" : "") + '"><span class="ajuda">' + E(rot) + "</span><b>" + val + '</b><span class="ajuda">' + E(sub) + "</span></div>"; }
+	el().innerHTML = cab("Mercado Livre · " + (m.conta || ""), "Minha loja", "Direto da sua conta do Mercado Livre.") +
+		'<div class="kpis">' + k("Vendas em " + (met.mes || "—"), met.vendas || 0, R(met.faturado), false) +
+		k("A enviar", fila.length, atrasados ? atrasados + " atrasado(s)" : "no prazo", atrasados > 0) +
+		k("Perguntas", (m.perguntas || []).length, "sem resposta", (m.perguntas || []).length > 0) +
+		k("Visitas no mês", met.visitas || 0, met.conversao != null ? met.conversao + "% viram venda" : "—", false) +
+		k("Anúncios ativos", ativos, pausados + " pausados", false) + k("Mensagens", msgs, "sem ler", msgs > 0) +
+		k("Reclamações", m.reclamacoes || 0, "abertas", m.reclamacoes > 0) +
+		'<div class="kpi"><span class="ajuda">Reputação</span><b style="color:' + E(rep.cor || "inherit") + ';font-size:20px">' + E(rep.nivel_texto || "—") + '</b><span class="ajuda">' + E(rep.lider || ((rep.vendas_total || 0) + " vendas no total")) + "</span></div></div>" +
+		'<div class="duas">' + card("O que falta enviar", (fila.length ? fila.slice(0, 4).map(linhaEnvio).join("") : vazio("Nenhuma venda esperando envio.")) + filamento(), fila.length > 4 ? ["enviar", "Ver todas"] : null) +
+		card("Perguntas esperando você", (m.perguntas || []).length ? m.perguntas.slice(0, 3).map(function (q) {
+			return '<div class="it">' + foto(q.foto) + '<div class="tx"><b>' + E(q.texto) + "</b><span>" + E(q.titulo) + " · " + E(q.data_txt) + "</span></div></div>"; }).join("") : vazio("Nenhuma pergunta sem resposta."), ["perguntas", "Responder"]) + "</div>" +
+		card("Últimas vendas", tabelaVendas((m.pedidos || []).slice(0, 5)), ["vendas", "Ver todas"]);
+	ligarAcoesEnvio();
+}
 
 function anuncios() {
-	var l = st.ml.anuncios;
-	el().innerHTML = cab("Mercado Livre", "Anúncios", "Mude preço e estoque, pause ou reative. Vale na hora no Mercado Livre.") +
-		(l.length ? '<div class="card" style="padding:6px 8px;margin-top:14px"><table class="l"><tr><th></th><th>Anúncio</th><th>Preço (R$)</th><th>Estoque</th><th>Vendidos</th><th>Situação</th><th></th></tr>' +
-			l.map(function (a, k) {
-				return "<tr><td><img src='" + E(a.foto) + "'></td><td><b>" + E(a.titulo) + "</b><div class='ajuda'>" + E(a.id) + "</div></td>" +
-					"<td><input type='number' step='0.01' data-preco='" + k + "' value='" + E(a.preco) + "'></td><td><input type='number' data-est='" + k + "' value='" + E(a.estoque) + "' style='width:70px'></td>" +
-					"<td>" + E(a.vendidos || 0) + "</td><td>" + (a.status == "active" ? "<span class='pill ok'>Ativo</span>" : a.status == "paused" ? "<span class='pill alerta'>Pausado</span>" : "<span class='pill'>" + E(a.status) + "</span>") + "</td>" +
-					"<td style='white-space:nowrap'><button class='btn peq' data-salvar='" + k + "'>Salvar</button> " +
-					(a.status == "active" ? "<button class='btn peq' data-status='" + k + "' data-v='paused'>Pausar</button>" : a.status == "paused" ? "<button class='btn peq' data-status='" + k + "' data-v='active'>Reativar</button>" : "") +
-					" <button class='btn peq' data-ver='" + k + "'>Ver</button></td></tr>";
-			}).join("") + "</table></div>" : '<div class="vazio" style="margin-top:14px">Nenhum anúncio. Publique produtos pela aba Projeto.</div>');
-	var mudar = function (k, corpo) {
-		var a = l[k];
-		Filuna.api("POST", "/lojas/mercadolivre/anuncios/" + encodeURIComponent(a.id), corpo).then(function (r) {
-			a.status = r.status || a.status; if (r.preco != null) a.preco = r.preco; if (r.estoque != null) a.estoque = r.estoque;
-			st.msg = "Anúncio atualizado."; st.erro = ""; anuncios();
-		}, function (e) { st.erro = e.erro; st.msg = ""; anuncios(); });
-	};
-	el().querySelectorAll("[data-salvar]").forEach(function (b) { b.onclick = function () { var k = +b.dataset.salvar;
-		mudar(k, { preco: el().querySelector("[data-preco='" + k + "']").value, estoque: el().querySelector("[data-est='" + k + "']").value }); }; });
-	el().querySelectorAll("[data-status]").forEach(function (b) { b.onclick = function () { mudar(+b.dataset.status, { status: b.dataset.v }); }; });
-	el().querySelectorAll("[data-ver]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(l[+b.dataset.ver].link); }; });
+	var f = st.filtro, todos = st.ml.anuncios || [], q = f.q.toLowerCase();
+	var l = todos.filter(function (a) {
+		var okS = f.status == "todos" || (f.status == "encerrados" ? a.status != "active" && a.status != "paused" : a.status == f.status);
+		return okS && (!q || a.titulo.toLowerCase().indexOf(q) >= 0 || String(a.id).toLowerCase().indexOf(q) >= 0);
+	});
+	var ord = { vendidos: function (a, b) { return (b.vendidos || 0) - (a.vendidos || 0); }, visitas: function (a, b) { return (b.visitas || 0) - (a.visitas || 0); },
+		preco: function (a, b) { return (a.preco || 0) - (b.preco || 0); }, estoque: function (a, b) { return (a.estoque || 0) - (b.estoque || 0); } }[f.ordem];
+	if (ord) l = l.slice().sort(ord);
+	var conta = function (s) { return todos.filter(function (a) { return s == "todos" || (s == "encerrados" ? a.status != "active" && a.status != "paused" : a.status == s); }).length; };
+	var editavel = function (a) { return a.status == "active" || a.status == "paused"; };
+	el().innerHTML = cab("Mercado Livre", "Anúncios", "Mude preço e estoque, pause ou reative. Vale na hora no Mercado Livre, depois de você confirmar.") +
+		'<div class="filtro">' + [["todos", "Todos"], ["active", "Ativos"], ["paused", "Pausados"], ["encerrados", "Encerrados"]].map(function (s) {
+			return '<button class="chip' + (f.status == s[0] ? " on" : "") + '" data-st="' + s[0] + '">' + E(s[1]) + " (" + conta(s[0]) + ")</button>"; }).join("") + "</div>" +
+		'<div class="filtro"><input id="busca" placeholder="Buscar por título ou código (MLB…)" value="' + E(f.q) + '"><select id="ordem">' +
+		[["", "Mais recentes"], ["vendidos", "Mais vendidos"], ["visitas", "Mais visitados"], ["preco", "Menor preço"], ["estoque", "Menor estoque"]].map(function (o) {
+			return '<option value="' + o[0] + '"' + (f.ordem == o[0] ? " selected" : "") + ">" + E(o[1]) + "</option>"; }).join("") + "</select></div>" +
+		(l.length ? '<div class="card" style="padding:6px 8px"><table class="l"><tr><th></th><th>Anúncio</th><th>Preço (R$)</th><th>Estoque</th><th>Vendidos</th><th>Visitas</th><th>Situação</th><th></th></tr>' +
+			l.map(function (a) {
+				var k = todos.indexOf(a), ed = editavel(a);
+				return "<tr><td>" + foto(a.foto) + "</td><td><b>" + E(a.titulo) + "</b><div class='ajuda'>" + E(a.id) + (a.tipo ? " · " + E(a.tipo) : "") + (a.frete_gratis ? " · frete grátis" : "") +
+					((st.ml.filuna || []).indexOf(a.id) >= 0 ? " · <span class='tag'>Filuna</span>" : "") + "</div></td>" +
+					"<td><input type='number' step='0.01' min='1' data-preco='" + k + "' value='" + E(a.preco) + "'" + (ed ? "" : " disabled") + "></td>" +
+					"<td><input type='number' min='0' data-est='" + k + "' value='" + E(a.estoque) + "' style='width:70px'" + (ed && !a.variacoes ? "" : " disabled") +
+					(a.variacoes ? " title='Anúncio com variações: o estoque muda no Mercado Livre'" : "") + "></td>" +
+					"<td>" + E(a.vendidos || 0) + "</td><td>" + (a.visitas == null ? "—" : E(a.visitas)) + "</td><td>" + pill(a.status, a.status_texto) + "</td>" +
+					"<td style='white-space:nowrap'>" + (ed ? "<button class='btn peq' data-salvar='" + k + "'>Salvar</button> <button class='btn peq' data-status='" + k + "' data-v='" +
+						(a.status == "active" ? "paused'>Pausar" : "active'>Reativar") + "</button> " : "") + (a.link ? "<button class='btn peq' data-link='" + E(a.link) + "'>Ver</button>" : "") + "</td></tr>";
+			}).join("") + "</table></div>" : vazio(todos.length ? "Nenhum anúncio com esse filtro." : "Nenhum anúncio. Publique produtos pela aba Projeto."));
+	el().querySelectorAll("[data-st]").forEach(function (b) { b.onclick = function () { f.status = b.dataset.st; anuncios(); desenharExtras(); }; });
+	var busca = el().querySelector("#busca");
+	busca.oninput = function () { f.q = busca.value; clearTimeout(st.tBusca); st.tBusca = setTimeout(function () { anuncios(); desenharExtras(); var b = el().querySelector("#busca"); b.focus(); b.setSelectionRange(b.value.length, b.value.length); }, 350); };
+	el().querySelector("#ordem").onchange = function (ev) { f.ordem = ev.target.value; anuncios(); desenharExtras(); };
+	function mudar(a, corpo, texto, okmsg) {
+		confirmar(texto).then(function (sim) {
+			if (!sim) return;
+			resultado(Filuna.api("POST", "/lojas/mercadolivre/anuncios/" + encodeURIComponent(a.id), corpo), okmsg).then(function (r) {
+				if (r && r.anuncio) { var v = a.visitas; Object.assign(a, r.anuncio); a.visitas = v; }
+				desenhar();
+			}, function () { desenhar(); });
+		});
+	}
+	el().querySelectorAll("[data-salvar]").forEach(function (b) { b.onclick = function () {
+		var a = todos[+b.dataset.salvar], corpo = {}, partes = [];
+		var p = el().querySelector("[data-preco='" + b.dataset.salvar + "']").value, e = el().querySelector("[data-est='" + b.dataset.salvar + "']");
+		if (p !== String(a.preco)) { corpo.preco = p; partes.push("preço de " + R(a.preco) + " para " + R(p)); }
+		if (!e.disabled && e.value !== String(a.estoque)) { corpo.estoque = e.value; partes.push("estoque de " + a.estoque + " para " + e.value); }
+		if (!partes.length) { st.erro = "Nada mudou neste anúncio."; st.msg = ""; desenhar(); return; }
+		mudar(a, corpo, "Mudar o " + partes.join(" e o ") + " de “" + a.titulo + "”?", "Anúncio atualizado no Mercado Livre.");
+	}; });
+	el().querySelectorAll("[data-status]").forEach(function (b) { b.onclick = function () {
+		var a = todos[+b.dataset.status], pausar = b.dataset.v == "paused";
+		mudar(a, { status: b.dataset.v }, (pausar ? "Pausar" : "Reativar") + " o anúncio “" + a.titulo + "”?", pausar ? "Anúncio pausado." : "Anúncio reativado.");
+	}; });
+}
+function desenharExtras() {
+	el().querySelectorAll("[data-link]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(b.dataset.link); }; });
+	var at = el().querySelector("#atualizar");
+	if (at) at.onclick = function () { at.disabled = true; carregar(true); };
 }
 
-var STATUS = { paid: "Pago", confirmed: "Confirmado", cancelled: "Cancelado", payment_required: "Aguardando pagamento", payment_in_process: "Pagamento em análise" };
+function envioDe(p) {
+	var e = (st.ml.a_enviar || []).filter(function (x) { return x.envio_id && x.envio_id == p.envio_id; })[0];
+	return e ? e.envio_info : null;
+}
 function tabelaVendas(l) {
-	if (!l.length) return '<div class="vazio">Nenhuma venda recente.</div>';
-	return '<table class="l"><tr><th>Data</th><th>Comprador</th><th>Itens</th><th>Total</th><th>Situação</th><th></th></tr>' + l.map(function (p) {
-		return "<tr><td>" + E((p.data || "").slice(0, 10).split("-").reverse().join("/")) + "</td><td>" + E(p.comprador || "") + "</td><td>" + p.itens.map(E).join("<br>") +
-			"</td><td><b>" + Filuna.reais(p.total) + "</b></td><td>" + E(STATUS[p.status] || p.status) + "</td><td>" + (p.envio && p.status == "paid" ? "<button class='btn peq' data-etq='" + E(p.envio) + "'>Etiqueta</button>" : "") + "</td></tr>";
+	if (!l.length) return vazio("Nenhuma venda ainda.");
+	return '<table class="l"><tr><th></th><th>Venda</th><th>Comprador</th><th>Valor</th><th>Pagamento</th><th>Envio</th><th></th></tr>' + l.map(function (p) {
+		var e = envioDe(p), tags = p.tags || [];
+		var envio = e ? '<span class="' + (e.atrasado ? "atraso" : "") + '">' + E(e.substatus_texto || e.status_texto) + '</span><div class="ajuda">Despachar ' + E(e.prazo_txt || "—") + "</div>"
+			: tags.indexOf("delivered") >= 0 ? "Entregue" : tags.indexOf("shipped") >= 0 ? "A caminho" : p.envio_id ? "—" : "Sem envio pelo ML";
+		return "<tr><td>" + foto(p.foto) + "</td><td><b>" + E(p.titulo) + "</b><div class='ajuda'>" + E(p.data_txt) + " · nº " + E(p.id) + "</div></td><td>" + E(p.comprador) +
+			"</td><td><b>" + R(p.valor) + "</b></td><td>" + pill(p.status, p.status_texto) + (p.pagamento && p.pagamento != "Aprovado" ? "<div class='ajuda'>" + E(p.pagamento) + "</div>" : "") +
+			"</td><td>" + envio + "</td><td style='white-space:nowrap'>" + (e && e.etiqueta ? "<button class='btn primario peq' data-etq='" + E(e.id) + "'>Etiqueta</button> " : "") +
+			"<button class='btn peq' data-link='" + E(p.link) + "'>Ver</button></td></tr>";
 	}).join("") + "</table>";
 }
 function vendas() {
-	el().innerHTML = cab("Mercado Livre", "Vendas", "Os pedidos mais recentes. A etiqueta de envio baixa em PDF.") + '<div class="card" style="padding:6px 8px;margin-top:14px">' + tabelaVendas(st.ml.pedidos) + "</div>";
-	ligarEtiquetas();
+	var f = st.filtroV = st.filtroV || { status: "todos", q: "" }, q = f.q.toLowerCase();
+	var l = (st.ml.pedidos || []).filter(function (p) {
+		var okS = f.status == "todos" || (f.status == "pagos" ? p.status == "paid" : p.status == "cancelled");
+		return okS && (!q || p.titulo.toLowerCase().indexOf(q) >= 0 || (p.comprador || "").toLowerCase().indexOf(q) >= 0 || String(p.id).indexOf(q) >= 0);
+	});
+	el().innerHTML = cab("Mercado Livre", "Vendas", "As 50 vendas mais recentes, com foto, pagamento e envio. A etiqueta sai em PDF.") +
+		'<div class="filtro">' + [["todos", "Todas"], ["pagos", "Pagas"], ["cancelados", "Canceladas"]].map(function (s) {
+			return '<button class="chip' + (f.status == s[0] ? " on" : "") + '" data-stv="' + s[0] + '">' + E(s[1]) + "</button>"; }).join("") +
+		'<input id="buscaV" placeholder="Buscar por comprador, produto ou número" value="' + E(f.q) + '"></div>' +
+		'<div class="card" style="padding:6px 8px">' + tabelaVendas(l) + "</div>";
+	el().querySelectorAll("[data-stv]").forEach(function (b) { b.onclick = function () { f.status = b.dataset.stv; desenhar(); }; });
+	var bv = el().querySelector("#buscaV");
+	bv.oninput = function () { f.q = bv.value; clearTimeout(st.tBusca); st.tBusca = setTimeout(function () { desenhar(); var b = el().querySelector("#buscaV"); b.focus(); b.setSelectionRange(b.value.length, b.value.length); }, 350); };
+}
+
+function enviar() {
+	var fila = st.ml.a_enviar || [];
+	el().innerHTML = cab("Mercado Livre", "O que falta enviar", "Vendas pagas esperando o despacho, da mais urgente para a menos urgente.") +
+		'<div class="card" style="margin-top:14px">' + (fila.length ? fila.map(linhaEnvio).join("") : vazio("Tudo enviado. Nenhuma venda esperando despacho.")) + filamento() + "</div>";
+	ligarAcoesEnvio();
+}
+function ligarAcoesEnvio() {
+	el().querySelectorAll("[data-msg]").forEach(function (b) { b.onclick = function () { abrirConversa(b.dataset.msg); }; });
+	el().querySelectorAll("[data-farm]").forEach(function (b) { b.onclick = function () { location.href = "farm.html"; }; });
 }
 function ligarEtiquetas() {
 	el().querySelectorAll("[data-etq]").forEach(function (b) { b.onclick = function () {
+		var zpl = b.dataset.fmt == "zpl";
 		b.disabled = true;
-		Filuna.nativo("config.ler", { chave: "filuna_token" }).then(function (t) {
-			return fetch("https://filuna3d.com/api/slicer/v1/lojas/mercadolivre/etiquetas/" + encodeURIComponent(b.dataset.etq), { headers: { Authorization: "Bearer " + t.valor } });
-		}).then(function (r) {
-			if (!r.ok) return r.json().then(function (d) { throw { erro: d.erro }; });
-			return r.blob().then(function (bl) { var a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = "etiqueta-" + b.dataset.etq + ".pdf"; document.body.appendChild(a); a.click(); a.remove(); b.disabled = false; });
-		}).catch(function (e) { b.disabled = false; st.erro = e.erro || "Não consegui baixar a etiqueta."; desenhar(); });
+		Filuna.imagem("/lojas/mercadolivre/etiquetas/" + encodeURIComponent(b.dataset.etq) + (zpl ? "?formato=zpl" : "")).then(function (bl) {
+			var a = document.createElement("a");
+			a.href = URL.createObjectURL(bl); a.download = "etiqueta-" + b.dataset.etq + (zpl ? ".zpl" : ".pdf");
+			document.body.appendChild(a); a.click(); a.remove(); b.disabled = false;
+		}, function () { b.disabled = false; st.erro = "A etiqueta ainda não está disponível. Ela libera quando a venda está paga e pronta para enviar."; st.msg = ""; desenhar(); });
 	}; });
 }
 
 function perguntas() {
-	var l = st.ml.perguntas;
-	el().innerHTML = cab("Mercado Livre", "Perguntas", "Responder rápido aumenta as vendas.") + '<div style="margin-top:14px">' +
+	var l = st.ml.perguntas || [];
+	el().innerHTML = cab("Mercado Livre", "Perguntas", "Responder rápido ajuda a vender. A resposta aparece pública no anúncio.") + '<div style="margin-top:14px">' +
 		(l.length ? l.map(function (q, k) {
-			return '<div class="perg"><div class="ajuda">' + E(titulo(q.item)) + " · " + E((q.data || "").slice(0, 10).split("-").reverse().join("/")) + '</div><div class="t">' + E(q.texto) + "</div>" +
-				'<textarea rows="2" data-r="' + k + '" placeholder="Sua resposta"></textarea><div class="linha" style="margin-top:8px"><button class="btn primario peq" data-resp="' + k + '">Responder</button>' +
-				'<button class="btn peq" data-ia="' + k + '">✨ Sugerir resposta</button></div></div>'; }).join("") : '<div class="vazio">Nenhuma pergunta esperando resposta.</div>') + "</div>";
-	el().querySelectorAll("[data-resp]").forEach(function (b) { b.onclick = function () { var k = +b.dataset.resp, q = l[k];
-		Filuna.api("POST", "/lojas/mercadolivre/perguntas/" + q.id, { texto: el().querySelector("[data-r='" + k + "']").value }).then(function () { l.splice(k, 1); st.msg = "Resposta enviada."; st.erro = ""; perguntas(); },
-			function (e) { st.erro = e.erro; perguntas(); }); }; });
-	el().querySelectorAll("[data-ia]").forEach(function (b) { b.onclick = function () { var k = +b.dataset.ia, q = l[k]; b.disabled = true;
-		Filuna.api("POST", "/ia", { pergunta: "Um cliente perguntou no Mercado Livre sobre o anúncio \"" + titulo(q.item) + "\": \"" + q.texto + "\". Escreva uma resposta curta, educada e vendedora, em português do Brasil, sem inventar informação que você não tem. Responda só com o texto.", contexto: "" })
-			.then(function (r) { el().querySelector("[data-r='" + k + "']").value = r.resposta.trim(); b.disabled = false; }, function (e) { st.erro = e.erro; perguntas(); }); }; });
+			return '<div class="perg"><div class="it">' + foto(q.foto) + '<div class="tx"><b>' + E(q.texto) + "</b><span>" + E(q.titulo) + " · " + E(q.data_txt) + "</span></div></div>" +
+				'<textarea rows="2" maxlength="2000" data-r="' + k + '" placeholder="Sua resposta"></textarea><div class="linha" style="margin-top:8px"><button class="btn primario peq" data-resp="' + k + '">Responder</button>' +
+				'<button class="btn peq" data-ia="' + k + '">✨ Sugerir resposta</button></div></div>'; }).join("") : vazio("Nenhuma pergunta esperando resposta.")) + "</div>";
+	el().querySelectorAll("[data-resp]").forEach(function (b) { b.onclick = function () {
+		var k = +b.dataset.resp, q = l[k], texto = el().querySelector("[data-r='" + k + "']").value.trim();
+		if (!texto) { st.erro = "Escreva a resposta."; desenhar(); return; }
+		confirmar("Publicar esta resposta no anúncio “" + q.titulo + "”?").then(function (sim) {
+			if (!sim) return;
+			resultado(Filuna.api("POST", "/lojas/mercadolivre/perguntas/" + q.id, { texto: texto }), "Resposta publicada.").then(function () { l.splice(k, 1); desenhar(); }, function () { desenhar(); });
+		});
+	}; });
+	el().querySelectorAll("[data-ia]").forEach(function (b) { b.onclick = function () {
+		var k = +b.dataset.ia, q = l[k]; b.disabled = true;
+		Filuna.api("POST", "/ia", { pergunta: "Um cliente perguntou no Mercado Livre sobre o anúncio \"" + q.titulo + "\": \"" + q.texto + "\". Escreva uma resposta curta, educada e vendedora, em português do Brasil, sem inventar informação que você não tem. Responda só com o texto.", contexto: "" })
+			.then(function (r) { el().querySelector("[data-r='" + k + "']").value = (r.resposta || "").trim(); b.disabled = false; }, function (e) { st.erro = e.erro; desenhar(); });
+	}; });
+}
+
+function abrirConversa(pack) {
+	st.secao = "mensagens"; st.pack = pack; st.conversa = null; st.msg = st.erro = ""; desenhar();
+	Filuna.api("GET", "/lojas/mercadolivre/mensagens/" + encodeURIComponent(pack)).then(function (c) { st.conversa = c; desenhar(); }, function (e) { st.erro = e.erro; desenhar(); });
+}
+function mensagens() {
+	var vend = st.ml.pedidos || [], nl = st.ml.mensagens_nao_lidas || {}, c = st.conversa;
+	var lista = vend.length ? vend.map(function (p) {
+		return '<div class="it" style="cursor:pointer' + (st.pack == p.pack_id ? ";background:var(--rose);border-radius:10px;padding-inline:8px" : "") + '" data-msg="' + E(p.pack_id) + '">' + foto(p.foto) +
+			'<div class="tx"><b>' + E(p.comprador) + "</b><span>" + E(p.titulo) + " · " + E(p.data_txt) + "</span></div>" + (nl[p.pack_id] ? '<span class="bolinha">' + nl[p.pack_id] + "</span>" : "") + "</div>"; }).join("") : vazio("Sem vendas recentes.");
+	var conversa = !st.pack ? vazio("Escolha uma venda para ver a conversa com o comprador.") : !c ? '<div class="carregando">Abrindo a conversa…</div>' :
+		'<div class="chat">' + (c.mensagens.length ? c.mensagens.map(function (m) { return '<div class="balao' + (m.de_mim ? " meu" : "") + '">' + E(m.texto) + "<small>" + (m.de_mim ? "Você" : "Comprador") + " · " + E(m.data_txt) + (m.anexos ? " · " + m.anexos + " anexo(s)" : "") + "</small></div>"; }).join("") : vazio("Nenhuma mensagem nesta venda ainda.")) +
+		(c.bloqueada ? '<div class="erro">O Mercado Livre bloqueou novas mensagens nesta venda.</div>' : '<textarea id="txtMsg" rows="3" maxlength="350" placeholder="Mensagem ao comprador (até 350 caracteres)"></textarea><div class="linha" style="margin-top:8px"><button class="btn primario peq" id="envMsg">Enviar</button></div>') + "</div>";
+	el().innerHTML = cab("Mercado Livre", "Mensagens", "Conversas pós-venda com os compradores.") + '<div class="duas">' + card("Vendas", lista) + card(st.pack ? "Venda " + st.pack : "Conversa", conversa) + "</div>";
+	el().querySelectorAll("[data-msg]").forEach(function (b) { b.onclick = function () { abrirConversa(b.dataset.msg); }; });
+	var env = el().querySelector("#envMsg");
+	if (env) env.onclick = function () {
+		var t = el().querySelector("#txtMsg").value.trim();
+		if (!t) return;
+		confirmar("Enviar esta mensagem ao comprador?").then(function (sim) {
+			if (!sim) return;
+			resultado(Filuna.api("POST", "/lojas/mercadolivre/mensagens/" + encodeURIComponent(st.pack), { texto: t }), "Mensagem enviada.").then(function (r) { if (r && r.mensagens) st.conversa = r; desenhar(); }, function () { desenhar(); });
+		});
+	};
+}
+
+function reputacao() {
+	var r = st.ml.reputacao || {}, m = st.ml.metricas || {}, av = r.avaliacoes || {};
+	var niveis = [["1_red", "#D92D20"], ["2_orange", "#F97316"], ["3_yellow", "#CA8A04"], ["4_light_green", "#65A30D"], ["5_green", "#16A34A"]];
+	function linha(a, b) { return "<tr><td>" + E(a) + "</td><td style='text-align:right;font-weight:600'>" + b + "</td></tr>"; }
+	function taxa(t) { t = t || {}; return E((t.taxa || 0) + "% · " + (t.quantidade || 0)); }
+	el().innerHTML = cab("Mercado Livre", "Reputação e métricas", "Como o Mercado Livre vê sua loja agora.") + '<div class="duas">' +
+		card("Reputação", '<div class="termo">' + niveis.map(function (n) { return '<i style="background:' + n[1] + '" class="' + (r.nivel == n[0] ? "on" : "") + '"></i>'; }).join("") + "</div>" +
+			"<div><b>" + E(r.nivel_texto || "—") + "</b>" + (r.lider ? " · " + E(r.lider) : "") + (r.nivel ? "" : '<div class="ajuda">A cor aparece depois das primeiras vendas concluídas.</div>') + "</div>" +
+			'<table class="l" style="margin-top:8px">' + linha("Vendas concluídas", E((r.concluidas || 0) + " de " + (r.vendas_total || 0))) +
+			linha("Avaliações", E((av.positive || 0) + "% positivas · " + (av.negative || 0) + "% negativas")) + linha("Reclamações", taxa(r.reclamacoes)) +
+			linha("Despachos com atraso", taxa(r.atrasos)) + linha("Cancelamentos", taxa(r.cancelamentos)) +
+			linha("Reclamações abertas", E(st.ml.reclamacoes || 0) + (st.ml.reclamacoes ? " · <a data-link='https://www.mercadolivre.com.br/vendas/reclamacoes'>Responder no ML</a>" : "")) + "</table>") +
+		card("Métricas de " + (m.mes || "—"), '<table class="l">' + linha("Vendas pagas", E(m.vendas || 0)) + linha("Unidades vendidas", E(m.unidades || 0)) + linha("Faturamento", R(m.faturado)) +
+			linha("Ticket médio", R(m.ticket_medio)) + linha("Visitas", E(m.visitas || 0)) + linha("Conversão", m.conversao != null ? E(m.conversao + "%") : "—") + "</table>") + "</div>";
+}
+
+function avisos() {
+	var l = st.ml.avisos || [];
+	el().innerHTML = cab("Mercado Livre", "Avisos", "Vendas, perguntas, mensagens, envios e mudanças nos anúncios, assim que o Mercado Livre avisa.") +
+		'<div class="card" style="margin-top:14px">' + (l.length ? l.map(function (a) {
+			return '<div class="it" style="cursor:pointer" data-s="' + E(a.aba || "visao") + '">' + foto(a.foto) + '<div class="tx"><b>' + (a.visto ? "" : "● ") + E(a.titulo) + "</b><span>" + E(a.texto) + '</span></div><span class="ajuda">' + E(a.quando) + "</span></div>"; }).join("")
+			: vazio("Nenhum aviso ainda. Eles chegam quando acontece algo na sua conta do Mercado Livre.")) + "</div>";
+}
+function marcarAvisos() { st.ml.avisos_novos = 0; Filuna.api("POST", "/lojas/mercadolivre/avisos", {}).catch(function () {}); }
+function verAvisos() {
+	if (!st.ml || !st.ml.conectada || document.hidden) return;
+	Filuna.api("GET", "/lojas/mercadolivre/avisos?desde=" + st.ultimoAviso).then(function (d) {
+		var novos = (d.avisos || []).filter(function (a) { return a.id > st.ultimoAviso; });
+		if (!novos.length) return;
+		st.ultimoAviso = d.ultimo || st.ultimoAviso;
+		st.msg = novos[0].titulo + ": " + novos[0].texto;
+		carregar();
+	}).catch(function () {});
 }
 
 function listaLojas() {
@@ -158,14 +366,19 @@ function listaLojas() {
 	}).join("") + "</div>";
 }
 function lojas() { el().innerHTML = cab("Integrações", "Lojas conectadas", "A conexão é feita no navegador, direto com a loja; o Filuna nunca vê sua senha.") + listaLojas(); ligarLojas(); }
-function ligarLojas() { el().querySelectorAll("[data-con]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(b.dataset.con); st.msg = "Conclua a conexão no navegador. Esta tela atualiza em seguida."; desenhar(); setTimeout(carregar, 20000); }; }); }
+function conectarML() {
+	var ml = st.lojas.filter(function (l) { return l.id == "mercadolivre"; })[0];
+	Filuna.abrirLink((ml && ml.conectar_url) || "https://filuna3d.com/conta/mercadolivre/conectar");
+	st.msg = "Conclua a conexão no navegador. Esta tela atualiza em seguida."; desenhar(); setTimeout(carregar, 20000);
+}
+function ligarLojas() { el().querySelectorAll("[data-con]").forEach(function (b) { b.onclick = conectarML; }); }
 
 document.getElementById("voltar").onclick = function () { location.href = "meu-espaco.html"; };
 // Seção pedida pela tela Início ("loja:vendas", "loja:perguntas", "loja:lojas"); as outras telas mandam as delas sem o prefixo.
 function secaoPedida(s) { var m = /^loja:([a-z]+)$/.exec(s || ""); return m && SECOES.some(function (x) { return x[0] == m[1]; }) ? m[1] : ""; }
 Filuna.iniciar().then(function () {
 	return Filuna.nativo("secao.pendente").then(function (r) { var s = secaoPedida(r && r.secao); if (s) st.secao = s; }).catch(function () {});
-}).then(carregar);
+}).then(function () { carregar(); });
 Filuna.ouvir("mostrar", function () { if (st.ml) carregar(); });
 Filuna.ouvir("secao", function (d) {
 	var s = secaoPedida(d && d.secao);
@@ -174,6 +387,7 @@ Filuna.ouvir("secao", function (d) {
 	st.secao = s; st.msg = st.erro = "";
 	if (st.ml) desenhar();
 });
+setInterval(verAvisos, 45000);
 </script>
 </body>
 </html>
