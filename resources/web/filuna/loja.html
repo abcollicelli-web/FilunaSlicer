@@ -18,6 +18,15 @@ table.l input{width:96px;padding:6px 8px}
 .lojaC .n{font-weight:700;font-size:16px}
 .slogan{background:linear-gradient(120deg,var(--rose),#FFF0E6);border-radius:16px;padding:16px 18px;margin:16px 0}
 .slogan b{font-size:17px}
+.grupoM{padding:12px 6px 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.mf-chat{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;margin:12px 0}
+.mf-msg{max-width:80%;padding:9px 12px;border-radius:14px;background:var(--side);border:1px solid var(--line);white-space:pre-line;font-size:13.5px}
+.mf-msg.eu{align-self:flex-end;background:var(--ink);color:#fff;border-color:var(--ink)}
+.mf-msg small{display:block;opacity:.65;font-size:11px;margin-top:3px}
+.mf-conv{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:8px;cursor:pointer;background:none;width:100%;text-align:left;font:inherit;color:inherit}
+.mf-conv:hover{border-color:var(--ink2)}
+.mf-zero{background:linear-gradient(120deg,#FBE1EC,#FFE6D6);border-radius:16px;padding:18px 20px;margin:16px 0}
+.mf-zero b{font-size:18px}
 </style>
 </head>
 <body>
@@ -26,21 +35,30 @@ table.l input{width:96px;padding:6px 8px}
 		<button class="nav" id="voltar" style="color:var(--ink2);margin-bottom:8px">‹ Meu espaço</button>
 		<div class="lbl" style="padding:0 6px 8px">Minha loja</div>
 		<div id="menu"></div>
-		<div style="margin-top:auto" class="ajuda">Tudo das suas lojas aqui: anúncios, vendas, perguntas e etiquetas. Para anunciar, use a aba Projeto.</div>
+		<div style="margin-top:auto" class="ajuda">Tudo das suas lojas aqui: Mercado Filuna e Mercado Livre, com pedidos, mensagens e etiquetas. Para anunciar, use a aba Projeto.</div>
 	</div>
 	<div class="principal" id="tela"><div class="carregando">Carregando…</div></div>
 </div></div></div>
 <script src="ponte.js"></script>
 <script>
 var E = Filuna.esc;
-var SECOES = [["visao", "Visão geral"], ["anuncios", "Anúncios"], ["vendas", "Vendas"], ["perguntas", "Perguntas"], ["lojas", "Lojas conectadas"]];
-var st = { secao: "visao", ml: null, lojas: [], msg: "", erro: "" };
+// Mercado Filuna (marketplace da própria Filuna, API /lojas/filuna) primeiro; depois o Mercado Livre.
+var SECOES = [["#", "Mercado Filuna"], ["mf_visao", "Visão geral"], ["mf_pedidos", "Pedidos"], ["mf_mensagens", "Mensagens"], ["mf_anuncios", "Anúncios"],
+	["#", "Mercado Livre"], ["visao", "Visão geral"], ["anuncios", "Anúncios"], ["vendas", "Vendas"], ["perguntas", "Perguntas"], ["#", ""], ["lojas", "Lojas conectadas"]];
+var st = { secao: "mf_visao", ml: null, mf: null, conversa: null, lojas: [], msg: "", erro: "" };
 
+function contador(id) {
+	if (id == "perguntas" && st.ml && st.ml.perguntas) return st.ml.perguntas.length;
+	if (id == "mf_mensagens" && st.mf && st.mf.resumo) return st.mf.resumo.mensagens;
+	if (id == "mf_pedidos" && st.mf && st.mf.resumo) return st.mf.resumo.a_enviar;
+	return 0;
+}
 function menu() {
 	document.getElementById("menu").innerHTML = SECOES.map(function (s) {
-		var n = s[0] == "perguntas" && st.ml && st.ml.perguntas ? " (" + st.ml.perguntas.length + ")" : "";
-		return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1] + n) + "</button>"; }).join("");
-	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; st.msg = st.erro = ""; desenhar(); }; });
+		if (s[0] == "#") return s[1] ? '<div class="grupoM">' + E(s[1]) + "</div>" : '<div style="height:10px"></div>';
+		var n = contador(s[0]);
+		return '<button class="nav' + (s[0] == st.secao ? " on" : "") + '" data-s="' + s[0] + '">' + E(s[1] + (n ? " (" + n + ")" : "")) + "</button>"; }).join("");
+	document.querySelectorAll("#menu [data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; st.msg = st.erro = ""; st.conversa = null; desenhar(); }; });
 }
 function el() { return document.getElementById("tela"); }
 function cab(l, t, s) { return '<div class="lbl">' + E(l) + '</div><div class="h1" style="margin-top:6px">' + E(t) + "</div>" + (s ? '<div class="sub">' + E(s) + "</div>" : "") +
@@ -52,16 +70,141 @@ function carregar() {
 	Filuna.api("GET", "/lojas").then(function (r) {
 		st.lojas = r.lojas || [];
 		var ml = st.lojas.filter(function (l) { return l.id == "mercadolivre"; })[0];
-		if (!ml || !ml.conectada) { st.ml = { conectada: false }; desenhar(); return; }
-		return Filuna.api("GET", "/lojas/mercadolivre").then(function (d) { st.ml = d; desenhar(); });
-	}).catch(function (e) { if (e.status == 401) { Filuna.sair().then(carregar); return; } st.erro = e.erro; st.ml = st.ml || { conectada: false }; desenhar(); });
+		var pML = ml && ml.conectada ? Filuna.api("GET", "/lojas/mercadolivre") : Promise.resolve({ conectada: false });
+		var pMF = Filuna.api("GET", "/lojas/filuna").catch(function () { return { conectada: false, indisponivel: true }; });
+		return Promise.all([pML, pMF]).then(function (d) { st.ml = d[0]; st.mf = d[1]; desenhar(); });
+	}).catch(function (e) { if (e.status == 401) { Filuna.sair().then(carregar); return; } st.erro = e.erro; st.ml = st.ml || { conectada: false }; st.mf = st.mf || { conectada: false }; desenhar(); });
 }
 
 function desenhar() {
 	menu();
-	if (!st.ml) return;
+	if (!st.ml || !st.mf) return;
+	if (st.secao.indexOf("mf_") == 0) {
+		if (!st.mf.conectada) return mfAbrir();
+		return ({ mf_visao: mfVisao, mf_pedidos: mfPedidos, mf_mensagens: mfMensagens, mf_anuncios: mfAnuncios }[st.secao])();
+	}
 	if (!st.ml.conectada && st.secao != "lojas") return semLoja();
 	({ visao: visao, anuncios: anuncios, vendas: vendas, perguntas: perguntas, lojas: lojas }[st.secao])();
+}
+
+/* ---------- Mercado Filuna ---------- */
+function mfRecarregar(msg) {
+	return Filuna.api("GET", "/lojas/filuna").then(function (d) { st.mf = d; st.msg = msg || ""; st.erro = ""; desenhar(); },
+		function (e) { st.erro = e.erro; desenhar(); });
+}
+function mfErro(e) { st.erro = e.erro || "Não consegui falar com o Mercado Filuna."; st.msg = ""; desenhar(); }
+function mfAbrir() {
+	el().innerHTML = cab("Mercado Filuna", "Abra sua loja no Mercado Filuna", "O marketplace de impressão 3D do Brasil, dentro do Filuna.") +
+		'<div class="mf-zero"><b>Venda sem comissão.</b><div class="sub">Assinante Filuna não paga nada por venda. O dinheiro cai direto no seu Mercado Pago e a etiqueta sai pelo Melhor Envio.</div></div>' +
+		'<div class="card"><div class="ajuda">Abra a loja no site (2 minutos). Depois, os pedidos, mensagens e etiquetas aparecem aqui, e a aba Projeto ganha o botão “Publicar no Mercado Filuna”.</div>' +
+		'<div class="linha" style="margin-top:12px"><button class="btn primario" id="mfAbrir">Abrir minha loja</button><button class="btn" id="mfVer">Ver o Mercado Filuna</button></div></div>';
+	document.getElementById("mfAbrir").onclick = function () { Filuna.abrirLink(st.mf.abrir_url || "https://filuna3d.com/conta/mercado/abrir"); st.msg = "Conclua no navegador. Esta tela atualiza em seguida."; setTimeout(carregar, 20000); };
+	document.getElementById("mfVer").onclick = function () { Filuna.abrirLink("https://filuna3d.com/mercado"); };
+}
+function mfVisao() {
+	var m = st.mf, r = m.resumo || {};
+	el().innerHTML = cab("Mercado Filuna · " + (m.conta || ""), "Visão geral", m.pode_publicar ? "Sua loja está no ar." : "Resolva a abertura da loja no site para publicar anúncios.") +
+		'<div class="kpis"><div class="kpi"><span class="ajuda">Vendas no mês</span><b>' + Filuna.reais((r.vendas_mes || 0) / 100) + '</b></div>' +
+		'<div class="kpi"><span class="ajuda">A enviar</span><b style="color:' + (r.a_enviar ? "var(--warn)" : "inherit") + '">' + (r.a_enviar || 0) + "</b></div>" +
+		'<div class="kpi"><span class="ajuda">Mensagens novas</span><b>' + (r.mensagens || 0) + '</b></div><div class="kpi"><span class="ajuda">Anúncios no ar</span><b>' + (r.ativos || 0) + "</b></div></div>" +
+		(m.etiqueta_automatica ? "" : '<div class="card" style="margin-bottom:14px"><div class="ajuda">Ligue o Melhor Envio no site (Loja e envio) para comprar e imprimir a etiqueta aqui.</div></div>') +
+		'<div class="card"><div class="ch"><span class="lbl">Últimos pedidos</span><a data-s="mf_pedidos">Ver todos</a></div>' + mfTabela(m.pedidos.slice(0, 5)) + "</div>" +
+		'<div class="linha" style="margin-top:14px"><button class="btn" id="mfLoja">Ver minha loja</button><button class="btn" id="mfPainel">Painel completo no site</button></div>';
+	el().querySelectorAll("[data-s]").forEach(function (b) { b.onclick = function () { st.secao = b.dataset.s; desenhar(); }; });
+	document.getElementById("mfLoja").onclick = function () { Filuna.abrirLink(m.link); };
+	document.getElementById("mfPainel").onclick = function () { Filuna.abrirLink(m.painel); };
+	mfLigarPedidos();
+}
+var MF_ESTADO = { pago: "Pago", producao: "Em produção", enviado: "Enviado", entregue: "Entregue", cancelado: "Cancelado", aguardando: "Aguardando pagamento" };
+function mfTabela(l) {
+	if (!l.length) return '<div class="vazio">Nenhum pedido ainda. Divulgue o link da sua loja.</div>';
+	return '<table class="l"><tr><th>#</th><th>Data</th><th>Comprador</th><th>Itens</th><th>Total</th><th>Situação</th><th></th></tr>' + l.map(function (p) {
+		var pend = p.status == "pago" || p.status == "producao";
+		return "<tr><td><b>" + E(p.numero) + "</b></td><td>" + E((p.data || "").slice(0, 10).split("-").reverse().join("/")) + "</td><td>" + E(p.comprador) + "</td><td>" + p.itens.map(E).join("<br>") +
+			"<div class='ajuda'>" + E(p.frete || "") + "</div></td><td><b>" + Filuna.reais(p.total) + "</b></td><td>" + (pend ? "<span class='pill alerta'>" : "<span class='pill" + (p.status == "entregue" ? " ok" : "") + "'>") +
+			E(p.status_nome || MF_ESTADO[p.status] || p.status) + "</span>" + (p.rastreio ? "<div class='ajuda'>" + E(p.rastreio) + "</div>" : "") + "</td><td style='white-space:nowrap'>" +
+			(p.seguinte.indexOf("producao") >= 0 ? "<button class='btn peq' data-mfest='" + E(p.id) + "' data-v='producao'>Produzir</button> " : "") +
+			(pend && p.pode_etiqueta ? "<button class='btn primario peq' data-mfetq='" + E(p.id) + "'>" + (p.etiqueta == "gerada" ? "Imprimir etiqueta" : "Comprar etiqueta") + "</button> " : "") +
+			(pend ? "<button class='btn peq' data-mfenv='" + E(p.id) + "'>Enviado</button> " : "") +
+			"<button class='btn peq' data-mfver='" + E(p.link) + "'>Abrir</button></td></tr>";
+	}).join("") + "</table>";
+}
+function mfPedidos() {
+	el().innerHTML = cab("Mercado Filuna", "Pedidos", "Pagos aparecem para produzir. A etiqueta é comprada com a carteira do seu Melhor Envio.") +
+		'<div class="card" style="padding:6px 8px;margin-top:14px">' + mfTabela(st.mf.pedidos) + "</div>";
+	mfLigarPedidos();
+}
+function mfLigarPedidos() {
+	el().querySelectorAll("[data-mfest]").forEach(function (b) { b.onclick = function () { b.disabled = true;
+		Filuna.api("POST", "/lojas/filuna/pedidos/" + b.dataset.mfest, { estado: b.dataset.v }).then(function () { mfRecarregar("Pedido atualizado. O comprador foi avisado."); }, mfErro); }; });
+	el().querySelectorAll("[data-mfenv]").forEach(function (b) { b.onclick = function () {
+		var r = prompt("Código de rastreio (deixe vazio se foi retirada ou se a etiqueta foi comprada aqui):", "");
+		if (r === null) return;
+		b.disabled = true;
+		Filuna.api("POST", "/lojas/filuna/pedidos/" + b.dataset.mfenv, { estado: "enviado", rastreio: r.trim() }).then(function () { mfRecarregar("Pedido marcado como enviado."); }, mfErro); }; });
+	el().querySelectorAll("[data-mfetq]").forEach(function (b) { b.onclick = function () {
+		var p = st.mf.pedidos.filter(function (x) { return x.id == b.dataset.mfetq; })[0];
+		if (p && p.etiqueta != "gerada" && !confirm("Comprar a etiqueta deste pedido com o saldo da sua carteira Melhor Envio?")) return;
+		b.disabled = true; b.textContent = "Gerando…";
+		Filuna.api(p && p.etiqueta == "gerada" ? "GET" : "POST", "/lojas/filuna/pedidos/" + b.dataset.mfetq + "/etiqueta", p && p.etiqueta == "gerada" ? undefined : {})
+			.then(function (r) { if (r.url) Filuna.abrirLink(r.url); mfRecarregar("Etiqueta pronta: abriu no navegador para imprimir."); }, mfErro); }; });
+	el().querySelectorAll("[data-mfver]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(b.dataset.mfver); }; });
+}
+function mfMensagens() {
+	if (st.conversa) return mfConversa();
+	var l = st.mf.conversas || [];
+	el().innerHTML = cab("Mercado Filuna", "Mensagens", "Perguntas sobre anúncios e conversas dos pedidos. A resposta chega no e-mail do comprador.") + '<div style="margin-top:14px">' +
+		(l.length ? l.map(function (c, k) {
+			return '<button class="mf-conv" data-cv="' + k + '"><span><b>' + E(c.comprador) + "</b>" + (c.pedido ? " · pedido" : " · pergunta") + '<div class="ajuda">' + E((c.ultima || "").slice(0, 110)) + "</div></span>" +
+				(c.nao_lidas ? '<span class="pill alerta">' + c.nao_lidas + " nova" + (c.nao_lidas > 1 ? "s" : "") + "</span>" : '<span class="ajuda">' + E((c.data || "").slice(0, 10).split("-").reverse().join("/")) + "</span>") + "</button>";
+		}).join("") : '<div class="vazio">Nenhuma mensagem ainda.</div>') + "</div>";
+	el().querySelectorAll("[data-cv]").forEach(function (b) { b.onclick = function () {
+		var c = l[+b.dataset.cv];
+		el().innerHTML = '<div class="carregando">Abrindo a conversa…</div>';
+		Filuna.api("GET", "/lojas/filuna/conversas/" + c.id).then(function (d) {
+			if (st.mf.resumo) st.mf.resumo.mensagens = Math.max(0, (st.mf.resumo.mensagens || 0) - (c.nao_lidas || 0));   // abrir marca como lida
+			st.conversa = { id: c.id, dados: d }; c.nao_lidas = 0; desenhar(); }, mfErro); }; });
+}
+function mfConversa() {
+	var d = st.conversa.dados;
+	el().innerHTML = cab("Mercado Filuna · Mensagens", d.comprador, d.pedido ? "Conversa de um pedido." : "Pergunta sobre um anúncio.") +
+		'<div class="mf-chat">' + d.mensagens.map(function (m) {
+			return '<div class="mf-msg' + (m.autor == "vendedor" ? " eu" : "") + '">' + E(m.texto) + "<small>" + (m.autor == "vendedor" ? "Você" : E(d.comprador)) + " · " + E((m.data || "").slice(0, 16).replace("T", " ")) + "</small></div>"; }).join("") + "</div>" +
+		'<textarea rows="3" id="mfTexto" placeholder="Sua resposta"></textarea><div class="linha" style="margin-top:8px"><button class="btn primario" id="mfEnviar">Enviar</button>' +
+		'<button class="btn" id="mfIA">✨ Sugerir resposta</button><button class="btn" id="mfVoltar">Voltar</button></div>';
+	var chat = el().querySelector(".mf-chat"); chat.scrollTop = chat.scrollHeight;
+	document.getElementById("mfVoltar").onclick = function () { st.conversa = null; desenhar(); };
+	document.getElementById("mfEnviar").onclick = function () {
+		var t = document.getElementById("mfTexto").value.trim(); if (!t) return;
+		this.disabled = true;
+		Filuna.api("POST", "/lojas/filuna/conversas/" + st.conversa.id, { texto: t }).then(function (r) { st.conversa.dados = r; st.msg = "Mensagem enviada."; st.erro = ""; desenhar(); }, mfErro); };
+	document.getElementById("mfIA").onclick = function () {
+		var b = this, ult = d.mensagens.filter(function (m) { return m.autor == "comprador"; }).pop();
+		if (!ult) return;
+		b.disabled = true;
+		Filuna.api("POST", "/ia", { pergunta: "Um comprador escreveu para a minha loja de peças impressas em 3D no Mercado Filuna: \"" + ult.texto + "\". Escreva uma resposta curta, educada e vendedora, em português do Brasil, sem inventar prazo, preço ou informação que você não tem. Responda só com o texto.", contexto: "" })
+			.then(function (r) { document.getElementById("mfTexto").value = r.resposta.trim(); b.disabled = false; }, mfErro); };
+}
+function mfAnuncios() {
+	var l = st.mf.anuncios;
+	el().innerHTML = cab("Mercado Filuna", "Anúncios", "Mude preço e estoque, pause ou reative. Para anunciar um produto novo, use a aba Projeto › Publicar no Mercado Filuna.") +
+		(l.length ? '<div class="card" style="padding:6px 8px;margin-top:14px"><table class="l"><tr><th></th><th>Anúncio</th><th>Preço (R$)</th><th>Estoque</th><th>Vendidos</th><th>Situação</th><th></th></tr>' +
+			l.map(function (a, k) {
+				return "<tr><td>" + (a.foto ? "<img src='" + E(a.foto) + "'>" : "") + "</td><td><b>" + E(a.titulo) + "</b></td>" +
+					"<td><input type='number' step='0.01' data-mfpreco='" + k + "' value='" + E(a.preco) + "'></td><td><input type='number' data-mfest2='" + k + "' value='" + E(a.estoque) + "' style='width:70px'></td>" +
+					"<td>" + E(a.vendidos || 0) + "</td><td>" + (a.status == "active" ? "<span class='pill ok'>No ar</span>" : a.status == "paused" ? "<span class='pill alerta'>Pausado</span>" : "<span class='pill'>Rascunho</span>") + "</td>" +
+					"<td style='white-space:nowrap'><button class='btn peq' data-mfsalvar='" + k + "'>Salvar</button> " +
+					(a.status == "active" ? "<button class='btn peq' data-mfstatus='" + k + "' data-v='paused'>Pausar</button>" : "<button class='btn peq' data-mfstatus='" + k + "' data-v='active'>Publicar</button>") +
+					" <button class='btn peq' data-mfveran='" + k + "'>Ver</button></td></tr>";
+			}).join("") + "</table></div>" : '<div class="vazio" style="margin-top:14px">Nenhum anúncio. Publique produtos pela aba Projeto.</div>');
+	var mudar = function (k, corpo) {
+		Filuna.api("POST", "/lojas/filuna/anuncios/" + encodeURIComponent(l[k].id), corpo).then(function (r) {
+			l[k].status = r.status; l[k].preco = r.preco; l[k].estoque = r.estoque; st.msg = "Anúncio atualizado."; st.erro = ""; mfAnuncios(); }, function (e) { st.erro = e.erro; st.msg = ""; mfAnuncios(); });
+	};
+	el().querySelectorAll("[data-mfsalvar]").forEach(function (b) { b.onclick = function () { var k = +b.dataset.mfsalvar;
+		mudar(k, { preco: el().querySelector("[data-mfpreco='" + k + "']").value, estoque: el().querySelector("[data-mfest2='" + k + "']").value }); }; });
+	el().querySelectorAll("[data-mfstatus]").forEach(function (b) { b.onclick = function () { mudar(+b.dataset.mfstatus, { status: b.dataset.v }); }; });
+	el().querySelectorAll("[data-mfveran]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(l[+b.dataset.mfveran].link); }; });
 }
 
 function semLoja() {
@@ -162,7 +305,7 @@ function ligarLojas() { el().querySelectorAll("[data-con]").forEach(function (b)
 
 document.getElementById("voltar").onclick = function () { location.href = "meu-espaco.html"; };
 Filuna.iniciar().then(carregar);
-Filuna.ouvir("mostrar", function () { if (st.ml) carregar(); });
+Filuna.ouvir("mostrar", function () { if (st.ml && !st.conversa) carregar(); });
 </script>
 </body>
 </html>
