@@ -48,6 +48,9 @@ on:
         description: "só mostrar as configurações da Store (visibilidade, mercados, pacotes) da versão publicada e do rascunho"
         type: boolean
         default: false
+      submissao:
+        description: "com todos=true: só pedir a certificação desta submissão pública já montada (visibilidade e pacote prontos)"
+        default: ""
       ramo:
         description: "branch com o manifesto e os ícones (FILUNA/loja-msix)"
         default: "filuna/v1-teste-fisico"
@@ -136,6 +139,7 @@ jobs:
           C: ${{ secrets.MSSTORE_CLIENT_ID }}
           CS: ${{ secrets.MSSTORE_CLIENT_SECRET }}
           VOO: ${{ inputs.voo }}
+          SUBMISSAO: ${{ inputs.submissao }}
         run: |
           msstore reconfigure --tenantId $env:T --sellerId $env:S --clientId $env:C --clientSecret $env:CS
           if ($LASTEXITCODE -ne 0) { throw "a Store recusou as credenciais (confira os segredos MSSTORE_*)" }
@@ -155,6 +159,14 @@ jobs:
               $tok = (Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$env:T/oauth2/token" -Body @{ grant_type = 'client_credentials'; client_id = $env:C; client_secret = $env:CS; resource = 'https://manage.devcenter.microsoft.com' }).access_token
               $h = @{ Authorization = "Bearer $tok" }
               $app = Invoke-RestMethod -Uri $base -Headers $h
+              $existente = "$env:SUBMISSAO".Trim()
+              if ($existente) {
+                if ($existente -ne "$($app.pendingApplicationSubmission.id)") { throw "a submissão $existente não é a pendente da Store: nada enviado" }
+                $sub = Invoke-RestMethod -Uri "$base/submissions/$existente" -Headers $h
+                $nome = Split-Path $env:MSIX -Leaf
+                if ($sub.visibility -ne 'Public' -or -not ($sub.applicationPackages | Where-Object { $_.fileName -eq $nome })) { throw "a submissão $existente não tem visibilidade Public e o pacote $($nome): nada enviado" }
+                Write-Host "usando a submissão já montada $existente (visibilidade $($sub.visibility))"
+              } else {
               if ($app.pendingApplicationSubmission) { throw "já há uma submissão pública pendente ($($app.pendingApplicationSubmission.id)): nada enviado" }
               Write-Host "criando a submissão..."
               $r = Invoke-WebRequest -Method Post -Uri "$base/submissions" -Headers $h -ContentType 'application/json' -Body '' -SkipHttpErrorCheck
@@ -186,7 +198,9 @@ jobs:
               $lista = '<?xml version="1.0" encoding="utf-8"?><BlockList>' + (($ids | ForEach-Object { "<Latest>$_</Latest>" }) -join '') + '</BlockList>'
               Invoke-RestMethod -Method Put -Uri "$url&comp=blocklist" -Headers @{ 'x-ms-version' = '2020-10-02'; 'x-ms-blob-content-type' = 'application/zip' } -ContentType 'application/xml' -Body $lista | Out-Null
               Write-Host "pacote enviado: $n blocos, $((Get-Item $zip).Length) bytes"
-              Invoke-RestMethod -Method Post -Uri "$base/submissions/$($sub.id)/commit" -Headers $h | Out-Null
+              }
+              $r = Invoke-WebRequest -Method Post -Uri "$base/submissions/$($sub.id)/commit" -Headers $h -ContentType 'application/json' -Body '' -SkipHttpErrorCheck
+              if ($r.StatusCode -ge 300) { throw "pedir certificação: HTTP $($r.StatusCode) $($r.Content)" }
               $st = Invoke-RestMethod -Uri "$base/submissions/$($sub.id)/status" -Headers $h
               Write-Host "commit pedido: $($st.status)"
               $global:LASTEXITCODE = 0
