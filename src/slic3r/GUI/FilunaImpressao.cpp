@@ -664,7 +664,7 @@ void imprimir(int plate_idx)
         BOOST_LOG_TRIVIAL(info) << "FilunaImpressao: " << (so_envio ? "arquivo enviado" : "impressão pedida") << " agente=" << agente
                                 << " arquivo=" << nome << " mapa=" << p.ams_mapping;
         jenvio->passo(so_envio ? JanelaEnvio::Passo::CONFERINDO : JanelaEnvio::Passo::AQUECENDO);
-        jenvio->concluir(true, wxString::FromUTF8(so_envio ? "O arquivo está na impressora." : std::string()));
+        jenvio->concluir(true, Filuna::trw(so_envio ? "O arquivo está na impressora." : std::string()));
         return;
     }
     if (and_->cancelar) {
@@ -1131,7 +1131,7 @@ void farm_avisar(const std::string& texto)
     wxGetApp().CallAfter([texto] {
         if (Plater* pl = wxGetApp().plater())
             if (auto* nm = pl->get_notification_manager())
-                nm->push_notification("Farm: " + texto);
+                nm->push_notification("Farm: " + Filuna::tr(texto));
     });
 }
 
@@ -1245,7 +1245,7 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     {
         const std::string confere = farm_conferir(t, m);
         if (!confere.empty())
-            return "mesa " + std::to_string(inteiro(t, "mesa", 1)) + " de " + texto_de(t, "descricao", "Farm") + " não foi enviada: " + confere;
+            return Filuna::tr_valores("mesa {0} de {1} não foi enviada: {2}", {std::to_string(inteiro(t, "mesa", 1)), texto_de(t, "descricao", "Farm"), confere});
     }
     const fsf::path pasta = fsf::path(data_dir()) / "filuna" / "farm" / tid;
     boost::system::error_code ec;
@@ -1416,7 +1416,7 @@ bool farm_acompanhar(FarmAtivo& ativo, const FarmMaquina& m, const std::string& 
     }
     if ((ativo.viu_imprimindo && (m.status == "FAILED" || m.status == "IDLE")) || (!ativo.viu_imprimindo && passou > 15 * 60)) {
         farm_http("POST", "/trabalhos/" + ativo.id, {{"estado", "falhou"}}, token);
-        farm_avisar("a mesa não terminou na impressora (" + (m.status.empty() ? std::string("sem resposta") : m.status) + "); veja no painel da Farm");
+        farm_avisar(Filuna::tr_valores("a mesa não terminou na impressora ({0}); veja no painel da Farm", {m.status.empty() ? Filuna::tr("sem resposta") : m.status}));
         return true;
     }
     return false;
@@ -1681,7 +1681,7 @@ json farm_acao(const std::string& acao, const json& d, std::function<void(const 
                 proteger_modelo(true);
                 fsf::remove(arq, ec2); // o arquivo original não fica no computador
                 if (auto* nm = plater->get_notification_manager())
-                    nm->push_notification(titulo + ": modelo do catálogo Filuna aberto para imprimir (não pode ser salvo nem exportado).");
+                    nm->push_notification(Filuna::tr_valores("{0}: modelo do catálogo Filuna aberto para imprimir (não pode ser salvo nem exportado).", {titulo}));
                 std::thread([eid, token] { farm_http("POST", "/modelos3d/envios/" + eid, {{"estado", "aberto"}}, token); }).detach();
                 evento("modelo3d.aberto", {{"id", eid}});
             });
@@ -1990,7 +1990,7 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
                                 return;
                             sim->Hide();
                             nao->Hide();
-                            pergunta->SetLabel(wxString::FromUTF8(!r2.value("ok", false) ? "Não foi possível mandar. Responda pelo site."
+                            pergunta->SetLabel(Filuna::trw(!r2.value("ok", false) ? "Não foi possível mandar. Responda pelo site."
                                                                   : acao == "sim" ? "A Filuna vai ajustar e acompanhar por 3 minutos. O resumo chega no fim."
                                                                                   : "Tudo bem: a Filuna não vai mexer na impressora."));
                             pergunta->Wrap(540);
@@ -2003,7 +2003,7 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
                 } else if (resposta == "boa") {
                     pergunta->SetLabel(Filuna::trw("Obrigado! A Filuna segue acompanhando."));
                 } else {
-                    pergunta->SetLabel(wxString::FromUTF8(r.value("pode_ligar", false)
+                    pergunta->SetLabel(Filuna::trw(r.value("pode_ligar", false)
                                                               ? "Obrigado. Para a Filuna poder ajustar a impressora numa próxima vez, ligue "
                                                                 "\"Deixar a Filuna ajustar minha impressora\" em filuna3d.com › Relatórios."
                                                               : "Obrigado. Confira a peça e decida se segue a impressão."));
@@ -2056,7 +2056,7 @@ void analise_alertar(json alerta, const std::string& ref)
         } else
             BOOST_LOG_TRIVIAL(warning) << "Filuna análise: o site não recebeu o alerta (" << resp.erro << ")";
     }
-    const std::string titulo = alerta.value("titulo", std::string("Impressão fora do previsto")), msg = alerta.value("mensagem", std::string());
+    const std::string titulo = alerta.value("titulo", Filuna::tr("Impressão fora do previsto")), msg = alerta.value("mensagem", std::string());
     wxGetApp().CallAfter([titulo, msg, jpeg, link, aid] { analise_janela(titulo, msg, jpeg, link, aid); });
 }
 

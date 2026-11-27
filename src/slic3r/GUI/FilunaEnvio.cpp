@@ -427,7 +427,7 @@ void JanelaEnvio::montar_fim(bool deu_certo, const wxString& recado)
         linha->Add(novo, 0, wxRIGHT, FromDIP(8));
     }
 
-    auto* fechar = new wxButton(rodape, wxID_ANY, wxString::FromUTF8(deu_certo ? "Ficar acompanhando" : "Fechar"));
+    auto* fechar = new wxButton(rodape, wxID_ANY, Filuna::trw(deu_certo ? "Ficar acompanhando" : "Fechar"));
     // Errado: fecha. Certo: "Ficar acompanhando" apenas some com o botão, e a janela segue mostrando a impressão.
     fechar->Bind(wxEVT_BUTTON, [this, deu_certo, fechar](wxCommandEvent&) {
         if (!deu_certo) {
@@ -576,7 +576,7 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
     titulo_secao("MESA");
     {
         auto* l = new wxBoxSizer(wxHORIZONTAL);
-        auto* m = new wxStaticText(this, wxID_ANY, wxString::FromUTF8(resumo.mesa.empty() ? "A que está na impressora" : resumo.mesa));
+        auto* m = new wxStaticText(this, wxID_ANY, wxString::FromUTF8(resumo.mesa.empty() ? Filuna::tr("A que está na impressora") : resumo.mesa));
         m->SetFont(fonte(this, 10, false));
         l->Add(m, 0, wxALIGN_CENTER_VERTICAL);
         l->AddStretchSpacer();

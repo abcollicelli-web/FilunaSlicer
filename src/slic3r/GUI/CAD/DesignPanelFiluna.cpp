@@ -3,6 +3,7 @@
 // own handlers — so nothing the ribbon could do is lost; the ribbon is only hidden.
 
 #include "slic3r/GUI/CAD/DesignPanel.hpp"
+#include "slic3r/GUI/FilunaIdioma.hpp"
 #include "slic3r/GUI/CAD/DesignCanvas.hpp"
 #include "slic3r/GUI/CAD/DesignOffer.hpp"
 #include "slic3r/GUI/CAD/FilunaCadIa.hpp"
@@ -56,7 +57,7 @@ namespace Slic3r { namespace GUI {
 
 namespace {
 
-wxString pt(const char* s) { return wxString::FromUTF8(s); }
+wxString pt(const char* s) { return Filuna::trw(s); } // português no código; inglês pelo dicionário
 
 // The atlas names its icons design_*; the columns draw the white fcad_* twins of the same art.
 std::string fcad_icon(const char* design_icon)

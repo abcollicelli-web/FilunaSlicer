@@ -1,4 +1,5 @@
 #include "FilunaCadUi.hpp"
+#include "slic3r/GUI/FilunaIdioma.hpp"
 
 #include <algorithm>
 #include <cfloat>
@@ -447,8 +448,8 @@ void FilunaCadUi::pill(const CadUiLayout& l, float s)
     const Text    title = make_text(u8(l.pill_title), fb, fsize);
     const Text    hint  = make_text(u8(l.pill_hint), fr, fsize * 0.9f);
     const bool    tool  = !l.pill_title.IsEmpty() && (l.confirm || l.cancel);
-    const Text    bc    = make_text(u8(_L("Cancelar")), fb, fsize);
-    const Text    bk    = make_text(u8(_L("Confirmar")), fb, fsize);
+    const Text    bc    = make_text(Filuna::tr("Cancelar"), fb, fsize);
+    const Text    bk    = make_text(Filuna::tr("Confirmar"), fb, fsize);
     const float   pad   = 12.f * s;
     const float   bh    = 26.f * s;
     float w = pad;
@@ -573,7 +574,7 @@ void FilunaCadUi::search(float s)
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.f * s);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.f * s, 7.f * s));
     if (m_search_focus) { ImGui::SetKeyboardFocusHere(); m_search_focus = false; }
-    ImGui::InputTextWithHint("##fcad_q", u8(_L("Pesquisar ferramentas")).c_str(), m_search_text, sizeof(m_search_text));
+    ImGui::InputTextWithHint("##fcad_q", Filuna::tr("Pesquisar ferramentas").c_str(), m_search_text, sizeof(m_search_text));
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();

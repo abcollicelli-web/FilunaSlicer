@@ -1,4 +1,5 @@
 #include "FilunaAutoajuda.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "GUI_App.hpp"
 #include "libslic3r/AppConfig.hpp"
@@ -39,7 +40,10 @@ const std::map<std::string, wxString>& cartoes()
     static std::once_flag                  uma_vez;
     std::call_once(uma_vez, [] {
         try {
-            const boost::filesystem::path p = boost::filesystem::path(resources_dir()) / "filuna" / "autoajuda" / "pt_BR.json";
+            // Programa em inglês: en_US.json (mesmas chaves); sem ele, o português.
+            const boost::filesystem::path pasta = boost::filesystem::path(resources_dir()) / "filuna" / "autoajuda";
+            const boost::filesystem::path p     = Filuna::ingles() && boost::filesystem::exists(pasta / "en_US.json") ? pasta / "en_US.json" :
+                                                                                                                       pasta / "pt_BR.json";
             boost::nowide::ifstream       in(p.string());
             const nlohmann::json          j = nlohmann::json::parse(in, nullptr, false);
             if (!j.is_object())

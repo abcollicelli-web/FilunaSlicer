@@ -232,7 +232,7 @@ private:
         gc->DrawText(caber(this, Filuna::trw("site oficial · entre com a sua conta Bambu · \"Open in Bambu Studio\" abre aqui na Preparação"),
                            fonte(this, 8., false), livre),
                      x2, (s.y - FromDIP(14)) / 2.);
-        FilunaLateral::Botao b{wxString::FromUTF8(m_navegador ? "Navegador: ligado" : "Usar meu navegador")};
+        FilunaLateral::Botao b{Filuna::trw(m_navegador ? "Navegador: ligado" : "Usar meu navegador")};
         b.destaque = m_navegador;
         desenhar_botao(*gc, this, area(NAVEGADOR), b, m_sobre == NAVEGADOR, false);
     }
