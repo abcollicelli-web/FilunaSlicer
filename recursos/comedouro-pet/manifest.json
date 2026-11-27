@@ -2,7 +2,7 @@
   "id": "comedouro-pet",
   "tipo": "parametrico",
   "nome": "Comedouro com nome",
-  "versao": "1.0.0",
+  "versao": "1.0.1",
   "descricao": "Comedouro do pet com o nome dele. Suporte elevado para 1, 2 ou 3 tigelas de aço (comida, água e petisco), com perfil cone, anéis, barriga, cintura ou reto, tampo inclinado para raças de focinho curto, fundo aberto ou fechado, rebaixo para pés de borracha e encaixes para os dedos. Ou a tigela inteira impressa em 11 formatos (redonda, coração, gato, cão, patinha, osso, peixe, coroa, estrela, flor, hexágono), com fundo arredondado fácil de limpar, base mais larga que não vira e comedouro lento com aletas ou pinos. Nome, frase e texto de trás em relevo de duas cores ou gravados, ícones dos lados e em volta (patinhas, ossos, corações, estrelas, peixes, coroas), texturas (frisos retos, diagonais, ondas, trançado, vazados) e três cores. Mostra a tigela de aço no lugar, vê por dentro, calcula os ml, o peso e confere antes: cabe na mesa, traço das letras para o bico, tigela que não encosta no chão e base firme. O 3MF vai para o Filuna Slicer com cada cor na sua extrusora e os recortes já aplicados ao fatiar. Imprime em pé, sem suporte. Tudo no computador do cliente.",
   "categoria": "Pets",
   "entrada": "index.html",
