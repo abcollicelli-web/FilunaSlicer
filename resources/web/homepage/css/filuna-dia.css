@@ -11,7 +11,7 @@
 .FdGrade { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .FdGrade > .FdVazio { grid-column: 1 / -1; }
 
-.FdBloco { height: 158px; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; }
+.FdBloco { height: 166px; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; }
 .FdCab { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .FdCab b { font-size: 14.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .FdIc { width: 26px; height: 26px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #F1EDFD; }
