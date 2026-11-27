@@ -161,8 +161,19 @@ function lojas() { el().innerHTML = cab("Integrações", "Lojas conectadas", "A 
 function ligarLojas() { el().querySelectorAll("[data-con]").forEach(function (b) { b.onclick = function () { Filuna.abrirLink(b.dataset.con); st.msg = "Conclua a conexão no navegador. Esta tela atualiza em seguida."; desenhar(); setTimeout(carregar, 20000); }; }); }
 
 document.getElementById("voltar").onclick = function () { location.href = "meu-espaco.html"; };
-Filuna.iniciar().then(carregar);
+// Seção pedida pela tela Início ("loja:vendas", "loja:perguntas", "loja:lojas"); as outras telas mandam as delas sem o prefixo.
+function secaoPedida(s) { var m = /^loja:([a-z]+)$/.exec(s || ""); return m && SECOES.some(function (x) { return x[0] == m[1]; }) ? m[1] : ""; }
+Filuna.iniciar().then(function () {
+	return Filuna.nativo("secao.pendente").then(function (r) { var s = secaoPedida(r && r.secao); if (s) st.secao = s; }).catch(function () {});
+}).then(carregar);
 Filuna.ouvir("mostrar", function () { if (st.ml) carregar(); });
+Filuna.ouvir("secao", function (d) {
+	var s = secaoPedida(d && d.secao);
+	if (!s) return;
+	Filuna.nativo("secao.pendente").catch(function () {});
+	st.secao = s; st.msg = st.erro = "";
+	if (st.ml) desenhar();
+});
 </script>
 </body>
 </html>

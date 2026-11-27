@@ -1,0 +1,83 @@
+/* Filuna — "Seu dia" no alto da tela Início: quatro cartões claros na mesma linha (dois por linha em janela estreita).
+   Cores do padrão Filuna: magenta #E0186B, violeta #6D4AE8; o resto vem das variáveis de filuna.css (o modo escuro
+   continua valendo). Com a faixa à vista a Início fica mais alta e rola em vez de apertar o resto. */
+.FdDia { --fd-magenta: #E0186B; --fd-violeta: #6D4AE8; --fd-laranja: #D9622B; flex: none; display: flex; flex-direction: column; gap: 8px; }
+.FdDia[hidden] { display: none; }
+#FlInicio.comDia { min-height: 860px; flex-shrink: 0; }   /* cresce com a faixa e a Início rola */
+.FdTopo { display: flex; align-items: baseline; gap: 10px; font-size: 12.5px; color: var(--fg-color-label); }
+.FdTopo b { font-size: 11.5px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase; color: var(--fd-violeta); }
+.FdTopo #FdData::first-letter { text-transform: uppercase; }
+.FdTopo #FdHora { margin-left: auto; font-size: 11.5px; }
+.FdGrade { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.FdGrade > .FdVazio { grid-column: 1 / -1; }
+
+.FdBloco { height: 158px; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; }
+.FdCab { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.FdCab b { font-size: 14.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FdIc { width: 26px; height: 26px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #F1EDFD; }
+.FdIc svg { width: 16px; height: 16px; fill: none; stroke: var(--fd-violeta); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.FdBloco.magenta .FdIc { background: #FDE7F0; } .FdBloco.magenta .FdIc svg { stroke: var(--fd-magenta); }
+.FdBloco.laranja .FdIc { background: #FDEDE4; } .FdBloco.laranja .FdIc svg { stroke: var(--fd-laranja); }
+.FdNum { font-style: normal; flex: none; font-size: 11.5px; font-weight: 800; min-width: 18px; text-align: center; padding: 1px 6px; border-radius: 99px;
+	color: var(--fd-violeta); background: #F1EDFD; }
+.FdBloco.magenta .FdNum { color: var(--fd-magenta); background: #FDE7F0; }
+.FdBloco.laranja .FdNum { color: #B34A16; background: #FDEDE4; }
+.FdNova { flex: none; font-size: 11px; font-weight: 800; color: #fff; background: var(--fd-magenta); padding: 2px 8px; border-radius: 99px; animation: fd-pulsa 1.6s ease-in-out 3; }
+@keyframes fd-pulsa { 50% { box-shadow: 0 0 0 5px rgba(224, 24, 107, .18); } }
+.FdVer { margin-left: auto; flex: none; font-size: 12.5px; font-weight: 600; color: var(--filuna-framboesa) !important; }
+.FdCorpo { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.FdVazio { margin: 4px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--fg-color-label); }
+
+/* uma linha de item: hora ou foto, texto em duas linhas e o número à direita */
+.FdLin { display: flex; align-items: center; gap: 10px; min-height: 0; padding: 3px 6px; margin: 0 -6px; border-radius: 10px; color: var(--fg-color-text) !important; }
+.FdLin:hover { background: var(--focus-bg-box); }
+.FdTx { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.FdTx b { font-size: 13px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FdTx small { font-size: 11.5px; color: var(--fg-color-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.FdG { flex: none; font-size: 12.5px; font-weight: 700; }
+.FdHora { flex: none; width: 44px; font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--fd-violeta); position: relative; padding-left: 9px; }
+.FdHora::before { content: ""; position: absolute; left: 0; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%; background: currentColor; }
+.FdLin.t-impressao .FdHora { color: var(--fd-magenta); }
+.FdLin.t-envio .FdHora { color: var(--fd-laranja); }
+.FdLin.t-evento .FdHora { color: #1F7A46; }
+.FdLin.prox { background: #F6F3FF; } .FdLin.prox:hover { background: #EFEAFE; }
+.FdLin.passou { opacity: .55; }
+
+.FdBobImg { flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+.FdCor { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.FdBob .FdG { color: var(--fd-laranja); }
+.FdBob.critico .FdG { color: #B3261E; }
+
+.FdFoto { flex: none; width: 34px; height: 34px; border-radius: 9px; overflow: hidden; background: #F3ECE3; display: flex; align-items: center; justify-content: center; }
+.FdFoto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.FdFoto svg { width: 18px; height: 18px; fill: none; stroke: #8A817A; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.FdSoma { display: flex; align-items: baseline; gap: 8px; margin-bottom: 1px; }
+.FdSoma b { font-size: 17px; font-weight: 800; letter-spacing: -.3px; }
+.FdSoma span { font-size: 12px; color: var(--fg-color-label); }
+.FdVenda .FdG { color: var(--fd-magenta); }
+.FdChips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.FdChip { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 99px; color: var(--fd-magenta) !important; background: #FDE7F0; }
+.FdChip.alerta { color: #B34A16 !important; background: #FDEDE4; }
+.FdEnvio.atrasado small { color: #B3261E; font-weight: 600; }
+.FdEtq { flex: none; font: inherit; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 9px; cursor: pointer;
+	border: 1px solid #DCD2F8; background: #F6F3FF; color: var(--fd-violeta); }
+.FdEtq:hover { background: #EFEAFE; } .FdEtq:disabled { opacity: .6; cursor: default; }
+.FdSeta { flex: none; font-size: 18px; color: var(--fg-color-disabled); }
+
+.FdConvite { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.FdConvite p { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--fg-color-label); }
+.FdBtn { align-self: flex-start; font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 10px; color: #fff !important; background: var(--fd-magenta); }
+.FdBtn:hover { background: var(--filuna-framboesa); }
+
+/* aviso de venda nova: discreto, no canto, some sozinho */
+#FdAviso { position: fixed; right: 22px; bottom: 22px; z-index: 50; display: flex; align-items: center; gap: 12px; max-width: 360px; padding: 12px 12px 12px 14px;
+	border-radius: 14px; background: var(--bg-color-sidebar); border: 1.5px solid #F3B5CF; box-shadow: var(--filuna-sombra); cursor: pointer; animation: fd-entra .35s ease-out; }
+#FdAviso .FdTx b { font-size: 13.5px; }
+#FdAviso button { flex: none; border: 0; background: none; font-size: 18px; line-height: 1; color: var(--fg-color-label); cursor: pointer; padding: 2px 4px; }
+@keyframes fd-entra { from { transform: translateY(12px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .FdNova, #FdAviso { animation: none; } }
+
+/* a largura é a da janela inteira (com a coluna da esquerda): abaixo de 1400 px os quatro cartões ficam 2 × 2 */
+@media (max-width: 1399px) { .FdGrade { grid-template-columns: repeat(2, minmax(0, 1fr)); } #FlInicio.comDia { min-height: 1030px; } }
+@media (max-width: 1180px) { #FlInicio.comDia { min-height: 0; height: auto; } }
+@media (max-width: 760px) { .FdGrade { grid-template-columns: minmax(0, 1fr); } }
