@@ -10,6 +10,10 @@ var Filuna = (function () {
 	// O login fica sempre no site de verdade; os dados (Filuna.api) podem ir a um site de teste (FILUNA_SITE_TESTE no programa).
 	var API_LOGIN = API;
 	var pendentes = {}, seq = 0, token = "", ouvintes = {};
+	// Moeda da conta (versão americana): vem do site em /conta e /resumo ("moeda": "USD" ou "BRL"), fica guardada no
+	// computador (funciona sem internet) e no app_config ("filuna_moeda", lido pelas Configurações em C++).
+	// Sem moeda conhecida = real, como sempre.
+	var moeda = "BRL";
 
 	function nativo(acao, dados) {
 		return new Promise(function (ok, falha) {
@@ -52,8 +56,9 @@ var Filuna = (function () {
 		// Onde ficam os dados da conta: o site de sempre, ou o de teste que o programa indicar.
 		var base = nativo("site.base").then(function (r) { if (r && r.base) API = r.base + "/api/slicer/v1"; }, function () {});
 		base.then(function () { return pendentesLocais(); }).then(function (f) { conexao.pendentes = f.length; if (f.length) enviarFila(); });
-		// O Filuna Slicer guarda a conta; o armazenamento da página só vale fora do programa.
-		return base.then(function () { return nativo("config.ler", { chave: "filuna_token" }); }).then(function (r) {
+		// O Filuna Slicer guarda a conta; o armazenamento da página só vale fora do programa. A moeda guardada vem antes.
+		return base.then(function () { return lerLocal("conta.moeda"); }).then(function (m) { if (m == "USD" || m == "BRL") moeda = m; }, function () {})
+			.then(function () { return nativo("config.ler", { chave: "filuna_token" }); }).then(function (r) {
 			token = r.valor || "";
 			return token;
 		}, function () {
@@ -112,11 +117,22 @@ var Filuna = (function () {
 		if (online) enviarFila();
 	}
 
+	// Guarda a moeda que o site mandou (só grava no programa quando muda).
+	function lembrarMoeda(d) {
+		var m = d && d.moeda;
+		if ((m != "USD" && m != "BRL") || m == moeda) return;
+		moeda = m;
+		guardarLocal("conta.moeda", m);
+		nativo("config.gravar", { chave: "filuna_moeda", valor: m }).catch(function () {});
+		_evento("moeda", { moeda: m });
+	}
+
 	function api(metodo, rota, corpo) {
 		if (!token) return Promise.reject({ status: 401, erro: "Entre na sua conta Filuna para ver seus dados." });
 		if (metodo == "GET") {
 			return rede(metodo, rota).then(function (d) {
 				marcarConexao(true);
+				lembrarMoeda(d);
 				guardarLocal(chaveCache(rota), d);
 				if (rota == "/resumo" || rota == "/conta") guardarLocal("conta.verificada", Date.now());
 				return d;
@@ -130,7 +146,7 @@ var Filuna = (function () {
 				});
 			});
 		}
-		return rede(metodo, rota, corpo).then(function (d) { marcarConexao(true); return d; }, function (e) {
+		return rede(metodo, rota, corpo).then(function (d) { marcarConexao(true); lembrarMoeda(d); return d; }, function (e) {
 			if (e.status !== 0) throw e;
 			marcarConexao(false);
 			if (NA_FILA.indexOf(rota) < 0) throw { status: 0, erro: "Sem conexão. Esta ação precisa da impressora ou da conta conectadas." };
@@ -199,7 +215,8 @@ var Filuna = (function () {
 	var PREFS = { "interface.autoajuda": "bool", "estoque.alerta_baixo": "bool", "estoque.limite_baixo_g": "num",
 		"farm.avisar_limpar_mesa": "bool", "farm.avisar_filamento": "bool", "inicio.tendencias": "bool", "ofertas.ativas": "bool",
 		"ofertas.material": "texto", "ofertas.preco_max_kg": "num", "calculo.margem": "num", "calculo.mao_obra_hora": "num",
-		"calculo.energia_kwh": "num", "calculo.potencia_w": "num", "calculo.preco_kg": "num" };
+		"calculo.energia_kwh": "num", "calculo.potencia_w": "num", "calculo.preco_kg": "num",
+		"calculo.manutencao_hora": "num", "calculo.desgaste_hora": "num" };
 	function prefs() {
 		var chaves = Object.keys(PREFS), valores = {};
 		return Promise.all(chaves.map(function (k) {
@@ -345,7 +362,28 @@ var Filuna = (function () {
 	}
 	function gramas(g) { g = Number(g || 0); return g >= 1000 ? (g / 1000).toFixed(2).replace(".", ",") + " kg" : Math.round(g) + " g"; }
 	function tempo(s) { s = Math.max(0, Math.round(s || 0)); var h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); if (m == 60) { h++; m = 0; } return (h ? h + "h" : "") + (m < 10 && h ? "0" : "") + m + "min"; }
-	function reais(v) { return "R$ " + Number(v || 0).toFixed(2).replace(".", ","); }
+	// Dinheiro na moeda da conta: real "R$ 12,50" (como sempre) ou dólar "$1,234.56".
+	function reais(v) {
+		if (moeda == "USD") {
+			var n = Number(v || 0);
+			return (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+		}
+		return "R$ " + Number(v || 0).toFixed(2).replace(".", ",");
+	}
+	function simbolo() { return moeda == "USD" ? "$" : "R$"; }
+	// Valor que volta para um campo de texto: "12,50" no Brasil, "12.50" nos EUA.
+	function valorCampo(v) { var t = Number(v || 0).toFixed(2); return moeda == "USD" ? t : t.replace(".", ","); }
+	// Valor digitado -> número (null se vazio ou inválido). Real: vírgula é decimal; dólar: "1,234.56", "$12.50".
+	function lerValor(texto) {
+		var t = String(texto == null ? "" : texto);
+		if (moeda == "USD") {
+			t = t.replace(/[^0-9,.\-]/g, "");
+			t = /^-?\d+,\d{1,2}$/.test(t) ? t.replace(",", ".") : t.replace(/,/g, "");
+		} else t = t.replace(/[^0-9,\.]/g, "").replace(",", ".");
+		if (t === "") return null;
+		var n = parseFloat(t);
+		return isFinite(n) ? n : null;
+	}
 	function num(v, casas) { return Number(v || 0).toFixed(casas == null ? 2 : casas).replace(".", ","); }
 	// Seção "modelo:<slug>" (aba.abrir de outra tela, ex.: cartão da tela inicial): abre a página do modelo.
 	function abrirModeloPedido(secao) {
@@ -518,5 +556,6 @@ var Filuna = (function () {
 
 	return { nativo: nativo, api: api, enviarArquivo: enviarArquivo, imagem: imagem, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
 		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
-		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, abrirModeloPedido: abrirModeloPedido, telaLogin: telaLogin };
+		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num,
+		dinheiro: reais, simbolo: simbolo, valorCampo: valorCampo, lerValor: lerValor, moeda: function () { return moeda; }, abrirLink: abrirLink, abrirModeloPedido: abrirModeloPedido, telaLogin: telaLogin };
 })();

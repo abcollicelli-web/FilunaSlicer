@@ -370,6 +370,9 @@ ResumoMesa resumo_da_mesa(const std::string& arquivo)
         r.gramas += g;
         r.custo += g * preco_kg / 1000.;
     }
+    // moeda da conta Filuna (gravada pelas telas quando a conta carrega); sem moeda = real
+    if (wxGetApp().app_config->get("filuna_moeda") == "USD")
+        r.moeda = "$";
     const float t = stats.modes[static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Normal)].time;
     if (t > 0.f)
         r.tempo_s = static_cast<long long>(std::llround(t));

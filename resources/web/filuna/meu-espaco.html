@@ -591,7 +591,7 @@ function novaBobina() {
 		'<div class="campo"><label>Marca</label><input type="text" id="fMarca" placeholder="Ex.: eSun"></div>' +
 		'<div class="campo"><label>Cor</label><div class="linha"><span id="fPrev">' + Filuna.bobinaSVG("#FFFFFF", 56) + '</span><input type="color" id="fCor" value="#FFFFFF" style="width:54px;height:40px;padding:3px">' +
 		'<input type="text" id="fHex" value="#FFFFFF" maxlength="7" style="width:96px" aria-label="Cor em hexadecimal"><input type="text" id="fNomeCor" placeholder="Nome da cor (ex.: Branco)"></div></div>' +
-		'<div class="campo"><label>Preço por kg (R$)</label><input type="number" id="fPreco" min="0" step="0.01" placeholder="Opcional"></div>' +
+		'<div class="campo"><label>Preço por kg (' + Filuna.simbolo() + ')</label><input type="number" id="fPreco" min="0" step="0.01" placeholder="Opcional"></div>' +
 		'<div class="campo"><label>Peso de filamento da bobina (g)</label><input type="number" id="fPeso" min="1" step="1" value="1000"></div>' +
 		'<div class="campo"><label>Peso da bobina vazia — tara (g)</label><input type="number" id="fTara" min="0" step="1" placeholder="Opcional, para pesar depois"></div>' +
 		'<div class="campo"><label>Situação</label><select id="fSit"><option value="nova">Nova, lacrada</option><option value="balanca">Já usada — pesei na balança</option><option value="fracao">Já usada — não tenho balança</option></select></div>' +
@@ -809,17 +809,17 @@ function lucroProdutos() {
 		caixa.innerHTML = "<table class='tabela-lucro' style='width:100%;border-collapse:collapse;font-size:13.5px'><tr style='color:var(--ink3);font-size:12px;text-align:left'><th>Produto</th><th>Peças</th><th>Custo/peça</th><th>Preço de venda</th><th>Lucro</th></tr>" +
 			l.map(function (x) {
 				if (x.lucro_total_centavos != null) { tot += x.lucro_total_centavos; comPreco++; }
-				var preco = x.preco_venda_centavos != null ? (x.preco_venda_centavos / 100).toFixed(2).replace(".", ",") : "";
+				var preco = x.preco_venda_centavos != null ? Filuna.valorCampo(x.preco_venda_centavos / 100) : "";
 				return "<tr style='border-top:1px solid var(--line)'><td style='padding:6px 0'><b>" + E(x.nome || "Sem nome") + "</b></td><td>" + x.pecas + "</td><td>" + Filuna.reais(x.custo_peca_centavos / 100) +
-					"</td><td><input data-preco='" + E(x.id) + "' value='" + preco + "' placeholder='R$' inputmode='decimal' style='width:80px'></td><td" +
+					"</td><td><input data-preco='" + E(x.id) + "' value='" + preco + "' placeholder='" + Filuna.simbolo() + "' inputmode='decimal' style='width:80px'></td><td" +
 					(x.lucro_total_centavos != null && x.lucro_total_centavos < 0 ? " style='color:var(--warn);font-weight:700'" : "") + ">" +
 					(x.lucro_total_centavos != null ? Filuna.reais(x.lucro_peca_centavos / 100) + " por peça · " + Filuna.reais(x.lucro_total_centavos / 100) : "—") + "</td></tr>";
 			}).join("") + "</table><div class='s' style='margin-top:8px'>" + (comPreco ? "Lucro total dos produtos com preço: <b>" + Filuna.reais(tot / 100) + "</b>. " : "") +
 			"O custo conta só o filamento gasto de verdade; energia, mão de obra e taxas de venda entram na calculadora do site.</div>";
 		caixa.querySelectorAll("[data-preco]").forEach(function (inp) {
 			inp.onchange = function () {
-				var v = String(inp.value || "").replace(/[^0-9,\.]/g, "").replace(",", ".");
-				var c = v === "" ? null : Math.round(parseFloat(v) * 100);
+				var n = Filuna.lerValor(inp.value);   // "12,50" no Brasil, "1,234.56" nos EUA
+				var c = n === null ? (String(inp.value || "").trim() === "" ? null : NaN) : Math.round(n * 100);
 				if (c !== null && !(c >= 0)) { inp.value = ""; return; }
 				Filuna.nativo("produto.preco", { id: inp.dataset.preco, centavos: c }).then(lucroProdutos, function (e) { falha(e); });
 			};

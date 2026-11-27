@@ -29,7 +29,7 @@ var E = Filuna.esc, slug = (location.search.match(/slug=([^&]+)/) || [])[1] || "
 var calmo = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 // filtros do template do site
 function tempo(s) { s = +s || 0; var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return (h ? h + " h " : "") + m + " min"; }
-function brl(v) { return "R$ " + (+v || 0).toFixed(2).replace(".", ","); }
+function brl(v) { return Filuna.reais(+v || 0); }   // na moeda da conta (real ou dólar)
 function g(v) { return (+v || 0).toFixed(1).replace(".", ",").replace(",0", "") + " g"; }
 function gramasJS(v) { return (Math.round(v * 10) / 10).toString().replace(".", ",") + " g"; }
 function pct(a, tot) { return Math.round(a / tot * 10000) / 100; }

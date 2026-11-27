@@ -504,7 +504,7 @@ private:
         struct { wxString titulo, valor; } campos[4] = {
             {wxString::FromUTF8("Tempo"), tempo_curto(m_r.tempo_s)},
             {wxString::FromUTF8("Peso"), m_r.gramas > 0. ? wxString::Format("%.1f g", m_r.gramas) : wxString::FromUTF8("—")},
-            {wxString::FromUTF8("Custo"), m_r.custo > 0. ? wxString::FromUTF8(m_r.moeda + " ") + wxString::Format("%.2f", m_r.custo)
+            {wxString::FromUTF8("Custo"), m_r.custo > 0. ? wxString::FromUTF8(m_r.moeda == "$" ? m_r.moeda : m_r.moeda + " ") + wxString::Format("%.2f", m_r.custo)
                                                          : wxString::FromUTF8("—")},
             {wxString::FromUTF8("Camada"), m_r.altura_camada > 0. ? wxString::Format("%.2f mm", m_r.altura_camada)
                                                                   : wxString::FromUTF8("—")},

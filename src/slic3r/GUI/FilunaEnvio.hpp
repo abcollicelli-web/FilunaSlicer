@@ -90,7 +90,7 @@ struct ResumoMesa
     std::string arquivo, mesa;     // nome do arquivo e nome da mesa (chapa) escolhida
     long long   tempo_s{0};
     double      gramas{0.}, custo{0.}, altura_camada{0.};
-    std::string moeda{"R$"};
+    std::string moeda{"R$"};       // "$" quando a conta Filuna é dos EUA (app_config "filuna_moeda" = "USD")
 };
 
 class JanelaConfirmar : public wxDialog

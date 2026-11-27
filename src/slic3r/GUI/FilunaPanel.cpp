@@ -114,7 +114,7 @@ boost::filesystem::path local_store_path(const std::string& key)
 // Only these app_config keys are reachable from the pages.
 bool allowed_config_key(const std::string& key)
 {
-    return key == "filuna_token" || key == "filuna_ultima_aba" || key.rfind("filuna_pref_", 0) == 0;
+    return key == "filuna_token" || key == "filuna_ultima_aba" || key == "filuna_moeda" || key.rfind("filuna_pref_", 0) == 0;
 }
 
 template <class T> double first_value(const DynamicPrintConfig& cfg, const char* key)
