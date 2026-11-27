@@ -156,7 +156,10 @@ jobs:
               $h = @{ Authorization = "Bearer $tok" }
               $app = Invoke-RestMethod -Uri $base -Headers $h
               if ($app.pendingApplicationSubmission) { throw "já há uma submissão pública pendente ($($app.pendingApplicationSubmission.id)): nada enviado" }
-              $sub = Invoke-RestMethod -Method Post -Uri "$base/submissions" -Headers $h
+              Write-Host "criando a submissão..."
+              $r = Invoke-WebRequest -Method Post -Uri "$base/submissions" -Headers $h -ContentType 'application/json' -Body '' -SkipHttpErrorCheck
+              if ($r.StatusCode -ge 300) { throw "criar submissão: HTTP $($r.StatusCode) $($r.Content)" }
+              $sub = $r.Content | ConvertFrom-Json
               Write-Host "submissão criada: $($sub.id) (visibilidade antes: $($sub.visibility))"
               $nome = Split-Path $env:MSIX -Leaf
               foreach ($p in $sub.applicationPackages) { $p.fileStatus = 'PendingDelete' }
@@ -164,7 +167,9 @@ jobs:
               $sub.visibility = 'Public'
               $sub.targetPublishMode = 'Immediate'
               $corpo = $sub | ConvertTo-Json -Depth 20
-              $sub = Invoke-RestMethod -Method Put -Uri "$base/submissions/$($sub.id)" -Headers $h -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($corpo))
+              $r = Invoke-WebRequest -Method Put -Uri "$base/submissions/$($sub.id)" -Headers $h -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($corpo)) -SkipHttpErrorCheck
+              if ($r.StatusCode -ge 300) { Invoke-RestMethod -Method Delete -Uri "$base/submissions/$($sub.id)" -Headers $h | Out-Null; throw "atualizar submissão: HTTP $($r.StatusCode) $($r.Content) (submissão apagada)" }
+              $sub = $r.Content | ConvertFrom-Json
               Write-Host "submissão atualizada: visibilidade $($sub.visibility), pacotes $(($sub.applicationPackages | ForEach-Object { "$($_.fileName)=$($_.fileStatus)" }) -join ', ')"
               $dir = Join-Path $env:RUNNER_TEMP 'zipstore'; New-Item -ItemType Directory -Force $dir | Out-Null; Copy-Item $env:MSIX $dir
               $zip = Join-Path $env:RUNNER_TEMP 'envio.zip'; Add-Type -AssemblyName System.IO.Compression.FileSystem
