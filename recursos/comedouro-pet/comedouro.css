@@ -1,0 +1,21 @@
+/* Comedouro Filuna — o que muda em relação ao estilo comum dos paramétricos */
+.modo{grid-template-columns:1fr 1fr}.modo button{height:42px;font-size:13px;line-height:1.15}
+.pets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pets button,.texturas button,.formas button{height:38px;font-size:12px;font-weight:600;background:#fff;border:1px solid #E7E3DD;border-radius:10px;color:var(--ink)}
+.pets button.on,.texturas button.on,.formas button.on{border-color:var(--magenta-deep);color:var(--magenta-deep);background:var(--rose)}
+.seg.tri{grid-template-columns:repeat(3,1fr)}.seg.tri button{font-size:12px}
+.seg.cinco{grid-template-columns:repeat(5,1fr)}.seg.cinco button{font-size:12px}
+.texturas{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.formas{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.formas button{height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px}
+.formas svg{display:block}
+.temas{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.temas button{height:34px;border-radius:10px;border:2px solid transparent;background:linear-gradient(135deg,var(--a) 0 60%,var(--b) 60% 100%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.temas button.on{border-color:var(--magenta-deep)}
+.verificacao{display:flex;flex-direction:column;gap:5px}
+.verificacao div{font-size:12.5px;line-height:1.4;padding:7px 10px;border-radius:9px;background:#EEF8F1;color:#1F6B43}
+.verificacao div.aviso{background:#FFF6E0;color:#8A5A00}.verificacao div.erro{background:#FDE8EA;color:#A3132A}
+.numeros{grid-template-columns:repeat(3,1fr)}
+#corCorpo,#corNome,#corDetalhe{height:36px}
+/* no Filuna Slicer o botão "← Paramétricos" fica no canto de cima à direita */
+.topo{right:178px}.ocupado{top:62px;right:178px}
