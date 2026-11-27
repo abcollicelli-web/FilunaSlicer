@@ -5,6 +5,8 @@
  *   cada leitura fica guardada no computador e é usada quando não há conexão; cadastros e ajustes ficam numa fila e
  *   são enviados quando a conexão volta. A conta vale 3 dias sem comprovar conexão (Filuna.plano()).
  * As telas são do Filuna Slicer; o site só sincroniza os dados. */
+// Inglês (idioma do programa "en..."): i18n/traduzir.js traduz a tela pelo dicionário; em português não carrega nada.
+(function (s) { if (window.FilunaI18n || window.FILUNA_IDIOMA == "pt") return; var src = (s && s.src ? s.src.replace(/[^\/]*$/, "") : "") + "i18n/traduzir.js"; if (document.readyState == "loading") document.write('<script src="' + src + '"><\/script>'); else { var e = document.createElement("script"); e.src = src; document.head.appendChild(e); } })(document.currentScript);
 var Filuna = (function () {
 	var API = "https://filuna3d.com/api/slicer/v1";
 	// O login fica sempre no site de verdade; os dados (Filuna.api) podem ir a um site de teste (FILUNA_SITE_TESTE no programa).
@@ -118,7 +120,7 @@ var Filuna = (function () {
 			return rede(metodo, rota).then(function (d) {
 				marcarConexao(true);
 				guardarLocal(chaveCache(rota), d);
-				if (rota == "/resumo" || rota == "/conta") guardarLocal("conta.verificada", Date.now());
+				if (rota == "/resumo" || rota == "/conta") { guardarLocal("conta.verificada", Date.now()); regiaoDaConta(d); }
 				return d;
 			}, function (e) {
 				if (e.status !== 0) throw e;
@@ -136,6 +138,17 @@ var Filuna = (function () {
 			if (NA_FILA.indexOf(rota) < 0) throw { status: 0, erro: "Sem conexão. Esta ação precisa da impressora ou da conta conectadas." };
 			return enfileirar(metodo, rota, corpo).then(function () { return { _pendente: true }; });
 		});
+	}
+
+	// Região e moeda da conta ("us"/"USD"...; a conta antiga não manda): o programa guarda e, se o idioma foi escolhido
+	// sozinho na primeira abertura, passa para inglês quando a conta é dos EUA.
+	var regiaoAvisada = "";
+	function regiaoDaConta(d) {
+		var c = d && (d.conta || d) || {}, regiao = String(c.regiao || d.regiao || ""), moeda = String(c.moeda || d.moeda || "");
+		if (!regiao && !moeda) return;
+		if (regiaoAvisada == regiao + "|" + moeda) return;
+		regiaoAvisada = regiao + "|" + moeda;
+		nativo("app.regiao", { regiao: regiao, moeda: moeda }).catch(function () {});
 	}
 
 	// Fila do que foi feito sem internet; enviada na ordem quando a conexão volta.
@@ -515,8 +528,15 @@ var Filuna = (function () {
 		iaAbrindo = "";
 	});
 	if (/rodape\.html$/.test(location.pathname)) setTimeout(iaCiclo, 12000);
+	// Idioma escolhido sozinho na primeira abertura: a região da conta decide (uma consulta só, pelo rodapé).
+	if (/rodape\.html$/.test(location.pathname))
+		setTimeout(function () {
+			if (!token) return;
+			nativo("app.idioma").then(function (r) { if (r && r.auto) api("GET", "/conta").catch(function () {}); }).catch(function () {});
+		}, 8000);
 
 	return { nativo: nativo, api: api, enviarArquivo: enviarArquivo, imagem: imagem, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
 		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
-		temToken: function () { return !!token; }, esc: esc, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, abrirModeloPedido: abrirModeloPedido, telaLogin: telaLogin };
+		temToken: function () { return !!token; }, esc: esc,
+		idioma: function () { return window.FilunaI18n ? FilunaI18n.idioma() : "pt"; }, t: function (s) { return window.FilunaI18n ? FilunaI18n.t(s) : s; }, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num, abrirLink: abrirLink, abrirModeloPedido: abrirModeloPedido, telaLogin: telaLogin };
 })();

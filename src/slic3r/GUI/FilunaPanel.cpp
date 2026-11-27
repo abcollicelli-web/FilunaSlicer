@@ -1,4 +1,5 @@
 #include "FilunaPanel.hpp"
+#include "FilunaIdioma.hpp"
 #include "slic3r/Utils/FilunaCameraUrls.hpp"
 #include <ctime>
 #include "FilunaAtualizacao.hpp"
@@ -639,6 +640,8 @@ void FilunaPanel::create_browser()
     if (m_browser == nullptr)
         return;
     m_browser->Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &FilunaPanel::on_script_message, this, m_browser->GetId());
+    // Idioma das telas (e, em inglês, o dicionário e o tradutor) antes da página carregar: a tela já nasce traduzida.
+    m_browser->AddUserScript(wxString::FromUTF8(Filuna::roteiro_telas()));
     if (m_url.EndsWith("parametricos.html"))
         m_browser->AddUserScript(wxString::FromUTF8(ROTEIRO_PARAMETRICO));
     GetSizer()->Insert(0, m_browser, wxSizerFlags().Expand().Proportion(1));
@@ -1033,6 +1036,19 @@ json FilunaPanel::handle(const std::string& action, const json& d)
     if (action == "preferencias.abrir") {
         // Filuna options are part of the program settings (gear of the navigation bar).
         CallAfter([] { wxGetApp().open_preferences(); });
+        return json::object();
+    }
+    if (action == "app.idioma") {
+        // Idioma das telas: "en" quando o programa está em inglês; "auto" = escolhido sozinho, a conta ainda pode decidir.
+        return {{"idioma", Filuna::ingles() ? "en" : "pt"}, {"programa", wxGetApp().app_config->get("language")},
+                {"auto", Filuna::idioma_automatico()}};
+    }
+    if (action == "app.dicionario") {
+        json dic = json::parse(Filuna::dicionario_json(), nullptr, false);
+        return dic.is_discarded() ? json::object() : dic;
+    }
+    if (action == "app.regiao") {
+        Filuna::regiao_da_conta(d.value("regiao", std::string()), d.value("moeda", std::string()));
         return json::object();
     }
     if (action == "app.metricas") {

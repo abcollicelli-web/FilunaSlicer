@@ -1,4 +1,5 @@
 #include "FilunaMakerWorld.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "FilunaLateral.hpp"
 #include "GUI_App.hpp"
@@ -228,7 +229,7 @@ private:
         gc->DrawText(wxString::FromUTF8("MakerWorld"), x, (s.y - th) / 2.);
         gc->SetFont(fonte(this, 8., false), CINZA);
         const int x2 = x + int(tw) + FromDIP(10), livre = area(NAVEGADOR).x - x2 - FromDIP(10);
-        gc->DrawText(caber(this, wxString::FromUTF8("site oficial · entre com a sua conta Bambu · \"Open in Bambu Studio\" abre aqui na Preparação"),
+        gc->DrawText(caber(this, Filuna::trw("site oficial · entre com a sua conta Bambu · \"Open in Bambu Studio\" abre aqui na Preparação"),
                            fonte(this, 8., false), livre),
                      x2, (s.y - FromDIP(14)) / 2.);
         FilunaLateral::Botao b{wxString::FromUTF8(m_navegador ? "Navegador: ligado" : "Usar meu navegador")};
@@ -295,19 +296,15 @@ void FilunaMakerWorld::usar_navegador()
     AppConfig* cfg     = wxGetApp().app_config;
     const bool ligado  = cfg->get("filuna_makerworld_navegador") == "1";
     if (ligado) {
-        if (wxMessageBox(wxString::FromUTF8("O botão \"Abrir no Bambu Studio\" do MakerWorld no seu navegador está abrindo no Filuna.\n\n"
-                                            "Devolver esse botão ao Bambu Studio? (o Bambu Studio volta a atendê-lo quando for aberto)"),
-                         wxString::FromUTF8("MakerWorld no navegador"), wxYES_NO | wxICON_QUESTION, this) != wxYES)
+        if (wxMessageBox(Filuna::trw("O botão \"Abrir no Bambu Studio\" do MakerWorld no seu navegador está abrindo no Filuna.\n\nDevolver esse botão ao Bambu Studio? (o Bambu Studio volta a atendê-lo quando for aberto)"),
+                         Filuna::trw("MakerWorld no navegador"), wxYES_NO | wxICON_QUESTION, this) != wxYES)
             return;
         wxGetApp().disassociate_url(L"bambustudioopen");
         cfg->set("filuna_makerworld_navegador", "0");
         return;
     }
-    if (wxMessageBox(wxString::FromUTF8("Para entrar com Google, Apple ou Facebook pelo seu navegador:\n\n"
-                                        "1. O MakerWorld abre no seu navegador; entre na sua conta lá.\n"
-                                        "2. No modelo, clique em \"Open in Bambu Studio\": o modelo abre aqui, na Preparação.\n\n"
-                                        "Isso faz o botão \"Abrir no Bambu Studio\" abrir no Filuna em vez do Bambu Studio. Continuar?"),
-                     wxString::FromUTF8("MakerWorld no navegador"), wxYES_NO | wxICON_QUESTION, this) != wxYES)
+    if (wxMessageBox(Filuna::trw("Para entrar com Google, Apple ou Facebook pelo seu navegador:\n\n1. O MakerWorld abre no seu navegador; entre na sua conta lá.\n2. No modelo, clique em \"Open in Bambu Studio\": o modelo abre aqui, na Preparação.\n\nIsso faz o botão \"Abrir no Bambu Studio\" abrir no Filuna em vez do Bambu Studio. Continuar?"),
+                     Filuna::trw("MakerWorld no navegador"), wxYES_NO | wxICON_QUESTION, this) != wxYES)
         return;
     wxGetApp().associate_url(L"bambustudioopen");
     cfg->set("filuna_makerworld_navegador", "1");

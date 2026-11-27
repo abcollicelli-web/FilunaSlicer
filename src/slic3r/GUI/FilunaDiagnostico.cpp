@@ -1,4 +1,5 @@
 #include "FilunaDiagnostico.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "FilunaAoVivo.hpp"
 #include "FilunaDispositivos.hpp"
@@ -603,10 +604,8 @@ void executar(json pedido)
         e["estado"] = "esperando_presenca";
         publicar(e);
         wxGetApp().CallAfter([nome = std::string(t->nome), imp = c.value("nome", std::string("impressora"))] {
-            wxNotificationMessage aviso(wxString::FromUTF8("Filuna — diagnóstico da " + imp),
-                                        wxString::FromUTF8("Pedido de teste: " + nome +
-                                                           ". Abra Dispositivo › Assistência técnica › Diagnóstico e confirme que está ao "
-                                                           "lado da impressora para começar."),
+            wxNotificationMessage aviso(Filuna::trw_valores("Filuna — diagnóstico da {0}", {imp}),
+                                        Filuna::trw_valores("Pedido de teste: {0}. Abra Dispositivo › Assistência técnica › Diagnóstico e confirme que está ao lado da impressora para começar.", {nome}),
                                         wxGetApp().mainframe);
             aviso.Show();
         });

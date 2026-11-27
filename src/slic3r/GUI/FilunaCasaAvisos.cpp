@@ -1,4 +1,5 @@
 #include "FilunaCasaAvisos.hpp"
+#include "FilunaIdioma.hpp"
 #include "FilunaCasa.hpp"
 #include "FilunaPanel.hpp"
 #include "GUI_App.hpp"
@@ -354,7 +355,7 @@ private:
         const wxSize   t      = GetClientSize();
         const wxString titulo = wxString::FromUTF8(m_aviso.value("titulo", std::string()));
         const wxString texto  = wxString::FromUTF8(m_aviso.value("texto", std::string()));
-        const wxString rodape = wxString::FromUTF8("Filuna" + (m_aviso.value("impressora", std::string()).empty() ? std::string() : " · " + m_aviso.value("impressora", std::string())));
+        const wxString rodape = Filuna::trw_valores("Filuna{0}", {(m_aviso.value(Filuna::tr("impressora"), std::string()).empty() ? std::string() : " · " + m_aviso.value(Filuna::tr("impressora"), std::string()))});
         wxFont fonte = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
         const bool escuro = m_tema == "escuro";
         if (m_modelo == "faixa") {
@@ -399,7 +400,7 @@ private:
             }
             f.SetPointSize(10);
             gc->SetFont(f, wxColour(255, 255, 255, 200));
-            gc->DrawText(rodape + wxString::FromUTF8(" · clique para fechar"), FromDIP(32), t.y - FromDIP(34));
+            gc->DrawText(rodape + Filuna::trw(" · clique para fechar"), FromDIP(32), t.y - FromDIP(34));
             return;
         }
         // cartão no canto

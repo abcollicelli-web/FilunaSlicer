@@ -1,4 +1,5 @@
 #include "FilunaIALado.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "FilunaAssistente.hpp"
 #include "FilunaPanel.hpp"
@@ -28,7 +29,7 @@ class JanelaIALado : public wxFrame
 {
 public:
     JanelaIALado()
-        : wxFrame(wxGetApp().mainframe, wxID_ANY, wxString::FromUTF8("IA do Filuna · sua conta"), wxDefaultPosition, wxDefaultSize,
+        : wxFrame(wxGetApp().mainframe, wxID_ANY, Filuna::trw("IA do Filuna · sua conta"), wxDefaultPosition, wxDefaultSize,
                   wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT)
     {
         SetBackgroundColour(*wxWHITE);

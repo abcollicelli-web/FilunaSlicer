@@ -1,4 +1,5 @@
 #include "MainFrame.hpp"
+#include "FilunaIdioma.hpp"
 #include "FilunaPanel.hpp"
 #include "FilunaMakerWorld.hpp"
 #include "FilunaImpressao.hpp"
@@ -1466,7 +1467,7 @@ void MainFrame::filuna_salvar_projeto()
     if (plater == nullptr)
         return;
     if (plater->model().objects.empty()) {
-        MessageDialog(this, wxString::FromUTF8("Não há nada na mesa para salvar."), wxString::FromUTF8("Salvar projeto"), wxOK).ShowModal();
+        MessageDialog(this, Filuna::trw("Não há nada na mesa para salvar."), Filuna::trw("Salvar projeto"), wxOK).ShowModal();
         return;
     }
     if (!plater->get_project_filename(".3mf").IsEmpty()) {
@@ -1480,8 +1481,8 @@ void MainFrame::filuna_salvar_projeto()
     boost::system::error_code ec;
     fs::create_directories(pasta, ec);
     if (ec) {
-        MessageDialog(this, wxString::FromUTF8("Não foi possível criar a pasta Documentos › Filuna › Projetos: ") + from_u8(ec.message()),
-                      wxString::FromUTF8("Salvar projeto"), wxOK | wxICON_WARNING).ShowModal();
+        MessageDialog(this, Filuna::trw("Não foi possível criar a pasta Documentos › Filuna › Projetos: ") + from_u8(ec.message()),
+                      Filuna::trw("Salvar projeto"), wxOK | wxICON_WARNING).ShowModal();
         return;
     }
     std::string nome = into_u8(plater->get_project_name());
@@ -1499,7 +1500,7 @@ void MainFrame::filuna_salvar_projeto()
         return;
     }
     if (auto* nm = plater->get_notification_manager())
-        nm->push_notification(into_u8(wxString::FromUTF8("Projeto salvo em Documentos › Filuna › Projetos: ") + from_path(arq.filename())));
+        nm->push_notification(into_u8(Filuna::trw("Projeto salvo em Documentos › Filuna › Projetos: ") + from_path(arq.filename())));
 }
 
 void MainFrame::show_option(bool show)
@@ -1700,19 +1701,19 @@ void MainFrame::init_tabpanel() {
     m_filuna_farm_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_FARM, 23,
                                                    [](wxWindow* parent) { return new FilunaPanel(parent, "farm.html"); });
     m_lazy_pages.push_back(m_filuna_farm_page);
-    m_tabpanel->AddPage(TAB_ID_FILUNA_FARM, m_filuna_farm_page, wxString::FromUTF8("Farm"), "tab_auxiliary_active");
+    m_tabpanel->AddPage(TAB_ID_FILUNA_FARM, m_filuna_farm_page, Filuna::trw("Farm"), "tab_auxiliary_active");
 
     // Paramétricos: modelos do servidor que geram a peça aqui no computador e a põem na mesa da Preparação
     m_filuna_param_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_PARAM, 24,
                                                     [](wxWindow* parent) { return new FilunaPanel(parent, "parametricos.html"); });
     m_lazy_pages.push_back(m_filuna_param_page);
-    m_tabpanel->AddPage(TAB_ID_FILUNA_PARAM, m_filuna_param_page, wxString::FromUTF8("Paramétricos"), "tab_auxiliary_active");
+    m_tabpanel->AddPage(TAB_ID_FILUNA_PARAM, m_filuna_param_page, Filuna::trw("Paramétricos"), "tab_auxiliary_active");
 
     // Modelos 3D do catálogo Filuna: abertos no fatiador só para imprimir (sem botão no topo; abre pelo menu da Home)
     m_filuna_modelos_page = new LazyPage<FilunaPanel>(m_tabpanel, TAB_ID_FILUNA_MODELOS, 25,
                                                       [](wxWindow* parent) { return new FilunaPanel(parent, "modelos-3d.html"); });
     m_lazy_pages.push_back(m_filuna_modelos_page);
-    m_tabpanel->AddPage(TAB_ID_FILUNA_MODELOS, m_filuna_modelos_page, wxString::FromUTF8("Modelos 3D"), "tab_auxiliary_active");
+    m_tabpanel->AddPage(TAB_ID_FILUNA_MODELOS, m_filuna_modelos_page, Filuna::trw("Modelos 3D"), "tab_auxiliary_active");
 
     // MakerWorld: o site oficial numa aba; o que ele manda abrir num fatiador vem direto para a Preparação
     m_filuna_makerworld_page = new LazyPage<FilunaMakerWorld>(m_tabpanel, TAB_ID_FILUNA_MAKERWORLD, 26,
@@ -2527,10 +2528,10 @@ wxBoxSizer* MainFrame::create_side_tools()
     m_print_option_btn = new SideButton(print_panel, "", "filuna_dropdown_dark", 0, 14); // Filuna: dark arrow on the outlined Exportar
     // Filuna: Novo trabalho e Salvar projeto ficam na barra (antes só no menu do logo)
     auto proj_panel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
-    m_novo_btn      = new SideButton(proj_panel, wxString::FromUTF8("Novo"), "");
-    m_salvar_btn    = new SideButton(proj_panel, wxString::FromUTF8("Salvar"), "");
-    m_novo_btn->SetToolTip(wxString::FromUTF8("Novo trabalho: mesa limpa (pergunta antes se há algo sem salvar)"));
-    m_salvar_btn->SetToolTip(wxString::FromUTF8("Salvar o projeto. Projeto novo vai para Documentos › Filuna › Projetos"));
+    m_novo_btn      = new SideButton(proj_panel, Filuna::trw("Novo"), "");
+    m_salvar_btn    = new SideButton(proj_panel, Filuna::trw("Salvar"), "");
+    m_novo_btn->SetToolTip(Filuna::trw("Novo trabalho: mesa limpa (pergunta antes se há algo sem salvar)"));
+    m_salvar_btn->SetToolTip(Filuna::trw("Salvar o projeto. Projeto novo vai para Documentos › Filuna › Projetos"));
     {
         auto proj_sizer = new wxBoxSizer(wxHORIZONTAL);
         proj_sizer->Add(m_novo_btn, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(8));
@@ -2569,7 +2570,7 @@ wxBoxSizer* MainFrame::create_side_tools()
     const StateColor nav_icon_bg(std::pair{wxColour(246, 239, 231), (int) StateColor::Hovered},
                                  std::pair{wxColour(255, 253, 251), (int) StateColor::Normal});
     auto* help_btn = new Button(this, "", "filuna_nav_help", wxNO_BORDER, 20);
-    help_btn->SetToolTip(wxString::FromUTF8("Autoajuda"));
+    help_btn->SetToolTip(Filuna::trw("Autoajuda"));
     help_btn->SetBackgroundColor(nav_icon_bg);
     help_btn->SetCornerRadius(FromDIP(18));
     help_btn->SetMinSize(FromDIP(wxSize(36, 36)));
@@ -2577,13 +2578,13 @@ wxBoxSizer* MainFrame::create_side_tools()
     help_btn->Bind(wxEVT_BUTTON, [this, help_btn](wxCommandEvent&) {
         wxMenu menu;
         const int id_auto = wxWindow::NewControlId(), id_atalhos = wxWindow::NewControlId(), id_como = wxWindow::NewControlId();
-        menu.AppendCheckItem(id_auto, wxString::FromUTF8("Autoajuda: explicar cada parâmetro ao passar o mouse"))->Check(FilunaAutoajuda::ligada());
-        menu.Append(id_como, wxString::FromUTF8("Como usar a Autoajuda"));
+        menu.AppendCheckItem(id_auto, Filuna::trw("Autoajuda: explicar cada parâmetro ao passar o mouse"))->Check(FilunaAutoajuda::ligada());
+        menu.Append(id_como, Filuna::trw("Como usar a Autoajuda"));
         const int id_limpeza = wxWindow::NewControlId();
-        menu.AppendCheckItem(id_limpeza, wxString::FromUTF8("Limpeza extra do bico antes da peça (3 voltas de saia)"))
+        menu.AppendCheckItem(id_limpeza, Filuna::trw("Limpeza extra do bico antes da peça (3 voltas de saia)"))
             ->Check(wxGetApp().app_config->get("filuna_pref_limpeza_bico") != "false");
         menu.AppendSeparator();
-        menu.Append(id_atalhos, wxString::FromUTF8("Atalhos do teclado"));
+        menu.Append(id_atalhos, Filuna::trw("Atalhos do teclado"));
         const int escolha = help_btn->GetPopupMenuSelectionFromUser(menu, wxPoint(0, help_btn->GetSize().GetHeight()));
         if (escolha == id_auto) {
             const bool agora = !FilunaAutoajuda::ligada();
@@ -2593,16 +2594,12 @@ wxBoxSizer* MainFrame::create_side_tools()
                                                          "preenchimento, suporte…) para ver o que ele faz e o efeito na peça.\n\nVale para os campos abertos a partir de agora; "
                                                          "os que já estão na tela passam a mostrar ao trocar de aba de parâmetros." :
                                                          "Autoajuda desligada. As dicas voltam ao texto curto original."),
-                              wxString::FromUTF8("Autoajuda"), wxOK);
+                              Filuna::trw("Autoajuda"), wxOK);
             dlg.ShowModal();
         } else if (escolha == id_como) {
             MessageDialog dlg(this,
-                              wxString::FromUTF8("A Autoajuda explica cada parâmetro de impressão em português simples.\n\n"
-                                                 "1. Deixe a Autoajuda ligada (este mesmo botão).\n"
-                                                 "2. Na Preparação, pare o mouse sobre o campo que quer entender.\n"
-                                                 "3. Aparece um cartão com o nome, o que o parâmetro faz e o efeito na peça.\n\n"
-                                                 "Ela não muda nenhum valor: só explica."),
-                              wxString::FromUTF8("Autoajuda"), wxOK);
+                              Filuna::trw("A Autoajuda explica cada parâmetro de impressão em português simples.\n\n1. Deixe a Autoajuda ligada (este mesmo botão).\n2. Na Preparação, pare o mouse sobre o campo que quer entender.\n3. Aparece um cartão com o nome, o que o parâmetro faz e o efeito na peça.\n\nEla não muda nenhum valor: só explica."),
+                              Filuna::trw("Autoajuda"), wxOK);
             dlg.ShowModal();
         } else if (escolha == id_limpeza) {
             const bool agora = wxGetApp().app_config->get("filuna_pref_limpeza_bico") == "false";
@@ -2611,7 +2608,7 @@ wxBoxSizer* MainFrame::create_side_tools()
                               wxString::FromUTF8(agora ? "Limpeza extra ligada: toda impressão começa com 3 voltas de saia em torno da peça, "
                                                          "para a sobra do bico não grudar nela. Fatie de novo para valer." :
                                                          "Limpeza extra desligada. Vale a saia configurada no perfil. Fatie de novo para valer."),
-                              wxString::FromUTF8("Limpeza do bico"), wxOK);
+                              Filuna::trw("Limpeza do bico"), wxOK);
             dlg.ShowModal();
         } else if (escolha == id_atalhos)
             wxGetApp().keyboard_shortcuts(ShortcutContext::Global);
@@ -2728,11 +2725,9 @@ wxBoxSizer* MainFrame::create_side_tools()
                     // Filuna: o botão não fica mudo; diz por que não dá para enviar ainda.
                     const bool todas = wxGetApp().plater()->get_preview_canvas3D()->is_all_plates_selected();
                     MessageDialog(this,
-                                  todas ? wxString::FromUTF8("Escolha uma placa na lista de placas (à esquerda) para imprimir: com \"todas as placas\" "
-                                                             "selecionado não dá para enviar uma placa só. Para mandar todas, use \"Imprimir tudo\" na seta do botão.")
-                                        : wxString::FromUTF8("Fatie a placa antes de imprimir (botão Fatiar placa). Se ela já foi fatiada, confira os avisos "
-                                                             "da Visualização: algum problema impede o envio."),
-                                  wxString::FromUTF8("Imprimir placa"), wxOK | wxICON_INFORMATION)
+                                  todas ? Filuna::trw("Escolha uma placa na lista de placas (à esquerda) para imprimir: com \"todas as placas\" selecionado não dá para enviar uma placa só. Para mandar todas, use \"Imprimir tudo\" na seta do botão.")
+                                        : Filuna::trw("Fatie a placa antes de imprimir (botão Fatiar placa). Se ela já foi fatiada, confira os avisos da Visualização: algum problema impede o envio."),
+                                  Filuna::trw("Imprimir placa"), wxOK | wxICON_INFORMATION)
                         .ShowModal();
                 }
                 if (m_print_enable) {

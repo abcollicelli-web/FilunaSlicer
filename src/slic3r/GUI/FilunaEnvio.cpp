@@ -1,4 +1,5 @@
 #include "FilunaEnvio.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "FilunaLateral.hpp"
 #include "Widgets/Button.hpp"
@@ -247,7 +248,7 @@ private:
         }
     }
 
-    wxString m_titulo{wxString::FromUTF8("Preparando o envio")}, m_detalhe;
+    wxString m_titulo{Filuna::trw("Preparando o envio")}, m_detalhe;
     int      m_porcento{-1};
     double   m_fase{0};
     bool     m_pronto{false};
@@ -256,7 +257,7 @@ private:
 // ================================================================================ a janela
 
 JanelaEnvio::JanelaEnvio(wxWindow* pai, const std::string& dev_id, const wxString& impressora, const wxString& arquivo)
-    : wxDialog(pai, wxID_ANY, wxString::FromUTF8("Imprimir"), wxDefaultPosition, wxDefaultSize,
+    : wxDialog(pai, wxID_ANY, Filuna::trw("Imprimir"), wxDefaultPosition, wxDefaultSize,
                wxDEFAULT_DIALOG_STYLE & ~wxRESIZE_BORDER)
     , m_dev_id(dev_id)
     , m_impressora(impressora)
@@ -271,7 +272,7 @@ JanelaEnvio::JanelaEnvio(wxWindow* pai, const std::string& dev_id, const wxStrin
     faixa->SetBackgroundColour(MAGENTA);
     {
         auto* fs = new wxBoxSizer(wxVERTICAL);
-        auto* t1 = new wxStaticText(faixa, wxID_ANY, wxString::FromUTF8("Enviando para ") + m_impressora);
+        auto* t1 = new wxStaticText(faixa, wxID_ANY, Filuna::trw("Enviando para ") + m_impressora);
         t1->SetForegroundColour(BRANCO);
         t1->SetFont(fonte(faixa, 12, true));
         auto* t2 = new wxStaticText(faixa, wxID_ANY, m_arquivo);
@@ -341,23 +342,23 @@ void JanelaEnvio::passo(Passo p, int porcento)
     if (m_coluna == nullptr) return;
     switch (p) {
     case Passo::PREPARANDO:
-        m_coluna->dizer(wxString::FromUTF8("Preparando o envio"), wxString::FromUTF8("Separando o arquivo da mesa"), -1);
+        m_coluna->dizer(Filuna::trw("Preparando o envio"), Filuna::trw("Separando o arquivo da mesa"), -1);
         break;
     case Passo::ENVIANDO:
-        m_coluna->dizer(wxString::FromUTF8("Enviando o arquivo"), wxString::FromUTF8("Pela rede local, sem passar por nuvem"), porcento);
+        m_coluna->dizer(Filuna::trw("Enviando o arquivo"), Filuna::trw("Pela rede local, sem passar por nuvem"), porcento);
         break;
     case Passo::CONFERINDO:
-        m_coluna->dizer(wxString::FromUTF8("Conferindo se o arquivo chegou"), wxString::FromUTF8("Comparando o que foi enviado"), -1);
+        m_coluna->dizer(Filuna::trw("Conferindo se o arquivo chegou"), Filuna::trw("Comparando o que foi enviado"), -1);
         break;
     case Passo::FALANDO:
-        m_coluna->dizer(wxString::FromUTF8("Falando com a impressora"), wxString::FromUTF8("Pedindo o início da impressão"), -1);
+        m_coluna->dizer(Filuna::trw("Falando com a impressora"), Filuna::trw("Pedindo o início da impressão"), -1);
         break;
     case Passo::AQUECENDO:
-        m_coluna->dizer(wxString::FromUTF8("A impressora está aquecendo"), wxString::FromUTF8("Bico e mesa chegando na temperatura"), -1);
+        m_coluna->dizer(Filuna::trw("A impressora está aquecendo"), Filuna::trw("Bico e mesa chegando na temperatura"), -1);
         if (m_desenho != nullptr) m_desenho->imprimindo(true);
         break;
     case Passo::IMPRIMINDO:
-        m_coluna->dizer(wxString::FromUTF8("Imprimindo"), wxString::FromUTF8("A impressora começou"), -1);
+        m_coluna->dizer(Filuna::trw("Imprimindo"), Filuna::trw("A impressora começou"), -1);
         if (m_desenho != nullptr) m_desenho->imprimindo(true);
         break;
     }
@@ -370,9 +371,9 @@ void JanelaEnvio::concluir(bool deu_certo, const wxString& recado)
     if (m_coluna != nullptr) {
         m_coluna->pronto(deu_certo);
         if (deu_certo)
-            m_coluna->dizer(wxString::FromUTF8("Sua impressão foi enviada e já está imprimindo"), m_impressora, -1);
+            m_coluna->dizer(Filuna::trw("Sua impressão foi enviada e já está imprimindo"), m_impressora, -1);
         else
-            m_coluna->dizer(wxString::FromUTF8("Não deu para enviar"), recado, -1);
+            m_coluna->dizer(Filuna::trw("Não deu para enviar"), recado, -1);
     }
     if (m_desenho != nullptr) m_desenho->imprimindo(deu_certo);
     montar_fim(deu_certo, recado);
@@ -389,13 +390,13 @@ void JanelaEnvio::montar_fim(bool deu_certo, const wxString& recado)
 
     if (deu_certo) {
         auto* a = new wxStaticText(rodape, wxID_ANY,
-                                   wxString::FromUTF8("Acompanhe pela aba Dispositivo, de qualquer tela, ou deixe esta janela aberta."));
+                                   Filuna::trw("Acompanhe pela aba Dispositivo, de qualquer tela, ou deixe esta janela aberta."));
         a->SetFont(fonte(rodape, 9, false));
         a->SetForegroundColour(VINHO);
         rs->Add(a, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(16));
 
         auto* b = new wxStaticText(rodape, wxID_ANY,
-                                   wxString::FromUTF8("Fechando esta tela nenhum arquivo é perdido, e você pode imprimir em outra impressora."));
+                                   Filuna::trw("Fechando esta tela nenhum arquivo é perdido, e você pode imprimir em outra impressora."));
         b->SetFont(fonte(rodape, 9, false));
         b->SetForegroundColour(CINZA);
         rs->Add(b, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(16));
@@ -410,14 +411,14 @@ void JanelaEnvio::montar_fim(bool deu_certo, const wxString& recado)
     linha->AddStretchSpacer();
 
     if (deu_certo) {
-        auto* ver = new wxButton(rodape, wxID_ANY, wxString::FromUTF8("Acompanhar no Dispositivo"));
+        auto* ver = new wxButton(rodape, wxID_ANY, Filuna::trw("Acompanhar no Dispositivo"));
         ver->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
             if (wxGetApp().mainframe != nullptr) wxGetApp().mainframe->select_filuna_tab(TAB_ID_MONITOR);
             Close(true);
         });
         linha->Add(ver, 0, wxRIGHT, FromDIP(8));
 
-        auto* novo = new wxButton(rodape, wxID_ANY, wxString::FromUTF8("Abrir um projeto novo"));
+        auto* novo = new wxButton(rodape, wxID_ANY, Filuna::trw("Abrir um projeto novo"));
         novo->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
             m_projeto_novo = true;
             Close(true);
@@ -502,11 +503,11 @@ private:
         const wxSize       s  = GetClientSize();
 
         struct { wxString titulo, valor; } campos[4] = {
-            {wxString::FromUTF8("Tempo"), tempo_curto(m_r.tempo_s)},
-            {wxString::FromUTF8("Peso"), m_r.gramas > 0. ? wxString::Format("%.1f g", m_r.gramas) : wxString::FromUTF8("—")},
-            {wxString::FromUTF8("Custo"), m_r.custo > 0. ? wxString::FromUTF8(m_r.moeda + " ") + wxString::Format("%.2f", m_r.custo)
+            {Filuna::trw("Tempo"), tempo_curto(m_r.tempo_s)},
+            {Filuna::trw("Peso"), m_r.gramas > 0. ? wxString::Format("%.1f g", m_r.gramas) : wxString::FromUTF8("—")},
+            {Filuna::trw("Custo"), m_r.custo > 0. ? wxString::FromUTF8(m_r.moeda + " ") + wxString::Format("%.2f", m_r.custo)
                                                          : wxString::FromUTF8("—")},
-            {wxString::FromUTF8("Camada"), m_r.altura_camada > 0. ? wxString::Format("%.2f mm", m_r.altura_camada)
+            {Filuna::trw("Camada"), m_r.altura_camada > 0. ? wxString::Format("%.2f mm", m_r.altura_camada)
                                                                   : wxString::FromUTF8("—")},
         };
 
@@ -527,7 +528,7 @@ private:
 JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, const ResumoMesa& resumo,
                                  const std::vector<ItemFilamento>& filamentos, const std::vector<ItemEntrada>& entradas,
                                  bool entrada_fixa)
-    : wxDialog(pai, wxID_ANY, wxString::FromUTF8("Imprimir"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
+    : wxDialog(pai, wxID_ANY, Filuna::trw("Imprimir"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
     , m_entradas(entradas)
 {
     SetBackgroundColour(BRANCO);
@@ -538,7 +539,7 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
     faixa->SetBackgroundColour(MAGENTA);
     {
         auto* fs = new wxBoxSizer(wxVERTICAL);
-        auto* t1 = new wxStaticText(faixa, wxID_ANY, wxString::FromUTF8("Conferir antes de imprimir"));
+        auto* t1 = new wxStaticText(faixa, wxID_ANY, Filuna::trw("Conferir antes de imprimir"));
         t1->SetForegroundColour(BRANCO);
         t1->SetFont(fonte(faixa, 12, true));
         auto* t2 = new wxStaticText(faixa, wxID_ANY, impressora);
@@ -579,7 +580,7 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
         m->SetFont(fonte(this, 10, false));
         l->Add(m, 0, wxALIGN_CENTER_VERTICAL);
         l->AddStretchSpacer();
-        m_nivelar = new wxCheckBox(this, wxID_ANY, wxString::FromUTF8("Nivelar a mesa antes"));
+        m_nivelar = new wxCheckBox(this, wxID_ANY, Filuna::trw("Nivelar a mesa antes"));
         m_nivelar->SetValue(wxGetApp().app_config->get("filuna_imprimir_nivelar") != "0");
         l->Add(m_nivelar, 0, wxALIGN_CENTER_VERTICAL);
         v->Add(l, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
@@ -590,14 +591,14 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
         titulo_secao("FILAMENTO");
         wxArrayString nomes;
         for (const ItemEntrada& e : entradas)
-            nomes.Add(wxString::FromUTF8("Entrada " + std::to_string(e.global + 1) + (e.tipo.empty() ? "" : " · " + e.tipo)));
+            nomes.Add(Filuna::trw_valores("Entrada {0}{1}", {std::to_string(e.global + 1), (e.tipo.empty() ? "" : " · " + e.tipo)}));
 
         auto* g = new wxFlexGridSizer(5, FromDIP(8), FromDIP(10));
         g->AddGrowableCol(2);
         for (const ItemFilamento& f : filamentos) {
             g->Add(amostra(this, cor_de(f.cor_hex)), 0, wxALIGN_CENTER_VERTICAL);
 
-            wxString rotulo = wxString::FromUTF8("Filamento " + std::to_string(f.indice + 1) + (f.tipo.empty() ? "" : " · " + f.tipo));
+            wxString rotulo = Filuna::trw_valores("Filamento {0}{1}", {std::to_string(f.indice + 1), (f.tipo.empty() ? "" : " · " + f.tipo)});
             if (f.gramas > 0.) rotulo += wxString::Format("  (%.1f g)", f.gramas);
             auto* nome = new wxStaticText(this, wxID_ANY, rotulo);
             nome->SetFont(fonte(this, 9.5, false));
@@ -630,8 +631,7 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
 
         if (entrada_fixa) {
             auto* n = new wxStaticText(this, wxID_ANY,
-                                       wxString::FromUTF8("Nesta impressora o filamento 1 do projeto sai da Entrada 1, o 2 da Entrada 2, "
-                                                          "e assim por diante."));
+                                       Filuna::trw("Nesta impressora o filamento 1 do projeto sai da Entrada 1, o 2 da Entrada 2, e assim por diante."));
             n->SetFont(fonte(this, 8.5, false));
             n->SetForegroundColour(CINZA);
             v->Add(n, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
@@ -639,8 +639,7 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
     } else if (entradas.empty()) {
         titulo_secao("FILAMENTO");
         auto* n = new wxStaticText(this, wxID_ANY,
-                                   wxString::FromUTF8("A impressora não informou um sistema de cores. Vai sair com o filamento que já "
-                                                      "está carregado nela."));
+                                   Filuna::trw("A impressora não informou um sistema de cores. Vai sair com o filamento que já está carregado nela."));
         n->SetFont(fonte(this, 9.5, false));
         n->SetForegroundColour(CINZA);
         v->Add(n, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
@@ -652,10 +651,10 @@ JanelaConfirmar::JanelaConfirmar(wxWindow* pai, const wxString& impressora, cons
     {
         auto* b = new wxBoxSizer(wxHORIZONTAL);
         b->AddStretchSpacer();
-        auto* cancel = new wxButton(rodape, wxID_CANCEL, wxString::FromUTF8("Cancelar"));
-        auto* so_env = new wxButton(rodape, wxID_APPLY, wxString::FromUTF8("Só enviar o arquivo"));
+        auto* cancel = new wxButton(rodape, wxID_CANCEL, Filuna::trw("Cancelar"));
+        auto* so_env = new wxButton(rodape, wxID_APPLY, Filuna::trw("Só enviar o arquivo"));
         // O botão principal no magenta do Filuna.
-        auto* ok = new Button(rodape, wxString::FromUTF8("Imprimir"), "", 0, 0, wxID_OK);
+        auto* ok = new Button(rodape, Filuna::trw("Imprimir"), "", 0, 0, wxID_OK);
         ok->SetBackgroundColor(StateColor(std::pair<wxColour, int>(MAGENTA_ESCURO, StateColor::Hovered),
                                           std::pair<wxColour, int>(MAGENTA, StateColor::Normal)));
         ok->SetBorderColor(StateColor(std::pair<wxColour, int>(MAGENTA_ESCURO, StateColor::Hovered),
@@ -763,12 +762,12 @@ void previa_telas_de_impressao(wxWindow* pai)
     const std::vector<ItemFilamento> fs = {{0, "PLA", "#C8102E", 22.4}, {1, "PETG", "#00C1AE", 13.5}};
     const std::vector<ItemEntrada>   es = {{0, "PLA", "#C8102E"}, {1, "PETG", "#00C1AE"}, {2, "PLA", "#F4F4F4"}, {3, "PLA", "#222222"}};
 
-    JanelaConfirmar confirmar(pai, wxString::FromUTF8("A1-ASHLEY"), r, fs, es, false);
+    JanelaConfirmar confirmar(pai, Filuna::trw("A1-ASHLEY"), r, fs, es, false);
     const int resposta = confirmar.ShowModal();
     if (resposta != wxID_OK && resposta != wxID_APPLY)
         return;
 
-    auto* envio = new JanelaEnvio(pai, std::string(), wxString::FromUTF8("A1-ASHLEY"), wxString::FromUTF8(r.arquivo));
+    auto* envio = new JanelaEnvio(pai, std::string(), Filuna::trw("A1-ASHLEY"), wxString::FromUTF8(r.arquivo));
     envio->Show();
     new RelogioPrevia(envio); // apaga-se sozinho no fim
 }

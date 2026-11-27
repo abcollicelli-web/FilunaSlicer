@@ -1,5 +1,6 @@
 #include <boost/asio.hpp> // no Windows o boost precisa vir antes dos cabeçalhos do wxWidgets
 #include "FilunaDispositivos.hpp"
+#include "FilunaIdioma.hpp"
 #include "FilunaCasa.hpp"
 #include "FilunaCasaAvisos.hpp"
 #include "FilunaAoVivo.hpp"
@@ -1560,12 +1561,11 @@ void monitor_iniciar()
                     FilunaCasaAvisos::evento("pausada", dados);
             }
             if ((a == "imprimindo" || a == "pausada") && (est == "concluida" || est == "livre")) {
-                const wxString texto = wxString::FromUTF8("Impressão concluída na " + i.value("nome", std::string("impressora")) +
-                                                          ". Retire a peça e limpe a mesa.");
+                const wxString texto = Filuna::trw_valores("Impressão concluída na {0}. Retire a peça e limpe a mesa.", {i.value("nome", std::string(Filuna::tr("impressora")))});
                 if (Plater* pl = wxGetApp().plater())
                     if (auto* nm = pl->get_notification_manager())
                         nm->push_notification(std::string(texto.ToUTF8().data()));
-                wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer"), texto, wxGetApp().mainframe);
+                wxNotificationMessage aviso(Filuna::trw("Filuna Slicer"), texto, wxGetApp().mainframe);
                 aviso.Show();
             }
             {
@@ -1626,12 +1626,11 @@ void monitor_iniciar()
                 if (!novas.empty()) {
                     FilunaCasaAvisos::evento("filamento", {{"impressora", i.value("nome", std::string())},
                                                            {"texto", "filamento trocado na entrada " + novas + "."}});
-                    const wxString texto = wxString::FromUTF8("Filamento trocado na " + i.value("nome", std::string("impressora")) + ": entrada " + novas +
-                                                              ". Abra Dispositivo para cadastrar no estoque.");
+                    const wxString texto = Filuna::trw_valores("Filamento trocado na {0}: entrada {1}. Abra Dispositivo para cadastrar no estoque.", {i.value("nome", std::string(Filuna::tr("impressora"))), novas});
                     if (Plater* pl = wxGetApp().plater())
                         if (auto* nm = pl->get_notification_manager())
                             nm->push_notification(std::string(texto.ToUTF8().data()));
-                    wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer — filamento trocado"), texto, wxGetApp().mainframe);
+                    wxNotificationMessage aviso(Filuna::trw("Filuna Slicer — filamento trocado"), texto, wxGetApp().mainframe);
                     aviso.Show();
                 }
             }
@@ -1655,8 +1654,7 @@ void monitor_iniciar()
                 const auto agora = std::chrono::steady_clock::now();
                 if (entrada > 0 && ant_e > 0 && entrada != ant_e && agora - aviso_cor[dev] > std::chrono::seconds(60)) {
                     aviso_cor[dev] = agora;
-                    const wxString texto = wxString::FromUTF8(i.value("nome", std::string("Impressora")) + ": troca de cor, agora puxando a entrada " +
-                                                              std::to_string(entrada) + " (antes " + std::to_string(ant_e) + ").");
+                    const wxString texto = Filuna::trw_valores("{0}: troca de cor, agora puxando a entrada {1} (antes {2}).", {i.value("nome", std::string(Filuna::tr("Impressora"))), std::to_string(entrada), std::to_string(ant_e)});
                     if (Plater* pl = wxGetApp().plater())
                         if (auto* nm = pl->get_notification_manager())
                             nm->push_notification(std::string(texto.ToUTF8().data()));
@@ -1672,7 +1670,7 @@ void monitor_iniciar()
                 if (Plater* pl = wxGetApp().plater())
                     if (auto* nm = pl->get_notification_manager())
                         nm->push_notification(std::string(texto.ToUTF8().data()));
-                wxNotificationMessage aviso(wxString::FromUTF8("Filuna Slicer — impressão com problema"), texto, wxGetApp().mainframe, wxICON_WARNING);
+                wxNotificationMessage aviso(Filuna::trw("Filuna Slicer — impressão com problema"), texto, wxGetApp().mainframe, wxICON_WARNING);
                 aviso.Show();
             }
             erro_antes[dev] = err;
