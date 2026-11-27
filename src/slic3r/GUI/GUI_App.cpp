@@ -5640,6 +5640,8 @@ std::string GUI_App::handle_web_request(std::string cmd)
                     try {
                         if (acao == "dispositivos.estado")
                             r = FilunaDispositivos::estado();
+                        else if (acao == "site.base") // o mesmo site dos dados das telas Filuna (FILUNA_SITE_TESTE nos testes)
+                            r = {{"base", filuna_site_base()}};
                         else if (acao == "estoque.listar" || acao == "historico.listar") {
                             const auto d = filuna_dados_acao(acao, acao == "historico.listar" ? nlohmann::json{{"limite", 30}} : nlohmann::json::object());
                             r = d ? *d : nlohmann::json::object();

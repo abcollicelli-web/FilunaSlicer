@@ -23,6 +23,8 @@
 <script type="text/javascript" src="../filuna/ponte.js"></script>	<!-- o desenho da bobina é o mesmo do Estoque -->
 <script type="text/javascript" src="js/filuna-inicio.js"></script>
 <link rel="stylesheet" type="text/css" href="./css/filuna-inicio.css" />
+<script type="text/javascript" src="js/filuna-dia.js"></script>
+<link rel="stylesheet" type="text/css" href="./css/filuna-dia.css" />
 </head>
 <body class="thin-scroll" onLoad="OnInit()">
 <div id="LeftBoard">
@@ -164,6 +166,7 @@
 		</div>
 		<div class="BtnItem" onClick="FlAbrirAba('filuna.espaco', 'loja')">
 			<div>Minha loja</div>
+			<div class="FlContador" id="FlMenuLoja" hidden title="Vendas novas no Mercado Livre"></div>
 			<div class="NavArrow icon16"></div>
 		</div>
 		<div class="BtnItem" onClick="FlAbrirAba('novidades')">
@@ -203,6 +206,12 @@
 				<a class="FiBtn" onClick="OnClickOpenProject()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/></svg>Abrir projeto</a>
 				<a class="FiBtn" onClick="FiImportar()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg>Importar STL / 3MF</a>
 			</div>
+		</section>
+		<!-- Seu dia (27/11/2026): agenda de hoje, estoque baixo, vendas do Mercado Livre e o que falta enviar, do site
+		     (GET /inicio/resumo). Só aparece com a conta ligada; js/filuna-dia.js. -->
+		<section id="FdDia" class="FdDia" hidden aria-label="Seu dia">
+			<div class="FdTopo"><b>Seu dia</b><span id="FdData"></span><span id="FdHora"></span></div>
+			<div class="FdGrade"></div>
 		</section>
 		<section class="FiMeio">
 			<div id="FiImps" class="FiImps"></div>
