@@ -1,0 +1,1187 @@
+{
+ "layer_height": {
+  "titulo": "Layer height",
+  "oque": "How thick each printed layer is.",
+  "efeito": "Thinner layers give a smoother surface but take longer. Thicker layers print fast and show more stair-stepping."
+ },
+ "initial_layer_print_height": {
+  "titulo": "First layer height",
+  "oque": "Thickness of the layer that touches the bed.",
+  "efeito": "A bit thicker helps the part stick and forgives a slightly uneven bed."
+ },
+ "line_width": {
+  "titulo": "Line width",
+  "oque": "Width of each extruded plastic line.",
+  "efeito": "Wider lines make the part stronger and faster; narrower lines show more detail."
+ },
+ "wall_loops": {
+  "titulo": "Wall loops",
+  "oque": "How many outline loops the part has.",
+  "efeito": "More loops make a stronger part but use more time and filament."
+ },
+ "top_shell_layers": {
+  "titulo": "Top shell layers",
+  "oque": "How many solid layers close off the top.",
+  "efeito": "Too few leave holes or a wavy top; more layers close it better but use more filament."
+ },
+ "bottom_shell_layers": {
+  "titulo": "Bottom shell layers",
+  "oque": "How many solid layers form the bottom of the part.",
+  "efeito": "More layers give a sturdier, watertight bottom."
+ },
+ "top_shell_thickness": {
+  "titulo": "Top shell thickness",
+  "oque": "Minimum thickness of the solid top.",
+  "efeito": "If the top layers add up to less than this, the slicer adds more layers."
+ },
+ "bottom_shell_thickness": {
+  "titulo": "Bottom shell thickness",
+  "oque": "Minimum thickness of the solid bottom.",
+  "efeito": "Keeps the bottom solid even with thin layers."
+ },
+ "sparse_infill_density": {
+  "titulo": "Sparse infill density",
+  "oque": "How much of the part's inside is filled with plastic.",
+  "efeito": "15% to 20% works for most parts. More infill makes the part stronger, heavier and slower to print."
+ },
+ "sparse_infill_pattern": {
+  "titulo": "Sparse infill pattern",
+  "oque": "The pattern printed inside the part.",
+  "efeito": "Gyroid and cubic are strong in every direction; grid and lines print faster."
+ },
+ "seam_position": {
+  "titulo": "Seam position",
+  "oque": "Where each wall loop starts and ends.",
+  "efeito": "Aligned leaves a subtle line on one corner; random scatters the mark around the part."
+ },
+ "enable_support": {
+  "titulo": "Enable support",
+  "oque": "Builds supports under areas that would otherwise print in mid-air.",
+  "efeito": "Needed for steep overhangs and long bridges. Uses filament and leaves marks where it touches."
+ },
+ "support_type": {
+  "titulo": "Support type",
+  "oque": "Support shape: normal (grid) or tree.",
+  "efeito": "Tree uses less filament and comes off easier; normal holds large flat surfaces better."
+ },
+ "support_threshold_angle": {
+  "titulo": "Threshold angle",
+  "oque": "The overhang angle at which the part gets support.",
+  "efeito": "A lower angle creates less support; a higher one creates more. 30° to 45° is typical."
+ },
+ "support_on_build_plate_only": {
+  "titulo": "On build plate only",
+  "oque": "Only creates support that starts from the bed.",
+  "efeito": "Avoids support resting on the part itself, which marks the surface."
+ },
+ "brim_type": {
+  "titulo": "Brim type",
+  "oque": "A thin band around the base, printed on the first layer.",
+  "efeito": "Helps parts with a small footprint stay down and not warp. You peel it off afterward."
+ },
+ "brim_width": {
+  "titulo": "Brim width",
+  "oque": "How far the brim extends out from the part.",
+  "efeito": "Wider holds better but takes more work to remove."
+ },
+ "skirt_loops": {
+  "titulo": "Skirt loops",
+  "oque": "Lines printed around the part without touching it.",
+  "efeito": "Primes the nozzle and shows whether the first layer looks good before the part starts."
+ },
+ "raft_layers": {
+  "titulo": "Raft layers",
+  "oque": "A throwaway base printed under the part.",
+  "efeito": "Helps materials that warp a lot; uses filament and leaves a rougher bottom."
+ },
+ "outer_wall_speed": {
+  "titulo": "Outer wall speed",
+  "oque": "Speed of the visible outer wall.",
+  "efeito": "Slower improves the finish; faster shortens the print."
+ },
+ "inner_wall_speed": {
+  "titulo": "Inner wall speed",
+  "oque": "Speed of the inner walls.",
+  "efeito": "Can be faster than the outer wall without hurting looks."
+ },
+ "sparse_infill_speed": {
+  "titulo": "Sparse infill speed",
+  "oque": "Speed of the part's interior.",
+  "efeito": "Can be high: the inside isn't visible."
+ },
+ "initial_layer_speed": {
+  "titulo": "First layer speed",
+  "oque": "Speed of the layer that touches the bed.",
+  "efeito": "Slow helps the part stick. This is the layer that fails most when printed too fast."
+ },
+ "travel_speed": {
+  "titulo": "Travel speed",
+  "oque": "How fast the nozzle moves when it isn't printing.",
+  "efeito": "Faster cuts print time and stringing."
+ },
+ "default_acceleration": {
+  "titulo": "Default acceleration",
+  "oque": "How quickly the printer changes speed.",
+  "efeito": "Higher shortens the print; too high causes ripples (ghosting) near corners."
+ },
+ "nozzle_temperature": {
+  "titulo": "Nozzle temperature",
+  "oque": "Temperature that melts the filament.",
+  "efeito": "Too low causes under-extrusion and weak layers; too high oozes and strings. Follow the range on the filament label."
+ },
+ "nozzle_temperature_initial_layer": {
+  "titulo": "First layer nozzle temperature",
+  "oque": "Nozzle temperature for the layer that touches the bed only.",
+  "efeito": "A few degrees hotter helps adhesion."
+ },
+ "hot_plate_temp": {
+  "titulo": "Bed temperature",
+  "oque": "Bed temperature during the print.",
+  "efeito": "Keeps the base stuck down. PLA runs around 55–65 °C, PETG 70–80 °C, ABS/ASA 90–100 °C."
+ },
+ "textured_plate_temp": {
+  "titulo": "Textured PEI plate temperature",
+  "oque": "Bed temperature when using the textured (PEI) plate.",
+  "efeito": "Usually a few degrees higher than the smooth plate for the same material."
+ },
+ "filament_flow_ratio": {
+  "titulo": "Flow ratio",
+  "oque": "Fine-tunes how much plastic is extruded.",
+  "efeito": "Above 1 lays down more (fuller part, may smear); below 1 lays down less (may leave gaps)."
+ },
+ "filament_max_volumetric_speed": {
+  "titulo": "Max volumetric speed",
+  "oque": "How much plastic per second this filament can melt.",
+  "efeito": "This is the material's real speed limit. Go past it and extrusion fails."
+ },
+ "fan_min_speed": {
+  "titulo": "Min fan speed",
+  "oque": "Lowest speed of the part cooling fan.",
+  "efeito": "PLA likes lots of airflow; ABS and ASA want almost none, so they don't crack."
+ },
+ "fan_max_speed": {
+  "titulo": "Max fan speed",
+  "oque": "Highest speed of the part cooling fan.",
+  "efeito": "Used on fast layers, bridges and overhangs."
+ },
+ "retraction_length": {
+  "titulo": "Retraction length",
+  "oque": "How far the filament is pulled back before the nozzle travels.",
+  "efeito": "Reduces stringing. Too much can clog; too little leaves strings between parts."
+ },
+ "retraction_speed": {
+  "titulo": "Retraction speed",
+  "oque": "How fast the filament is pulled back.",
+  "efeito": "Fast cuts strings better; too fast grinds the filament."
+ },
+ "z_hop": {
+  "titulo": "Z hop",
+  "oque": "The nozzle lifts slightly while traveling.",
+  "efeito": "Avoids hitting or scratching the part; can increase stringing."
+ },
+ "ironing_type": {
+  "titulo": "Ironing type",
+  "oque": "The nozzle passes over the top again to smooth it.",
+  "efeito": "A much smoother top, with longer print time."
+ },
+ "fuzzy_skin": {
+  "titulo": "Fuzzy skin",
+  "oque": "Gives the outer wall a rough texture.",
+  "efeito": "Hides layer lines and improves grip."
+ },
+ "spiral_mode": {
+  "titulo": "Spiral vase",
+  "oque": "Prints the part as a single continuous spiral wall.",
+  "efeito": "For vases and hollow parts: no seam, no infill and no top."
+ },
+ "prime_tower_width": {
+  "titulo": "Prime tower width",
+  "oque": "Size of the tower used for color changes.",
+  "efeito": "A bigger tower purges the previous color better and uses more filament."
+ },
+ "enable_prime_tower": {
+  "titulo": "Enable prime tower",
+  "oque": "A tower where the nozzle dumps the previous color at each change.",
+  "efeito": "Keeps colors clean on multi-color parts."
+ },
+ "flush_into_infill": {
+  "titulo": "Flush into objects' infill",
+  "oque": "Uses the part's interior to purge the previous color.",
+  "efeito": "Saves filament on color changes; the mixed color stays hidden inside."
+ },
+ "wall_generator": {
+  "titulo": "Wall generator",
+  "oque": "How walls are calculated: Classic or Arachne.",
+  "efeito": "Arachne varies line width and fills thin areas better."
+ },
+ "elefant_foot_compensation": {
+  "titulo": "Elephant foot compensation",
+  "oque": "Shrinks the first layer slightly.",
+  "efeito": "Fixes a base that flares out from being squished against the bed."
+ },
+ "xy_hole_compensation": {
+  "titulo": "X-Y hole compensation",
+  "oque": "Makes the part's holes bigger or smaller.",
+  "efeito": "Use it when holes come out too tight or too loose for a fit."
+ },
+ "xy_contour_compensation": {
+  "titulo": "X-Y contour compensation",
+  "oque": "Makes the outer contour bigger or smaller.",
+  "efeito": "Use it when the part comes out larger or smaller than it should."
+ },
+ "bridge_speed": {
+  "titulo": "Bridge speed",
+  "oque": "Speed when printing spans with nothing underneath.",
+  "efeito": "Slower gives a straighter bridge."
+ },
+ "overhang_fan_speed": {
+  "titulo": "Overhang fan speed",
+  "oque": "Fan speed on overhangs and bridges.",
+  "efeito": "More airflow sets the plastic before it sags."
+ },
+ "print_sequence": {
+  "titulo": "Print sequence",
+  "oque": "Prints by layer (all parts together) or by object (one at a time).",
+  "efeito": "By object avoids strings between parts but needs space between them."
+ },
+ "curr_bed_type": {
+  "titulo": "Bed type",
+  "oque": "Which plate is on the printer.",
+  "efeito": "Changes the bed temperature and first layer height used."
+ },
+ "ferramenta:add": {
+  "titulo": "Add",
+  "oque": "Brings a 3D file (STL, 3MF, STEP, OBJ) onto the plate.",
+  "efeito": "You can add several; each one becomes a part on the plate."
+ },
+ "ferramenta:addplate": {
+  "titulo": "Add plate",
+  "oque": "Adds another plate to the same project.",
+  "efeito": "Handy when the parts don't fit in one print; each plate is sliced and printed separately."
+ },
+ "ferramenta:orient": {
+  "titulo": "Auto orient",
+  "oque": "Rotates the part to the position that prints best.",
+  "efeito": "Usually reduces support and increases contact with the bed."
+ },
+ "ferramenta:arrange": {
+  "titulo": "Arrange all objects",
+  "oque": "Spreads the parts across the plate without touching each other.",
+  "efeito": "Makes better use of space and keeps parts inside the printable area."
+ },
+ "ferramenta:more": {
+  "titulo": "Add instance",
+  "oque": "Adds a copy of the selected part.",
+  "efeito": "Use it to print several identical parts on the same plate."
+ },
+ "ferramenta:fewer": {
+  "titulo": "Remove instance",
+  "oque": "Removes a copy of the selected part.",
+  "efeito": ""
+ },
+ "ferramenta:splitobjects": {
+  "titulo": "Split to objects",
+  "oque": "Splits a file with several loose pieces into separate objects.",
+  "efeito": "Each piece can be moved, rotated and set up on its own."
+ },
+ "ferramenta:splitvolumes": {
+  "titulo": "Split to parts",
+  "oque": "Splits the object into parts that stay together.",
+  "efeito": "Lets you give each part its own color or settings without breaking up the assembly."
+ },
+ "ferramenta:layersediting": {
+  "titulo": "Variable layer height",
+  "oque": "Changes the layer height along the part.",
+  "efeito": "Thin layers on curves and details, thick ones on straight sections: better finish without doubling the time."
+ },
+ "ferramenta:assembly_view": {
+  "titulo": "Assembly view",
+  "oque": "Shows the parts assembled, off the plate.",
+  "efeito": "Good for checking fits; it doesn't change the print."
+ },
+ "gizmo:toolbar_move": {
+  "titulo": "Move",
+  "oque": "Drags the part around the plate.",
+  "efeito": "Position on the plate doesn't affect quality; avoid the edges if the bed heats less there."
+ },
+ "gizmo:toolbar_rotate": {
+  "titulo": "Rotate",
+  "oque": "Rotates the part on any axis.",
+  "efeito": "Orientation decides where support goes and which direction the part is strongest."
+ },
+ "gizmo:toolbar_scale": {
+  "titulo": "Scale",
+  "oque": "Makes the part bigger or smaller.",
+  "efeito": "With the lock closed it keeps proportions; open, it stretches just one side."
+ },
+ "gizmo:toolbar_flatten": {
+  "titulo": "Lay on face",
+  "oque": "Click a face and it becomes the base.",
+  "efeito": "The fastest way to get the part sitting flat."
+ },
+ "gizmo:toolbar_cut": {
+  "titulo": "Cut",
+  "oque": "Splits the part with a plane.",
+  "efeito": "Lets you print in two halves (no support) or make parts bigger than the plate, with connectors."
+ },
+ "gizmo:toolbar_meshboolean": {
+  "titulo": "Mesh boolean",
+  "oque": "Combines two parts.",
+  "efeito": "Union joins them, difference cuts a hole shaped like the other, intersection keeps only what they share."
+ },
+ "gizmo:toolbar_support": {
+  "titulo": "Support painting",
+  "oque": "Paint where you want support and where you don't.",
+  "efeito": "Gives fine control: support only where needed, none where it would mark the part."
+ },
+ "gizmo:toolbar_seam": {
+  "titulo": "Seam painting",
+  "oque": "Paint where the layer seam should or shouldn't go.",
+  "efeito": "Hides the mark on a corner or the back."
+ },
+ "gizmo:toolbar_fuzzy_skin_paint": {
+  "titulo": "Fuzzy skin painting",
+  "oque": "Paint the areas that get fuzzy skin.",
+  "efeito": "Texture only where it matters, like the grip on a handle."
+ },
+ "gizmo:mmu_segmentation": {
+  "titulo": "Color painting",
+  "oque": "Paint the part with your filament colors.",
+  "efeito": "Each painted color becomes a filament change during the print."
+ },
+ "gizmo:toolbar_text": {
+  "titulo": "Text",
+  "oque": "Adds raised or engraved text to the part.",
+  "efeito": "Great for names, logos or serial numbers."
+ },
+ "gizmo:toolbar_measure": {
+  "titulo": "Measure",
+  "oque": "Measures distance, angle and diameter on the part.",
+  "efeito": "Check fits before you print."
+ },
+ "gizmo:toolbar_assembly": {
+  "titulo": "Assemble",
+  "oque": "Snaps one part onto another by faces or points.",
+  "efeito": "Helps position the pieces of an assembly."
+ },
+ "gizmo:toolbar_brimears": {
+  "titulo": "Brim ears",
+  "oque": "Adds small discs at corners that tend to lift.",
+  "efeito": "Holds just the corners, with less waste than a full brim."
+ },
+ "gizmo:reduce_triangles": {
+  "titulo": "Simplify mesh",
+  "oque": "Reduces the model's triangle count.",
+  "efeito": "Makes heavy files lighter; overdo it and you lose detail."
+ },
+ "gizmo:toolbar_texture_displacement": {
+  "titulo": "Texture displacement",
+  "oque": "Applies an image texture to the surface.",
+  "efeito": "Creates real, printed relief."
+ },
+ "initial_layer_line_width": {
+  "titulo": "First layer line width",
+  "oque": "Line width on the layer that touches the bed.",
+  "efeito": "A bit wider sticks better and covers small leveling flaws."
+ },
+ "outer_wall_line_width": {
+  "titulo": "Outer wall line width",
+  "oque": "Line width of the visible wall.",
+  "efeito": "Thinner shows more detail; wider makes the wall stronger and faster."
+ },
+ "inner_wall_line_width": {
+  "titulo": "Inner wall line width",
+  "oque": "Line width of the hidden walls.",
+  "efeito": "Wider makes the part stronger and prints faster."
+ },
+ "top_surface_line_width": {
+  "titulo": "Top surface line width",
+  "oque": "Line width of the final top layer.",
+  "efeito": "Thinner gives a smoother, better-closed top."
+ },
+ "sparse_infill_line_width": {
+  "titulo": "Sparse infill line width",
+  "oque": "Line width used inside the part.",
+  "efeito": "Wider fills faster and makes the core stronger."
+ },
+ "internal_solid_infill_line_width": {
+  "titulo": "Internal solid infill line width",
+  "oque": "Line width of the inner solid layers.",
+  "efeito": "Wider prints faster; thinner closes better."
+ },
+ "support_line_width": {
+  "titulo": "Support line width",
+  "oque": "Line width of the support.",
+  "efeito": "Thinner comes off easier; wider holds more firmly."
+ },
+ "bridge_line_width": {
+  "titulo": "Bridge line width",
+  "oque": "Width of the line stretched across mid-air.",
+  "efeito": "Thinner cools faster and sags less."
+ },
+ "staggered_inner_seams": {
+  "titulo": "Staggered inner seams",
+  "oque": "Spreads out where each inner wall starts and ends.",
+  "efeito": "Keeps the seams from stacking on top of each other and weakening the part."
+ },
+ "seam_gap": {
+  "titulo": "Seam gap",
+  "oque": "How far short of the loop's start the loop ends.",
+  "efeito": "A small gap prevents a \"zit\" at the seam."
+ },
+ "seam_slope_type": {
+  "titulo": "Scarf joint seam",
+  "oque": "Starts and ends each wall loop on a gradual ramp.",
+  "efeito": "The seam nearly disappears; takes a little longer."
+ },
+ "wipe_on_loops": {
+  "titulo": "Wipe on loops",
+  "oque": "After finishing a wall, the nozzle moves a bit inward before lifting.",
+  "efeito": "Hides the seam point and reduces blobs."
+ },
+ "wipe_speed": {
+  "titulo": "Wipe speed",
+  "oque": "Speed of the nozzle wipe at the end of a line.",
+  "efeito": "Too fast doesn't wipe; too slow melts the wall."
+ },
+ "resolution": {
+  "titulo": "Resolution",
+  "oque": "Simplifies details smaller than this value when slicing.",
+  "efeito": "A higher value slices faster and makes a smaller file, with less detail."
+ },
+ "enable_arc_fitting": {
+  "titulo": "Arc fitting",
+  "oque": "Replaces many straight segments with arcs (G2/G3) in the G-code.",
+  "efeito": "Smaller file and smoother curves, if your printer supports arcs."
+ },
+ "precise_outer_wall": {
+  "titulo": "Precise wall",
+  "oque": "Adjusts wall spacing so outer dimensions come out exact.",
+  "efeito": "Helps parts that need to fit together come out to size."
+ },
+ "precise_z_height": {
+  "titulo": "Precise Z height",
+  "oque": "Adjusts the last layers so the part comes out at the right height.",
+  "efeito": "Good for parts where height really matters."
+ },
+ "ironing_pattern": {
+  "titulo": "Ironing pattern",
+  "oque": "Pattern of the ironing passes on the top.",
+  "efeito": "Concentric suits round parts; lines suit straight ones."
+ },
+ "ironing_flow": {
+  "titulo": "Ironing flow",
+  "oque": "How much plastic comes out during the ironing pass.",
+  "efeito": "Too little leaves streaks; too much leaves bumps."
+ },
+ "ironing_spacing": {
+  "titulo": "Ironing line spacing",
+  "oque": "Distance between ironing lines.",
+  "efeito": "Smaller is smoother and takes longer."
+ },
+ "wall_sequence": {
+  "titulo": "Walls printing order",
+  "oque": "Whether the inner or outer wall prints first.",
+  "efeito": "Inner → outer gives a nicer outer wall; outer → inner gives more accurate dimensions."
+ },
+ "is_infill_first": {
+  "titulo": "Print infill first",
+  "oque": "Prints the core before the walls on each layer.",
+  "efeito": "Firmer walls, but the infill may show through on the outside."
+ },
+ "print_flow_ratio": {
+  "titulo": "Flow ratio",
+  "oque": "Multiplies all the plastic extruded in this process.",
+  "efeito": "Use it to fix under-extrusion (raise it) or over-extrusion (lower it)."
+ },
+ "only_one_wall_top": {
+  "titulo": "Only one wall on top surfaces",
+  "oque": "Uses a single wall on the top layer.",
+  "efeito": "Cleaner top and more room for top infill."
+ },
+ "only_one_wall_first_layer": {
+  "titulo": "Only one wall on first layer",
+  "oque": "Uses a single wall on the bed layer.",
+  "efeito": "Faster, smoother first layer."
+ },
+ "reduce_crossing_wall": {
+  "titulo": "Avoid crossing walls",
+  "oque": "The nozzle detours so it doesn't travel over walls.",
+  "efeito": "Fewer strings and marks on the outside; slightly longer travel moves."
+ },
+ "bridge_flow": {
+  "titulo": "Bridge flow ratio",
+  "oque": "How much plastic comes out on mid-air sections.",
+  "efeito": "A little less keeps the bridge taut and keeps it from sagging."
+ },
+ "thick_bridges": {
+  "titulo": "Thick bridges",
+  "oque": "Uses the full nozzle width on bridges.",
+  "efeito": "Stronger, more reliable bridges; slightly heavier."
+ },
+ "enable_extra_bridge_layer": {
+  "titulo": "Extra bridge layers",
+  "oque": "Prints a second bridge layer on top of the first.",
+  "efeito": "Closes the top of large spans better."
+ },
+ "detect_overhang_wall": {
+  "titulo": "Detect overhang walls",
+  "oque": "Finds walls that stick out past the layer below.",
+  "efeito": "Lets those areas print slower and with more cooling."
+ },
+ "make_overhang_printable": {
+  "titulo": "Make overhangs printable",
+  "oque": "Reshapes the area under overhangs so they're self-supporting.",
+  "efeito": "Prints overhangs without support; changes the shape slightly."
+ },
+ "extra_perimeters_on_overhangs": {
+  "titulo": "Extra perimeters on overhangs",
+  "oque": "Adds walls where the part hangs in mid-air.",
+  "efeito": "Better overhangs, using a bit more filament."
+ },
+ "overhang_reverse": {
+  "titulo": "Reverse on even",
+  "oque": "Alternates wall direction on layers with overhangs.",
+  "efeito": "Reduces edges curling up in mid-air."
+ },
+ "hole_to_polyhole": {
+  "titulo": "Convert holes to polyholes",
+  "oque": "Replaces round holes with polygons.",
+  "efeito": "Holes come out to size, great for screws and shafts."
+ },
+ "zaa_enabled": {
+  "titulo": "Z anti-aliasing",
+  "oque": "Adjusts nozzle height within the layer on sloped surfaces.",
+  "efeito": "Sloped tops come out smoother, with less stair-stepping."
+ },
+ "wall_distribution_count": {
+  "titulo": "Wall distribution count",
+  "oque": "How many walls can change width in thin areas (Arachne).",
+  "efeito": "More walls spread the difference out better."
+ },
+ "min_bead_width": {
+  "titulo": "Minimum wall width",
+  "oque": "The thinnest line the slicer will still use.",
+  "efeito": "Smaller prints finer details; too small can fail."
+ },
+ "min_feature_size": {
+  "titulo": "Minimum feature size",
+  "oque": "Details smaller than this are ignored.",
+  "efeito": "Smaller keeps more tiny details."
+ },
+ "top_solid_infill_flow_ratio": {
+  "titulo": "Top surface flow ratio",
+  "oque": "Plastic on the final top layer.",
+  "efeito": "Fine-tune it for a closed, smooth top."
+ },
+ "bottom_solid_infill_flow_ratio": {
+  "titulo": "Bottom surface flow ratio",
+  "oque": "Plastic on the bottom solid layers.",
+  "efeito": "Fine-tune it for a solid bottom."
+ },
+ "first_layer_flow_ratio": {
+  "titulo": "First layer flow ratio",
+  "oque": "Plastic on the bed layer.",
+  "efeito": "A little more helps adhesion; too much causes \"elephant foot\"."
+ },
+ "detect_thin_wall": {
+  "titulo": "Detect thin walls",
+  "oque": "Prints walls too thin for two lines with a single line.",
+  "efeito": "Fine details show up instead of disappearing."
+ },
+ "alternate_extra_wall": {
+  "titulo": "Alternate extra wall",
+  "oque": "Adds an extra wall on every other layer.",
+  "efeito": "Stronger walls without the cost of a full extra wall."
+ },
+ "top_surface_pattern": {
+  "titulo": "Top surface pattern",
+  "oque": "Line pattern of the final top layer.",
+  "efeito": "Monotonic gives a more even top; concentric suits round parts."
+ },
+ "bottom_surface_pattern": {
+  "titulo": "Bottom surface pattern",
+  "oque": "Line pattern of the bottom layer.",
+  "efeito": "Changes how the part's base looks."
+ },
+ "top_surface_density": {
+  "titulo": "Top surface density",
+  "oque": "How closed the final top layer is.",
+  "efeito": "100% closes it fully; less gives a decorative effect."
+ },
+ "internal_solid_infill_pattern": {
+  "titulo": "Internal solid infill pattern",
+  "oque": "Pattern of the inner solid layers.",
+  "efeito": "Rectilinear is the fastest and sturdiest."
+ },
+ "gyroid_optimized": {
+  "titulo": "Optimized gyroid",
+  "oque": "A lighter version of gyroid infill.",
+  "efeito": "Slices faster with almost the same strength."
+ },
+ "infill_direction": {
+  "titulo": "Sparse infill direction",
+  "oque": "Angle of the infill lines.",
+  "efeito": "Rotate it to line up strength with the load the part will take."
+ },
+ "infill_anchor": {
+  "titulo": "Sparse infill anchor length",
+  "oque": "A short line segment that connects infill to the wall.",
+  "efeito": "Ties the core to the walls better."
+ },
+ "infill_anchor_max": {
+  "titulo": "Maximum length of the infill anchor",
+  "oque": "Maximum length of the segment that connects infill to the wall.",
+  "efeito": "Longer bonds more; too long leaves marks."
+ },
+ "filter_out_gap_fill": {
+  "titulo": "Filter out tiny gaps",
+  "oque": "Skips filling gaps smaller than this value.",
+  "efeito": "Fewer short moves and faster printing."
+ },
+ "infill_wall_overlap": {
+  "titulo": "Infill/Wall overlap",
+  "oque": "How far the infill reaches into the wall.",
+  "efeito": "More overlap bonds better; too much shows on the outside."
+ },
+ "ensure_vertical_shell_thickness": {
+  "titulo": "Ensure vertical shell thickness",
+  "oque": "Adds solid fill where walls would get thin on sloped surfaces.",
+  "efeito": "Prevents holes on sloped sides."
+ },
+ "minimum_sparse_infill_area": {
+  "titulo": "Minimum sparse infill threshold",
+  "oque": "Areas smaller than this become solid.",
+  "efeito": "Small sections stay sturdy."
+ },
+ "infill_combination": {
+  "titulo": "Infill combination",
+  "oque": "Prints infill every other layer, twice as thick.",
+  "efeito": "Prints faster without changing the walls."
+ },
+ "top_bottom_infill_wall_overlap": {
+  "titulo": "Top/Bottom solid infill/wall overlap",
+  "oque": "How far the top and bottom reach into the wall.",
+  "efeito": "More overlap prevents gaps at the edge."
+ },
+ "extra_solid_infills": {
+  "titulo": "Extra solid infill",
+  "oque": "Adds extra solid layers at heights you choose.",
+  "efeito": "Reinforces the part where it takes the most stress."
+ },
+ "initial_layer_infill_speed": {
+  "titulo": "First layer infill speed",
+  "oque": "Speed of the core on the bed layer.",
+  "efeito": "Slower sticks better."
+ },
+ "initial_layer_travel_speed": {
+  "titulo": "First layer travel speed",
+  "oque": "Travel speed (not printing) on the first layer.",
+  "efeito": "Slower avoids knocking loose what was just printed."
+ },
+ "slow_down_layers": {
+  "titulo": "Number of slow layers",
+  "oque": "How many layers ramp up gradually after the first.",
+  "efeito": "More layers give the base time to settle."
+ },
+ "small_perimeter_speed": {
+  "titulo": "Small perimeters",
+  "oque": "Speed for holes and small outlines.",
+  "efeito": "Slower gives round holes and clean details."
+ },
+ "internal_solid_infill_speed": {
+  "titulo": "Internal solid infill",
+  "oque": "Speed of the inner solid layers.",
+  "efeito": "Can be fast: it isn't visible."
+ },
+ "top_surface_speed": {
+  "titulo": "Top surface",
+  "oque": "Speed of the final top layer.",
+  "efeito": "Slower gives a smoother top."
+ },
+ "gap_infill_speed": {
+  "titulo": "Gap infill",
+  "oque": "Speed for filling gaps between walls.",
+  "efeito": "Slower closes gaps better."
+ },
+ "ironing_speed": {
+  "titulo": "Ironing speed",
+  "oque": "Speed of the pass that smooths the top.",
+  "efeito": "Slower irons better."
+ },
+ "support_speed": {
+  "titulo": "Support",
+  "oque": "Support printing speed.",
+  "efeito": "Can be fast: the support comes off later."
+ },
+ "support_interface_speed": {
+  "titulo": "Support interface",
+  "oque": "Speed of the layer that touches the part.",
+  "efeito": "Slower gives a nicer underside on the part."
+ },
+ "enable_overhang_speed": {
+  "titulo": "Slow down for overhangs",
+  "oque": "Prints mid-air sections more slowly.",
+  "efeito": "Better overhangs and bridges."
+ },
+ "outer_wall_acceleration": {
+  "titulo": "Outer wall acceleration",
+  "oque": "How quickly the visible wall gets up to speed.",
+  "efeito": "Lower gives a nicer wall, without \"ghosting\"."
+ },
+ "travel_acceleration": {
+  "titulo": "Travel acceleration",
+  "oque": "How quickly it accelerates on non-printing moves.",
+  "efeito": "Higher saves time; too high makes the printer shake."
+ },
+ "initial_layer_acceleration": {
+  "titulo": "First layer acceleration",
+  "oque": "Acceleration on the bed layer.",
+  "efeito": "Lower helps the part stick."
+ },
+ "default_jerk": {
+  "titulo": "Default jerk",
+  "oque": "Instant speed change at corners.",
+  "efeito": "Lower gives smoother corners; higher prints faster."
+ },
+ "max_volumetric_extrusion_rate_slope": {
+  "titulo": "Extrusion rate smoothing",
+  "oque": "Limits how quickly plastic flow can change.",
+  "efeito": "Prevents gaps when speed changes."
+ },
+ "support_style": {
+  "titulo": "Support style",
+  "oque": "Support shape: grid, slim tree, organic tree…",
+  "efeito": "Organic uses less and comes off easily; grid is sturdier."
+ },
+ "support_top_z_distance": {
+  "titulo": "Top Z distance",
+  "oque": "Gap between the support and the part resting on it.",
+  "efeito": "Larger removes easier; smaller gives a smoother underside."
+ },
+ "support_bottom_z_distance": {
+  "titulo": "Bottom Z distance",
+  "oque": "Gap between the part and support that starts on top of it.",
+  "efeito": "Larger releases more easily."
+ },
+ "support_interface_top_layers": {
+  "titulo": "Top interface layers",
+  "oque": "Denser layers where the support touches the part.",
+  "efeito": "More layers give a smoother underside on the part."
+ },
+ "support_interface_bottom_layers": {
+  "titulo": "Bottom interface layers",
+  "oque": "Dense layers where support starts on top of the part.",
+  "efeito": "Protects the surface underneath."
+ },
+ "support_interface_pattern": {
+  "titulo": "Interface pattern",
+  "oque": "Line pattern that touches the part.",
+  "efeito": "Concentric or rectilinear change the finish and how easily it comes off."
+ },
+ "support_interface_spacing": {
+  "titulo": "Top interface spacing",
+  "oque": "Distance between interface lines.",
+  "efeito": "Smaller gives a smoother part; larger releases more easily."
+ },
+ "support_base_pattern": {
+  "titulo": "Base pattern",
+  "oque": "Pattern of the support's core.",
+  "efeito": "Rectilinear is light; honeycomb is sturdier."
+ },
+ "support_base_pattern_spacing": {
+  "titulo": "Base pattern spacing",
+  "oque": "Distance between the support core lines.",
+  "efeito": "Larger uses less and removes easier."
+ },
+ "support_object_xy_distance": {
+  "titulo": "Support/object XY distance",
+  "oque": "Side gap between the support and the part.",
+  "efeito": "Larger keeps it from sticking to the part's sides."
+ },
+ "support_remove_small_overhang": {
+  "titulo": "Remove small overhangs",
+  "oque": "Skips support for very small overhangs.",
+  "efeito": "Less support and fewer marks."
+ },
+ "bridge_no_support": {
+  "titulo": "Don't support bridges",
+  "oque": "Doesn't add support under bridges.",
+  "efeito": "Saves support when the bridge is short."
+ },
+ "max_bridge_length": {
+  "titulo": "Max bridge length",
+  "oque": "Longest bridge that stays unsupported.",
+  "efeito": "Beyond that, it gets support in the middle."
+ },
+ "tree_support_branch_angle": {
+  "titulo": "Tree support branch angle",
+  "oque": "Maximum tilt of tree support branches.",
+  "efeito": "Higher reaches farther; lower is sturdier."
+ },
+ "tree_support_branch_diameter": {
+  "titulo": "Tree support branch diameter",
+  "oque": "Diameter of tree support branches.",
+  "efeito": "Thicker is sturdier."
+ },
+ "tree_support_tip_diameter": {
+  "titulo": "Tip diameter",
+  "oque": "Diameter of the tip that touches the part.",
+  "efeito": "Thinner leaves a smaller mark."
+ },
+ "tree_support_wall_count": {
+  "titulo": "Support wall loops",
+  "oque": "How many walls each branch has.",
+  "efeito": "More walls make the branch sturdier."
+ },
+ "raft_contact_distance": {
+  "titulo": "Raft contact Z distance",
+  "oque": "Gap between the raft and the part's first layer.",
+  "efeito": "Larger releases easier; smaller gives a smoother base."
+ },
+ "raft_expansion": {
+  "titulo": "Raft expansion",
+  "oque": "How far the raft extends past the part's edge.",
+  "efeito": "Larger holds better on the bed."
+ },
+ "support_filament": {
+  "titulo": "Support/raft base",
+  "oque": "Which filament prints the support.",
+  "efeito": "Using a different material (soluble or interface) makes removal easier."
+ },
+ "support_interface_filament": {
+  "titulo": "Support/raft interface",
+  "oque": "Which filament prints the layer that touches the part.",
+  "efeito": "An interface material lets the support come off clean."
+ },
+ "support_ironing": {
+  "titulo": "Ironing support interface",
+  "oque": "Runs the nozzle over the top of the support again.",
+  "efeito": "The part's underside comes out smoother."
+ },
+ "support_critical_regions_only": {
+  "titulo": "Support critical regions only",
+  "oque": "Only adds support where the part would fail without it.",
+  "efeito": "Less support and less cleanup."
+ },
+ "prime_volume": {
+  "titulo": "Prime volume",
+  "oque": "Plastic purged in the tower on each color change.",
+  "efeito": "More volume cleans the previous color better; uses more filament."
+ },
+ "prime_tower_brim_width": {
+  "titulo": "Prime tower brim width",
+  "oque": "Brim around the prime tower.",
+  "efeito": "Keeps the tower stuck to the bed so it doesn't topple."
+ },
+ "ooze_prevention": {
+  "titulo": "Enable ooze prevention",
+  "oque": "Lowers the temperature of the idle nozzle on multi-nozzle printers.",
+  "efeito": "Fewer blobs and strings between colors."
+ },
+ "flush_into_objects": {
+  "titulo": "Flush into objects",
+  "oque": "Color-change purge goes inside another part.",
+  "efeito": "Saves filament by using the part as a waste bin."
+ },
+ "flush_into_support": {
+  "titulo": "Flush into objects' support",
+  "oque": "Color-change purge goes into the support.",
+  "efeito": "Saves filament; the support comes out multicolored."
+ },
+ "interlocking_beam": {
+  "titulo": "Use beam interlocking",
+  "oque": "Creates interlocking joints between parts in different materials.",
+  "efeito": "Parts stay locked together instead of separating."
+ },
+ "purge_in_prime_tower": {
+  "titulo": "Purge in prime tower",
+  "oque": "Does the color-change purge in the tower.",
+  "efeito": "Keeps leftovers of the previous color off the part."
+ },
+ "wipe_tower_type": {
+  "titulo": "Wipe tower type",
+  "oque": "Which prime tower style is used for color changes.",
+  "efeito": "Each type changes the tower's size and filament use."
+ },
+ "skirt_type": {
+  "titulo": "Skirt type",
+  "oque": "One skirt per part or one around everything.",
+  "efeito": "A single skirt for everything saves time."
+ },
+ "skirt_distance": {
+  "titulo": "Skirt distance",
+  "oque": "Gap between the skirt and the part.",
+  "efeito": "Too close can fuse to the part."
+ },
+ "skirt_height": {
+  "titulo": "Skirt height",
+  "oque": "How many layers the skirt has.",
+  "efeito": "More layers shield against drafts (draft shield)."
+ },
+ "draft_shield": {
+  "titulo": "Draft shield",
+  "oque": "Turns the skirt into a wall around the part, as tall as the part.",
+  "efeito": "Protects ABS and ASA from drafts and cracking."
+ },
+ "brim_object_gap": {
+  "titulo": "Brim-object gap",
+  "oque": "Small gap between the brim and the part's wall.",
+  "efeito": "Makes the brim easier to remove without marks."
+ },
+ "extra_brim_width": {
+  "titulo": "Extra brim width",
+  "oque": "Additional brim width.",
+  "efeito": "More brim holds better."
+ },
+ "slicing_mode": {
+  "titulo": "Slicing mode",
+  "oque": "How the slicer handles models with holes or open meshes.",
+  "efeito": "Regular is the default; the others help with broken models."
+ },
+ "print_order": {
+  "titulo": "Print order",
+  "oque": "Order in which the parts on the plate are printed.",
+  "efeito": "Changes travel time between parts."
+ },
+ "fuzzy_skin_mode": {
+  "titulo": "Fuzzy skin mode",
+  "oque": "Choose whether the texture goes on the outside only or on holes too.",
+  "efeito": "Use outside only to keep fitting surfaces smooth."
+ },
+ "fuzzy_skin_thickness": {
+  "titulo": "Fuzzy skin thickness",
+  "oque": "How far the rough texture moves in and out of the wall.",
+  "efeito": "Larger gives a stronger texture."
+ },
+ "fuzzy_skin_point_distance": {
+  "titulo": "Fuzzy skin point distance",
+  "oque": "Distance between texture points.",
+  "efeito": "Smaller gives a finer grain."
+ },
+ "timelapse_type": {
+  "titulo": "Timelapse",
+  "oque": "How the camera records the print video.",
+  "efeito": "Smooth moves the part out of the way for each shot."
+ },
+ "exclude_object": {
+  "titulo": "Exclude objects",
+  "oque": "Tags each part in the G-code so you can cancel just one.",
+  "efeito": "If one fails, the others keep printing."
+ },
+ "gcode_label_objects": {
+  "titulo": "Label objects",
+  "oque": "Writes each part's name into the file.",
+  "efeito": "Required to cancel parts on the printer."
+ },
+ "reduce_infill_retraction": {
+  "titulo": "Reduce infill retraction",
+  "oque": "Skips retraction on travel moves inside the infill.",
+  "efeito": "Prints faster; any strings stay hidden."
+ },
+ "filament_type": {
+  "titulo": "Filament type",
+  "oque": "PLA, PETG, ABS, TPU…",
+  "efeito": "Sets the material's temperatures and rules."
+ },
+ "filament_diameter": {
+  "titulo": "Diameter",
+  "oque": "Filament thickness: almost always 1.75 mm.",
+  "efeito": "Getting it wrong causes under- or over-extrusion."
+ },
+ "filament_density": {
+  "titulo": "Density",
+  "oque": "Weight per volume of the material.",
+  "efeito": "Used to calculate how many grams the part uses."
+ },
+ "filament_cost": {
+  "titulo": "Price",
+  "oque": "Cost per kilogram of the spool.",
+  "efeito": "Used for the part's cost and sale price."
+ },
+ "filament_shrink": {
+  "titulo": "Shrinkage",
+  "oque": "How much the material shrinks as it cools.",
+  "efeito": "The slicer scales the part up to compensate."
+ },
+ "filament_soluble": {
+  "titulo": "Soluble material",
+  "oque": "Material that dissolves in water or a solvent.",
+  "efeito": "Great for support that disappears on its own."
+ },
+ "filament_is_support": {
+  "titulo": "Support material",
+  "oque": "Material made for support.",
+  "efeito": "Used as interface so the support comes off clean."
+ },
+ "enable_pressure_advance": {
+  "titulo": "Enable pressure advance",
+  "oque": "Compensates for pressure inside the nozzle when speed changes.",
+  "efeito": "Sharper corners with no excess."
+ },
+ "pressure_advance": {
+  "titulo": "Pressure advance",
+  "oque": "How much the printer compensates for pressure.",
+  "efeito": "Calibrate per material: accurate corners with no gaps."
+ },
+ "temperature_vitrification": {
+  "titulo": "Softening temperature",
+  "oque": "Temperature at which the material starts to soften.",
+  "efeito": "Helps decide cooling and bed settings."
+ },
+ "idle_temperature": {
+  "titulo": "Idle temperature",
+  "oque": "Temperature of the idle nozzle on multi-nozzle printers.",
+  "efeito": "Less oozing while it waits."
+ },
+ "filament_colour": {
+  "titulo": "Color",
+  "oque": "The color shown in the app.",
+  "efeito": "Helps you check colors before printing."
+ },
+ "filament_vendor": {
+  "titulo": "Vendor",
+  "oque": "The spool's manufacturer.",
+  "efeito": "Helps pick the right profile."
+ },
+ "close_fan_the_first_x_layers": {
+  "titulo": "No cooling for the first",
+  "oque": "How many initial layers print with the fan off.",
+  "efeito": "The base stays warm and sticks better."
+ },
+ "initial_layer_fan_speed": {
+  "titulo": "First layer fan speed",
+  "oque": "Fan power on the bed layer.",
+  "efeito": "Usually off to help adhesion."
+ },
+ "full_fan_speed_layer": {
+  "titulo": "Full fan speed at layer",
+  "oque": "Layer at which the fan reaches full power.",
+  "efeito": "Ramps up gradually so the base doesn't lift."
+ },
+ "slow_down_for_layer_cooling": {
+  "titulo": "Slow printing down for better layer cooling",
+  "oque": "Prints layers that would finish too quickly more slowly.",
+  "efeito": "Gives them time to cool so tips don't melt."
+ },
+ "dont_slow_down_outer_wall": {
+  "titulo": "Don't slow down outer walls",
+  "oque": "The outer wall keeps its speed when slowing down for cooling.",
+  "efeito": "Even appearance on the outside."
+ },
+ "slow_down_min_speed": {
+  "titulo": "Min print speed",
+  "oque": "The slowest the printer goes while waiting for a layer to cool.",
+  "efeito": "Keeps it from lingering and melting the part."
+ },
+ "enable_overhang_bridge_fan": {
+  "titulo": "Force cooling for overhangs and bridges",
+  "oque": "Boosts the fan on overhangs and bridges.",
+  "efeito": "Mid-air sections set faster."
+ },
+ "overhang_fan_threshold": {
+  "titulo": "Overhang cooling activation threshold",
+  "oque": "How far an overhang must stick out to get extra fan.",
+  "efeito": "Lower cools more areas."
+ },
+ "internal_bridge_fan_speed": {
+  "titulo": "Internal bridges fan speed",
+  "oque": "Fan power on bridges inside the part.",
+  "efeito": "Firmer internal bridges."
+ },
+ "additional_cooling_fan_speed": {
+  "titulo": "Auxiliary part cooling fan",
+  "oque": "Power of the chamber's side fan.",
+  "efeito": "Helps with PLA; turn it off for ABS and ASA."
+ },
+ "ironing_fan_speed": {
+  "titulo": "Ironing fan speed",
+  "oque": "Fan power while ironing the top.",
+  "efeito": "Less fan gives a smoother top."
+ },
+ "reduce_fan_stop_start_freq": {
+  "titulo": "Keep fan always on",
+  "oque": "Keeps the fan running between layers.",
+  "efeito": "Less wear and more even cooling."
+ },
+ "printable_height": {
+  "titulo": "Printable height",
+  "oque": "The tallest part the printer can make.",
+  "efeito": "The slicer warns you when you go over it."
+ },
+ "z_offset": {
+  "titulo": "Z offset",
+  "oque": "Raises or lowers the nozzle on every layer.",
+  "efeito": "Fixes a first layer that's too squished or too loose."
+ },
+ "gcode_flavor": {
+  "titulo": "G-code flavor",
+  "oque": "The G-code dialect your printer understands.",
+  "efeito": "The wrong one makes the printer ignore commands."
+ },
+ "use_relative_e_distances": {
+  "titulo": "Use relative E distances",
+  "oque": "Counts the plastic for each move separately.",
+  "efeito": "The default on most current printers."
+ },
+ "use_firmware_retraction": {
+  "titulo": "Use firmware retraction",
+  "oque": "Lets the printer handle retraction (G10/G11).",
+  "efeito": "You tune retraction directly on the printer."
+ },
+ "auxiliary_fan": {
+  "titulo": "Auxiliary part cooling fan",
+  "oque": "Tells the slicer whether the printer has a side fan.",
+  "efeito": "Enables the commands for that fan."
+ },
+ "extruder_clearance_radius": {
+  "titulo": "Extruder clearance radius",
+  "oque": "Free radius around the nozzle.",
+  "efeito": "Used to print one part at a time without collisions."
+ },
+ "extruder_clearance_height_to_rod": {
+  "titulo": "Height to rod",
+  "oque": "Height between the nozzle and the X-axis rod.",
+  "efeito": "Limits how tall parts can be when printed one at a time."
+ },
+ "time_cost": {
+  "titulo": "Time cost",
+  "oque": "What one hour of printer run time costs.",
+  "efeito": "Goes into the part's cost."
+ },
+ "nozzle_diameter": {
+  "titulo": "Nozzle diameter",
+  "oque": "Size of the nozzle opening: 0.4 mm is standard.",
+  "efeito": "A bigger nozzle prints fast; a smaller one does detail."
+ },
+ "nozzle_type": {
+  "titulo": "Nozzle type",
+  "oque": "Brass, hardened steel…",
+  "efeito": "Fiber-filled materials need a hardened nozzle."
+ },
+ "min_layer_height": {
+  "titulo": "Min layer height",
+  "oque": "The thinnest layer this nozzle can do.",
+  "efeito": "Limit for variable layer height."
+ },
+ "max_layer_height": {
+  "titulo": "Max layer height",
+  "oque": "The thickest layer this nozzle can do.",
+  "efeito": "Usually up to 75% of the nozzle size."
+ },
+ "retract_length_toolchange": {
+  "titulo": "Retraction length on toolchange",
+  "oque": "How far the filament pulls back when switching nozzles or colors.",
+  "efeito": "Prevents blobs during the change."
+ },
+ "extruder_offset": {
+  "titulo": "Extruder offset",
+  "oque": "This nozzle's offset relative to the first one.",
+  "efeito": "Aligns colors on multi-nozzle printers."
+ },
+ "emit_machine_limits_to_gcode": {
+  "titulo": "Emit limits to G-code",
+  "oque": "Writes the max speeds and accelerations into the G-code.",
+  "efeito": "The printer follows the profile's limits."
+ }
+}

@@ -17,6 +17,7 @@
 #include "WebViewDialog.hpp"
 #include "FilunaImpressao.hpp"
 #include "FilunaPanel.hpp"
+#include "FilunaIdioma.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaDispositivos.hpp"
 #include "FilunaAtualizacao.hpp"
@@ -8681,9 +8682,13 @@ bool GUI_App::load_language(wxString language, bool initial)
     	// There is a static list of lookup path prefixes in wxWidgets. Add ours.
 	    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(from_u8(localization_dir()));
     	// Get the active language from PrusaSlicer.ini, or empty string if the key does not exist.
-        // Filuna defaults to pt-BR on first launch; keep existing user preferences.
-        if (app_config->get("language").empty())
-            app_config->set("language", "pt_BR");
+        // Filuna: first launch follows Windows (English -> "en", otherwise pt-BR); the account region may still
+        // switch it once (FilunaIdioma.cpp). Existing user choices are kept.
+        if (app_config->get("language").empty()) {
+            const std::string filuna_lang = Filuna::idioma_primeira_abertura();
+            app_config->set("language", filuna_lang);
+            app_config->set("filuna_idioma_auto", filuna_lang);
+        }
         language = app_config->get("language");
         if (! language.empty())
         	BOOST_LOG_TRIVIAL(info) << boost::format("language provided by OrcaSlicer.conf: %1%") % language;
@@ -9360,6 +9365,7 @@ void GUI_App::open_preferences(PreferencesTab tab, const std::string& highlight_
     if (!pending_language.empty()) {
         const std::string previous_language = app_config->get("language");
         app_config->set("language", pending_language);
+        app_config->set("filuna_idioma_auto", ""); // chosen by the user: the account region no longer changes it
         if (!load_language(wxString::FromUTF8(pending_language), false)) {
             app_config->set("language", previous_language);
             if (this->plater_)

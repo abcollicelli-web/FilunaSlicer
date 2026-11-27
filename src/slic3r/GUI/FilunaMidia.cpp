@@ -1,4 +1,5 @@
 #include "FilunaMidia.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "FilunaAssistente.hpp"
 #include "FilunaDispositivos.hpp"
@@ -116,7 +117,7 @@ class JanelaPost : public wxDialog
 {
 public:
     explicit JanelaPost(json dados)
-        : wxDialog(wxGetApp().mainframe, wxID_ANY, wxString::FromUTF8("Post nas redes sociais"), wxDefaultPosition,
+        : wxDialog(wxGetApp().mainframe, wxID_ANY, Filuna::trw("Post nas redes sociais"), wxDefaultPosition,
                    wxGetApp().mainframe->FromDIP(wxSize(1440, 860)), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
         , m_dados(std::move(dados))
     {
@@ -264,8 +265,7 @@ void filuna_midia_caixa_no_envio(wxWindow* pai, wxSizer* sizer)
     });
     linha->Add(caixa, 0, wxALL | wxALIGN_CENTER, pai->FromDIP(2));
     auto* texto = new wxStaticText(pai, wxID_ANY,
-                                   wxString::FromUTF8("Post nas redes sociais: quando a impressão começar sem erro, a sua IA cria a foto "
-                                                      "do produto com a sua marca"));
+                                   Filuna::trw("Post nas redes sociais: quando a impressão começar sem erro, a sua IA cria a foto do produto com a sua marca"));
     texto->SetFont(::Label::Body_13);
     texto->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#323A3D")));
     linha->Add(texto, 0, wxALL | wxALIGN_CENTER, pai->FromDIP(2));

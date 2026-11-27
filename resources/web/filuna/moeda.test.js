@@ -7,7 +7,7 @@ const ctx = {
 	localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
 	document: { addEventListener() {}, getElementById: () => null, createElement: () => ({ style: {} }), body: { appendChild() {} },
 		documentElement: { style: { setProperty() {} } } },
-	addEventListener() {}, wx: { postMessage() { throw new Error("fora"); } },
+	addEventListener() {}, wx: { postMessage() { throw new Error("fora"); } }, FILUNA_IDIOMA: "pt",  // português: o tradutor não carrega
 	fetch: () => Promise.reject(new Error("sem rede")), Promise, JSON, Math, Number, String, isFinite, parseFloat,
 };
 ctx.globalThis = ctx;

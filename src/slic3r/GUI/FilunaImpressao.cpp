@@ -1,4 +1,5 @@
 #include "FilunaImpressao.hpp"
+#include "FilunaIdioma.hpp"
 #include "libslic3r/miniz_extension.hpp"
 #include "FilunaAoVivo.hpp"
 
@@ -208,7 +209,7 @@ std::string nome_arquivo()
 
 void avisar(const wxString& texto, long estilo = wxOK | wxICON_INFORMATION)
 {
-    MessageDialog dlg(wxGetApp().mainframe, texto, wxString::FromUTF8("Imprimir"), estilo);
+    MessageDialog dlg(wxGetApp().mainframe, texto, Filuna::trw("Imprimir"), estilo);
     dlg.ShowModal();
 }
 
@@ -229,32 +230,32 @@ class Janela : public wxDialog
 public:
     Janela(wxWindow* pai, const std::string& impressora, const std::string& arquivo, const std::vector<Filamento>& fs,
            const std::vector<Entrada>& es, bool fixa = false)
-        : wxDialog(pai, wxID_ANY, wxString::FromUTF8("Imprimir"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE), m_es(es)
+        : wxDialog(pai, wxID_ANY, Filuna::trw("Imprimir"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE), m_es(es)
     {
         SetBackgroundColour(*wxWHITE);
         auto* v = new wxBoxSizer(wxVERTICAL);
 
-        auto* titulo = new wxStaticText(this, wxID_ANY, wxString::FromUTF8("Imprimir em " + impressora));
+        auto* titulo = new wxStaticText(this, wxID_ANY, Filuna::trw_valores("Imprimir em {0}", {impressora}));
         wxFont ft    = titulo->GetFont();
         ft.SetWeight(wxFONTWEIGHT_BOLD);
         ft.SetPointSize(ft.GetPointSize() + 2);
         titulo->SetFont(ft);
         v->Add(titulo, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
-        v->Add(new wxStaticText(this, wxID_ANY, wxString::FromUTF8("Arquivo: " + arquivo)), 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
+        v->Add(new wxStaticText(this, wxID_ANY, Filuna::trw_valores("Arquivo: {0}", {arquivo})), 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
 
         if (!es.empty() && !fs.empty()) {
-            v->Add(new wxStaticText(this, wxID_ANY, wxString::FromUTF8("Entrada usada por cada filamento do projeto")), 0,
+            v->Add(new wxStaticText(this, wxID_ANY, Filuna::trw("Entrada usada por cada filamento do projeto")), 0,
                    wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
             auto* g = new wxFlexGridSizer(4, FromDIP(8), FromDIP(10));
             wxArrayString nomes;
             for (const Entrada& e : es)
-                nomes.Add(wxString::FromUTF8("Entrada " + std::to_string(e.global + 1) + (e.tipo.empty() ? "" : " · " + e.tipo)));
+                nomes.Add(Filuna::trw_valores("Entrada {0}{1}", {std::to_string(e.global + 1), (e.tipo.empty() ? "" : " · " + e.tipo)}));
             for (const Filamento& f : fs) {
                 auto* amostra = new wxPanel(this, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(18, 18)), wxBORDER_SIMPLE);
                 amostra->SetBackgroundColour(cor_wx(f.cor));
                 g->Add(amostra, 0, wxALIGN_CENTER_VERTICAL);
                 g->Add(new wxStaticText(this, wxID_ANY,
-                                        wxString::FromUTF8("Filamento " + std::to_string(f.indice + 1) + (f.tipo.empty() ? "" : " · " + f.tipo))),
+                                        Filuna::trw_valores("Filamento {0}{1}", {std::to_string(f.indice + 1), (f.tipo.empty() ? "" : " · " + f.tipo)})),
                        0, wxALIGN_CENTER_VERTICAL);
                 auto* escolha = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, nomes);
                 int k = melhor_entrada(f, es);
@@ -281,23 +282,22 @@ public:
             v->Add(g, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
             if (fixa)
                 v->Add(new wxStaticText(this, wxID_ANY,
-                                        wxString::FromUTF8("Nesta impressora o filamento 1 do projeto sai da Entrada 1, o 2 da Entrada 2, e assim por diante.\n"
-                                                           "Para mudar, use \"Usar no projeto\" no cartão da impressora.")),
+                                        Filuna::trw("Nesta impressora o filamento 1 do projeto sai da Entrada 1, o 2 da Entrada 2, e assim por diante.\nPara mudar, use \"Usar no projeto\" no cartão da impressora.")),
                        0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
         } else if (es.empty()) {
             v->Add(new wxStaticText(this, wxID_ANY,
-                                    wxString::FromUTF8("A impressora não informou um sistema de cores.\nSerá usado o filamento que já está carregado nela.")),
+                                    Filuna::trw("A impressora não informou um sistema de cores.\nSerá usado o filamento que já está carregado nela.")),
                    0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
         }
 
-        m_nivelar = new wxCheckBox(this, wxID_ANY, wxString::FromUTF8("Nivelar a mesa antes de imprimir"));
+        m_nivelar = new wxCheckBox(this, wxID_ANY, Filuna::trw("Nivelar a mesa antes de imprimir"));
         m_nivelar->SetValue(wxGetApp().app_config->get("filuna_imprimir_nivelar") != "0");
         v->Add(m_nivelar, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
 
         auto* b      = new wxBoxSizer(wxHORIZONTAL);
-        auto* cancel = new wxButton(this, wxID_CANCEL, wxString::FromUTF8("Cancelar"));
-        auto* enviar = new wxButton(this, wxID_APPLY, wxString::FromUTF8("Só enviar o arquivo"));
-        auto* ok     = new wxButton(this, wxID_OK, wxString::FromUTF8("Imprimir"));
+        auto* cancel = new wxButton(this, wxID_CANCEL, Filuna::trw("Cancelar"));
+        auto* enviar = new wxButton(this, wxID_APPLY, Filuna::trw("Só enviar o arquivo"));
+        auto* ok     = new wxButton(this, wxID_OK, Filuna::trw("Imprimir"));
         ok->SetDefault();
         enviar->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { EndModal(wxID_APPLY); });
         b->AddStretchSpacer(1);
@@ -371,7 +371,7 @@ ResumoMesa resumo_da_mesa(const std::string& arquivo)
         r.custo += g * preco_kg / 1000.;
     }
     // moeda da conta Filuna (gravada pelas telas quando a conta carrega); sem moeda = real
-    if (wxGetApp().app_config->get("filuna_moeda") == "USD")
+    if (Filuna::moeda_da_conta() == "USD")
         r.moeda = "$";
     const float t = stats.modes[static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Normal)].time;
     if (t > 0.f)
@@ -454,16 +454,16 @@ void imprimir(int plate_idx)
     const std::string agente = agente_ativo();
     MachineObject*    o      = dev->get_selected_machine();
     if (o == nullptr || o->printer_agent_id != agente) {
-        avisar(wxString::FromUTF8("Nenhuma impressora deste modelo está conectada.\n\nAbra a aba Dispositivo, clique na impressora e volte para imprimir."),
+        avisar(Filuna::trw("Nenhuma impressora deste modelo está conectada.\n\nAbra a aba Dispositivo, clique na impressora e volte para imprimir."),
                wxOK | wxICON_WARNING);
         return;
     }
     if (!o->is_online()) {
-        avisar(wxString::FromUTF8("A impressora " + o->get_dev_name() + " está desligada ou fora da rede."), wxOK | wxICON_WARNING);
+        avisar(Filuna::trw_valores("A impressora {0} está desligada ou fora da rede.", {o->get_dev_name()}), wxOK | wxICON_WARNING);
         return;
     }
     if (o->is_in_printing()) {
-        avisar(wxString::FromUTF8("A impressora " + o->get_dev_name() + " já está imprimindo."), wxOK | wxICON_WARNING);
+        avisar(Filuna::trw_valores("A impressora {0} já está imprimindo.", {o->get_dev_name()}), wxOK | wxICON_WARNING);
         return;
     }
 
@@ -473,9 +473,8 @@ void imprimir(int plate_idx)
         const json v = json::parse(Filuna::mesa(o->get_dev_id()), nullptr, false);
         if (v.is_object() && !v.value("livre", true) && (long long) std::time(nullptr) - v.value("em", 0LL) < 15 * 60) {
             MessageDialog dlg(wxGetApp().mainframe,
-                              wxString::FromUTF8("A câmera mostrou a mesa ocupada: " + v.value("motivo", std::string("há algo na mesa")) +
-                                                 ".\n\nRetire as peças e limpe a mesa. Imprimir assim mesmo?"),
-                              wxString::FromUTF8("Mesa ocupada"), wxYES_NO | wxICON_WARNING);
+                              Filuna::trw_valores("A câmera mostrou a mesa ocupada: {0}.\n\nRetire as peças e limpe a mesa. Imprimir assim mesmo?", {v.value("motivo", std::string(Filuna::tr("há algo na mesa")))}),
+                              Filuna::trw("Mesa ocupada"), wxYES_NO | wxICON_WARNING);
             if (dlg.ShowModal() != wxID_YES)
                 return;
         }
@@ -486,14 +485,14 @@ void imprimir(int plate_idx)
     if (mesa == nullptr)
         mesa = mesas.get_curr_plate();
     if (mesa == nullptr || !mesa->is_slice_result_valid()) {
-        avisar(wxString::FromUTF8("Fatie a mesa antes de imprimir."), wxOK | wxICON_WARNING);
+        avisar(Filuna::trw("Fatie a mesa antes de imprimir."), wxOK | wxICON_WARNING);
         return;
     }
     const fs::path origem(mesa->get_tmp_gcode_path());
     boost::system::error_code ec;
     if (!fs::exists(origem, ec)) {
         FilunaManutencao::diagnostico("impressao", "G-code da mesa não encontrado", json{{"caminho", origem.string()}, {"agente", agente}});
-        avisar(wxString::FromUTF8("O G-code desta mesa não foi encontrado. Fatie de novo e tente outra vez."), wxOK | wxICON_ERROR);
+        avisar(Filuna::trw("O G-code desta mesa não foi encontrado. Fatie de novo e tente outra vez."), wxOK | wxICON_ERROR);
         return;
     }
 
@@ -513,17 +512,14 @@ void imprimir(int plate_idx)
             const std::string n = std::to_string(f.indice + 1);
             if (e == nullptr) {
                 FilunaManutencao::diagnostico("impressao", "entrada " + n + " vazia para o filamento " + n + " do projeto", json{{"agente", agente}});
-                avisar(wxString::FromUTF8("O filamento " + n + " do projeto sai da Entrada " + n + " da impressora, e ela está vazia.\n\n"
-                                          "Coloque o filamento na Entrada " + n + ", ou abra o cartão da impressora no Dispositivo e clique em "
-                                          "\"Usar no projeto\" para alinhar os filamentos do projeto com as entradas."),
+                avisar(Filuna::trw_valores("O filamento {0} do projeto sai da Entrada {1} da impressora, e ela está vazia.\n\nColoque o filamento na Entrada {2}, ou abra o cartão da impressora no Dispositivo e clique em \"Usar no projeto\" para alinhar os filamentos do projeto com as entradas.", {n, n, n}),
                        wxOK | wxICON_WARNING);
                 return;
             }
             if (!f.tipo.empty() && !e->tipo.empty() && !boost::iequals(f.tipo, e->tipo)) {
                 MessageDialog dlg(wxGetApp().mainframe,
-                                  wxString::FromUTF8("O filamento " + n + " do projeto é " + f.tipo + ", mas a Entrada " + n + " da impressora tem " + e->tipo +
-                                                     ".\n\nImprimir assim mesmo?"),
-                                  wxString::FromUTF8("Material diferente"), wxYES_NO | wxICON_WARNING);
+                                  Filuna::trw_valores("O filamento {0} do projeto é {1}, mas a Entrada {2} da impressora tem {3}.\n\nImprimir assim mesmo?", {n, f.tipo, n, e->tipo}),
+                                  Filuna::trw("Material diferente"), wxYES_NO | wxICON_WARNING);
                 if (dlg.ShowModal() != wxID_YES)
                     return;
             }
@@ -557,7 +553,7 @@ void imprimir(int plate_idx)
     if (ec) {
         FilunaManutencao::diagnostico("impressao", "não copiou o G-code para envio: " + ec.message(),
                                       json{{"de", origem.string()}, {"para", envio.string()}});
-        avisar(wxString::FromUTF8("Não foi possível preparar o arquivo para envio: " + ec.message()), wxOK | wxICON_ERROR);
+        avisar(Filuna::trw_valores("Não foi possível preparar o arquivo para envio: {0}", {ec.message()}), wxOK | wxICON_ERROR);
         return;
     }
 
@@ -671,19 +667,17 @@ void imprimir(int plate_idx)
         BOOST_LOG_TRIVIAL(info) << "FilunaImpressao: " << (so_envio ? "arquivo enviado" : "impressão pedida") << " agente=" << agente
                                 << " arquivo=" << nome << " mapa=" << p.ams_mapping;
         jenvio->passo(so_envio ? JanelaEnvio::Passo::CONFERINDO : JanelaEnvio::Passo::AQUECENDO);
-        jenvio->concluir(true, wxString::FromUTF8(so_envio ? "O arquivo está na impressora." : std::string()));
+        jenvio->concluir(true, Filuna::trw(so_envio ? "O arquivo está na impressora." : std::string()));
         return;
     }
     if (and_->cancelar) {
-        jenvio->concluir(false, wxString::FromUTF8("Envio cancelado por você."));
+        jenvio->concluir(false, Filuna::trw("Envio cancelado por você."));
         return;
     }
     FilunaManutencao::diagnostico("impressao", msg.empty() ? "falha ao enviar/imprimir (código " + std::to_string(rc) + ")" : msg,
                                   json{{"agente", agente}, {"codigo", rc}, {"so_envio", so_envio}, {"arquivo", nome},
                                        {"mapa", p.ams_mapping}, {"ip", p.dev_ip}});
-    jenvio->concluir(false, wxString::FromUTF8("Não foi possível " + std::string(so_envio ? "enviar o arquivo" : "iniciar a impressão") +
-                                               ". " + (msg.empty() ? "Código " + std::to_string(rc) : msg) +
-                                               "\nO erro foi enviado ao suporte da Filuna."));
+    jenvio->concluir(false, Filuna::trw_valores("Não foi possível {0}. {1}\nO erro foi enviado ao suporte da Filuna.", {std::string(so_envio ? Filuna::tr("enviar o arquivo") : Filuna::tr("iniciar a impressão")), (msg.empty() ? Filuna::tr("Código ") + std::to_string(rc) : msg)}));
 }
 
 // ============================================================================================================
@@ -1140,7 +1134,7 @@ void farm_avisar(const std::string& texto)
     wxGetApp().CallAfter([texto] {
         if (Plater* pl = wxGetApp().plater())
             if (auto* nm = pl->get_notification_manager())
-                nm->push_notification("Farm: " + texto);
+                nm->push_notification("Farm: " + Filuna::tr(texto));
     });
 }
 
@@ -1254,7 +1248,7 @@ std::string farm_imprimir_mesa(const json& t, const std::string& token, const Fa
     {
         const std::string confere = farm_conferir(t, m);
         if (!confere.empty())
-            return "mesa " + std::to_string(inteiro(t, "mesa", 1)) + " de " + texto_de(t, "descricao", "Farm") + " não foi enviada: " + confere;
+            return Filuna::tr_valores("mesa {0} de {1} não foi enviada: {2}", {std::to_string(inteiro(t, "mesa", 1)), texto_de(t, "descricao", "Farm"), confere});
     }
     const fsf::path pasta = fsf::path(data_dir()) / "filuna" / "farm" / tid;
     boost::system::error_code ec;
@@ -1425,7 +1419,7 @@ bool farm_acompanhar(FarmAtivo& ativo, const FarmMaquina& m, const std::string& 
     }
     if ((ativo.viu_imprimindo && (m.status == "FAILED" || m.status == "IDLE")) || (!ativo.viu_imprimindo && passou > 15 * 60)) {
         farm_http("POST", "/trabalhos/" + ativo.id, {{"estado", "falhou"}}, token);
-        farm_avisar("a mesa não terminou na impressora (" + (m.status.empty() ? std::string("sem resposta") : m.status) + "); veja no painel da Farm");
+        farm_avisar(Filuna::tr_valores("a mesa não terminou na impressora ({0}); veja no painel da Farm", {m.status.empty() ? Filuna::tr("sem resposta") : m.status}));
         return true;
     }
     return false;
@@ -1521,7 +1515,7 @@ json ler_json(const fsf::path& p)
 json farm_acao(const std::string& acao, const json& d, std::function<void(const std::string&, const json&)> evento)
 {
     if (acao == "farm.escolher") {
-        wxFileDialog dlg(wxGetApp().mainframe, wxString::FromUTF8("Escolha o projeto para a Farm"), wxEmptyString, wxEmptyString,
+        wxFileDialog dlg(wxGetApp().mainframe, Filuna::trw("Escolha o projeto para a Farm"), wxEmptyString, wxEmptyString,
                          wxString::FromUTF8("Modelos 3D (*.stl;*.3mf;*.zip)|*.stl;*.3mf;*.zip;*.STL;*.3MF;*.ZIP"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
         if (dlg.ShowModal() != wxID_OK)
             return json::object();
@@ -1690,7 +1684,7 @@ json farm_acao(const std::string& acao, const json& d, std::function<void(const 
                 proteger_modelo(true);
                 fsf::remove(arq, ec2); // o arquivo original não fica no computador
                 if (auto* nm = plater->get_notification_manager())
-                    nm->push_notification(titulo + ": modelo do catálogo Filuna aberto para imprimir (não pode ser salvo nem exportado).");
+                    nm->push_notification(Filuna::tr_valores("{0}: modelo do catálogo Filuna aberto para imprimir (não pode ser salvo nem exportado).", {titulo}));
                 std::thread([eid, token] { farm_http("POST", "/modelos3d/envios/" + eid, {{"estado", "aberto"}}, token); }).detach();
                 evento("modelo3d.aberto", {{"id", eid}});
             });
@@ -1731,10 +1725,8 @@ bool saida_barrada()
     if (!modelo_protegido())
         return false;
     MessageDialog dlg(wxGetApp().mainframe,
-                      wxString::FromUTF8("Este projeto tem um modelo 3D do catálogo Filuna. Ele pode ser impresso nas suas impressoras, "
-                                         "mas não pode ser salvo nem exportado (projeto, 3MF, STL, G-code ou arquivo fatiado).\n\n"
-                                         "Para salvar ou exportar os seus modelos, tire o modelo do catálogo da mesa ou comece um projeto novo."),
-                      wxString::FromUTF8("Modelo do catálogo Filuna"), wxOK | wxICON_INFORMATION);
+                      Filuna::trw("Este projeto tem um modelo 3D do catálogo Filuna. Ele pode ser impresso nas suas impressoras, mas não pode ser salvo nem exportado (projeto, 3MF, STL, G-code ou arquivo fatiado).\n\nPara salvar ou exportar os seus modelos, tire o modelo do catálogo da mesa ou comece um projeto novo."),
+                      Filuna::trw("Modelo do catálogo Filuna"), wxOK | wxICON_INFORMATION);
     dlg.ShowModal();
     return true;
 }
@@ -1963,11 +1955,11 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
     col->Add(txt, 0, wxLEFT | wxRIGHT | wxBOTTOM, 14);
     if (!aid.empty()) {
         // Como está a impressão? Boa / Ruim. Com Ruim (e a opção ligada na conta) vem a oferta do ajuste de 3 min.
-        auto* pergunta = new wxStaticText(d, wxID_ANY, wxString::FromUTF8("Como está a impressão?"));
+        auto* pergunta = new wxStaticText(d, wxID_ANY, Filuna::trw("Como está a impressão?"));
         pergunta->SetFont(pergunta->GetFont().Bold());
         auto* linha = new wxBoxSizer(wxHORIZONTAL);
-        auto* boa   = new wxButton(d, wxID_ANY, wxString::FromUTF8("Boa"));
-        auto* ruim  = new wxButton(d, wxID_ANY, wxString::FromUTF8("Ruim"));
+        auto* boa   = new wxButton(d, wxID_ANY, Filuna::trw("Boa"));
+        auto* ruim  = new wxButton(d, wxID_ANY, Filuna::trw("Ruim"));
         linha->Add(boa, 0, wxRIGHT, 8);
         linha->Add(ruim);
         col->Add(pergunta, 0, wxLEFT | wxRIGHT, 14);
@@ -1983,15 +1975,12 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
                 boa->Hide();
                 ruim->Hide();
                 if (!r.value("ok", false)) {
-                    pergunta->SetLabel(wxString::FromUTF8("Não foi possível mandar a resposta. Responda pelo site."));
+                    pergunta->SetLabel(Filuna::trw("Não foi possível mandar a resposta. Responda pelo site."));
                 } else if (r.value("oferecer_ajuste", false)) {
-                    pergunta->SetLabel(wxString::FromUTF8("Quer que a Filuna ajuste e acompanhe a impressão por 3 minutos? Ela pode mudar a "
-                                                          "temperatura do bico e da mesa, a velocidade e a ventoinha, dentro da faixa "
-                                                          "segura do material, e no fim manda o resumo com a opção de desfazer. Só aceite "
-                                                          "se você estiver junto da impressora, verificando a impressão."));
+                    pergunta->SetLabel(Filuna::trw("Quer que a Filuna ajuste e acompanhe a impressão por 3 minutos? Ela pode mudar a temperatura do bico e da mesa, a velocidade e a ventoinha, dentro da faixa segura do material, e no fim manda o resumo com a opção de desfazer. Só aceite se você estiver junto da impressora, verificando a impressão."));
                     pergunta->Wrap(540);
-                    auto* sim = new wxButton(dd, wxID_ANY, wxString::FromUTF8("Sim, estou junto da impressora"));
-                    auto* nao = new wxButton(dd, wxID_ANY, wxString::FromUTF8("Não"));
+                    auto* sim = new wxButton(dd, wxID_ANY, Filuna::trw("Sim, estou junto da impressora"));
+                    auto* nao = new wxButton(dd, wxID_ANY, Filuna::trw("Não"));
                     linha->Add(sim, 0, wxRIGHT, 8);
                     linha->Add(nao);
                     auto decidir = [ref, pergunta, sim, nao, aid](const std::string& acao) {
@@ -2004,7 +1993,7 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
                                 return;
                             sim->Hide();
                             nao->Hide();
-                            pergunta->SetLabel(wxString::FromUTF8(!r2.value("ok", false) ? "Não foi possível mandar. Responda pelo site."
+                            pergunta->SetLabel(Filuna::trw(!r2.value("ok", false) ? "Não foi possível mandar. Responda pelo site."
                                                                   : acao == "sim" ? "A Filuna vai ajustar e acompanhar por 3 minutos. O resumo chega no fim."
                                                                                   : "Tudo bem: a Filuna não vai mexer na impressora."));
                             pergunta->Wrap(540);
@@ -2015,9 +2004,9 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
                     sim->Bind(wxEVT_BUTTON, [decidir](wxCommandEvent&) { decidir("sim"); });
                     nao->Bind(wxEVT_BUTTON, [decidir](wxCommandEvent&) { decidir("nao"); });
                 } else if (resposta == "boa") {
-                    pergunta->SetLabel(wxString::FromUTF8("Obrigado! A Filuna segue acompanhando."));
+                    pergunta->SetLabel(Filuna::trw("Obrigado! A Filuna segue acompanhando."));
                 } else {
-                    pergunta->SetLabel(wxString::FromUTF8(r.value("pode_ligar", false)
+                    pergunta->SetLabel(Filuna::trw(r.value("pode_ligar", false)
                                                               ? "Obrigado. Para a Filuna poder ajustar a impressora numa próxima vez, ligue "
                                                                 "\"Deixar a Filuna ajustar minha impressora\" em filuna3d.com › Relatórios."
                                                               : "Obrigado. Confira a peça e decida se segue a impressão."));
@@ -2032,11 +2021,11 @@ void analise_janela(const std::string& titulo, const std::string& mensagem, cons
     }
     auto* botoes = new wxBoxSizer(wxHORIZONTAL);
     if (!link.empty()) {
-        auto* ver = new wxButton(d, wxID_ANY, wxString::FromUTF8("Ver no site"));
+        auto* ver = new wxButton(d, wxID_ANY, Filuna::trw("Ver no site"));
         ver->Bind(wxEVT_BUTTON, [link](wxCommandEvent&) { wxLaunchDefaultBrowser(wxString::FromUTF8(link)); });
         botoes->Add(ver, 0, wxRIGHT, 8);
     }
-    auto* fechar = new wxButton(d, wxID_OK, wxString::FromUTF8("Fechar"));
+    auto* fechar = new wxButton(d, wxID_OK, Filuna::trw("Fechar"));
     fechar->Bind(wxEVT_BUTTON, [d](wxCommandEvent&) { d->Destroy(); });
     botoes->Add(fechar);
     col->Add(botoes, 0, wxALL | wxALIGN_RIGHT, 12);
@@ -2070,7 +2059,7 @@ void analise_alertar(json alerta, const std::string& ref)
         } else
             BOOST_LOG_TRIVIAL(warning) << "Filuna análise: o site não recebeu o alerta (" << resp.erro << ")";
     }
-    const std::string titulo = alerta.value("titulo", std::string("Impressão fora do previsto")), msg = alerta.value("mensagem", std::string());
+    const std::string titulo = alerta.value("titulo", Filuna::tr("Impressão fora do previsto")), msg = alerta.value("mensagem", std::string());
     wxGetApp().CallAfter([titulo, msg, jpeg, link, aid] { analise_janela(titulo, msg, jpeg, link, aid); });
 }
 

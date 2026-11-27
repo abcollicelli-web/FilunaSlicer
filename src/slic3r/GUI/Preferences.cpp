@@ -75,6 +75,7 @@
 #include "slic3r/Utils/NetworkAgent.hpp"
 #include "NetworkPluginDialog.hpp"
 #include "DownloadProgressDialog.hpp"
+#include "FilunaIdioma.hpp"
 
 #ifdef __WINDOWS__
 #ifdef _MSW_DARK_MODE
@@ -1771,7 +1772,7 @@ void PreferencesDialog::create_items()
 
     g_sizer->Add(create_item_title(_L("Costs for the sale suggestion")), 1, wxEXPAND);
     // Moeda da conta Filuna (as telas gravam "filuna_moeda" quando a conta carrega): EUA = "$", sem moeda = "R$".
-    const wxString simbolo = app_config->get("filuna_moeda") == "USD" ? "$" : "R$";
+    const wxString simbolo = Filuna::moeda_da_conta() == "USD" ? "$" : "R$";
     g_sizer->Add(create_item_decimal_input(_L("Profit margin"), "", _L("From 0 to 0.95. Empty uses the calculator default."), "filuna_pref_calculo_margem", 0., 0.95, 2));
     g_sizer->Add(create_item_decimal_input(_L("Labor per hour"), simbolo, "", "filuna_pref_calculo_mao_obra_hora", 0., 10000., 2));
     g_sizer->Add(create_item_decimal_input(_L("Energy per kWh"), simbolo, "", "filuna_pref_calculo_energia_kwh", 0., 100., 2));

@@ -1,4 +1,5 @@
 #include "FilunaAssistente.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "FilunaPanel.hpp"
 #include "GLCanvas3D.hpp"
@@ -579,7 +580,7 @@ static void ia_janela_de_login(wxWebViewEvent& e)
     wxWebViewWindowFeatures* features = e.GetTargetWindowFeatures();
     if (features == nullptr)
         return;
-    auto* janela = new wxDialog(wxGetApp().mainframe, wxID_ANY, wxString::FromUTF8("Entrar na sua IA"), wxDefaultPosition,
+    auto* janela = new wxDialog(wxGetApp().mainframe, wxID_ANY, Filuna::trw("Entrar na sua IA"), wxDefaultPosition,
                                 wxGetApp().mainframe->FromDIP(wxSize(520, 700)), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
     wxWebView* filho = features->GetChildWebView();
     if (filho == nullptr || !filho->Create(janela, wxID_ANY, e.GetURL())) {

@@ -1,4 +1,5 @@
 #include "FilunaLateral.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "Widgets/TabCtrl.hpp"
 
@@ -348,7 +349,7 @@ CartaoImpressora::CartaoImpressora(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDef
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     SetMinSize(wxSize(FromDIP(220), FromDIP(98)));
-    SetToolTip(wxString::FromUTF8("Selecionar impressora"));
+    SetToolTip(Filuna::trw("Selecionar impressora"));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
     Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
     auto ativo = [this](int i) { return i == BICO ? m_bico_sel && m_mostrar_bico : i == MESA ? m_mesa_sel : i == TIPO ? m_info.tipo_selecionavel : true; };
@@ -479,11 +480,11 @@ void CartaoImpressora::pintar()
     double    tw = 0, th = 0;
     if (m_info.impressora.empty()) {
         gc->SetFont(fonte(this, 9.5, true), BRANCO);
-        gc->GetTextExtent(wxString::FromUTF8("SELECIONAR IMPRESSORA"), &tw, &th);
-        gc->DrawText(wxString::FromUTF8("SELECIONAR IMPRESSORA"), tx, f.y + (f.height - th) / 2.);
+        gc->GetTextExtent(Filuna::trw("SELECIONAR IMPRESSORA"), &tw, &th);
+        gc->DrawText(Filuna::trw("SELECIONAR IMPRESSORA"), tx, f.y + (f.height - th) / 2.);
     } else {
         gc->SetFont(fonte(this, 6.5, true), wxColour(255, 255, 255, 200));
-        gc->DrawText(wxString::FromUTF8("IMPRESSORA"), tx, f.y + FromDIP(6));
+        gc->DrawText(Filuna::trw("IMPRESSORA"), tx, f.y + FromDIP(6));
         gc->SetFont(fonte(this, 9.5, true), BRANCO);
         gc->DrawText(caber(this, m_info.impressora, fonte(this, 9.5, true), larg_texto), tx, f.y + FromDIP(19));
     }
@@ -648,7 +649,7 @@ void Bobinas::pintar()
         const double cx = r.x + r.width / 2.;
         double       y  = by + d.GetHeight();
         const int    lt = r.width - FromDIP(6);
-        texto_centro(*gc, this, b.marca.empty() ? wxString::FromUTF8("Genérico") : b.marca, f_marca, TEXTO_CLARO, cx, y, lt);
+        texto_centro(*gc, this, b.marca.empty() ? Filuna::trw("Genérico") : b.marca, f_marca, TEXTO_CLARO, cx, y, lt);
         y += FromDIP(11);
         texto_centro(*gc, this, b.tipo, f_tipo, sel ? MAGENTA_CLARO : TEXTO_CLARO, cx, y, lt);
         y += FromDIP(13);
@@ -778,12 +779,12 @@ BarraBobina::BarraBobina(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPositi
 
 std::vector<Botao> BarraBobina::botoes() const
 {
-    Botao cor{wxString::FromUTF8("Cor")};
+    Botao cor{Filuna::trw("Cor")};
     cor.cor   = m_cor.IsOk() ? m_cor : *wxWHITE;
     cor.ativo = m_pode_cor;
     Botao tirar{wxString(), Icone::lixeira};
     tirar.ativo = m_pode_tirar;
-    return {cor, Botao{wxString::FromUTF8("Trocar")}, Botao{wxString(), Icone::lapis}, tirar};
+    return {cor, Botao{Filuna::trw("Trocar")}, Botao{wxString(), Icone::lapis}, tirar};
 }
 
 wxRect BarraBobina::area(int i) const
@@ -840,7 +841,7 @@ Resumo::Resumo(wxWindow* pai) : wxPanel(pai, wxID_ANY, wxDefaultPosition, wxDefa
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     SetMinSize(wxSize(-1, FromDIP(48)));
-    SetToolTip(wxString::FromUTF8("Abrir impressora e filamentos"));
+    SetToolTip(Filuna::trw("Abrir impressora e filamentos"));
     SetCursor(wxCursor(wxCURSOR_HAND));
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) { pintar(); });
     Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
@@ -888,7 +889,7 @@ void Resumo::pintar()
     }
     // "Abrir" à direita
     gc->SetFont(fonte(this, 8., true), BRANCO);
-    const wxString abrir = wxString::FromUTF8("Abrir");
+    const wxString abrir = Filuna::trw("Abrir");
     const double   aw    = largura_texto(*gc, abrir) + FromDIP(30);
     const wxRect   a(int(s.x - aw - FromDIP(8)), (s.y - FromDIP(26)) / 2, int(aw), FromDIP(26));
     gc->SetBrush(wxBrush(m_sobre ? MAGENTA_ESCURO : MAGENTA));

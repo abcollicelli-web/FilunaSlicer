@@ -1,4 +1,5 @@
 #include "FilunaFilamento.hpp"
+#include "FilunaIdioma.hpp"
 
 #include "FilunaDados.hpp"
 #include "FilunaLateral.hpp"
@@ -121,8 +122,8 @@ std::vector<Perfil> carregar_perfis(const std::string& atual)
         f.ventoinha = int(numero(p.config, "fan_max_speed"));
         f.vol_max   = numero(p.config, "filament_max_volumetric_speed");
         const int lo = int(numero(p.config, "nozzle_temperature_range_low")), hi = int(numero(p.config, "nozzle_temperature_range_high"));
-        f.faixa      = lo > 0 && hi > 0 ? wxString::Format(wxString::FromUTF8("%d–%d °C"), lo, hi) : wxString::Format(wxString::FromUTF8("%d °C"), f.bico);
-        f.mesa       = wxString::Format(wxString::FromUTF8("mesa %d °C"), f.mesa_c);
+        f.faixa      = lo > 0 && hi > 0 ? wxString::Format(Filuna::trw("%d–%d °C"), lo, hi) : wxString::Format(Filuna::trw("%d °C"), f.bico);
+        f.mesa       = wxString::Format(Filuna::trw("mesa %d °C"), f.mesa_c);
         v.push_back(std::move(f));
     }
     std::sort(v.begin(), v.end(), [](const Perfil& a, const Perfil& b) { return a.rotulo.CmpNoCase(b.rotulo) < 0; });
@@ -355,7 +356,7 @@ public:
             est.push_back(i);
         }
         if (!est.empty()) {
-            titulo(u8("No seu estoque Filuna"));
+            titulo(Filuna::trw("No seu estoque Filuna"));
             const int cw = (w - 2 * gap) / 3, ch = FromDIP(56);
             for (size_t k = 0; k < est.size(); ++k) {
                 m_itens.push_back({ItemLista::estoque, wxRect(int(k % 3) * (cw + gap), y + int(k / 3) * (ch + gap), cw, ch), est[k]});
@@ -364,7 +365,7 @@ public:
         }
         // perfis: da marca em foco, ou os que a busca acha em todas
         const bool por_marca = m_e.busca.empty();
-        titulo(por_marca ? (m_e.marca == "Generic" ? u8("Perfis genéricos") : u8("Perfis da ") + m_e.marca) : u8("Resultados"));
+        titulo(por_marca ? (m_e.marca == "Generic" ? Filuna::trw("Perfis genéricos") : Filuna::trw("Perfis da ") + m_e.marca) : Filuna::trw("Resultados"));
         int n = 0;
         for (int i = 0; i < int(m_e.perfis.size()) && n < 120; ++i) {
             if (!m_e.passa(m_e.perfis[i], por_marca))
@@ -374,7 +375,7 @@ public:
             ++n;
         }
         if (n == 0) {
-            m_itens.push_back({ItemLista::titulo, wxRect(0, y, w, FromDIP(30)), 1, u8("Nenhum perfil com esse filtro.")});
+            m_itens.push_back({ItemLista::titulo, wxRect(0, y, w, FromDIP(30)), 1, Filuna::trw("Nenhum perfil com esse filtro.")});
             y += FromDIP(32);
         }
         y += FromDIP(10);
@@ -384,12 +385,12 @@ public:
             if (p.marca != m_e.marca && (m_e.material.empty() || p.tipo == m_e.material) && (!m_e.so_estoque || p.estoque_g > 0.))
                 ++marcas[p.marca];
         if (!marcas.empty()) {
-            titulo(u8("Outras marcas"));
+            titulo(Filuna::trw("Outras marcas"));
             int x = 0;
             wxClientDC dc(this);
             dc.SetFont(fonte(this, 9., true));
             for (const auto& [nome, qtd] : marcas) {
-                const wxString t  = nome == "Generic" ? u8("Genérico") : nome;
+                const wxString t  = nome == "Generic" ? Filuna::trw("Genérico") : nome;
                 const int      bw = dc.GetTextExtent(t).x + dc.GetTextExtent(wxString::Format("%d", qtd)).x + FromDIP(34);
                 if (x > 0 && x + bw > w) {
                     x = 0;
@@ -471,7 +472,7 @@ private:
                 break;
             }
             case ItemLista::marca: {
-                Botao b{it.texto == "Generic" ? u8("Genérico") : it.texto};
+                Botao b{it.texto == "Generic" ? Filuna::trw("Genérico") : it.texto};
                 desenhar_botao(*gc, this, r, b, s, false);
                 break;
             }
@@ -515,7 +516,7 @@ struct JanelaFilamento::Dados
 };
 
 JanelaFilamento::JanelaFilamento(wxWindow* pai, int entrada)
-    : wxDialog(pai, wxID_ANY, wxString::Format(wxString::FromUTF8("Filamento da entrada %d"), entrada + 1), wxDefaultPosition, wxDefaultSize,
+    : wxDialog(pai, wxID_ANY, wxString::Format(Filuna::trw("Filamento da entrada %d"), entrada + 1), wxDefaultPosition, wxDefaultSize,
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     , m(std::make_unique<Dados>())
 {
@@ -543,7 +544,7 @@ JanelaFilamento::JanelaFilamento(wxWindow* pai, int entrada)
         for (const auto& [t, n] : conta)
             ordem.emplace_back(-n, t);
         std::sort(ordem.begin(), ordem.end());
-        m->materiais.push_back(u8("Todos"));
+        m->materiais.push_back(Filuna::trw("Todos"));
         for (size_t i = 0; i < ordem.size() && i < 9; ++i)
             m->materiais.push_back(ordem[i].second);
     }
@@ -559,7 +560,7 @@ JanelaFilamento::JanelaFilamento(wxWindow* pai, int entrada)
             texto_centro(gc, this, wxString::Format("%d", entrada + 1), fonte(this, 11., true), MAGENTA, r.x + d / 2., r.y + (r.height - d) / 2. + FromDIP(6),
                          int(d));
         },
-        wxString::Format(wxString::FromUTF8("Filamento da entrada %d"), entrada + 1), impressora);
+        wxString::Format(Filuna::trw("Filamento da entrada %d"), entrada + 1), impressora);
 
     auto* corpo = new wxBoxSizer(wxVERTICAL);
     corpo->Add(topo, 0, wxEXPAND);
@@ -567,7 +568,7 @@ JanelaFilamento::JanelaFilamento(wxWindow* pai, int entrada)
     // 1 · cor
     auto* sec1 = new wxBoxSizer(wxHORIZONTAL);
     sec1->Add(rotulo(this, u8("1 · COR"), 9., true, VINHO), 0, wxALIGN_BOTTOM);
-    sec1->Add(rotulo(this, u8("a cor que aparece na peça e na bobina"), 8.5, false, CINZA), 0, wxALIGN_BOTTOM | wxLEFT, FromDIP(8));
+    sec1->Add(rotulo(this, Filuna::trw("a cor que aparece na peça e na bobina"), 8.5, false, CINZA), 0, wxALIGN_BOTTOM | wxLEFT, FromDIP(8));
     corpo->Add(sec1, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(18));
     auto* linha_cor = new wxBoxSizer(wxHORIZONTAL);
     m->amostras     = new Desenho(this, FromDIP(40));
@@ -603,11 +604,11 @@ JanelaFilamento::JanelaFilamento(wxWindow* pai, int entrada)
                 m->resumo->Refresh();
             }
     };
-    m->amostras->SetToolTip(u8("Clique numa cor ou digite o código ao lado"));
+    m->amostras->SetToolTip(Filuna::trw("Clique numa cor ou digite o código ao lado"));
     linha_cor->Add(m->amostras, 0, wxALIGN_CENTER_VERTICAL);
-    linha_cor->Add(rotulo(this, u8("Outra:"), 9., true, CINZA), 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(10));
+    linha_cor->Add(rotulo(this, Filuna::trw("Outra:"), 9., true, CINZA), 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(10));
     m->hex = new wxTextCtrl(this, wxID_ANY, e.cor.GetAsString(wxC2S_HTML_SYNTAX), wxDefaultPosition, wxSize(FromDIP(90), -1));
-    m->hex->SetToolTip(u8("Código da cor, como #C8102E"));
+    m->hex->SetToolTip(Filuna::trw("Código da cor, como #C8102E"));
     m->hex->Bind(wxEVT_TEXT, [this](wxCommandEvent&) {
         const wxString t = m->hex->GetValue().Trim().Trim(false);
         const wxColour c(t.StartsWith("#") ? t : "#" + t);
@@ -625,14 +626,14 @@ JanelaFilamento::JanelaFilamento(wxWindow* pai, int entrada)
 
     // 2 · filamento
     auto* sec2 = new wxBoxSizer(wxHORIZONTAL);
-    sec2->Add(rotulo(this, u8("2 · FILAMENTO"), 9., true, VINHO), 0, wxALIGN_BOTTOM);
-    sec2->Add(rotulo(this, u8("perfis do Orca já trazidos para a Filuna"), 8.5, false, CINZA), 0, wxALIGN_BOTTOM | wxLEFT, FromDIP(8));
+    sec2->Add(rotulo(this, Filuna::trw("2 · FILAMENTO"), 9., true, VINHO), 0, wxALIGN_BOTTOM);
+    sec2->Add(rotulo(this, Filuna::trw("perfis do Orca já trazidos para a Filuna"), 8.5, false, CINZA), 0, wxALIGN_BOTTOM | wxLEFT, FromDIP(8));
     corpo->Add(sec2, 0, wxLEFT | wxRIGHT | wxTOP, FromDIP(14));
     auto* linha_busca = new wxBoxSizer(wxHORIZONTAL);
     auto* busca       = new wxTextCtrl(this, wxID_ANY, wxString(), wxDefaultPosition, wxSize(-1, FromDIP(30)));
-    busca->SetHint(u8("Buscar marca, material ou nome"));
+    busca->SetHint(Filuna::trw("Buscar marca, material ou nome"));
     linha_busca->Add(busca, 1, wxALIGN_CENTER_VERTICAL);
-    auto* so = new wxCheckBox(this, wxID_ANY, u8("Só com estoque"));
+    auto* so = new wxCheckBox(this, wxID_ANY, Filuna::trw("Só com estoque"));
     linha_busca->Add(so, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(12));
     corpo->Add(linha_busca, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(10));
 
@@ -691,14 +692,14 @@ JanelaFilamento::JanelaFilamento(wxWindow* pai, int entrada)
         const Perfil*  p    = m->e.escolhido();
         const int      tl   = botao_ajuste(s).x - FromDIP(76);
         gc.SetFont(fonte(m->resumo, 10., true), TINTA);
-        gc.DrawText(caber(m->resumo, p ? p->rotulo : u8("Escolha um perfil"), fonte(m->resumo, 10., true), tl), FromDIP(70), FromDIP(12));
+        gc.DrawText(caber(m->resumo, p ? p->rotulo : Filuna::trw("Escolha um perfil"), fonte(m->resumo, 10., true), tl), FromDIP(70), FromDIP(12));
         if (p) {
-            const wxString d = wxString::Format(wxString::FromUTF8("Bico %d °C · Mesa %d °C · Ventoinha %d%% · até %s mm³/s"), p->bico, p->mesa_c, p->ventoinha,
+            const wxString d = wxString::Format(Filuna::trw("Bico %d °C · Mesa %d °C · Ventoinha %d%% · até %s mm³/s"), p->bico, p->mesa_c, p->ventoinha,
                                                 wxString::Format("%g", p->vol_max));
             gc.SetFont(fonte(m->resumo, 8.5, false), wxColour(0x4A, 0x41, 0x3A));
             gc.DrawText(caber(m->resumo, d, fonte(m->resumo, 8.5, false), tl), FromDIP(70), FromDIP(33));
         }
-        desenhar_botao(gc, m->resumo, botao_ajuste(s), Botao{u8("Ajustes"), Icone::lapis}, false, false);
+        desenhar_botao(gc, m->resumo, botao_ajuste(s), Botao{Filuna::trw("Ajustes"), Icone::lapis}, false, false);
     };
     m->resumo->sobre  = [this, botao_ajuste](const wxPoint& p) { return botao_ajuste(m->resumo->GetClientSize()).Contains(p); };
     m->resumo->clique = [this, botao_ajuste](const wxPoint& p) {
@@ -709,9 +710,9 @@ JanelaFilamento::JanelaFilamento(wxWindow* pai, int entrada)
 
     m->rodape = new Botoes(this, false);
     m->rodape->SetMinSize(wxSize(-1, FromDIP(40)));
-    Botao usar{wxString::Format(wxString::FromUTF8("Usar na entrada %d"), entrada + 1)};
+    Botao usar{wxString::Format(Filuna::trw("Usar na entrada %d"), entrada + 1)};
     usar.destaque = true;
-    m->rodape->definir({Botao{u8("Cadastrar filamento novo"), Icone::mais}, Botao{u8("Cancelar")}, usar});
+    m->rodape->definir({Botao{Filuna::trw("Cadastrar filamento novo"), Icone::mais}, Botao{Filuna::trw("Cancelar")}, usar});
     m->rodape->ao_clicar = [this](int i, const wxRect&) {
         if (i == 0)
             EndModal(CADASTRAR_NOVO);
@@ -769,7 +770,7 @@ struct JanelaAjustesFilamento::Dados
 };
 
 JanelaAjustesFilamento::JanelaAjustesFilamento(wxWindow* pai, int entrada)
-    : wxDialog(pai, wxID_ANY, wxString::FromUTF8("Ajustes do filamento"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+    : wxDialog(pai, wxID_ANY, Filuna::trw("Ajustes do filamento"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     , m(std::make_unique<Dados>())
 {
     SetBackgroundColour(FUNDO);
@@ -809,15 +810,15 @@ JanelaAjustesFilamento::JanelaAjustesFilamento(wxWindow* pai, int entrada)
                        const wxBitmap b = bobina(cor, FromDIP(42));
                        gc.DrawBitmap(b, r.x - FromDIP(4), r.y + (r.height - b.GetHeight()) / 2., b.GetWidth(), b.GetHeight());
                    },
-                   salvo ? u8(salvo->label(false)) : u8(m->nome), wxString::Format(wxString::FromUTF8("Ajustes do filamento · entrada %d"), entrada + 1)),
+                   salvo ? u8(salvo->label(false)) : u8(m->nome), wxString::Format(Filuna::trw("Ajustes do filamento · entrada %d"), entrada + 1)),
                0, wxEXPAND);
 
     const int lo = atual ? int(numero(*atual, "nozzle_temperature_range_low")) : 0, hi = atual ? int(numero(*atual, "nozzle_temperature_range_high")) : 0;
     const std::vector<std::tuple<wxString, wxString, wxColour>> grupos{
-        {u8("TEMPERATURA"), lo > 0 && hi > 0 ? wxString::Format(wxString::FromUTF8("faixa do fabricante: %d–%d °C"), lo, hi) : wxString(), ROSA},
-        {u8("VENTOINHA"), wxString(), LILAS},
-        {u8("FLUXO E VELOCIDADE"), wxString(), LARANJA_CLARO},
-        {u8("RETRAÇÃO"), u8("vazio: vale o da impressora"), VERDE_CLARO}};
+        {Filuna::trw("TEMPERATURA"), lo > 0 && hi > 0 ? wxString::Format(Filuna::trw("faixa do fabricante: %d–%d °C"), lo, hi) : wxString(), ROSA},
+        {Filuna::trw("VENTOINHA"), wxString(), LILAS},
+        {Filuna::trw("FLUXO E VELOCIDADE"), wxString(), LARANJA_CLARO},
+        {Filuna::trw("RETRAÇÃO"), Filuna::trw("vazio: vale o da impressora"), VERDE_CLARO}};
     for (int g = 0; g < int(grupos.size()); ++g) {
         auto* caixa = new wxPanel(this);
         caixa->SetBackgroundColour(BRANCO);
@@ -855,7 +856,7 @@ JanelaAjustesFilamento::JanelaAjustesFilamento(wxWindow* pai, int entrada)
     }
 
     auto* avancado = new Botoes(this, false);
-    avancado->definir({Botao{u8("Ajustes avançados (todos os campos do Orca)"), Icone::tabela}});
+    avancado->definir({Botao{Filuna::trw("Ajustes avançados (todos os campos do Orca)"), Icone::tabela}});
     avancado->ao_clicar = [this](int, const wxRect&) { EndModal(AJUSTES_AVANCADOS); };
     corpo->Add(avancado, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(14));
     corpo->AddStretchSpacer(1);
@@ -888,9 +889,9 @@ JanelaAjustesFilamento::JanelaAjustesFilamento(wxWindow* pai, int entrada)
     };
     auto* rodape = new Botoes(this, false);
     rodape->SetMinSize(wxSize(-1, FromDIP(40)));
-    Botao ok{u8("Aplicar")};
+    Botao ok{Filuna::trw("Aplicar")};
     ok.destaque = true;
-    rodape->definir({Botao{u8("Voltar ao padrão")}, Botao{u8("Salvar como meu perfil")}, ok});
+    rodape->definir({Botao{Filuna::trw("Voltar ao padrão")}, Botao{Filuna::trw("Salvar como meu perfil")}, ok});
     rodape->ao_clicar = [this, aplicar, salvo](int i, const wxRect&) {
         if (i == 0) { // os valores do perfil salvo voltam para as caixas; só gravam no Aplicar
             for (Campo& c : m->campos)
