@@ -21,8 +21,16 @@ var RaioXDiag = (function () {
 		'.dg-graf{width:100%;height:120px;background:var(--side);border-radius:12px;margin-top:8px}.dg-leg{display:flex;gap:12px;font-size:12px;color:var(--ink2);margin-top:4px;flex-wrap:wrap}' +
 		'.dg-leg i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:4px;vertical-align:middle}' +
 		'.dg-ses{border-top:1px solid var(--line);padding:10px 0}.dg-ses:first-of-type{border-top:0}.dg-it{font-size:13px;color:var(--ink2);margin:3px 0 0 4px}' +
-		'.dg-linha{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}.dg-linha input{flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;font:inherit}</style>';
-	var st = { chave: "", dev: "", painel: null, testes: null, leitura: null, lendo: false, teste: null, erro: "", sup: null, carregado: false, ouvindo: false };
+		'.dg-linha{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}.dg-linha input{flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;font:inherit}' +
+		'.dg-card.dg-cu{border-color:var(--magenta)}.dg-passos{margin:6px 0 10px 18px;padding:0;font-size:13.5px;color:var(--ink2)}.dg-marca{background:var(--side);border-radius:12px;padding:8px 12px;font-size:13px;margin-bottom:10px}' +
+		'.dg-ok{display:flex;gap:8px;align-items:center;font-size:13.5px;margin:4px 0}.dg-ok input{width:18px;height:18px}.dg-cu-l{list-style:none;margin:8px 0;padding:0}' +
+		'.dg-cu-l li{display:flex;gap:8px;align-items:baseline;padding:4px 0;font-size:13.5px;border-top:1px solid var(--line)}.dg-cu-l li:first-child{border-top:0}.dg-cu-l small{color:var(--ink2)}</style>';
+	var st = { chave: "", dev: "", viva: null, painel: null, testes: null, leitura: null, lendo: false, teste: null, erro: "", sup: null, carregado: false, ouvindo: false,
+		checkup: null };
+	// Check-up completo ("minha impressora está ruim"): lê todos os sensores e roda, um por vez, os testes que a marca
+	// permite. Cada teste passa pelas mesmas travas do programa (presença confirmada aqui, limites, desliga tudo no fim);
+	// os que movimentam só entram se o cliente disser que a mesa está vazia. Calibração (PID) fica de fora: é avulsa.
+	var ORDEM = ["consultas", "ruido_acelerometro", "coolers", "aquecimento_bico", "aquecimento_mesa"], ORDEM_MOVE = ["eixos", "malha_mesa", "precisao_sonda", "ressonancia"];
 
 	function quando(iso) { try { return new Date(typeof iso == "number" ? iso * 1000 : iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
 	function nivel(n) { return { falha: "Problema", atencao: "Atenção", info: "Ok", ok: "Normal", confirmar: "Confirmar", interrompido: "Parado", indisponivel: "Sem recurso" }[n] || n || ""; }
@@ -77,12 +85,141 @@ var RaioXDiag = (function () {
 			(t.analise && t.analise.achados ? '<div style="margin-top:8px">' + achadosHtml(t.analise.achados) + "</div>" : "") + "</div>";
 	}
 
+	function cuTestes(ts, move) {
+		var ids = {};
+		(ts.testes || []).forEach(function (t) { ids[t.id] = t; });
+		return ORDEM.concat(move ? ORDEM_MOVE : []).filter(function (id) { return ids[id]; }).map(function (id) { return ids[id]; });
+	}
+	function temCamera(v) { return !!(v && (v.camera_flv || v.camera_repasse)); }
+	function checkupHtml(ts) {
+		var cu = st.checkup, fisicos = (ts.testes || []).some(function (t) { return t.risco != "leitura"; });
+		var movem = (ts.testes || []).some(function (t) { return t.risco == "move"; });
+		var h = '<div class="dg-card dg-cu"><h3>Algo errado com a impressora?</h3><p>Faça o check-up completo: a Filuna confere tudo o que esta impressora deixa e diz o que fazer.</p>' +
+			'<ol class="dg-passos"><li>Lê todos os sensores (temperaturas, coolers, motores, avisos, câmera).</li><li>Roda, um por vez, os testes que esta impressora permite.</li>' +
+			"<li>Mostra o resultado e guarda tudo no Raio X da impressora.</li></ol>" + (ts.permite ? '<div class="dg-marca">' + E(ts.permite) + "</div>" : "");
+		if (!st.dev) return h + '<div class="rx-m">Ligue a impressora e abra o cartão dela para o check-up.</div></div>';
+		if (cu && cu.rodando) {
+			return h + '<ul class="dg-cu-l">' + cu.lista.map(function (p, i) {
+				var est = p.res ? nivel(p.res) : i == cu.i ? (p.espera ? "esperando você" : "rodando…") : "na fila";
+				return '<li><span class="dg-niv ' + E(p.res || (i == cu.i ? "confirmar" : "")) + '">' + E(est) + "</span><div><b>" + E(p.nome) + "</b>" + (p.texto ? " <small>" + E(p.texto) + "</small>" : "") + "</div></li>";
+			}).join("") + '</ul><button class="btn peq" id="dgCuParar">Parar o check-up</button></div>';
+		}
+		if (cu && cu.fim) h += resultadoHtml(cu, ts);
+		var min = 2 + cuTestes(ts, true).reduce(function (n, t) { return n + (t.minutos || 1); }, 0);
+		return h + (fisicos ? '<label class="dg-ok"><input type="checkbox" id="dgCuPres"> Estou ao lado da impressora (necessário para os testes que aquecem)</label>' : "") +
+			(movem ? '<label class="dg-ok"><input type="checkbox" id="dgCuMove"> A mesa está limpa e vazia: incluir os testes que movimentam (eixos, mapa da mesa, sonda e vibração)</label>' : "") +
+			'<button class="btn primario" id="dgCheckup"' + (st.lendo ? " disabled" : "") + ">" + (cu && cu.fim ? "Fazer o check-up de novo" : "Fazer o check-up completo") + "</button>" +
+			'<div class="rx-m">Leva de 1 a ' + min + " min, conforme os testes. Você pode parar quando quiser: o programa desliga o calor e o cooler.</div></div>";
+	}
+	function resultadoHtml(cu, ts) {
+		var vistos = {}, fazer = [];
+		cu.achados.forEach(function (a) {
+			if ((a.nivel == "falha" || a.nivel == "atencao") && !vistos[a.titulo + a.texto]) { vistos[a.titulo + a.texto] = 1; fazer.push(a); }
+		});
+		fazer.sort(function (a, b) { return (a.nivel == "falha" ? 0 : 1) - (b.nivel == "falha" ? 0 : 1); });
+		var falhas = fazer.filter(function (a) { return a.nivel == "falha"; }).length;
+		var h = '<div class="dg-run"><b>Resultado do check-up · ' + E(quando(cu.fim)) + "</b>" + '<ul class="dg-cu-l">' + cu.lista.map(function (p) {
+			return '<li><span class="dg-niv ' + E(p.res || "") + '">' + E(nivel(p.res) || "—") + "</span><div><b>" + E(p.nome) + "</b>" + (p.texto ? " <small>" + E(p.texto) + "</small>" : "") + "</div></li>";
+		}).join("") + "</ul>";
+		h += fazer.length ? "<b>O que fazer</b>" + achadosHtml(fazer) : '<div class="dg-ach"><span class="dg-niv ok">Normal</span><div><b>Tudo certo no que foi testado</b><span>Se a impressão ainda sai ruim, o problema pode estar no fatiamento ou no filamento: rode o Teste de impressão.</span></div></div>';
+		if (cu.pulados) h += '<div class="rx-m">' + E(cu.pulados) + "</div>";
+		if ((ts.guiados || []).length) h += '<div class="rx-m">Para completar, rode também pela tela da impressora: ' + E(ts.guiados.join(" ")) + "</div>";
+		if (falhas) h += '<div class="rx-m">Precisa de ajuda? Abra o reparo pelo erro na aba Erros, ou toque em "Autorizar a Filuna por 1 hora" mais abaixo para o suporte (ou a sua IA) olhar com você.</div>';
+		return h + "</div>";
+	}
+	// Espera o teste pedido terminar e a análise do site chegar (o programa publica o resultado e, depois, a análise).
+	function esperarFim(id, desde) {
+		return new Promise(function (ok) {
+			var concluidoEm = 0;
+			var passo = function () {
+				if (st.checkup && st.checkup.parado) return ok({ resultado: { resultado: "interrompido", texto: "Check-up parado." } });
+				Filuna.nativo("diagnostico.teste.estado", {}).then(function (e) {
+					if (e && e.teste == id && (e.inicio || 0) >= desde - 5) {
+						var p = st.checkup && st.checkup.lista[st.checkup.i];
+						if (p) p.espera = e.estado == "esperando_presenca";
+						if (e.estado == "interrompido" || (e.estado == "concluido" && (e.analise || (concluidoEm && Date.now() - concluidoEm > 60000)))) return ok(e);
+						if (e.estado == "concluido" && !concluidoEm) concluidoEm = Date.now();
+					}
+					setTimeout(passo, 2000);
+				}, function () { setTimeout(passo, 3000); });
+			};
+			setTimeout(passo, 1500);
+		});
+	}
+	function testeCamera() {
+		var v = st.viva;
+		var r = !temCamera(v) ? Promise.resolve({ resultado: "indisponivel", texto: "A câmera desta impressora não abre por este programa." }) :
+			FilunaCameraConta.foto(v).then(function (b) {
+				return b ? { resultado: "ok", texto: "A câmera mandou imagem (" + Math.round(b.size / 1024) + " KB).", foto_kb: Math.round(b.size / 1024) } :
+					{ resultado: "falha", texto: "A câmera não mandou imagem em 15 s: confira se ela está ligada e se a impressora está na mesma rede deste computador." };
+			});
+		return r.then(function (res) {
+			return Filuna.api("POST", "/raiox/diagnostico/registrar", { chave: st.chave, dev_id: st.dev, tipo: "teste", teste: "camera", origem: "cliente",
+				nome: (v && v.nome) || "", modelo: (v && v.modelo_nome) || "", agente: (v && v.agente) || "", dados: res })
+				.then(function (an) { return { resultado: res, analise: an }; }, function () { return { resultado: res, analise: null }; });
+		});
+	}
+	function checkup(redesenhar, presente, move) {
+		var ts = st.testes || {}, lista = [{ id: "leitura", nome: "Leitura de todos os sensores" }];
+		if (st.viva && st.viva.camera && window.FilunaCameraConta && FilunaCameraConta.foto) lista.push({ id: "camera", nome: "Câmera" });
+		var pulados = [];
+		cuTestes(ts, move).forEach(function (t) {
+			if (t.risco == "leitura" || presente) lista.push({ id: t.id, nome: t.nome });
+			else pulados.push(t.nome);
+		});
+		var cu = st.checkup = { lista: lista, i: 0, rodando: true, achados: [], parado: false,
+			pulados: pulados.length ? "Ficaram de fora porque você não marcou que está ao lado da impressora: " + pulados.join(", ") + "." : "" };
+		st.erro = "";
+		var guardar = function (p, e) {
+			var res = (e && e.resultado) || {};
+			p.res = res.resultado || "falha"; p.texto = res.texto || ""; p.espera = false;
+			((e && e.analise && e.analise.achados) || []).forEach(function (a) { cu.achados.push(a); });
+		};
+		var cadeia = presente ? Filuna.nativo("diagnostico.presenca", { dev_id: st.dev }) : Promise.resolve();
+		lista.forEach(function (p, i) {
+			cadeia = cadeia.then(function () {
+				if (cu.parado) { p.res = "interrompido"; return; }
+				cu.i = i; redesenhar();
+				if (p.id == "leitura")
+					return Filuna.nativo("diagnostico.ler", { dev_id: st.dev }).then(function (r) {
+						if (r && r.erro) throw r;
+						st.leitura = r; guardar(p, { resultado: { resultado: (r.analise && r.analise.achados && r.analise.achados[0] || {}).nivel || "info",
+							texto: (r.analise && r.analise.aviso) || "" }, analise: r.analise });
+					});
+				if (p.id == "camera") return testeCamera().then(function (e) { guardar(p, e); });
+				var desde = Math.floor(Date.now() / 1000);
+				return Filuna.nativo("diagnostico.testar", { dev_id: st.dev, teste: p.id, origem: "cliente" }).then(function (r) {
+					if (r && r.erro) throw r;
+					return esperarFim(p.id, desde);
+				}).then(function (e) {
+					guardar(p, e);
+					if (p.res == "interrompido") cu.parado = true; // parado na impressora ou sem presença: não segue sozinho
+				});
+			}).catch(function (e) {
+				p.res = "falha"; p.texto = (e && (e.erro || e.message)) || "Não deu para rodar agora.";
+				if (p.id == "leitura") cu.parado = true; // sem a leitura (impressora fora da rede) os testes também não rodam
+			});
+		});
+		cadeia.then(function () {
+			cu.rodando = false; cu.fim = new Date().toISOString();
+			var conta = function (n) { return cu.lista.filter(function (p) { return p.res == n; }).length; };
+			Filuna.api("POST", "/raiox/diagnostico/registrar", { chave: st.chave, tipo: "nota", origem: "cliente",
+				texto: "Check-up completo" + (cu.parado ? " (parado antes do fim)" : "") + ": " + cu.lista.length + " etapas; " + conta("falha") + " com problema, " +
+					conta("atencao") + " com atenção." + (cu.pulados ? " " + cu.pulados : "") }).catch(function () {});
+			st.painel = null; carregar(redesenhar);
+		});
+	}
+
 	function html(u, chave) {
-		if (chave != st.chave) { st.painel = null; st.testes = null; st.leitura = null; st.teste = null; st.carregado = false; st.erro = ""; }
-		st.chave = chave; st.dev = (u.viva && u.viva.dev_id) || u.dev_id || "";
+		if (chave != st.chave) {
+			st.painel = null; st.testes = null; st.leitura = null; st.teste = null; st.carregado = false; st.erro = "";
+			if (st.checkup && !st.checkup.rodando) st.checkup = null;
+		}
+		st.chave = chave; st.dev = (u.viva && u.viva.dev_id) || u.dev_id || ""; st.viva = u.viva || null;
 		if (!st.carregado) return CSS + '<p class="rx-txt">Carregando o diagnóstico…</p>';
 		var p = st.painel || { sessoes: [], alertas: [], serie: [], frota: {} }, ts = st.testes || {}, sug = (st.leitura && st.leitura.analise && st.leitura.analise.testes_sugeridos) || [];
 		var h = CSS + (st.erro ? '<div class="aviso" style="margin-bottom:12px"><span>' + E(st.erro) + "</span></div>" : "");
+		h += checkupHtml(ts);
 		// 1. leitura
 		h += '<div class="dg-card"><h3>Raio X do equipamento</h3><p>A Filuna lê tudo o que esta impressora informa e mostra o que está fora do normal. Não aquece nem move nada.</p>' +
 			'<button class="btn primario" id="dgLer"' + (st.lendo || !st.dev ? " disabled" : "") + ">" + (st.lendo ? "Lendo a impressora…" : "Ler a impressora agora") + "</button>" +
@@ -146,7 +283,14 @@ var RaioXDiag = (function () {
 		}
 		if (!st.carregado) { carregar(redesenhar); return; }
 		var falha = function (e) { st.erro = (e && (e.erro || e.message)) || "Não deu para fazer isso agora."; redesenhar(); };
-		var b = q("#dgLer");
+		var b = q("#dgCheckup");
+		if (b) b.onclick = function () {
+			var pres = q("#dgCuPres"), mv = q("#dgCuMove");
+			checkup(redesenhar, !!(pres && pres.checked), !!(mv && mv.checked && pres && pres.checked));
+		};
+		b = q("#dgCuParar");
+		if (b) b.onclick = function () { b.disabled = true; if (st.checkup) st.checkup.parado = true; Filuna.nativo("diagnostico.parar", {}).catch(falha); };
+		b = q("#dgLer");
 		if (b) b.onclick = function () {
 			st.lendo = true; st.erro = ""; redesenhar();
 			Filuna.nativo("diagnostico.ler", { dev_id: st.dev }).then(function (r) {
@@ -196,12 +340,13 @@ var RaioXDiag = (function () {
 	function visivel(redesenhar) {
 		if (lib.valor === null && !lib.pedindo && Filuna.temToken()) {
 			lib.pedindo = true;
-			Filuna.api("GET", "/raiox/diagnostico/liberado").then(function (r) { lib.valor = !!(r && r.liberado); }, function () { lib.valor = false; })
+			Filuna.api("GET", "/raiox/diagnostico/liberado").then(function (r) { lib.valor = !!(r && r.liberado); },
+				function () { lib.valor = false; setTimeout(function () { lib.valor = null; }, 60000); })
 				.then(function () { lib.pedindo = false; if (lib.valor) redesenhar(); });
 		}
 		return !!lib.valor;
 	}
 
 	return { html: html, ligar: ligar, visivel: visivel, contar: function () { return st.painel ? (st.painel.alertas || []).filter(function (a) { return !a.visto_em; }).length : 0; },
-		recarregar: function () { st.painel = null; st.testes = null; st.leitura = null; st.carregado = false; st.erro = ""; } };
+		recarregar: function () { st.painel = null; st.testes = null; st.leitura = null; st.carregado = false; st.erro = ""; if (st.checkup && !st.checkup.rodando) st.checkup = null; } };
 })();

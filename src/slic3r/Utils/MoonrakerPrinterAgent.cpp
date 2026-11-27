@@ -1229,8 +1229,9 @@ int MoonrakerPrinterAgent::handle_request(const std::string& dev_id, const std::
     if (json.contains("filuna") && json["filuna"].is_object() && json["filuna"].value("command", std::string()) == "diagnostico") {
         const std::string base = device_info.base_url, key = device_info.api_key, dev = device_info.dev_id.empty() ? dev_id : device_info.dev_id;
         const bool        so_console = json["filuna"].value("so_console", false);
+        const bool        so_objetos = json["filuna"].value("so_objetos", false); // acompanhar um teste: sem log nem histórico
         const long long   pedido     = json["filuna"].value("pedido", 0LL); // devolvido para quem pediu saber que é a resposta dele
-        std::thread([this, base, key, dev, so_console, pedido] {
+        std::thread([this, base, key, dev, so_console, so_objetos, pedido] {
             const auto     nunca = [] { return false; };
             nlohmann::json out   = nlohmann::json::object();
             auto           ler   = [&](const std::string& caminho, const char* chave) {
@@ -1266,7 +1267,10 @@ int MoonrakerPrinterAgent::handle_request(const std::string& dev_id, const std::
                 }
                 consulta += std::string(consulta.empty() ? "" : "&") + "configfile=warnings,save_config_pending";
                 ler("/printer/objects/query?" + consulta, "objetos");
+            }
+            if (!so_console && !so_objetos) {
                 ler("/printer/info", "klipper");
+                ler("/server/webcams/list", "cameras");
                 ler("/server/info", "moonraker");
                 ler("/machine/system_info", "sistema");
                 ler("/machine/proc_stats", "processos");

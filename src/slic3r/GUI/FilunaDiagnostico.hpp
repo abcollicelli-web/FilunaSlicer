@@ -13,6 +13,8 @@
 //   - nunca com a impressora imprimindo; um teste por vez;
 //   - bico no máximo 240 °C, mesa no máximo 70 °C, tempo máximo por teste;
 //   - sem resposta da impressora, conexão caída ou comando recusado: desliga o calor e encerra;
+//   - movimento só depois de zerar os eixos (G28) e dentro dos limites que a própria impressora informa; o teste de
+//     vibração só roda com sensor de vibração instalado;
 //   - nada grava configuração ou firmware (sem SAVE_CONFIG, sem mexer em driver).
 
 #include <nlohmann/json.hpp>
