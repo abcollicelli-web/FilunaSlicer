@@ -36580,6 +36580,12 @@ msgstr "Potência média da impressora"
 msgid "Filament price per kg"
 msgstr "Preço do filamento por kg"
 
+msgid "Maintenance per print hour"
+msgstr "Manutenção por hora de impressão"
+
+msgid "Printer wear per print hour"
+msgstr "Desgaste da impressora por hora de impressão"
+
 # AI Translated
 msgid "Offers"
 msgstr "Ofertas"

@@ -1770,16 +1770,20 @@ void PreferencesDialog::create_items()
     g_sizer->Add(create_item_checkbox(_L("Show sales trends on Home"), "", "filuna_pref_inicio_tendencias"));
 
     g_sizer->Add(create_item_title(_L("Costs for the sale suggestion")), 1, wxEXPAND);
+    // Moeda da conta Filuna (as telas gravam "filuna_moeda" quando a conta carrega): EUA = "$", sem moeda = "R$".
+    const wxString simbolo = app_config->get("filuna_moeda") == "USD" ? "$" : "R$";
     g_sizer->Add(create_item_decimal_input(_L("Profit margin"), "", _L("From 0 to 0.95. Empty uses the calculator default."), "filuna_pref_calculo_margem", 0., 0.95, 2));
-    g_sizer->Add(create_item_decimal_input(_L("Labor per hour"), "R$", "", "filuna_pref_calculo_mao_obra_hora", 0., 10000., 2));
-    g_sizer->Add(create_item_decimal_input(_L("Energy per kWh"), "R$", "", "filuna_pref_calculo_energia_kwh", 0., 100., 2));
+    g_sizer->Add(create_item_decimal_input(_L("Labor per hour"), simbolo, "", "filuna_pref_calculo_mao_obra_hora", 0., 10000., 2));
+    g_sizer->Add(create_item_decimal_input(_L("Energy per kWh"), simbolo, "", "filuna_pref_calculo_energia_kwh", 0., 100., 2));
     g_sizer->Add(create_item_decimal_input(_L("Average printer power"), "W", "", "filuna_pref_calculo_potencia_w", 0., 10000., 0));
-    g_sizer->Add(create_item_decimal_input(_L("Filament price per kg"), "R$", "", "filuna_pref_calculo_preco_kg", 0., 10000., 2));
+    g_sizer->Add(create_item_decimal_input(_L("Filament price per kg"), simbolo, "", "filuna_pref_calculo_preco_kg", 0., 10000., 2));
+    g_sizer->Add(create_item_decimal_input(_L("Maintenance per print hour"), simbolo, "", "filuna_pref_calculo_manutencao_hora", 0., 1000., 2));
+    g_sizer->Add(create_item_decimal_input(_L("Printer wear per print hour"), simbolo, "", "filuna_pref_calculo_desgaste_hora", 0., 1000., 2));
 
     g_sizer->Add(create_item_title(_L("Offers")), 1, wxEXPAND);
     g_sizer->Add(create_item_checkbox(_L("Show filament and parts offers"), "", "filuna_pref_ofertas_ativas"));
     g_sizer->Add(create_item_input(_L("Only this material"), "", _L("For example PLA. Empty shows every material."), "filuna_pref_ofertas_material"));
-    g_sizer->Add(create_item_decimal_input(_L("Maximum price per kg"), "R$", _L("0 shows every price."), "filuna_pref_ofertas_preco_max_kg", 0., 10000., 2));
+    g_sizer->Add(create_item_decimal_input(_L("Maximum price per kg"), simbolo, _L("0 shows every price."), "filuna_pref_ofertas_preco_max_kg", 0., 10000., 2));
 
     //// GENERAL > Features
     g_sizer->Add(create_item_title(_L("Features")), 1, wxEXPAND);

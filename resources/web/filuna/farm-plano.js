@@ -78,8 +78,12 @@ function duracao(seg) {
 	return h ? h + " h " + (m < 10 ? "0" : "") + m : m + " min";
 }
 function gramas(g) { return String(pyRound(g)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " g"; }
+// moeda da conta vinda da ponte (Filuna.moeda); sem ponte ou sem moeda = real, igual ao site
+function emDolar() { return !!(raiz.Filuna && raiz.Filuna.moeda && raiz.Filuna.moeda() == "USD"); }
 function reais(v) {
-	var t = v.toFixed(2).split("."), i = t[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+	var t = v.toFixed(2).split(".");
+	if (emDolar()) return "$" + t[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "." + t[1];
+	var i = t[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 	return "R$ " + i + "," + t[1];
 }
 function _cm(mm) {
@@ -147,7 +151,7 @@ function planejar(pecas, r, impressoras, bobinas, fatias, params, precos_kg, den
 	var bob = {}; bobinas.forEach(function (b) { bob[b.id] = b; });
 	var preco_kg = function (b_id, mat) {
 		if (mat === undefined) mat = material;
-		return (b_id in bob && bob[b_id].preco_kg) ? bob[b_id].preco_kg : ((precos_kg || {})[mat] !== undefined ? precos_kg[mat] : 100.0);
+		return (b_id in bob && bob[b_id].preco_kg) ? bob[b_id].preco_kg : ((precos_kg || {})[mat] !== undefined ? precos_kg[mat] : (emDolar() ? 25.0 : 100.0));
 	};
 	var dens = densidades || {}, base = r._base || material, fator = {};
 	var mats = {}; for (var hx in (r.materiais || {})) mats[r.materiais[hx]] = 1; mats[material] = 1;
