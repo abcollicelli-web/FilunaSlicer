@@ -139,6 +139,7 @@ document.getElementById("entendi").onclick = function () { fechar(false); };
 document.getElementById("depois").onclick = function () { fechar(true); };
 document.addEventListener("keydown", function (e) { if (e.key == "Escape") fechar(false); });
 
+Filuna.iniciar().catch(function () {});   // lê a conta, como as outras telas (sem isso o aviso "mostrar" recarregaria a tela)
 Filuna.nativo("novidades.dados").then(function (d) { dados = d || dados; desenhar(); }, function () { desenhar(); });
 </script>
 </body>
