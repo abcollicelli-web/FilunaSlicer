@@ -602,6 +602,10 @@ if (SLIC3R_CAD)
             CAD/CadDocument.hpp
             CAD/ThreadStandards.cpp
             CAD/ThreadStandards.hpp
+            CAD/CadAnalise.cpp
+            CAD/CadAnalise.hpp
+            CAD/CadRaster.cpp
+            CAD/CadRaster.hpp
         )
 endif ()
 

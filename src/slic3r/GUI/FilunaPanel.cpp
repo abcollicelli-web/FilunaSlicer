@@ -153,6 +153,22 @@ json printer_info()
 // O filamento que a peça usa de verdade: o da extrusora da primeira peça da mesa atual (cada entrada da lista de
 // filamentos da lateral é uma extrusora). Antes o Assistente mostrava o perfil aberto para edição na aba de
 // filamento, que com AMS (vários filamentos) é o último clicado: a peça em PLA aparecia como PETG.
+std::string filuna_site_base()
+{
+    static const std::string base = [] {
+        const char* v = std::getenv("FILUNA_SITE_TESTE");
+        std::string s = v != nullptr ? v : "";
+        while (!s.empty() && s.back() == '/') s.pop_back();
+        static const std::regex aceito("^(http://(127\\.0\\.0\\.1|localhost)(:[0-9]{1,5})?|https://([a-z0-9-]+\\.)+filuna3d\\.com)$");
+        if (!s.empty() && std::regex_match(s, aceito)) {
+            BOOST_LOG_TRIVIAL(warning) << "Filuna: API do Slicer em " << s << " (FILUNA_SITE_TESTE)";
+            return s;
+        }
+        return std::string("https://filuna3d.com");
+    }();
+    return base;
+}
+
 const Preset& filuna_filamento_da_peca()
 {
     PresetBundle& b     = *wxGetApp().preset_bundle;
@@ -788,6 +804,8 @@ json FilunaPanel::handle(const std::string& action, const json& d)
         return *cad;
 #endif
     AppConfig* cfg = wxGetApp().app_config;
+    if (action == "site.base")   // where Filuna.api goes (FILUNA_SITE_TESTE for tests)
+        return json{{"base", filuna_site_base()}};
     if (action == "config.ler") {
         const std::string key = d.value("chave", std::string());
         if (!allowed_config_key(key))
@@ -843,7 +861,7 @@ json FilunaPanel::handle(const std::string& action, const json& d)
                 boost::filesystem::create_directories(pasta, ec);
                 std::string corpo;
                 unsigned    status = 0;
-                Http        http   = Http::get("https://filuna3d.com" + url);
+                Http        http   = Http::get(filuna_site_base() + url);
                 http.tls_verify(true);
                 http.timeout_connect(15);
                 http.timeout_max(300);

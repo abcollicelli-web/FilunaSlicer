@@ -19,6 +19,7 @@
 #include "slic3r/GUI/MainFrame.hpp"
 #include "slic3r/GUI/Plater.hpp"
 #include "slic3r/GUI/Widgets/WebView.hpp"
+#include "slic3r/Utils/Http.hpp"
 
 #include <BRepBndLib.hxx>
 #include <BRepGProp.hxx>
@@ -34,11 +35,22 @@
 #include <wx/uri.h>
 #include <wx/webview.h>
 #include <wx/statline.h>
+#include <wx/timer.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <ctime>
+#include <deque>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <random>
+#include <set>
+#include <thread>
+#include <utility>
+#include <vector>
 
 namespace Slic3r { namespace GUI {
 
@@ -754,6 +766,7 @@ public:
         else if (c == "navegador") wxLaunchDefaultBrowser(m_ia->GetCurrentURL());
     }
     bool aberta() const { return m_aberta; }
+    void evento(const std::string& nome, const json& dados) { if (m_tela != nullptr) m_tela->send_event(nome, dados); }
 
 private:
     static inline FilunaCadIaPainel* g_atual = nullptr;
@@ -762,14 +775,30 @@ private:
     bool         m_aberta{false};
 };
 
+// Every refusal on the AI's path has the same shape: a stable code to act on, the message (the old site reads
+// "erro") and a hint saying what to send instead.
+json erro_ia(const std::string& codigo, const std::string& erro, const std::string& dica)
+{
+    return json{{"ok", false}, {"codigo", codigo}, {"erro", erro}, {"dica", dica}};
+}
+
 json rpc(const std::string& method, const json& params)
 {
     json r;
     try { r = json::parse(filuna_cad_rpc(method, params.dump())); }
-    catch (const std::exception& ex) { return json{{"ok", false}, {"erro", ex.what()}}; }
-    if (r.contains("error"))
-        return json{{"ok", false}, {"erro", r["error"].value("message", std::string("erro"))}};
-    return json{{"ok", true}, {"resultado", r.contains("result") ? r["result"] : json()}};
+    catch (const std::exception& ex) { return erro_ia("erro_interno", ex.what(), "tente de novo; se repetir, avise o cliente"); }
+    if (!r.contains("error")) return json{{"ok", true}, {"resultado", r.contains("result") ? r["result"] : json()}};
+    const int         code = r["error"].value("code", -32000);
+    const std::string msg  = r["error"].value("message", std::string("erro"));
+    if (code == -32010)
+        return erro_ia("generation_vencida", msg, "os ids mudaram: releia query_topology e mande os ids novos com a generation nova");
+    if (code == -32002)
+        return erro_ia("design_ocupado", msg, "há um esboço ou ferramenta aberta: mande \"concluir\" ou \"cancelar\" (ou sketch_commit) antes");
+    if (code == -32601) return erro_ia("metodo_desconhecido", msg, "veja a lista de comandos em filuna_cad");
+    if (code == -32602) return erro_ia("valor_invalido", msg, "confira o tipo do parâmetro na lista de comandos de filuna_cad");
+    if (msg.find("type_error") != std::string::npos)
+        return erro_ia("tipo_errado", msg, "um parâmetro veio com o tipo errado (texto no lugar de número, lista no lugar de objeto...)");
+    return erro_ia("erro_na_operacao", msg, "confira os parâmetros e o estado com describe_scene; ids de face e aresta vêm de query_topology");
 }
 
 // Extrude a sketch that is already in the document (by default the last one): what makes a circle,
@@ -778,16 +807,18 @@ json rpc(const std::string& method, const json& params)
 json extrude_sketch(DesignPanel* p, const json& params)
 {
     std::string why;
-    if (p->mcp_busy(false, why)) return json{{"ok", false}, {"erro", "Design ocupado: " + why}};
+    if (p->mcp_busy(false, why))
+        return erro_ia("design_ocupado", "Design ocupado: " + why, "mande \"concluir\" ou \"cancelar\" antes");
     CadDocument& doc = p->mcp_doc();
     int s = params.value("sketch", -1);
     if (s < 0)
         for (int i = int(doc.features.size()) - 1; i >= 0; --i)
             if (doc.features[i].type == CadFeatureType::Sketch) { s = i; break; }
     if (s < 0 || s >= int(doc.features.size()) || doc.features[s].type != CadFeatureType::Sketch)
-        return json{{"ok", false}, {"erro", "não há esboço para extrudar (sketch = índice de um recurso Sketch)"}};
+        return erro_ia("sem_esboco", "não há esboço para extrudar (sketch = índice de um recurso Sketch)",
+                       "desenhe com sketch_begin, sketch_add e sketch_commit, ou passe o índice certo em 'sketch'");
     const double d = params.value("distance", 10.0);
-    if (d <= 0) return json{{"ok", false}, {"erro", "distance precisa ser maior que zero"}};
+    if (d <= 0) return erro_ia("fora_da_faixa", "distance precisa ser maior que zero", "distance em mm, maior que 0");
     const std::string b = params.value("boolean", std::string("new"));
     const BooleanMode mode = b == "union" || b == "add" ? BooleanMode::Add
                            : b == "subtract" || b == "cut" ? BooleanMode::Cut
@@ -814,15 +845,33 @@ json extra_tools()
 {
     auto par = [](const char* n, const char* t, const char* d) { return json{{"name", n}, {"type", t}, {"description", d}}; };
     auto tool = [](const char* n, const char* s, json ps) { return json{{"name", n}, {"summary", s}, {"params", ps}}; };
+    json tamanho = par("tamanho", "integer", "lado da imagem em pixels, 256 a 1024 (padrão 640)");
+    tamanho["min"] = 256;
+    tamanho["max"] = 1024;
     return json::array({
+        tool("ver", "Mostra a peça como imagem (PNG), desenhada sem depender da tela: use para conferir a forma depois de "
+                    "modelar. Vistas: iso, frente, topo, direita, esquerda, tras, baixo. A imagem traz a vista, a escala, uma "
+                    "régua, a caixa em mm e o número de cada corpo. Imagem não é medida: para medir use describe_scene e measure.",
+             json::array({par("vistas", "array|string", "lista de vistas (padrão [\"iso\"])"), tamanho,
+                          par("corpo", "integer", "índice de um corpo só (padrão: todos os visíveis)")})),
+        tool("laudo", "Laudo de imprimibilidade (só leitura): status ok | aviso | bloqueado e os códigos corpo_aberto, "
+                      "volume_zero, nao_cabe_na_mesa (bloqueiam), pedacos_soltos, fora_da_mesa, pode_tombar (avisos), com "
+                      "volume, caixa, área de apoio e se o centro de massa cai no apoio de cada corpo. Vem também em todo "
+                      "passo que muda a peça.",
+             json::array()),
         tool("sketch_begin", "Abre um esboço num plano (XY = mesa, XZ = frente, YZ = lado). Depois: sketch_add, sketch_commit.",
              json::array({par("plane", "string", "XY | XZ | YZ (padrão XY)")})),
         tool("sketch_add", "Desenha no esboço aberto: 'entities' = lista de {type: line|circle|arc|point, ...}; ou um só "
                            "(type + campos); ou 'rect' [x0,y0,x1,y1] (retângulo fechado). line: p0 [x,y], p1 [x,y]; circle: "
-                           "center [x,y], radius; arc: center, radius, start_angle, end_angle (radianos); point: p [x,y]. "
-                           "construction: true para linha de construção (não vira sólido).",
+                           "center [x,y], radius; arc: center, radius e start_deg/end_deg em graus (ou start_angle/end_angle "
+                           "em radianos); point: p [x,y]. construction: true para linha de construção (não vira sólido).",
              json::array({par("entities", "array", "lista de entidades"), par("rect", "array", "[x0, y0, x1, y1] em mm"),
-                          par("type", "string", "uma entidade só"), par("construction", "boolean", "geometria de construção")})),
+                          par("type", "string", "uma entidade só"), par("construction", "boolean", "geometria de construção"),
+                          par("p0", "array", "[x,y] (line)"), par("p1", "array", "[x,y] (line)"), par("p", "array", "[x,y] (point)"),
+                          par("center", "array", "[x,y] (circle, arc)"), par("centre", "array", "o mesmo que center"),
+                          par("radius", "number", "mm (circle, arc)"), par("start_deg", "number", "graus (arc)"),
+                          par("end_deg", "number", "graus (arc)"), par("start_angle", "number", "radianos (arc)"),
+                          par("end_angle", "number", "radianos (arc)")})),
         tool("sketch_describe", "Lista o que está desenhado no esboço aberto (índices, medidas, laços fechados).", json::array()),
         tool("sketch_select", "Seleciona entidades do esboço pelos índices (para restrições e operações).",
              json::array({par("entities", "array", "índices")})),
@@ -846,7 +895,8 @@ json extra_tools()
              json::array({par("name", "string", "nome"), par("expr", "string", "expressão em mm")})),
         tool("set_feature_expr", "Liga um campo de um recurso a uma expressão (ex.: distance = altura/2).",
              json::array({par("feature", "integer", "índice do recurso"), par("field", "string", "campo"), par("expr", "string", "expressão")})),
-        tool("list_verbs", "Lista as ações da ferramenta que valem para a seleção atual.", json::array()),
+        tool("list_verbs", "Lista as ações da ferramenta que valem para a seleção atual.",
+             json::array({par("applicable_only", "boolean", "só as que valem agora"), par("sketch_mode", "boolean", "as do esboço")})),
         tool("run_verb", "Roda uma ação da ferramenta pelo id (de list_verbs).", json::array({par("verb", "string", "id")})),
         tool("desfazer", "Desfaz o último passo.", json::array()),
         tool("refazer", "Refaz o passo desfeito.", json::array()),
@@ -856,7 +906,564 @@ json extra_tools()
     });
 }
 
+// --- validation of the AI's steps -------------------------------------------------------------------------------
+
+// method -> its parameter list, from the same descriptions the AI reads (describe_tools + extra_tools).
+const json& esquemas()
+{
+    static json m;   // null until describe_tools answers; a null schema validates nothing
+    if (!m.is_object()) {
+        json tools = rpc("describe_tools", json::object()).value("resultado", json::object());
+        if (tools.contains("tools") && tools["tools"].is_array()) {
+            json out = json::object();
+            for (const json& t : tools["tools"]) out[t.value("name", std::string())] = t.value("params", json::array());
+            for (const json& t : extra_tools()) out[t.value("name", std::string())] = t.value("params", json::array());
+            out["view"] = out["ver"];
+            m = std::move(out);
+        }
+    }
+    return m;
+}
+
+bool numero_invalido(const json& j)
+{
+    if (j.is_number_float()) return !std::isfinite(j.get<double>());
+    if (j.is_structured())
+        for (const json& x : j)
+            if (numero_invalido(x)) return true;
+    return false;
+}
+
+bool tipo_confere(const json& v, const std::string& tipos)
+{
+    size_t i = 0;
+    while (i <= tipos.size()) {
+        const size_t f = std::min(tipos.find('|', i), tipos.size());
+        const std::string t = tipos.substr(i, f - i);
+        i = f + 1;
+        if ((t == "number" && v.is_number()) || (t == "boolean" && v.is_boolean()) || (t == "string" && v.is_string()) ||
+            (t == "array" && v.is_array()) || (t == "object" && v.is_object()) ||
+            (t == "integer" && (v.is_number_integer() || (v.is_number_float() && std::floor(v.get<double>()) == v.get<double>()))))
+            return true;
+        if (t != "number" && t != "boolean" && t != "string" && t != "array" && t != "object" && t != "integer")
+            return true;   // a type this check does not know: let the handler judge it
+    }
+    return false;
+}
+
+std::string nomes_dos_parametros(const json& lista)
+{
+    std::string s;
+    for (const json& p : lista) s += (s.empty() ? "" : ", ") + p.value("name", std::string());
+    return s.empty() ? std::string("nenhum") : s;
+}
+
+// Does this call name a face or an edge by id? Those ids expire with every rebuild, so the call must say which
+// topology it read them from.
+bool usa_ids_de_topologia(const std::string& m, const json& params)
+{
+    auto ativo = [](const json& v) { return (v.is_number() && v.get<double>() >= 0) || (v.is_array() && !v.empty()); };
+    for (const char* k : {"edge", "edges", "face", "faces", "up_to_face"})
+        if (params.contains(k) && ativo(params[k])) return true;
+    if (m == "measure")
+        for (const char* k : {"a", "b"})
+            if (params.contains(k) && params[k].is_object() && (params[k].contains("face") || params[k].contains("edge"))) return true;
+    return false;
+}
+
+std::optional<json> validar(DesignPanel* p, const std::string& m, const json& params)
+{
+    if (numero_invalido(params))
+        return erro_ia("valor_invalido", "número inválido (NaN ou infinito) nos parâmetros", "mande números finitos, em mm ou graus");
+    const json& esq = esquemas();
+    if (esq.contains(m)) {
+        const json& lista = esq[m];
+        for (auto it = params.begin(); it != params.end(); ++it) {
+            const std::string& k = it.key();
+            if (k == "generation") continue;
+            const json* def = nullptr;
+            for (const json& d : lista)
+                if (d.value("name", std::string()) == k) { def = &d; break; }
+            if (def == nullptr)
+                return erro_ia("parametro_desconhecido", m + " não conhece o parâmetro '" + k + "'",
+                               "aceitos: " + nomes_dos_parametros(lista) + " (e generation)");
+            const json& v = it.value();
+            const std::string tipo = def->value("type", std::string());
+            if (!tipo.empty() && !tipo_confere(v, tipo))
+                return erro_ia("tipo_errado", "'" + k + "' de " + m + " precisa ser " + tipo + ", veio " + v.type_name(),
+                               def->contains("description") ? k + ": " + def->value("description", std::string()) : k + ": " + tipo);
+            if (def->contains("enum") && (*def)["enum"].is_array()) {
+                bool achou = false;
+                for (const json& e : (*def)["enum"]) achou = achou || e == v;
+                if (!achou) return erro_ia("valor_invalido", "'" + k + "' = " + v.dump() + " não vale em " + m, "use um de: " + (*def)["enum"].dump());
+            }
+            if (v.is_number()) {
+                const double x = v.get<double>();
+                if ((def->contains("min") && x < (*def)["min"].get<double>()) || (def->contains("max") && x > (*def)["max"].get<double>()))
+                    return erro_ia("fora_da_faixa", "'" + k + "' = " + v.dump() + " fora da faixa em " + m,
+                                   k + " vai de " + (def->contains("min") ? (*def)["min"].dump() : std::string("-")) + " a " +
+                                       (def->contains("max") ? (*def)["max"].dump() : std::string("-")));
+            }
+        }
+    }
+    if (params.contains("profile")) {
+        const json& pr = params["profile"];
+        bool ok = pr.is_array() && pr.size() >= 3;
+        for (size_t i = 0; ok && i < pr.size(); ++i)
+            ok = pr[i].is_array() && pr[i].size() >= 2 && pr[i][0].is_number() && pr[i][1].is_number();
+        if (!ok)
+            return erro_ia("perfil_invalido", "profile precisa de pelo menos 3 pontos [[x,y],[x,y],[x,y],...]",
+                           "um contorno fechado em mm no plano do esboço; para um retângulo centrado, tire profile e use width/height");
+    }
+    if (usa_ids_de_topologia(m, params) && !params.contains("generation")) {
+        std::string dica = "a generation atual é " + std::to_string(p->mcp_doc().topo_generation) +
+                           ": leia os ids em query_topology e mande \"generation\" junto com eles";
+        if (m == "fillet" || m == "chamfer")
+            dica += ", ou troque 'edge' por \"arestas\": \"topo\" | \"base\" | \"verticais\" | \"horizontais\" | \"circulares\" | \"todas\"";
+        return erro_ia("generation_obrigatorio", m + " recebeu ids de face/aresta sem 'generation'", dica);
+    }
+    return std::nullopt;
+}
+
+// Steps after which the part may have changed: they get the printability report.
+bool muda_a_peca(const std::string& m)
+{
+    static const std::set<std::string> leitura = {
+        "describe_tools", "describe_scene", "query_topology", "measure", "mass_properties", "slice_body", "list_verbs",
+        "check_interference", "ver", "view", "laudo", "enquadrar", "mandar_para_preparacao"};
+    return leitura.count(m) == 0 && m.rfind("sketch_", 0) != 0;
+}
+
+json laudo_atual()
+{
+    return rpc("laudo", json::object()).value("resultado", json());
+}
+
+json mandar_para_preparacao(DesignPanel* p, const json& params)
+{
+    if (p->mcp_doc().bodies.empty()) return erro_ia("sem_corpo", "não há peça para mandar", "modele a peça antes");
+    const json l = laudo_atual();
+    if (l.value("status", std::string()) == "bloqueado" && !params.value("forcar", false)) {
+        std::string cods;
+        for (const json& c : l.value("codigos", json::array())) cods += (cods.empty() ? "" : ", ") + c.get<std::string>();
+        json r = erro_ia("laudo_bloqueado", "a peça não está pronta para imprimir: " + cods,
+                         "corrija o que o laudo aponta e mande de novo; se o cliente quiser mesmo assim, mande {\"forcar\": true}");
+        r["laudo"] = l;
+        return r;
+    }
+    json r = json::parse(p->filuna_ia_extra("mandar_para_preparacao"));
+    r["laudo"] = l;
+    return r;
+}
+
+// One step of a request, on the main thread: validated, run, and judged.
+json executar_passo(DesignPanel* p, const json& c)
+{
+    const std::string m = c.is_object() && c.contains("metodo") && c["metodo"].is_string() ? c["metodo"].get<std::string>() : std::string();
+    json r;
+    try {
+        const json params = c.is_object() && c.contains("parametros") ? c["parametros"] : json::object();
+        if (m.empty())
+            r = erro_ia("passo_invalido", "passo sem 'metodo'", "cada passo é {\"metodo\": \"...\", \"parametros\": {...}}");
+        else if (!params.is_object())
+            r = erro_ia("tipo_errado", "'parametros' precisa ser um objeto", "{\"metodo\": \"" + m + "\", \"parametros\": {...}}");
+        else if (blocked_for_ai(m))
+            r = erro_ia("metodo_bloqueado", m + " não está liberado para a IA", "esses comandos leem arquivos do computador do cliente");
+        else if (std::optional<json> e = validar(p, m, params))
+            r = *e;
+        else if (m == "extrude_sketch")
+            r = extrude_sketch(p, params);
+        else if (m == "mandar_para_preparacao")
+            r = mandar_para_preparacao(p, params);
+        else {
+            const std::string extra = p->filuna_ia_extra(m);
+            r = extra.empty() ? rpc(m, params) : json::parse(extra);
+        }
+        // A control method can answer ok at the envelope and still report a refusal inside.
+        if (r.value("ok", false) && r.contains("resultado") && r["resultado"].is_object() && r["resultado"].contains("ok") &&
+            r["resultado"]["ok"].is_boolean() && !r["resultado"]["ok"].get<bool>()) {
+            r["ok"]     = false;
+            r["codigo"] = "operacao_falhou";
+            r["erro"]   = r["resultado"].value("error", std::string("a operação não deu certo"));
+            r["dica"]   = "o passo foi desfeito e a peça ficou como antes; mude as medidas (raio menor, distância maior...) e tente de novo";
+        }
+        if (!r.value("ok", false) && !r.contains("codigo")) {
+            r["codigo"] = "erro_na_operacao";
+            if (!r.contains("dica")) r["dica"] = "confira os parâmetros e o estado com describe_scene";
+        }
+        if (r.value("ok", false) && muda_a_peca(m)) r["laudo"] = laudo_atual();
+    } catch (const std::exception& ex) {
+        r = erro_ia(std::string(ex.what()).find("type_error") != std::string::npos ? "tipo_errado" : "erro_na_operacao", ex.what(),
+                    "confira os parâmetros na lista de comandos de filuna_cad");
+    }
+    r["metodo"] = m;
+    return r;
+}
+
+// The steps that left something to undo, for the panel's "Desfazer".
+bool conta_para_desfazer(const json& passo)
+{
+    const std::string m = passo.value("metodo", std::string());
+    return passo.value("ok", false) && m != "desfazer" && m != "refazer" && (muda_a_peca(m) || m == "sketch_commit");
+}
+
+std::string id_desta_instancia()
+{
+    static const std::string id = [] {
+        std::random_device rd;
+        std::mt19937_64    g((uint64_t(rd()) << 32) ^ rd() ^ uint64_t(std::time(nullptr)));
+        char b[20];
+        std::snprintf(b, sizeof(b), "%016llx", static_cast<unsigned long long>(g()));
+        return std::string(b);
+    }();
+    return id;
+}
+
+std::string api_base() { return filuna_site_base() + "/api/slicer/v1"; }
+
+struct RespostaHttp { bool ok{false}; unsigned status{0}; std::string corpo; };
+
+// Off the main thread only.
+RespostaHttp http_site(const std::string& metodo, const std::string& rota, const std::string& token, const std::string& corpo = {})
+{
+    RespostaHttp r;
+    Http h = metodo == "GET" ? Http::get(api_base() + rota) : Http::post(api_base() + rota);
+    h.header("Authorization", "Bearer " + token).timeout_connect(5).timeout_max(30);
+    if (metodo != "GET") h.header("Content-Type", "application/json").set_post_body(corpo);
+    h.on_complete([&r](std::string b, unsigned st) { r.ok = st >= 200 && st < 300; r.status = st; r.corpo = std::move(b); })
+        .on_error([&r](std::string b, std::string, unsigned st) { r.status = st; r.corpo = std::move(b); })
+        .perform_sync();
+    return r;
+}
+
+std::string id_do_pedido(const json& p)
+{
+    if (!p.contains("id")) return std::string();
+    return p["id"].is_string() ? p["id"].get<std::string>() : p["id"].dump();
+}
+
 } // namespace
+
+// --- the "Modelar com IA" queue ---------------------------------------------------------------------------------
+// Read by C++ every 3 s for as long as the customer's session lasts — not by the page: a hidden WebView may stop
+// its timers, a layout change may hide the pane, a reload may forget what already ran. A request is reserved for
+// this instance (?reservar=1&instancia=, newer site), marked as started before its first step, run one step per
+// event-loop turn (the window keeps answering) within 120 s, and its result posted; a POST that fails is retried.
+struct FilunaIaFila : std::enable_shared_from_this<FilunaIaFila>
+{
+    explicit FilunaIaFila(DesignPanel* p) : painel(p) {}
+    ~FilunaIaFila() { if (timer) timer->Stop(); }
+
+    struct Timer : wxTimer {
+        std::function<void()> f;
+        void Notify() override { if (f) f(); }
+    };
+
+    DesignPanel*           painel;
+    std::unique_ptr<Timer> timer;
+    bool                   rede{false};            // a request to the site is in flight
+    bool                   envio_novo{false};      // something was queued to post while `rede` was busy
+    std::string            token_publicado;        // the tool list went to the site for this account
+    std::string            ultimo_estado;
+    std::deque<json>       fila;                   // fetched, waiting to run here
+    std::set<std::string>  iniciados;              // never run the same request twice
+    std::vector<std::pair<std::string, std::string>> envios;   // (route, body) still to post
+    json                   conectadas = json::array();
+    std::string            endereco;
+    json                   historico = json::array();          // newest first, for the panel
+
+    bool                   executando{false};
+    json                   atual;
+    json                   passos;
+    size_t                 proximo{0};
+    bool                   tudo{true};
+    std::chrono::steady_clock::time_point inicio;
+
+    static constexpr int kOrcamentoSeg = 120;
+
+    void ligar()
+    {
+        if (!timer) {
+            timer = std::make_unique<Timer>();
+            std::weak_ptr<FilunaIaFila> w = shared_from_this();
+            timer->f = [w] { if (auto f = w.lock()) f->tique(); };
+        }
+        if (!timer->IsRunning()) timer->Start(3000);
+        tique();
+    }
+
+    std::string token() const { return wxGetApp().app_config->get("filuna_token"); }
+
+    json resumo() const
+    {
+        std::string ocupado;
+        if (executando) ocupado = "Sua " + atual.value("ia", std::string("IA")) + " está modelando: " + atual.value("texto", std::string());
+        return json{{"sessao", painel->filuna_ia_session()}, {"ocupado", ocupado}, {"log", historico},
+                    {"conectadas", conectadas}, {"endereco", endereco}, {"na_fila", int(fila.size())}, {"instancia", id_desta_instancia()}};
+    }
+
+    void avisar_tela() const
+    {
+        if (FilunaCadIaPainel* t = FilunaCadIaPainel::atual()) t->evento("cadia.fila", resumo());
+    }
+
+    // Every 3 s on the main thread: keep the pane in step, publish the Design state if it changed, fetch requests.
+    void tique()
+    {
+        if (!painel->filuna_ia_session()) {   // ended: only the posts still owed (results, refusals) go out
+            if (envios.empty() && !executando) timer->Stop();
+            else if (!rede) tique_envios();
+            return;
+        }
+        painel->filuna_ia_sync_pane();
+        const std::string tk = token();
+        if (tk.empty() || rede || executando) return;
+
+        const bool levar = token_publicado != tk;
+        std::optional<json> e;
+        try { e = filuna_cad_acao("cad.estado", json{{"com_comandos", levar}}); } catch (const std::exception&) {}
+        std::string corpo_estado;
+        if (e && e->value("aberto", false)) {
+            json est = *e;
+            json ferramentas = est.contains("comandos") ? est["comandos"] : json();
+            est.erase("comandos");
+            const std::string t = est.dump();
+            if (t != ultimo_estado || levar) {
+                json corpo{{"estado", est}};
+                if (levar && !ferramentas.is_null()) corpo["ferramentas"] = ferramentas;
+                corpo_estado = corpo.dump();
+                ultimo_estado = t;
+            }
+        }
+        auto envios_agora = envios;
+        rede = true;
+        std::weak_ptr<FilunaIaFila> w = shared_from_this();
+        std::thread([w, tk, corpo_estado, envios_agora, levar] {
+            bool publicou = true;
+            if (!corpo_estado.empty()) publicou = http_site("POST", "/ia/cad", tk, corpo_estado).ok;
+            std::vector<size_t> enviados;
+            for (size_t i = 0; i < envios_agora.size(); ++i) {
+                const RespostaHttp r = http_site("POST", envios_agora[i].first, tk, envios_agora[i].second);
+                if (r.ok || (r.status >= 400 && r.status < 500)) enviados.push_back(i);   // a 4xx will not get better
+            }
+            const RespostaHttp g = http_site("GET", "/ia/cad/pedidos?reservar=1&instancia=" + id_desta_instancia(), tk);
+            wxGetApp().CallAfter([w, tk, publicou, levar, enviados, envios_agora, g] {
+                auto f = w.lock();
+                if (!f) return;
+                f->rede = false;
+                if (!publicou) f->ultimo_estado.clear();
+                else if (levar) f->token_publicado = tk;
+                for (size_t k = enviados.size(); k-- > 0;) {
+                    auto it = std::find(f->envios.begin(), f->envios.end(), envios_agora[enviados[k]]);
+                    if (it != f->envios.end()) f->envios.erase(it);
+                }
+                if (f->envio_novo) { f->envio_novo = false; f->tique_envios(); }
+                f->receber(g);
+            });
+        }).detach();
+    }
+
+    void receber(const RespostaHttp& g)
+    {
+        const json r = json::parse(g.corpo, nullptr, false);
+        if (!g.ok || !r.is_object()) return;
+        if (r.contains("conectadas")) conectadas = r["conectadas"];
+        if (r.contains("endereco") && r["endereco"].is_string()) endereco = r["endereco"].get<std::string>();
+        // An older site does not reserve: it lists every 'novo' request, and `iniciados` keeps them from running twice.
+        if (r.contains("pedidos") && r["pedidos"].is_array())
+            for (const json& p : r["pedidos"]) {
+                const std::string id = id_do_pedido(p);
+                if (id.empty() || iniciados.count(id)) continue;
+                bool ja = false;
+                for (const json& q : fila) ja = ja || id_do_pedido(q) == id;
+                if (!ja) fila.push_back(p);
+            }
+        if (!painel->filuna_ia_session()) {   // ended while the fetch was out: refuse what came
+            recusar_fila();
+            return;
+        }
+        avisar_tela();
+        if (!executando && !fila.empty()) iniciar_proximo();
+    }
+
+    void iniciar_proximo()
+    {
+        if (executando || fila.empty()) return;
+        atual = fila.front();
+        fila.pop_front();
+        const std::string id = id_do_pedido(atual);
+        iniciados.insert(id);   // before the first step
+        executando = true;
+        passos     = json::array();
+        proximo    = 0;
+        tudo       = true;
+        inicio     = std::chrono::steady_clock::now();
+        // The customer's AI is working: show its pane and the Design tab, whatever layout hid them.
+        if (!painel->filuna_ia_open()) painel->filuna_toggle_ia(true);
+        if (wxGetApp().mainframe != nullptr && !painel->IsShownOnScreen()) wxGetApp().mainframe->select_filuna_tab(TAB_ID_DESIGN);
+        avisar_tela();
+        seguir();
+    }
+
+    void seguir()
+    {
+        std::weak_ptr<FilunaIaFila> w = shared_from_this();
+        wxGetApp().CallAfter([w] { if (auto f = w.lock()) f->passo(); });
+    }
+
+    void passo()
+    {
+        if (!executando) return;
+        json cmds = atual.contains("comandos") ? atual["comandos"] : json::array();
+        if (cmds.is_string()) cmds = json::parse(cmds.get<std::string>(), nullptr, false);   // a site that stores it as text
+        if (!cmds.is_array() || cmds.empty() || cmds.size() > 60) {
+            passos.push_back(erro_ia("pedido_invalido", cmds.is_array() && cmds.size() > 60 ? "passos demais num pedido (máximo 60)" : "nenhum passo para fazer",
+                                     "mande de 1 a 60 passos em 'comandos'"));
+            tudo = false;
+            return terminar();
+        }
+        if (proximo >= cmds.size()) return terminar();
+        const auto passou = std::chrono::steady_clock::now() - inicio;
+        if (passou > std::chrono::seconds(kOrcamentoSeg)) {
+            for (size_t i = proximo; i < cmds.size(); ++i) {
+                json e = erro_ia("tempo_esgotado", "o pedido passou de " + std::to_string(kOrcamentoSeg) + " s e este passo não foi feito",
+                                 "mande os passos que faltam num pedido novo, em partes menores");
+                e["metodo"] = cmds[i].is_object() ? cmds[i].value("metodo", std::string()) : std::string();
+                passos.push_back(e);
+            }
+            tudo = false;
+            return terminar();
+        }
+        json r = executar_passo(painel, cmds[proximo++]);
+        const bool ok = r.value("ok", false);
+        passos.push_back(std::move(r));
+        if (!ok) { tudo = false; return terminar(); }
+        seguir();   // next step on the next event-loop turn: the window answers in between
+    }
+
+    void terminar()
+    {
+        executando = false;
+        const std::string id = id_do_pedido(atual);
+        int feitos = 0, alteracoes = 0;
+        std::string erro;
+        for (const json& s : passos) {
+            if (s.value("ok", false)) ++feitos;
+            else if (erro.empty()) erro = s.value("metodo", std::string()) + ": " + s.value("erro", std::string());
+            if (conta_para_desfazer(s)) ++alteracoes;
+        }
+        // The images leave the result (it is cut at 40,000 characters on the site) and go in their own field.
+        json imagens = json::array();
+        for (json& s : passos)
+            if (s.contains("resultado") && s["resultado"].is_object() && s["resultado"].contains("imagens") && s["resultado"]["imagens"].is_array())
+                for (json& im : s["resultado"]["imagens"])
+                    if (im.is_object() && im.contains("png_base64")) {
+                        imagens.push_back(json{{"nome", im.value("vista", std::string())}, {"png_base64", im["png_base64"]}});
+                        im.erase("png_base64");
+                        im["imagem"] = int(imagens.size()) - 1;
+                    }
+        // The site takes up to 6 images and nginx a 4 MB body: past either, the last images stay out, and the step
+        // that made each one says so.
+        constexpr size_t kMaxImagens = 6, kMaxCorpo = 3500000;
+        auto tamanho_corpo = [&] { return json{{"resultado", passos}, {"imagens", imagens}}.dump().size(); };
+        while (!imagens.empty() && (imagens.size() > kMaxImagens || tamanho_corpo() > kMaxCorpo)) {
+            const int ultima = int(imagens.size()) - 1;
+            imagens.erase(imagens.end() - 1);
+            for (json& s : passos)
+                if (s.contains("resultado") && s["resultado"].is_object() && s["resultado"].contains("imagens"))
+                    for (json& im : s["resultado"]["imagens"])
+                        if (im.is_object() && im.contains("imagem") && im["imagem"].is_number_integer() && im["imagem"].get<int>() == ultima) {
+                            im["imagem"]  = nullptr;
+                            im["omitida"] = "imagem não enviada: passou do limite do site (6 imagens, 3,5 MB); peça menos vistas por pedido";
+                        }
+        }
+        const json total = atual.contains("comandos") && atual["comandos"].is_array() ? int(atual["comandos"].size()) : 0;
+        historico.insert(historico.begin(), json{{"id", id}, {"ia", atual.value("ia", std::string())}, {"texto", atual.value("texto", std::string())},
+                                                 {"ok", tudo}, {"feitos", feitos}, {"total", total}, {"alteracoes", alteracoes}, {"erro", erro}});
+        if (historico.size() > 8) historico.erase(historico.begin() + 8, historico.end());
+        postar(id, json{{"estado", tudo ? "feito" : "erro"}, {"resultado", passos}, {"imagens", imagens}});
+        avisar_tela();
+        if (!fila.empty()) {
+            std::weak_ptr<FilunaIaFila> w = shared_from_this();
+            wxGetApp().CallAfter([w] { if (auto f = w.lock()) f->iniciar_proximo(); });
+        }
+    }
+
+    void postar(const std::string& id, const json& corpo)
+    {
+        if (id.empty()) return;
+        envios.emplace_back("/ia/cad/pedidos/" + Http::url_encode(id), corpo.dump());
+        if (!rede) tique_envios();
+        else envio_novo = true;   // sent as soon as the request in flight returns
+    }
+
+    // Post what is waiting now rather than on the next tick (which skips while a request runs).
+    void tique_envios()
+    {
+        const std::string tk = token();
+        if (tk.empty() || envios.empty()) return;
+        auto envios_agora = envios;
+        rede = true;
+        std::weak_ptr<FilunaIaFila> w = shared_from_this();
+        std::thread([w, tk, envios_agora] {
+            std::vector<size_t> enviados;
+            for (size_t i = 0; i < envios_agora.size(); ++i) {
+                const RespostaHttp r = http_site("POST", envios_agora[i].first, tk, envios_agora[i].second);
+                if (r.ok || (r.status >= 400 && r.status < 500)) enviados.push_back(i);
+            }
+            wxGetApp().CallAfter([w, enviados, envios_agora] {
+                auto f = w.lock();
+                if (!f) return;
+                f->rede = false;
+                for (size_t k = enviados.size(); k-- > 0;) {
+                    auto it = std::find(f->envios.begin(), f->envios.end(), envios_agora[enviados[k]]);
+                    if (it != f->envios.end()) f->envios.erase(it);
+                }
+                if (f->envio_novo) { f->envio_novo = false; f->tique_envios(); }
+            });
+        }).detach();
+    }
+
+    void recusar_fila()
+    {
+        while (!fila.empty()) {
+            const std::string id = id_do_pedido(fila.front());
+            fila.pop_front();
+            if (id.empty() || iniciados.count(id)) continue;
+            iniciados.insert(id);
+            postar(id, json{{"estado", "recusado"}, {"resultado", "o cliente encerrou o Modelar com IA"}});
+        }
+    }
+
+    // The customer ended the session: stop reading, refuse what is queued here and what the site still holds.
+    // A request already running finishes and is posted as usual.
+    void encerrar()
+    {
+        recusar_fila();   // the timer keeps going only until what is owed has been posted (see tique)
+        const std::string tk = token();
+        if (tk.empty()) return;
+        std::weak_ptr<FilunaIaFila> w = shared_from_this();
+        std::thread([w, tk] {
+            const RespostaHttp g = http_site("GET", "/ia/cad/pedidos?reservar=1&instancia=" + id_desta_instancia(), tk);
+            wxGetApp().CallAfter([w, g] {
+                auto f = w.lock();
+                if (!f || f->painel->filuna_ia_session()) return;   // reopened meanwhile: the queue will run them
+                f->receber(g);
+            });
+        }).detach();
+        avisar_tela();
+    }
+
+    // The panel's "Desfazer": undo what the last request changed.
+    void desfazer_ultimo()
+    {
+        if (historico.empty() || historico[0].value("desfeito", false)) return;
+        const int n = historico[0].value("alteracoes", 0);
+        for (int i = 0; i < n; ++i) painel->filuna_ia_extra("desfazer");
+        historico[0]["desfeito"] = true;
+        avisar_tela();
+    }
+};
 
 void DesignPanel::filuna_toggle_ia(bool show)
 {
@@ -871,6 +1478,26 @@ void DesignPanel::filuna_toggle_ia(bool show)
     m_aui.GetPane(m_cad_ia).Show(show);
     m_aui.Update();
     if (m_viewport) m_viewport->request_repaint();
+    if (show) {
+        m_ia_session = true;
+        if (!m_ia_fila) m_ia_fila = std::make_shared<FilunaIaFila>(this);
+        m_ia_fila->ligar();
+    } else if (m_ia_session) {
+        m_ia_session = false;
+        if (m_ia_fila) m_ia_fila->encerrar();
+    }
+}
+
+void DesignPanel::filuna_ia_sync_pane()
+{
+    if (m_cad_ia == nullptr) return;
+    wxAuiPaneInfo& pane = m_aui.GetPane(m_cad_ia);
+    if (!pane.IsOk()) return;
+    if (m_ia_session && !pane.IsShown()) {
+        pane.Show(true);
+        m_aui.Update();
+    }
+    m_ia_open = pane.IsShown();
 }
 
 std::string DesignPanel::filuna_mode_name() const
@@ -920,6 +1547,7 @@ std::optional<json> filuna_cad_acao(const std::string& acao, const json& d)
         }
         return out;
     }
+    // Synchronous run (the panel's own undo, older pages). The AI's queue runs step by step in FilunaIaFila.
     if (acao == "cad.executar") {
         p = DesignPanel::ensure();
         if (p == nullptr) throw std::runtime_error("O Design ainda não abriu.");
@@ -931,23 +1559,10 @@ std::optional<json> filuna_cad_acao(const std::string& acao, const json& d)
         json passos = json::array();
         bool tudo   = true;
         for (const json& c : cmds) {
-            const std::string m = c.value("metodo", std::string());
-            const json params   = c.contains("parametros") && c["parametros"].is_object() ? c["parametros"] : json::object();
-            json r;
-            if (m.empty()) r = json{{"ok", false}, {"erro", "passo sem 'metodo'"}};
-            else if (blocked_for_ai(m)) r = json{{"ok", false}, {"erro", m + " não está liberado para a IA"}};
-            else if (m == "extrude_sketch") r = extrude_sketch(p, params);
-            else {
-                const std::string extra = p->filuna_ia_extra(m);
-                r = extra.empty() ? rpc(m, params) : json::parse(extra);
-            }
-            r["metodo"] = m;
-            // A control method can answer ok at the envelope and still report a refusal inside.
-            if (r.value("ok", false) && r["resultado"].is_object() && r["resultado"].contains("ok") && r["resultado"]["ok"].is_boolean()
-                && !r["resultado"]["ok"].get<bool>())
-                r["ok"] = false;
-            passos.push_back(r);
-            if (!r.value("ok", false)) { tudo = false; break; }
+            json r = executar_passo(p, c);
+            const bool ok = r.value("ok", false);
+            passos.push_back(std::move(r));
+            if (!ok) { tudo = false; break; }
         }
         return json{{"ok", tudo}, {"passos", passos}, {"modo", p->filuna_mode_name()}};
     }
@@ -967,15 +1582,43 @@ std::optional<json> filuna_cad_acao(const std::string& acao, const json& d)
         if (FilunaCadIaPainel* painel = FilunaCadIaPainel::atual()) painel->comando(d.value("comando", std::string()));
         return json::object();
     }
-    if (acao == "cadia.painel") {   // the page's own close button
+    if (acao == "cadia.painel") {   // the page's own close button: the customer ends the session
         const bool mostrar = d.value("mostrar", false);
         wxGetApp().CallAfter([mostrar] { if (DesignPanel* dp = DesignPanel::if_built()) dp->filuna_toggle_ia(mostrar); });
         return json::object();
     }
-    if (acao == "cadia.estado")
-        return json{{"aberto", p != nullptr && p->filuna_ia_open()},
-                    {"ia_aberta", FilunaCadIaPainel::atual() != nullptr && FilunaCadIaPainel::atual()->aberta()}};
+    if (acao == "cadia.agora") {   // the page wants the queue read now (after login, "Conferir")
+        if (p != nullptr && p->filuna_ia_session())
+            wxGetApp().CallAfter([] { if (DesignPanel* dp = DesignPanel::if_built()) dp->filuna_ia_tick_now(); });
+        return json::object();
+    }
+    if (acao == "cadia.desfazer_ultimo") {
+        if (p != nullptr) p->filuna_ia_undo_last();
+        return json::object();
+    }
+    if (acao == "cadia.estado") {
+        json e{{"aberto", p != nullptr && p->filuna_ia_open()},
+               {"ia_aberta", FilunaCadIaPainel::atual() != nullptr && FilunaCadIaPainel::atual()->aberta()}};
+        if (p != nullptr) e.update(p->filuna_ia_summary());
+        return e;
+    }
     return std::nullopt;
+}
+
+void DesignPanel::filuna_ia_tick_now()
+{
+    if (m_ia_fila) m_ia_fila->tique();
+}
+
+void DesignPanel::filuna_ia_undo_last()
+{
+    if (m_ia_fila) m_ia_fila->desfazer_ultimo();
+}
+
+nlohmann::json DesignPanel::filuna_ia_summary() const
+{
+    if (m_ia_fila) return m_ia_fila->resumo();
+    return json{{"sessao", m_ia_session}, {"ocupado", ""}, {"log", json::array()}, {"conectadas", json::array()}, {"endereco", ""}};
 }
 
 }} // namespace Slic3r::GUI

@@ -21,6 +21,12 @@ namespace GUI {
 // O perfil de filamento que a peça da mesa atual usa (a entrada da extrusora dela), não o aberto para edição.
 const Preset& filuna_filamento_da_peca();
 
+// Base of the site for the Slicer API (/api/slicer/v1/...): "https://filuna3d.com", or, to test a package
+// against a site that is not published, the FILUNA_SITE_TESTE environment variable when it is http://127.0.0.1,
+// http://localhost (optionally with a port) or https://<sub>.filuna3d.com. Any other value is ignored. Login and
+// OAuth do not use this.
+std::string filuna_site_base();
+
 class FilunaPanel : public wxPanel
 {
 public:

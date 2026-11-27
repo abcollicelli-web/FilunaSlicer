@@ -43,7 +43,11 @@
 #include "libslic3r/CAD/CadDocument.hpp"
 #include "libslic3r/CAD/SketchEngine.hpp"
 #include "libslic3r/CAD/GeometryEngine.hpp"
+#include "libslic3r/CAD/CadAnalise.hpp"
+#include "libslic3r/CAD/CadRaster.hpp"
+#include "libslic3r/Config.hpp"
 #include "libslic3r/TriangleMesh.hpp"
+#include "slic3r/GUI/Plater.hpp"
 #include "libslic3r/Format/OBJ.hpp"
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem/path.hpp>
@@ -60,6 +64,17 @@
 #include <BRepGProp.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
+#include <Standard_ConstructionError.hxx>
+#include <TopLoc_Location.hxx>
+#include <gp_Trsf.hxx>
+
+#include <wx/base64.h>
+#include <wx/bitmap.h>
+#include <wx/dcmemory.h>
+#include <wx/font.h>
+#include <wx/image.h>
+#include <wx/imagpng.h>
+#include <wx/mstream.h>
 
 using json = nlohmann::json;
 
@@ -170,12 +185,16 @@ json describe_tools()
                      json{{"name", "edge"},   {"type", "integer|array"}, {"description", "one edge id, or an array of ids rounded together in one feature"}},
                      json{{"name", "radius"}, {"type", "number"}, {"unit", "mm"}, {"default", 1}, {"min", 0.01}},
                      json{{"name", "body"},   {"type", "integer"}, {"default", -1}, {"description", "target body; omit for the last body. edge id is resolved against THIS body."}},
+                     json{{"name", "arestas"}, {"type", "string"}, {"enum", json::array({"topo", "base", "verticais", "horizontais", "circulares", "todas"})}, {"description", "instead of 'edge': pick the edges by geometry (no ids, no generation needed)"}},
+                     json{{"name", "corpo"},  {"type", "integer"}, {"description", "same as body"}},
                  })}},
             json{{"name", "chamfer"}, {"summary", "Chamfer measured edges of a body (edge ids from query_topology on that body)."},
                  {"params", json::array({
                      json{{"name", "edge"},     {"type", "integer|array"}, {"description", "one edge id, or an array of ids chamfered together in one feature"}},
                      json{{"name", "distance"}, {"type", "number"}, {"unit", "mm"}, {"default", 1}, {"min", 0.01}},
                      json{{"name", "body"},     {"type", "integer"}, {"default", -1}, {"description", "target body; omit for the last body. edge id is resolved against THIS body."}},
+                     json{{"name", "arestas"},  {"type", "string"}, {"enum", json::array({"topo", "base", "verticais", "horizontais", "circulares", "todas"})}, {"description", "instead of 'edge': pick the edges by geometry (no ids, no generation needed)"}},
+                     json{{"name", "corpo"},    {"type", "integer"}, {"description", "same as body"}},
                  })}},
             json{{"name", "hole"}, {"summary", "Drill a circular hole into the current body at (x,y) on a plane."},
                  {"params", json::array({
@@ -890,9 +909,36 @@ std::vector<int> edge_ids_arg(const json& params, const char* verb)
     return ids;
 }
 
-json action_fillet(DesignPanel* panel, const json& params)
+// Filuna CAD: `arestas` ("topo", "base", "verticais"...) picks the edges by geometry on the target body, so the
+// AI can round "the top edges" without reading ids that expire with the next rebuild. `corpo` = `body`.
+json with_body_alias(const json& params)
 {
-    const std::vector<int> edges = edge_ids_arg(params, "fillet");
+    json p = params;
+    if (p.contains("corpo") && !p.contains("body")) p["body"] = p["corpo"];
+    return p;
+}
+
+std::vector<int> edges_for(DesignPanel* panel, const json& params, const char* verb)
+{
+    if (!params.contains("arestas")) return edge_ids_arg(params, verb);
+    if (params.contains("edge")) throw std::runtime_error(std::string(verb) + ": give 'edge' or 'arestas', not both");
+    const std::string nome = params["arestas"].get<std::string>();
+    CadAnalise::Arestas qual;
+    if (!CadAnalise::arestas_de_nome(nome, qual))
+        throw std::runtime_error("arestas '" + nome + "' unknown (use: " + CadAnalise::nomes_de_arestas() + ")");
+    CadDocument& doc = panel->mcp_doc();
+    if (doc.bodies.empty()) throw std::runtime_error(std::string("no body to ") + verb);
+    int bi = target_body_arg(params, doc);
+    if (bi < 0) bi = int(doc.bodies.size()) - 1;
+    std::vector<int> ids = CadAnalise::selecionar_arestas(doc.bodies[bi].shape, qual);
+    if (ids.empty()) throw std::runtime_error("no '" + nome + "' edge on body " + std::to_string(bi));
+    return ids;
+}
+
+json action_fillet(DesignPanel* panel, const json& params_in)
+{
+    const json params = with_body_alias(params_in);
+    const std::vector<int> edges = edges_for(panel, params, "fillet");
     const double radius = params.value("radius", 1.0);
     if (radius <= 0) throw std::runtime_error("radius must be > 0");
     CadDocument& doc = panel->mcp_doc();
@@ -905,12 +951,13 @@ json action_fillet(DesignPanel* panel, const json& params)
     if (!ok) { const std::string why = doc.error; doc.undo(); doc.error = why; }
     panel->mcp_after_change();
     return json{{"ok", ok}, {"fillet_index", f}, {"body", bi < 0 ? int(doc.bodies.size()) - 1 : bi},
-                {"bodies", int(doc.bodies.size())}, {"error", doc.error}};
+                {"edges", edges}, {"bodies", int(doc.bodies.size())}, {"error", doc.error}};
 }
 
-json action_chamfer(DesignPanel* panel, const json& params)
+json action_chamfer(DesignPanel* panel, const json& params_in)
 {
-    const std::vector<int> edges = edge_ids_arg(params, "chamfer");
+    const json params = with_body_alias(params_in);
+    const std::vector<int> edges = edges_for(panel, params, "chamfer");
     const double dist = params.value("distance", 1.0);
     if (dist <= 0) throw std::runtime_error("distance must be > 0");
     CadDocument& doc = panel->mcp_doc();
@@ -923,7 +970,7 @@ json action_chamfer(DesignPanel* panel, const json& params)
     if (!ok) { const std::string why = doc.error; doc.undo(); doc.error = why; }
     panel->mcp_after_change();
     return json{{"ok", ok}, {"chamfer_index", c}, {"body", bi < 0 ? int(doc.bodies.size()) - 1 : bi},
-                {"bodies", int(doc.bodies.size())}, {"error", doc.error}};
+                {"edges", edges}, {"bodies", int(doc.bodies.size())}, {"error", doc.error}};
 }
 
 json action_hole(DesignPanel* panel, const json& params)
@@ -1259,8 +1306,9 @@ SketchEntity sketch_entity_from(const json& j)
         e.type        = SketchEntity::Type::Arc;
         e.center      = centre_of("arc");
         e.radius      = j.value("radius", 0.0);
-        e.start_angle = j.value("start_angle", 0.0);
-        e.end_angle   = j.value("end_angle", 0.0);
+        // Radians (start_angle/end_angle), or degrees (start_deg/end_deg) like every other angle here.
+        e.start_angle = j.contains("start_deg") ? j.at("start_deg").get<double>() * PI / 180.0 : j.value("start_angle", 0.0);
+        e.end_angle   = j.contains("end_deg")   ? j.at("end_deg").get<double>()   * PI / 180.0 : j.value("end_angle", 0.0);
         if (e.radius <= 0.0) throw std::runtime_error("arc needs a positive 'radius'");
         e.p0 = e.center + e.radius * Vec2d(std::cos(e.start_angle), std::sin(e.start_angle));
         e.p1 = e.center + e.radius * Vec2d(std::cos(e.end_angle),   std::sin(e.end_angle));
@@ -2015,6 +2063,270 @@ json action_set_feature_expr(DesignPanel* panel, const json& params)
     return json{{"ok", ok}, {"feature", fi}, {"field", field}, {"error", doc.error}};
 }
 
+// ---- Filuna CAD: what the customer's AI sees ("ver") and the printability report ("laudo") ----------------
+
+// The printer's bed from the current printer profile, in world mm (the Design world is the bed's). When the
+// profile cannot be read, 256 x 256 x 256 mm around the modelling origin, and do_perfil says so.
+CadAnalise::Mesa mesa_da_impressora(const CadDocument& doc)
+{
+    CadAnalise::Mesa m;
+    const Plater*             pl   = wxGetApp().plater();
+    const DynamicPrintConfig* cfg  = pl != nullptr ? pl->config() : nullptr;
+    const auto*               area = cfg != nullptr ? cfg->opt<ConfigOptionPoints>("printable_area") : nullptr;
+    if (area != nullptr && area->values.size() >= 3) {
+        BoundingBoxf bb;
+        for (const Vec2d& p : area->values) bb.merge(p);
+        const auto* ph = cfg->opt<ConfigOptionFloat>("printable_height");
+        m.xmin = bb.min.x(); m.ymin = bb.min.y(); m.xmax = bb.max.x(); m.ymax = bb.max.y();
+        m.zmax      = ph != nullptr && ph->value > 0 ? ph->value : 256.0;
+        m.do_perfil = bb.size().x() > 0 && bb.size().y() > 0;
+    }
+    if (!m.do_perfil) {
+        m.xmin = doc.modeling_origin.x() - 128; m.xmax = doc.modeling_origin.x() + 128;
+        m.ymin = doc.modeling_origin.y() - 128; m.ymax = doc.modeling_origin.y() + 128;
+        m.zmax = 256;
+    }
+    return m;
+}
+
+double arred(double v, double passo = 0.01) { return std::round(v / passo) * passo; }
+
+// A body where the Design plate shows it: its Move transform as an OCCT location (no copy of the geometry).
+// A transform OCCT cannot take (a scale) leaves the body where its features put it.
+TopoDS_Shape corpo_na_mesa(const TopoDS_Shape& s, const Transform3d& t)
+{
+    if (s.IsNull() || t.isApprox(Transform3d::Identity())) return s;
+    try {
+        const auto& m = t.matrix();
+        gp_Trsf tr;
+        tr.SetValues(m(0, 0), m(0, 1), m(0, 2), m(0, 3), m(1, 0), m(1, 1), m(1, 2), m(1, 3), m(2, 0), m(2, 1), m(2, 2), m(2, 3));
+        return s.Moved(TopLoc_Location(tr));
+    } catch (const Standard_Failure&) {
+        return s;
+    }
+}
+
+const char* explicar_codigo(const std::string& c)
+{
+    if (c == "corpo_aberto")     return "casca ou superfície aberta, não é um sólido fechado: não imprime";
+    if (c == "volume_zero")      return "sem volume";
+    if (c == "pedacos_soltos")   return "mais de um sólido solto no mesmo corpo";
+    if (c == "nao_cabe_na_mesa") return "maior que a mesa da impressora";
+    if (c == "fora_da_mesa")     return "não está apoiado em Z = 0 ou passa da borda da mesa";
+    if (c == "pode_tombar")      return "o centro de massa cai fora da área de apoio";
+    return "";
+}
+
+// Cheap enough to run after every step: the result is kept until the model, the body moves or the bed change.
+json laudo_json(DesignPanel* panel)
+{
+    CadDocument&                   doc  = panel->mcp_doc();
+    const std::vector<Transform3d> xf   = panel->filuna_body_xforms();
+    const std::vector<bool>        vis  = panel->filuna_body_visible();
+    const CadAnalise::Mesa         mesa = mesa_da_impressora(doc);
+
+    std::string chave = std::to_string(doc.topo_generation) + "|" + std::to_string(doc.bodies.size()) + "|" +
+                        std::to_string(mesa.xmin) + "," + std::to_string(mesa.ymin) + "," + std::to_string(mesa.xmax) + "," +
+                        std::to_string(mesa.ymax) + "," + std::to_string(mesa.zmax);
+    for (size_t i = 0; i < xf.size(); ++i) {
+        chave += i < vis.size() && !vis[i] ? "h" : "v";
+        for (int k = 0; k < 12; ++k) chave += std::to_string(xf[i].matrix()(k % 3, k / 3)) + ",";
+    }
+    static std::string ultima_chave;
+    static json        ultimo;
+    if (chave == ultima_chave) return ultimo;
+
+    json corpos = json::array();
+    std::vector<std::string> codigos;
+    bool bloqueado = false, aviso = false;
+    for (size_t i = 0; i < doc.bodies.size(); ++i) {
+        const CadBody& b = doc.bodies[i];
+        const bool visivel = i >= vis.size() || vis[i];
+        const CadAnalise::LaudoCorpo l = CadAnalise::laudar_corpo(corpo_na_mesa(b.shape, i < xf.size() ? xf[i] : Transform3d::Identity()), mesa);
+        json motivos = json::object();
+        for (const std::string& c : l.codigos) motivos[c] = explicar_codigo(c);
+        corpos.push_back(json{
+            {"indice", int(i)}, {"nome", b.has_user_name ? b.user_name : b.name}, {"visivel", visivel},
+            {"fechado", l.fechado}, {"volume_mm3", arred(l.volume_mm3)}, {"pedacos", l.pedacos},
+            {"caixa_mm", json::array({arred(l.max[0] - l.min[0]), arred(l.max[1] - l.min[1]), arred(l.max[2] - l.min[2])})},
+            {"min_mm", json::array({arred(l.min[0]), arred(l.min[1]), arred(l.min[2])})},
+            {"cabe_na_mesa", l.cabe_na_mesa}, {"apoio_mm2", arred(l.apoio_mm2)}, {"centro_massa_no_apoio", l.centro_massa_no_apoio},
+            {"codigos", l.codigos}, {"motivos", motivos}});
+        if (!visivel) continue;   // a hidden body does not go to the plate (on_commit skips it)
+        for (const std::string& c : l.codigos) {
+            if (std::find(codigos.begin(), codigos.end(), c) == codigos.end()) codigos.push_back(c);
+            (CadAnalise::codigo_bloqueia(c) ? bloqueado : aviso) = true;
+        }
+    }
+    json r{{"status", bloqueado ? "bloqueado" : aviso ? "aviso" : "ok"},
+           {"codigos", codigos},
+           {"corpos", std::move(corpos)},
+           {"mesa_mm", json::array({arred(mesa.xmax - mesa.xmin), arred(mesa.ymax - mesa.ymin), arred(mesa.zmax)})},
+           {"mesa_do_perfil", mesa.do_perfil}};
+    if (!mesa.do_perfil)
+        r["aviso_mesa"] = "não deu para ler a mesa da impressora atual; usei 256 x 256 x 256 mm centrada na origem do Design";
+    ultima_chave = chave;
+    ultimo       = r;
+    return r;
+}
+
+json action_laudo(DesignPanel* panel, const json&) { return laudo_json(panel); }
+
+// Filuna palette for bodies without a colour of their own.
+std::array<uint8_t, 3> cor_filuna(size_t i)
+{
+    static const std::array<uint8_t, 3> k[] = {{{255, 46, 138}}, {{123, 75, 255}}, {{255, 107, 26}},
+                                               {{31, 143, 95}},  {{194, 24, 91}},  {{59, 130, 196}}};
+    return k[i % (sizeof(k) / sizeof(k[0]))];
+}
+
+std::string mm_txt(double v)
+{
+    char b[32];
+    std::snprintf(b, sizeof(b), std::abs(v) >= 100 ? "%.0f" : "%.1f", v);
+    std::string s = b;
+    if (s.size() > 2 && s.compare(s.size() - 2, 2, ".0") == 0) s.resize(s.size() - 2);
+    std::replace(s.begin(), s.end(), '.', ',');
+    return s;
+}
+
+// The image with its caption (view, scale, a ruler, the box size, body numbers), as base64 PNG.
+std::string png_com_legenda(const CadRaster::Imagem& im, CadRaster::Vista vista,
+                            const std::vector<std::pair<int, std::array<double, 3>>>& rotulos)
+{
+    wxImage img(im.largura, im.altura, false);
+    std::memcpy(img.GetData(), im.rgb.data(), im.rgb.size());
+    {
+        wxBitmap   bmp(img);
+        wxMemoryDC dc(bmp);
+        const int  W  = im.largura;
+        const int  fs = std::max(9, W / 60);
+        dc.SetFont(wxFont(wxFontInfo(fs).Family(wxFONTFAMILY_SWISS)));
+        const wxColour tinta(52, 56, 64);
+        dc.SetTextForeground(tinta);
+        dc.SetBackgroundMode(wxTRANSPARENT);
+        const int m = W / 40;
+        std::string titulo = CadRaster::nome_da_vista(vista);
+        std::transform(titulo.begin(), titulo.end(), titulo.begin(), ::toupper);
+        dc.DrawText(wxString::FromUTF8(titulo + "  ·  1 px = " + mm_txt(im.escala_mm_por_px) + " mm"), m, m);
+        if (!im.vazia)
+            dc.DrawText(wxString::FromUTF8("caixa " + mm_txt(im.max[0] - im.min[0]) + " × " + mm_txt(im.max[1] - im.min[1]) +
+                                           " × " + mm_txt(im.max[2] - im.min[2]) + " mm (X × Y × Z)"), m, m + fs * 2);
+        // Ruler: a round length close to a fifth of the width.
+        const double alvo = 0.2 * W * im.escala_mm_por_px;
+        double       L    = std::pow(10.0, std::floor(std::log10(alvo)));
+        if (5 * L <= alvo) L *= 5; else if (2 * L <= alvo) L *= 2;
+        const int px = std::max(1, int(std::lround(L / im.escala_mm_por_px)));
+        const int y  = im.altura - m - fs;
+        dc.SetPen(wxPen(tinta, std::max(2, W / 320)));
+        dc.DrawLine(m, y, m + px, y);
+        dc.DrawLine(m, y - fs / 2, m, y + fs / 2);
+        dc.DrawLine(m + px, y - fs / 2, m + px, y + fs / 2);
+        dc.DrawText(wxString::FromUTF8(mm_txt(L) + " mm"), m, y - fs * 2);
+        // Body numbers (the index the commands take) at each body's centre.
+        if (rotulos.size() > 1)
+            for (const auto& [idx, c] : rotulos) {
+                const auto p = CadRaster::projetar(im, c);
+                const wxString t = wxString::Format("%d", idx);
+                const wxSize   ts = dc.GetTextExtent(t);
+                dc.SetBrush(wxBrush(wxColour(255, 255, 255)));
+                dc.SetPen(wxPen(tinta, 1));
+                dc.DrawRoundedRectangle(int(p[0]) - ts.x / 2 - 4, int(p[1]) - ts.y / 2 - 2, ts.x + 8, ts.y + 4, 4);
+                dc.DrawText(t, int(p[0]) - ts.x / 2, int(p[1]) - ts.y / 2);
+            }
+        dc.SelectObject(wxNullBitmap);
+        img = bmp.ConvertToImage();
+    }
+    if (wxImage::FindHandler(wxBITMAP_TYPE_PNG) == nullptr) wxImage::AddHandler(new wxPNGHandler);
+    wxMemoryOutputStream out;
+    if (!img.SaveFile(out, wxBITMAP_TYPE_PNG)) throw std::runtime_error("could not encode the PNG");
+    std::string bytes(size_t(out.GetSize()), '\0');
+    out.CopyTo(bytes.data(), bytes.size());
+    return wxBase64Encode(bytes.data(), bytes.size()).ToStdString();
+}
+
+// Images of the bodies, drawn in software from the display meshes: works with the Design tab hidden.
+json action_ver(DesignPanel* panel, const json& params)
+{
+    CadDocument& doc = panel->mcp_doc();
+    json jv = params.contains("vistas") ? params["vistas"] : json::array({"iso"});
+    if (jv.is_string()) jv = json::array({jv});
+    if (!jv.is_array()) throw std::runtime_error(std::string("vistas must be a list of: ") + CadRaster::nomes_das_vistas());
+    std::vector<CadRaster::Vista> vistas;
+    for (const json& v : jv) {
+        CadRaster::Vista x;
+        if (!v.is_string() || !CadRaster::vista_de_nome(v.get<std::string>(), x))
+            throw std::runtime_error("unknown view " + v.dump() + " (use: " + CadRaster::nomes_das_vistas() + ")");
+        if (std::find(vistas.begin(), vistas.end(), x) == vistas.end()) vistas.push_back(x);
+    }
+    if (vistas.empty()) vistas.push_back(CadRaster::Vista::Iso);
+    const int tamanho = params.value("tamanho", 640);
+    if (tamanho < 256 || tamanho > 1024) throw std::runtime_error("tamanho must be 256..1024");
+    const int corpo = params.contains("corpo") ? params["corpo"].get<int>() : -1;
+    if (corpo >= int(doc.bodies.size()) || (params.contains("corpo") && corpo < 0))
+        throw std::runtime_error("corpo out of range (have " + std::to_string(doc.bodies.size()) + ")");
+
+    const std::vector<Transform3d> xf  = panel->filuna_body_xforms();
+    const std::vector<bool>        vis = panel->filuna_body_visible();
+    std::vector<std::vector<float>> pontos;
+    std::vector<CadRaster::Malha>   malhas;
+    std::vector<std::pair<int, std::array<double, 3>>> rotulos;
+    std::vector<int> ocultos;
+    pontos.reserve(doc.bodies.size());
+    static_assert(sizeof(doc.display_body_meshes[0].its.indices[0]) == 3 * sizeof(int32_t), "triangle = 3 x int32");
+    for (size_t b = 0; b < doc.bodies.size() && b < doc.display_body_meshes.size(); ++b) {
+        if (corpo >= 0 && int(b) != corpo) continue;
+        if (corpo < 0 && b < vis.size() && !vis[b]) { ocultos.push_back(int(b)); continue; }
+        const indexed_triangle_set& its = doc.display_body_meshes[b].its;
+        if (its.indices.empty()) continue;
+        const Transform3d t = b < xf.size() ? xf[b] : Transform3d::Identity();
+        std::vector<float> v;
+        v.reserve(its.vertices.size() * 3);
+        BoundingBoxf3 bb;
+        for (const stl_vertex& p : its.vertices) {
+            const Vec3d q = t * p.cast<double>();
+            v.push_back(float(q.x())); v.push_back(float(q.y())); v.push_back(float(q.z()));
+            bb.merge(q);
+        }
+        pontos.push_back(std::move(v));
+        CadRaster::Malha m;
+        m.xyz        = pontos.back().data();
+        m.n_vertices = its.vertices.size();
+        m.tri        = reinterpret_cast<const int32_t*>(its.indices.data());
+        m.n_tri      = its.indices.size();
+        const CadBody& body = doc.bodies[b];
+        m.cor = body.has_color ? std::array<uint8_t, 3>{{uint8_t(std::clamp(body.color.r(), 0.f, 1.f) * 255),
+                                                         uint8_t(std::clamp(body.color.g(), 0.f, 1.f) * 255),
+                                                         uint8_t(std::clamp(body.color.b(), 0.f, 1.f) * 255)}}
+                               : cor_filuna(b);
+        malhas.push_back(m);
+        const Vec3d c = bb.center();
+        rotulos.push_back({int(b), {c.x(), c.y(), c.z()}});
+    }
+
+    const CadAnalise::Mesa mesa = mesa_da_impressora(doc);
+    CadRaster::Mesa rm;
+    rm.tem = true; rm.xmin = mesa.xmin; rm.ymin = mesa.ymin; rm.xmax = mesa.xmax; rm.ymax = mesa.ymax;
+    json imagens = json::array();
+    json cameras = json::array();
+    for (CadRaster::Vista v : vistas) {
+        const CadRaster::Imagem im = CadRaster::desenhar(malhas, v, tamanho, rm);
+        json cam{{"vista", CadRaster::nome_da_vista(v)},
+                 {"centro", json::array({arred(im.centro[0]), arred(im.centro[1]), arred(im.centro[2])})},
+                 {"escala_mm_por_px", arred(im.escala_mm_por_px, 0.0001)},
+                 {"direita", json::array({arred(im.direita[0], 0.001), arred(im.direita[1], 0.001), arred(im.direita[2], 0.001)})},
+                 {"cima", json::array({arred(im.cima[0], 0.001), arred(im.cima[1], 0.001), arred(im.cima[2], 0.001)})}};
+        imagens.push_back(json{{"vista", CadRaster::nome_da_vista(v)}, {"png_base64", png_com_legenda(im, v, rotulos)},
+                               {"largura", im.largura}, {"altura", im.altura}, {"camera", cam}});
+        cameras.push_back(std::move(cam));
+    }
+    json r{{"ok", true}, {"imagens", std::move(imagens)}, {"camera", cameras[0]}, {"cameras", cameras},
+           {"aviso", "imagem não é medida; use describe_scene/measure para medidas"}};
+    if (malhas.empty()) r["vazio"] = "nenhum corpo visível para desenhar";
+    if (!ocultos.empty()) r["ocultos"] = ocultos;
+    return r;
+}
+
 // Dispatch one parsed request ON THE MAIN THREAD. Returns a JSON-RPC reply string.
 std::string handle_on_main(const std::string& method, const json& params, const json& id)
 {
@@ -2034,7 +2346,7 @@ std::string handle_on_main(const std::string& method, const json& params, const 
     static const std::set<std::string> kReadOnly = {
         "describe_tools", "describe_scene", "query_topology", "measure", "mass_properties",
         "slice_body", "validate_against", "list_verbs", "sketch_describe", "sketch_validate",
-        "check_interference" };
+        "check_interference", "ver", "view", "laudo" };
     if (kReadOnly.count(method) == 0) {
         std::string why;
         if (panel->mcp_busy(method.rfind("sketch_", 0) == 0, why))
@@ -2132,6 +2444,8 @@ std::string handle_on_main(const std::string& method, const json& params, const 
         if (method == "surface_fill")    return rpc_result(id, action_surface_fill(panel, params));
         if (method == "mate")          return rpc_result(id, action_mate(panel, params));
         if (method == "check_interference") return rpc_result(id, action_check_interference(panel, params));
+        if (method == "ver" || method == "view") return rpc_result(id, action_ver(panel, params));
+        if (method == "laudo")         return rpc_result(id, action_laudo(panel, params));
         return rpc_error(id, -32601, "Unknown method: " + method);
     } catch (const Standard_Failure& ex) {   // derives from std::exception, so it comes first
         return rpc_error(id, -32000, std::string("OCCT: ") + (*ex.what() ? ex.what() : "failure"));

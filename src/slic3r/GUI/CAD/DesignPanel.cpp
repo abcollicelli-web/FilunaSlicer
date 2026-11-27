@@ -7580,6 +7580,7 @@ void DesignPanel::reset_window_layout()
     load_default_layout();
     collapse_sidebar(false);
     update_sidebar_pane(true);
+    filuna_ia_sync_pane();   // the default layout predates the AI pane and would leave it hidden
 }
 
 // The sidebar where the user left it, collapsed if it was.
@@ -7596,6 +7597,7 @@ void DesignPanel::load_window_layout()
     if ((m_aui.GetFlags() & wxAUI_MGR_ALLOW_FLOATING) == 0)   // saved where windows can float
         sidebar.Dock().Floatable(false);
     update_sidebar_pane(true);
+    filuna_ia_sync_pane();
 }
 
 // Docked where Prepare's sidebar is, and as wide, so the canvas edge does not move between the tabs.

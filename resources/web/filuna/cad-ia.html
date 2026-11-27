@@ -54,8 +54,7 @@ var IAS = {
 };
 var EXEMPLOS = ["Caixa 80×50×30 mm com tampa de encaixe", "Suporte de celular para mesa", "Placa 60×40×4 mm com 4 furos M3 nos cantos",
 	"Porca sextavada M8", "Vaso redondo de 10 cm de altura", "Gancho de parede com 2 furos de parafuso"];
-var st = { ia: "", iaAberta: false, conectadas: [], endereco: "https://filuna3d.com/api/ia/mcp", log: [], ocupado: "", erro: "", pedido: "",
-	vistos: {}, comandosEnviados: false };
+var st = { ia: "", iaAberta: false, conectadas: [], endereco: "https://filuna3d.com/api/ia/mcp", log: [], ocupado: "", erro: "", pedido: "" };
 
 function nat(a, d) { return Filuna.nativo(a, d); }
 function on(id, f) { var b = document.getElementById(id); if (b) b.onclick = f; }
@@ -66,48 +65,21 @@ function item(cls, ic, titulo, texto, botao, id) {
 function falha(e) { st.ocupado = ""; st.erro = (e && (e.erro || e.message)) || "Não deu certo. Tente de novo."; desenhar(); }
 function conectada(k) { var n = IAS[k].nome.toLowerCase(); return st.conectadas.some(function (c) { return String(c).toLowerCase().indexOf(n) >= 0 || (k == "chatgpt" && /openai/i.test(c)); }); }
 
-// ------------------------------------------------ o que a IA lê (filuna_cad) e os passos que ela pede (filuna_cad_fazer)
-var ultimoEnvio = "";
-function publicar() {
-	if (!Filuna.temToken()) return Promise.resolve();
-	var levarComandos = !st.comandosEnviados;
-	return nat("cad.estado", { com_comandos: levarComandos }).then(function (e) {
-		if (!e || !e.aberto) return;
-		var comandos = e.comandos; delete e.comandos;
-		var t = JSON.stringify(e);
-		if (t == ultimoEnvio && !levarComandos) return;
-		var corpo = { estado: e }; if (levarComandos && comandos) corpo.ferramentas = comandos;
-		return Filuna.api("POST", "/ia/cad", corpo).then(function () { ultimoEnvio = t; if (levarComandos) st.comandosEnviados = true; });
-	}).catch(function () { ultimoEnvio = ""; });
+// ------------------------------------------------ a fila da IA
+// Quem lê a fila, roda os passos e responde ao site é o programa (DesignPanelFiluna.cpp, FilunaIaFila), a cada 3 s
+// enquanto o cliente não encerrar o "Modelar com IA" — mesmo com este painel escondido. Esta tela só mostra o andamento.
+var ultimoResumo = "";
+function aplicar(e) {
+	if (!e) return;
+	var r = { ocupado: e.ocupado || "", log: e.log || [], conectadas: e.conectadas || st.conectadas, endereco: e.endereco || st.endereco };
+	var t = JSON.stringify(r);
+	if (t == ultimoResumo) return;   // sem mudança: não redesenha (o cliente pode estar digitando o pedido)
+	ultimoResumo = t;
+	st.ocupado = r.ocupado; st.log = r.log; st.conectadas = r.conectadas; st.endereco = r.endereco;
+	desenhar();
 }
-function buscar() {
-	if (!Filuna.temToken() || st.ocupado) return Promise.resolve();
-	return Filuna.api("GET", "/ia/cad/pedidos").then(function (r) {
-		st.conectadas = r.conectadas || []; if (r.endereco) st.endereco = r.endereco;
-		var novos = (r.pedidos || []).filter(function (p) { return !st.vistos[p.id]; });
-		if (novos.length) return executar(novos[0]);
-	}).catch(function () {});
-}
-function executar(p) {
-	st.vistos[p.id] = 1;
-	st.ocupado = "Sua " + (p.ia || "IA") + " está modelando: " + p.texto; st.erro = ""; desenhar();
-	return nat("cad.executar", { comandos: p.comandos }).then(function (r) {
-		var feitos = (r.passos || []).filter(function (x) { return x.ok; }).length;
-		var ruim = (r.passos || []).filter(function (x) { return !x.ok; })[0];
-		st.log.unshift({ ia: p.ia, texto: p.texto, ok: r.ok, feitos: feitos, total: p.comandos.length, erro: ruim ? ruim.metodo + ": " + ruim.erro : "" });
-		return Filuna.api("POST", "/ia/cad/pedidos/" + p.id, { estado: r.ok ? "feito" : "erro", resultado: r.passos });
-	}, function (e) {
-		var msg = (e && (e.erro || e.message)) || "erro";
-		st.log.unshift({ ia: p.ia, texto: p.texto, ok: false, feitos: 0, total: p.comandos.length, erro: msg });
-		return Filuna.api("POST", "/ia/cad/pedidos/" + p.id, { estado: "erro", resultado: [{ ok: false, erro: msg }] });
-	}).catch(function () {}).then(function () { st.ocupado = ""; desenhar(); return publicar(); });
-}
-function desfazerUltimo() {
-	var u = st.log[0]; if (!u || !u.feitos) return;
-	var passos = []; for (var i = 0; i < u.feitos; i++) passos.push({ metodo: "desfazer" });
-	st.ocupado = "Desfazendo o que a IA fez…"; desenhar();
-	nat("cad.executar", { comandos: passos }).then(function () { u.desfeito = true; st.ocupado = ""; desenhar(); publicar(); }, falha);
-}
+function agora() { return nat("cadia.agora").catch(function () {}); }
+function desfazerUltimo() { nat("cadia.desfazer_ultimo").catch(falha); }
 
 // ------------------------------------------------ a IA do cliente
 function guardarIA(k) { st.ia = k; nat("armazem.gravar", { chave: "cadia.ia", valor: k }).catch(function () {}); }
@@ -119,7 +91,7 @@ function comecar() {
 		"Faça tudo direto no Filuna CAD: não gere OpenSCAD, STL, STEP, código nem arquivo. " +
 		"Medidas em milímetros, peça para impressão 3D. Se faltar alguma medida, me pergunte antes." +
 		(st.pedido ? " O que eu quero: " + st.pedido : " Pergunte o que eu quero modelar.");
-	publicar();
+	agora();
 	if (!st.ia) guardarIA(k);
 	abrirIA(ia.pergunta(q));
 }
@@ -165,7 +137,7 @@ function desenhar() {
 		h += "<h3>O que a IA fez</h3>";
 		st.log.slice(0, 8).forEach(function (l, i) {
 			h += item(l.ok ? "ok" : "av", l.ok ? "✓" : "!", l.texto, (l.desfeito ? "Desfeito · " : "") + l.feitos + " de " + l.total + " passo(s)" + (l.erro ? " · " + l.erro : ""),
-				i == 0 && l.feitos && !l.desfeito ? { t: "Desfazer", cinza: 1 } : null, "desf");
+				i == 0 && l.alteracoes && !l.desfeito ? { t: "Desfazer", cinza: 1 } : null, "desf");
 		});
 	}
 	h += item("ok", "✓", "Sem chave, sem crédito", "A IA trabalha pela sua assinatura de sempre. Tudo o que ela faz tem Desfazer (Ctrl+Z).");
@@ -179,21 +151,22 @@ function desenhar() {
 	document.querySelectorAll("[data-ia]").forEach(function (b) { b.onclick = function () { var k = b.dataset.ia; if (st.ia == k) comecar(); else { guardarIA(k); st.erro = ""; desenhar(); } }; });
 	on("p1", function () { abrirIA(IAS[esc].inicio); });
 	on("p2", function () { nat("texto.copiar", { texto: st.endereco }).catch(function () {}); abrirIA(IAS[esc].conectores); });
-	on("p3", function () { buscar().then(desenhar); });
+	on("p3", agora);
 	on("desf", desfazerUltimo);
 	on("go", comecar);
 }
 
 Filuna.iniciar().then(function () {
 	return nat("armazem.ler", { chave: "cadia.ia" }).then(function (r) { if (r && r.valor && IAS[r.valor]) st.ia = r.valor; }).catch(function () {});
-}).then(function () { desenhar(); publicar(); buscar().then(desenhar); });
-Filuna.ouvir("conta", function () { st.comandosEnviados = false; ultimoEnvio = ""; desenhar(); publicar(); });
-// Com o painel aberto: manda o Design para a IA e busca os passos que ela pediu.
+}).then(function () { desenhar(); return nat("cadia.estado").then(aplicar, function () {}); }).then(agora);
+Filuna.ouvir("conta", function () { desenhar(); agora(); });
+Filuna.ouvir("cadia.fila", aplicar);
+// Só o estado do navegador da IA e o resumo; a fila não depende deste relógio.
 setInterval(function () {
 	nat("cadia.estado").then(function (e) {
-		if (!e || !e.aberto) return;
+		if (!e) return;
 		if (e.ia_aberta != st.iaAberta) { st.iaAberta = e.ia_aberta; desenhar(); }
-		publicar().then(buscar);
+		aplicar(e);
 	}).catch(function () {});
 }, 3000);
 </script>

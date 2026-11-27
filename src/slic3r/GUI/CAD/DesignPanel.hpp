@@ -22,6 +22,7 @@
 #include <map>
 
 #include "libslic3r/CAD/CadDocument.hpp"
+#include <nlohmann/json.hpp>
 #include "slic3r/GUI/CAD/DesignInteraction.hpp"   // CadLevel: what one Esc press means
 #include "slic3r/GUI/CAD/FilunaCadUi.hpp"          // the floating tool columns
 #include "slic3r/GUI/AuiMgr.hpp"
@@ -57,6 +58,7 @@ namespace Slic3r { namespace GUI {
 class DesignTextDialog;
 class DesignRowList;
 struct OfferVerb;
+struct FilunaIaFila;   // "Modelar com IA" queue (DesignPanelFiluna.cpp)
 
 class DesignCanvas;
 
@@ -119,10 +121,23 @@ public:
 
     // Filuna CAD + the customer's AI (Claude or ChatGPT, by their own subscription): the "Modelar com
     // IA" side panel, and the extra verbs the AI may send besides the control methods.
+    // show=true starts the "Modelar com IA" session (the queue is read every 3 s, even with the pane hidden by a
+    // layout change); show=false is the customer ENDING it: the queue stops and what is still waiting is refused.
     void        filuna_toggle_ia(bool show);
     bool        filuna_ia_open() const { return m_ia_open; }
+    bool        filuna_ia_session() const { return m_ia_session; }
+    // A window layout was loaded (reset, saved perspective): wxAUI hides panes it does not know, so the AI pane
+    // is shown again while its session is on, and m_ia_open follows the pane.
+    void        filuna_ia_sync_pane();
+    void        filuna_ia_tick_now();      // read the queue now (the page asked: login, "Conferir")
+    void        filuna_ia_undo_last();     // the panel's "Desfazer": what the last request changed
+    nlohmann::json filuna_ia_summary() const;   // session, running request, history, linked AIs (for the page)
     std::string filuna_ia_extra(const std::string& metodo);   // "" = not an extra; else a JSON reply
     std::string filuna_mode_name() const;
+    // Where each body is on the Design plate (the Move gizmo's transform) and which are shown: what "ver" draws
+    // and what the printability report ("laudo") judges, as on_commit ships them.
+    std::vector<Transform3d> filuna_body_xforms() { sync_body_xform(); return m_body_xform; }
+    std::vector<bool>        filuna_body_visible() { sync_body_visible(); return m_body_visible; }
 
 private:
     enum class Tool { None, Sketch, Extrude, Dressup, Hole, Thread, Shell, Revolve, Sweep, Pattern, Plane, Loft, Draft, Boolean, Cut, Insert, Axis, CoordSys, SurfaceExtrude, SurfaceRevolve, SurfaceLoft, SurfaceFill, SurfaceOffset, ThickenSurface, Transform, Mirror, Thicken, Rib, Project, DeleteFace, Helix, Mate };
@@ -165,7 +180,9 @@ private:
     int               m_var_rect{0}, m_var_circle{0}, m_var_arc{0};   // the sketch tool variant in use
     wxStaticLine*     m_toolbar_line{nullptr};
     wxPanel*          m_cad_ia{nullptr};       // "Modelar com IA": the page and the AI's own site
-    bool              m_ia_open{false};
+    bool              m_ia_open{false};        // the pane is shown
+    bool              m_ia_session{false};     // the customer opened "Modelar com IA" and has not ended it
+    std::shared_ptr<FilunaIaFila> m_ia_fila;   // the AI's queue: timer, requests, results (DesignPanelFiluna.cpp)
     void     filuna_setup();
     void     filuna_overlay();
     void     filuna_layout(CadUiLayout& l);

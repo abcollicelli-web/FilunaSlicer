@@ -7,6 +7,8 @@
  * As telas são do Filuna Slicer; o site só sincroniza os dados. */
 var Filuna = (function () {
 	var API = "https://filuna3d.com/api/slicer/v1";
+	// O login fica sempre no site de verdade; os dados (Filuna.api) podem ir a um site de teste (FILUNA_SITE_TESTE no programa).
+	var API_LOGIN = API;
 	var pendentes = {}, seq = 0, token = "", ouvintes = {};
 
 	function nativo(acao, dados) {
@@ -47,9 +49,11 @@ var Filuna = (function () {
 		nativo("app.metricas").then(function (m) {
 			if (m.lateral) document.documentElement.style.setProperty("--lateral", m.lateral + "px");
 		}).catch(function () {});
-		pendentesLocais().then(function (f) { conexao.pendentes = f.length; if (f.length) enviarFila(); });
+		// Onde ficam os dados da conta: o site de sempre, ou o de teste que o programa indicar.
+		var base = nativo("site.base").then(function (r) { if (r && r.base) API = r.base + "/api/slicer/v1"; }, function () {});
+		base.then(function () { return pendentesLocais(); }).then(function (f) { conexao.pendentes = f.length; if (f.length) enviarFila(); });
 		// O Filuna Slicer guarda a conta; o armazenamento da página só vale fora do programa.
-		return nativo("config.ler", { chave: "filuna_token" }).then(function (r) {
+		return base.then(function () { return nativo("config.ler", { chave: "filuna_token" }); }).then(function (r) {
 			token = r.valor || "";
 			return token;
 		}, function () {
@@ -226,7 +230,7 @@ var Filuna = (function () {
 	}
 
 	function entrar(email, senha) {
-		return fetch(API + "/entrar", {
+		return fetch(API_LOGIN + "/entrar", {
 			method: "POST", headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ email: email, senha: senha, dispositivo: "Filuna Slicer" })
 		}).then(function (r) {
