@@ -107,19 +107,20 @@ function fdVendas(d) {
 		return fdBloco("FdVendas", "vendas", "magenta", "Mercado Livre", "", null,
 			'<div class="FdConvite"><p>Veja aqui as vendas do dia, as perguntas e o que falta enviar.</p><a class="FdBtn" data-i="' + fdItem({ link_aba: "filuna.loja", secao: "loja:lojas" }) + '">Conecte seu Mercado Livre</a></div>');
 	if (v.indisponivel && !(v.vendas_hoje || []).length)
-		return fdBloco("FdVendas", "vendas", "magenta", "Vendas do Mercado Livre", "", ver, fdVazio("O Mercado Livre não respondeu agora. Tentamos de novo em instantes."));
+		return fdBloco("FdVendas", "vendas", "magenta", "Mercado Livre", "", ver, fdVazio("O Mercado Livre não respondeu agora. Tentamos de novo em instantes."));
 	var l = v.vendas_hoje || [], soma = l.reduce(function (s, x) { return s + (+x.valor || 0); }, 0);
 	var nova = FD.novas ? '<span class="FdNova">' + FD.novas + (FD.novas == 1 ? " nova" : " novas") + "</span>" : "";
 	var h = l.length ? '<div class="FdSoma"><b>' + FlEsc(fdMoeda(soma, l[0].moeda)) + "</b><span>" + l.length + (l.length == 1 ? " venda hoje" : " vendas hoje") + "</span></div>" : "";
-	h += l.slice(0, 2).map(function (x) {
+	var chips = "";
+	if (v.perguntas_n) chips += '<a class="FdChip" data-i="' + fdItem({ link_aba: "filuna.loja", secao: "loja:perguntas" }) + '">' + v.perguntas_n + (v.perguntas_n == 1 ? " pergunta sem resposta" : " perguntas sem resposta") + "</a>";
+	if (v.reclamacoes_n) chips += '<a class="FdChip alerta" data-i="' + fdItem(ver) + '">' + v.reclamacoes_n + (v.reclamacoes_n == 1 ? " reclamação" : " reclamações") + "</a>";
+	// com perguntas ou reclamações à mostra cabe uma venda; sem elas, duas
+	h += l.slice(0, chips ? 1 : 2).map(function (x) {
 		return '<a class="FdLin FdVenda" data-i="' + fdItem(ver) + '" title="' + FlEsc(x.titulo) + '"><span class="FdFoto">' + (x.foto ? '<img src="' + FlEsc(x.foto) + '" alt="" loading="lazy">' : FD_IC.vendas) +
 			'</span><span class="FdTx"><b>' + FlEsc(x.titulo || "Venda") + "</b><small>" + FlEsc(x.comprador || "") + '</small></span><span class="FdG">' + FlEsc(fdMoeda(x.valor, x.moeda)) + "</span></a>";
 	}).join("");
 	if (!l.length) h = fdVazio("Nenhuma venda ainda hoje.");
-	var chips = "";
-	if (v.perguntas_n) chips += '<a class="FdChip" data-i="' + fdItem({ link_aba: "filuna.loja", secao: "loja:perguntas" }) + '">' + v.perguntas_n + (v.perguntas_n == 1 ? " pergunta sem resposta" : " perguntas sem resposta") + "</a>";
-	if (v.reclamacoes_n) chips += '<a class="FdChip alerta" data-i="' + fdItem(ver) + '">' + v.reclamacoes_n + (v.reclamacoes_n == 1 ? " reclamação" : " reclamações") + "</a>";
-	return fdBloco("FdVendas", "vendas", "magenta", "Vendas do Mercado Livre", "", ver, h + (chips ? '<div class="FdChips">' + chips + "</div>" : ""), nova);
+	return fdBloco("FdVendas", "vendas", "magenta", "Mercado Livre", "", ver, h + (chips ? '<div class="FdChips">' + chips + "</div>" : ""), nova);
 }
 
 function fdEnviar(d) {
