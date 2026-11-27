@@ -148,7 +148,44 @@ jobs:
             # para todos os clientes: só pedido explícito (-f todos=true) e nunca junto com um voo. O msstore apaga a
             # submissão pendente (rascunho) e cria outra a partir da última publicada.
             if ($voo) { throw "peça voo OU todos, não os dois: nada enviado" }
-            msstore publish $env:MSIX -id $env:APP_ID
+            # Pela API REST (não pelo msstore): a submissão nova copia a publicada, e só assim dá para pôr a
+            # visibilidade em Public (aparecer na busca da Store) junto com o pacote novo.
+            try {
+              $base = "https://manage.devcenter.microsoft.com/v1.0/my/applications/$env:APP_ID"
+              $tok = (Invoke-RestMethod -Method Post -Uri "https://login.microsoftonline.com/$env:T/oauth2/token" -Body @{ grant_type = 'client_credentials'; client_id = $env:C; client_secret = $env:CS; resource = 'https://manage.devcenter.microsoft.com' }).access_token
+              $h = @{ Authorization = "Bearer $tok" }
+              $app = Invoke-RestMethod -Uri $base -Headers $h
+              if ($app.pendingApplicationSubmission) { throw "já há uma submissão pública pendente ($($app.pendingApplicationSubmission.id)): nada enviado" }
+              $sub = Invoke-RestMethod -Method Post -Uri "$base/submissions" -Headers $h
+              Write-Host "submissão criada: $($sub.id) (visibilidade antes: $($sub.visibility))"
+              $nome = Split-Path $env:MSIX -Leaf
+              foreach ($p in $sub.applicationPackages) { $p.fileStatus = 'PendingDelete' }
+              $sub.applicationPackages = @($sub.applicationPackages) + @([pscustomobject]@{ fileName = $nome; fileStatus = 'PendingUpload'; minimumDirectXVersion = 'None'; minimumSystemRam = 'None' })
+              $sub.visibility = 'Public'
+              $sub.targetPublishMode = 'Immediate'
+              $corpo = $sub | ConvertTo-Json -Depth 20
+              $sub = Invoke-RestMethod -Method Put -Uri "$base/submissions/$($sub.id)" -Headers $h -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($corpo))
+              Write-Host "submissão atualizada: visibilidade $($sub.visibility), pacotes $(($sub.applicationPackages | ForEach-Object { "$($_.fileName)=$($_.fileStatus)" }) -join ', ')"
+              $dir = Join-Path $env:RUNNER_TEMP 'zipstore'; New-Item -ItemType Directory -Force $dir | Out-Null; Copy-Item $env:MSIX $dir
+              $zip = Join-Path $env:RUNNER_TEMP 'envio.zip'; Add-Type -AssemblyName System.IO.Compression.FileSystem
+              [IO.Compression.ZipFile]::CreateFromDirectory($dir, $zip, [IO.Compression.CompressionLevel]::Fastest, $false)
+              # envio em blocos de 8 MB para o Azure Blob da Store (o PUT único tem limite de tamanho)
+              $url = $sub.fileUploadUrl; $fs = [IO.File]::OpenRead($zip); $buf = New-Object byte[] (8MB); $ids = @(); $n = 0
+              while (($lidos = $fs.Read($buf, 0, $buf.Length)) -gt 0) {
+                $id = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(('{0:D6}' -f $n))); $n++
+                $parte = if ($lidos -eq $buf.Length) { $buf } else { $buf[0..($lidos - 1)] }
+                Invoke-RestMethod -Method Put -Uri "$url&comp=block&blockid=$([uri]::EscapeDataString($id))" -Headers @{ 'x-ms-version' = '2020-10-02' } -ContentType 'application/octet-stream' -Body ([byte[]]$parte) | Out-Null
+                $ids += $id
+              }
+              $fs.Close()
+              $lista = '<?xml version="1.0" encoding="utf-8"?><BlockList>' + (($ids | ForEach-Object { "<Latest>$_</Latest>" }) -join '') + '</BlockList>'
+              Invoke-RestMethod -Method Put -Uri "$url&comp=blocklist" -Headers @{ 'x-ms-version' = '2020-10-02'; 'x-ms-blob-content-type' = 'application/zip' } -ContentType 'application/xml' -Body $lista | Out-Null
+              Write-Host "pacote enviado: $n blocos, $((Get-Item $zip).Length) bytes"
+              Invoke-RestMethod -Method Post -Uri "$base/submissions/$($sub.id)/commit" -Headers $h | Out-Null
+              $st = Invoke-RestMethod -Uri "$base/submissions/$($sub.id)/status" -Headers $h
+              Write-Host "commit pedido: $($st.status)"
+              $global:LASTEXITCODE = 0
+            } catch { Write-Host "erro no envio pela API: $($_.Exception.Message) $($_.ErrorDetails.Message)"; $global:LASTEXITCODE = 1 }
           } else {
             if ($voo -notmatch '^[0-9a-fA-F-]{36}$') { throw "voo ausente ou inválido: nada enviado (sem -f todos=true o envio é só para voo de pacote)" }
             # a tabela do msstore quebra o id em várias linhas: junta só a coluna FlightId e procura o id inteiro nela
