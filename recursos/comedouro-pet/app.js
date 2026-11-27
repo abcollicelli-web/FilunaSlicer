@@ -276,6 +276,7 @@ function iniciar() {
   $('arquivoFonte').addEventListener('change', (e) => enviarFonte(e.target.files[0]));
   $('verAco').addEventListener('click', () => { estado.aco = !estado.aco; $('verAco').classList.toggle('on', estado.aco); agendar(); });
   $('verCorte').addEventListener('click', () => { estado.corte = !estado.corte; $('verCorte').classList.toggle('on', estado.corte); vista.cortar(estado.corte); });
+  $('padraoTudo').addEventListener('click', () => location.reload());
   $('b3mf').addEventListener('click', () => exportar('3mf'));
   $('bzip').addEventListener('click', () => exportar('zip'));
   if (!$('info')) $('verificacao').before(el('p', { className: 'info', id: 'info' }));
