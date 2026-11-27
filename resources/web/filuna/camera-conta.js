@@ -126,6 +126,7 @@
 		setTimeout(volta, 3000);
 		setInterval(volta, VISTA_MS);
 	}
-	window.FilunaCameraConta = { volta: volta };
+	// foto: o check-up do Raio X (diagnostico.js) confere se a câmera manda imagem
+	window.FilunaCameraConta = { volta: volta, foto: fotoAvulsa };
 	if (document.readyState == "loading") document.addEventListener("DOMContentLoaded", comecar); else comecar();
 })();

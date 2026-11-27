@@ -22,6 +22,8 @@
 #include <future>
 #include <map>
 #include <mutex>
+#include <regex>
+#include <cstring>
 #include <thread>
 #include <vector>
 
@@ -126,7 +128,7 @@ void desligar_tudo(const std::string& dev, const std::string& ag)
 }
 
 // Leitura profunda do agente: pede e espera a resposta nova (Filuna::diag com "em" depois do pedido).
-json leitura_profunda(const std::string& dev, const std::string& ag, bool so_console, int espera_s)
+json leitura_profunda(const std::string& dev, const std::string& ag, bool so_console, int espera_s, bool so_objetos = false)
 {
     static std::atomic<long long> contador{0};
     const long long antes = agora_unix();
@@ -135,7 +137,7 @@ json leitura_profunda(const std::string& dev, const std::string& ag, bool so_con
     if (bambu(ag))
         pedido = {{"info", {{"command", "get_version"}, {"sequence_id", "0"}}}};
     else
-        pedido = {{"filuna", {{"command", "diagnostico"}, {"so_console", so_console}, {"pedido", numero}}}};
+        pedido = {{"filuna", {{"command", "diagnostico"}, {"so_console", so_console}, {"so_objetos", so_objetos}, {"pedido", numero}}}};
     if (!enviar(dev, pedido))
         return json::object();
     const bool tem_resposta = moonraker(ag) || bambu(ag) || ag == "filuna_prusalink" || ag == "filuna_elegoo_sdcp";
@@ -224,8 +226,8 @@ struct Teste
 const Teste CATALOGO[] = {
     {"consultas", "Sensores e fins de curso", "leitura", 1,
      "Pergunta à impressora o estado dos fins de curso, da sonda e dos drivers dos motores. Não aquece nem move."},
-    {"ruido_acelerometro", "Ruído do acelerômetro", "leitura", 1,
-     "Mede o ruído do sensor de vibração parado. Acima de 1.000 indica sensor, cabo ou cooler com problema."},
+    {"ruido_acelerometro", "Ruído do sensor de vibração", "leitura", 1,
+     "Mede o ruído do sensor de vibração (acelerômetro) parado. Acima de 1.000 indica sensor, cabo ou cooler com problema."},
     {"aquecimento_bico", "Aquecimento do bico", "aquece", 5,
      "Aquece o bico até 200 °C, mede o tempo, a estabilidade e a força do aquecedor e desliga."},
     {"aquecimento_mesa", "Aquecimento da mesa", "aquece", 10, "Aquece a mesa até 60 °C, mede o tempo e a estabilidade e desliga."},
@@ -235,12 +237,18 @@ const Teste CATALOGO[] = {
     {"malha_mesa", "Mapa da mesa", "move", 6,
      "Zera os eixos e mede a altura da mesa em vários pontos. A mesa precisa estar limpa e vazia."},
     {"precisao_sonda", "Precisão da sonda", "move", 4, "Zera os eixos e mede a mesma posição 10 vezes para ver se a sonda repete o valor."},
+    {"eixos", "Eixos e movimento", "move", 3,
+     "Zera os eixos X, Y e Z, sobe o bico 10 mm e leva devagar até o centro da mesa. A mesa precisa estar vazia."},
+    {"ressonancia", "Vibração da estrutura", "move", 6,
+     "Faz a impressora vibrar alto por alguns minutos e mede a vibração de cada eixo (precisa de sensor de vibração). "
+     "Mostra se há correia frouxa ou parafuso solto. Não grava nada."},
 };
 
 std::vector<std::string> ids_do_agente(const std::string& ag)
 {
     if (moonraker(ag))
-        return {"consultas", "ruido_acelerometro", "aquecimento_bico", "aquecimento_mesa", "coolers", "pid_bico", "malha_mesa", "precisao_sonda"};
+        return {"consultas", "ruido_acelerometro", "aquecimento_bico", "aquecimento_mesa", "coolers", "pid_bico", "eixos", "malha_mesa",
+                "precisao_sonda", "ressonancia"};
     if (filuna_ctl(ag) || bambu(ag))
         return {"aquecimento_bico", "aquecimento_mesa", "coolers"};
     return {};
@@ -265,6 +273,31 @@ json guiados(const std::string& ag)
     if (ag == "filuna_elegoo_cc2")
         return json::array({"Na tela da impressora: Ajustes › Autoverificação."});
     return json::array();
+}
+
+// O que a marca deixa o Filuna ler e testar pela rede, para o cliente entender por que aparecem estes testes.
+std::string permite(const std::string& ag)
+{
+    if (moonraker(ag))
+        return "Esta impressora deixa o Filuna ler tudo (temperaturas, força dos aquecedores, coolers, motores, sensores de filamento, "
+               "câmera, avisos e registro) e rodar todos os testes: aquecimento, coolers, eixos, mapa da mesa, sonda e vibração.";
+    if (bambu(ag))
+        return "A Bambu Lab deixa o Filuna ler temperaturas, coolers, avisos da impressora, umidade do AMS, Wi-Fi, câmera e versão. "
+               "Os testes de aquecimento e cooler só funcionam com Modo LAN e Modo Desenvolvedor ligados; movimento e calibração "
+               "ficam na tela da impressora.";
+    if (ag == "filuna_prusalink")
+        return "A Prusa deixa o Filuna ler o estado, as temperaturas, os coolers e a versão. Ela não aceita testes de fora: "
+               "use o Autoteste da própria impressora (passo a passo abaixo).";
+    if (ag == "filuna_flashforge_lan")
+        return "A FlashForge deixa o Filuna ler o estado, as temperaturas, os erros, as horas de uso e a versão. Os testes ficam "
+               "na tela da impressora (passo a passo abaixo).";
+    if (ag == "filuna_elegoo_sdcp")
+        return "Esta Elegoo deixa o Filuna ler o estado, as temperaturas, a versão e o histórico de impressões. Os testes ficam "
+               "na tela da impressora (passo a passo abaixo).";
+    if (filuna_ctl(ag))
+        return "Esta impressora deixa o Filuna ler temperaturas e estado e rodar os testes de aquecimento e cooler. Movimento e "
+               "nivelamento ficam na tela da impressora.";
+    return "Esta impressora informa pouco pela rede: o Filuna lê o que ela manda e os testes ficam na tela dela.";
 }
 
 const Teste* teste_por_id(const std::string& id)
@@ -477,6 +510,117 @@ json teste_aquecimento(const std::string& dev, const std::string& ag, bool mesa,
     return r;
 }
 
+json objetos(const json& d) { return d.value("objetos", json::object()).value("status", json::object()); }
+
+bool tres(const json& v) { return v.is_array() && v.size() >= 3 && v[0].is_number() && v[1].is_number() && v[2].is_number(); }
+
+// Eixos: zera X, Y e Z, sobe o bico 10 mm e vai devagar ao centro da mesa, dentro dos limites que a própria impressora
+// informa (sem os limites, só zera). Confere se os três eixos ficaram zerados e se a posição bate com o pedido.
+json teste_eixos(const std::string& dev, const std::string& ag, json& e)
+{
+    if (!enviar(dev, gcode("G28")))
+        return {{"resultado", "falha"}, {"texto", "A impressora não aceitou zerar os eixos."}};
+    json       th;
+    const auto t0 = Relogio::now();
+    std::string zerados;
+    while (Relogio::now() - t0 < std::chrono::seconds(150)) {
+        if (parar_pedido().load())
+            return {{"resultado", "interrompido"}, {"texto", "Teste interrompido."}};
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        const json d = leitura_profunda(dev, ag, false, 8, true);
+        th           = objetos(d).value("toolhead", json::object());
+        const auto linhas = respostas_depois(d.value("console", json::object()), "G28");
+        e["console"]      = linhas;
+        publicar(e);
+        for (const auto& l : linhas)
+            if (l.rfind("!!", 0) == 0)
+                return {{"resultado", "falha"}, {"texto", "A impressora parou ao zerar os eixos: " + l.substr(0, 300)}, {"console", linhas}};
+        zerados = th.value("homed_axes", std::string());
+        if (zerados.find('x') != std::string::npos && zerados.find('y') != std::string::npos && zerados.find('z') != std::string::npos)
+            break;
+    }
+    if (zerados.find('x') == std::string::npos || zerados.find('y') == std::string::npos || zerados.find('z') == std::string::npos)
+        return {{"resultado", "falha"},
+                {"texto", "Não terminou de zerar os eixos em 2 min e meio (zerados: " + (zerados.empty() ? std::string("nenhum") : zerados) +
+                              "). Confira os fins de curso, a sonda e as correias."}};
+    const json mn = th.value("axis_minimum", json()), mx = th.value("axis_maximum", json());
+    if (!tres(mn) || !tres(mx))
+        return {{"resultado", "ok"}, {"texto", "Zerou X, Y e Z. A impressora não informou o tamanho da mesa, então o Filuna não moveu mais nada."}};
+    const double cx = std::round((mn[0].get<double>() + mx[0].get<double>()) / 2), cy = std::round((mn[1].get<double>() + mx[1].get<double>()) / 2);
+    const double z  = std::floor(std::max(0.0, std::min(10.0, mx[2].get<double>() - 1)));
+    // números inteiros: o G-code não pode depender da vírgula do idioma do computador
+    if (!enviar(dev, gcode("G90\nG1 Z" + std::to_string(int(z)) + " F600\nG1 X" + std::to_string(int(cx)) + " Y" + std::to_string(int(cy)) +
+                           " F3000\nM400")))
+        return {{"resultado", "falha"}, {"texto", "Zerou os eixos, mas a impressora não aceitou o movimento até o centro."}};
+    const auto t1 = Relogio::now();
+    while (Relogio::now() - t1 < std::chrono::seconds(60)) {
+        if (parar_pedido().load())
+            return {{"resultado", "interrompido"}, {"texto", "Teste interrompido."}};
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        const json pos = objetos(leitura_profunda(dev, ag, false, 8, true)).value("toolhead", json::object()).value("position", json());
+        if (tres(pos) && std::fabs(pos[0].get<double>() - cx) < 1 && std::fabs(pos[1].get<double>() - cy) < 1 && std::fabs(pos[2].get<double>() - z) < 1)
+            return {{"resultado", "ok"}, {"texto", "Zerou X, Y e Z e levou o bico ao centro da mesa sem erro."}};
+    }
+    return {{"resultado", "atencao"}, {"texto", "Zerou os eixos, mas o bico não chegou ao centro da mesa em 1 minuto. Confira se algo travou o movimento."}};
+}
+
+bool tem_sensor_vibracao(const json& d)
+{
+    if (!d.contains("objetos_disponiveis"))
+        return true; // sem a lista não dá para saber: a própria impressora responde se não tiver
+    static const char* const NOMES[] = {"adxl345", "lis2dw", "lis3dh", "mpu9250", "mpu6050", "icm20948", "resonance_tester"};
+    for (const auto& o : d["objetos_disponiveis"])
+        if (o.is_string())
+            for (const char* n : NOMES)
+                if (o.get<std::string>().rfind(n, 0) == 0)
+                    return true;
+    return false;
+}
+
+std::string busca(const std::string& texto, const char* padrao)
+{
+    std::smatch m;
+    return std::regex_search(texto, m, std::regex(padrao, std::regex::icase)) && m.size() > 1 ? m[1].str() : std::string();
+}
+
+// Texto de cliente para os testes que respondem no console (o console original fica guardado no Raio X).
+void texto_de_cliente(const std::string& id, json& r)
+{
+    if (r.value("resultado", std::string()) != "ok")
+        return;
+    std::string tudo;
+    for (const auto& l : r.value("console", json::array()))
+        if (l.is_string())
+            tudo += l.get<std::string>() + "\n";
+    if (id == "ruido_acelerometro") {
+        const std::string x = busca(tudo, "([\\d.]+)\\s*\\(x\\)"), y = busca(tudo, "([\\d.]+)\\s*\\(y\\)"), z = busca(tudo, "([\\d.]+)\\s*\\(z\\)");
+        if (!x.empty())
+            r["texto"] = "Ruído do sensor de vibração parado: X " + x + ", Y " + y + ", Z " + z + " (normal: até 100).";
+    } else if (id == "pid_bico") {
+        const std::string kp = busca(tudo, "pid_Kp=([\\d.]+)");
+        if (!kp.empty())
+            r["texto"] = "O aquecedor do bico respondeu bem à calibração (Kp " + kp + ", Ki " + busca(tudo, "pid_Ki=([\\d.]+)") + ", Kd " +
+                         busca(tudo, "pid_Kd=([\\d.]+)") + "). Nada foi gravado na impressora.";
+    } else if (id == "precisao_sonda") {
+        const std::string dp = busca(tudo, "standard deviation\\s*([\\d.]+)");
+        if (!dp.empty())
+            r["texto"] = "A sonda mediu o mesmo ponto 10 vezes com desvio de " + dp + " mm (bom: até 0,01 mm).";
+    } else if (id == "ressonancia") {
+        const std::string fx = busca(tudo, "shaper_freq_x\\s*=\\s*([\\d.]+)"), fy = busca(tudo, "shaper_freq_y\\s*=\\s*([\\d.]+)");
+        if (!fx.empty() || !fy.empty())
+            r["texto"] = "Vibração medida: eixo X em " + (fx.empty() ? std::string("?") : fx) + " Hz, eixo Y em " + (fy.empty() ? std::string("?") : fy) +
+                         " Hz (o comum fica entre 30 e 80 Hz). Nada foi gravado na impressora.";
+    } else if (id == "consultas") {
+        std::string t = tudo.substr(0, 300);
+        static const std::pair<const char*, const char*> TROCAS[] = {{":open", ": solto"}, {":TRIGGERED", ": ACIONADO"}, {":triggered", ": ACIONADO"}};
+        for (const auto& [de, para] : TROCAS)
+            for (size_t p = t.find(de); p != std::string::npos; p = t.find(de, p))
+                t.replace(p, std::strlen(de), para);
+        r["texto"] = "Fins de curso agora: " + t + "(\"solto\" é o normal com o bico longe deles). Os controles dos motores e os sensores "
+                     "de filamento estão no resultado abaixo.";
+    }
+}
+
 json teste_coolers(const std::string& dev, const std::string& ag, json& e)
 {
     json passos = json::array();
@@ -664,6 +808,16 @@ void executar(json pedido)
             }
         } else if (id == "precisao_sonda")
             r = teste_console(dev, ag, "PROBE_ACCURACY", "standard deviation", 240, e, true);
+        else if (id == "eixos")
+            r = teste_eixos(dev, ag, e);
+        else if (id == "ressonancia") {
+            if (!tem_sensor_vibracao(leitura_profunda(dev, ag, false, 15, true)))
+                r = {{"resultado", "indisponivel"},
+                     {"texto", "Esta impressora não tem sensor de vibração (acelerômetro) instalado: este teste não se aplica a ela."}};
+            else
+                r = teste_console(dev, ag, "SHAPER_CALIBRATE", "shaper_freq_y", 600, e, true);
+        }
+        texto_de_cliente(id, r);
     } catch (const std::exception& ex) {
         r = {{"resultado", "falha"}, {"texto", std::string("O teste parou por um erro: ") + ex.what()}};
     }
@@ -730,7 +884,8 @@ json testes(const std::string& dev_id)
     for (const std::string& id : ids_do_agente(ag))
         if (const Teste* t = teste_por_id(id))
             lista.push_back({{"id", t->id}, {"nome", t->nome}, {"risco", t->risco}, {"minutos", t->minutos}, {"explicacao", t->explicacao}});
-    return {{"testes", lista}, {"guiados", guiados(ag)}, {"presenca", presente(dev_id)}, {"presenca_minutos", PRESENCA_MIN}};
+    return {{"testes", lista}, {"guiados", guiados(ag)}, {"permite", c.empty() ? std::string() : permite(ag)}, {"presenca", presente(dev_id)},
+            {"presenca_minutos", PRESENCA_MIN}};
 }
 
 json testar(const json& pedido)
