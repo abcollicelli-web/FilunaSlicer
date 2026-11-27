@@ -1,0 +1,27 @@
+{
+  "id": "comedouro-pet",
+  "tipo": "parametrico",
+  "nome": "Comedouro com nome",
+  "versao": "1.0.0",
+  "descricao": "Comedouro do pet com o nome dele. Suporte elevado para 1, 2 ou 3 tigelas de aço (comida, água e petisco), com perfil cone, anéis, barriga, cintura ou reto, tampo inclinado para raças de focinho curto, fundo aberto ou fechado, rebaixo para pés de borracha e encaixes para os dedos. Ou a tigela inteira impressa em 11 formatos (redonda, coração, gato, cão, patinha, osso, peixe, coroa, estrela, flor, hexágono), com fundo arredondado fácil de limpar, base mais larga que não vira e comedouro lento com aletas ou pinos. Nome, frase e texto de trás em relevo de duas cores ou gravados, ícones dos lados e em volta (patinhas, ossos, corações, estrelas, peixes, coroas), texturas (frisos retos, diagonais, ondas, trançado, vazados) e três cores. Mostra a tigela de aço no lugar, vê por dentro, calcula os ml, o peso e confere antes: cabe na mesa, traço das letras para o bico, tigela que não encosta no chão e base firme. O 3MF vai para o Filuna Slicer com cada cor na sua extrusora e os recortes já aplicados ao fatiar. Imprime em pé, sem suporte. Tudo no computador do cliente.",
+  "categoria": "Pets",
+  "entrada": "index.html",
+  "miniatura": "miniatura.jpg",
+  "saidas": ["3MF", "STL", "ZIP"],
+  "parametros": [
+    { "chave": "modo", "rotulo": "Suporte para tigela de aço ou tigela impressa", "padrao": "suporte" },
+    { "chave": "qtd", "rotulo": "Quantas tigelas de aço", "padrao": 1, "min": 1, "max": 3 },
+    { "chave": "dTigela", "rotulo": "Diâmetro da tigela de aço", "unidade": "mm", "padrao": 160, "min": 80, "max": 260 },
+    { "chave": "altura", "rotulo": "Altura do suporte", "unidade": "mm", "padrao": 130, "min": 50, "max": 260 },
+    { "chave": "base", "rotulo": "Base do suporte", "unidade": "mm", "padrao": 220, "min": 100, "max": 420 },
+    { "chave": "inclinacao", "rotulo": "Inclinação para o pet", "unidade": "°", "padrao": 0, "min": 0, "max": 20 },
+    { "chave": "forma", "rotulo": "Formato da tigela impressa", "padrao": "redonda" },
+    { "chave": "largura", "rotulo": "Largura da tigela impressa", "unidade": "mm", "padrao": 170, "min": 80, "max": 280 },
+    { "chave": "lento", "rotulo": "Comedouro lento", "padrao": "não" },
+    { "chave": "nome", "rotulo": "Nome do pet", "padrao": "THOR" },
+    { "chave": "escrita", "rotulo": "Nome em relevo ou gravado", "padrao": "relevo" },
+    { "chave": "textura", "rotulo": "Textura da parede", "padrao": "lisa" },
+    { "chave": "padrao", "rotulo": "Ícones em volta", "padrao": "nenhum" },
+    { "chave": "pes", "rotulo": "Pés de borracha", "unidade": "mm", "padrao": 10 }
+  ]
+}
