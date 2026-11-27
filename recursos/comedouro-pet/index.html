@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comedouro com nome — Filuna</title>
+<link rel="stylesheet" href="estilo.css"><link rel="stylesheet" href="comedouro.css"></head>
+<body>
+<div class="app">
+  <aside class="lp">
+    <div class="crumb">Paramétricos › <span class="on">Comedouro com nome</span></div>
+    <h1>Comedouro com nome</h1>
+    <p class="sub">Suporte elevado para 1, 2 ou 3 tigelas de aço, ou a tigela inteira impressa em 11 formatos. O nome do seu pet na parede, em relevo de duas cores ou gravado, com ícones, textura e tudo conferido antes de imprimir.</p>
+
+    <div class="seg modo" role="group" aria-label="O que fazer">
+      <button type="button" data-modo="suporte" class="on">Suporte para tigela de aço</button><button type="button" data-modo="tigela">Tigela impressa</button>
+    </div>
+
+    <div class="pets" role="group" aria-label="Tamanho do pet">
+      <button type="button" data-pet="gato">Gato</button><button type="button" data-pet="pequeno">Cão pequeno</button><button type="button" data-pet="medio" class="on">Cão médio</button><button type="button" data-pet="grande">Cão grande</button>
+    </div>
+    <label class="chk" title="Pug, buldogue, persa, shih-tzu: a tigela inclinada para frente ajuda a comer sem esfregar o focinho"><input type="checkbox" id="focinho"> Focinho curto (inclina a tigela para o pet)</label>
+
+    <!-- SUPORTE -->
+    <details open class="so-suporte"><summary>1. Tigelas de aço</summary>
+      <div class="um">
+        <div class="seg tri" role="group" aria-label="Quantas tigelas"><button type="button" data-qtd="1" class="on">1 tigela</button><button type="button" data-qtd="2">2 (comida + água)</button><button type="button" data-qtd="3">3 tigelas</button></div>
+        <p class="nota">Meça a tigela por fora, logo abaixo da borda (o corpo, não a aba). Ela entra no furo e fica apoiada pela aba.</p>
+        <label class="faixa"><span>Diâmetro da tigela <i>mm</i></span><input type="range" id="dTigela" min="80" max="260" step="1" value="160"><input type="number" id="dTigelaN" min="80" max="260" value="160"></label>
+        <div class="tres">
+          <label title="Espaço em volta do corpo da tigela">Folga <i>mm</i><input type="number" id="folga" min="0" max="4" step="0.1" value="1"></label>
+          <label title="Altura da tigela de aço (só para conferir que ela não encosta no chão)">Altura dela <i>mm</i><input type="number" id="profTigela" min="25" max="140" step="1" value="55"></label>
+          <label class="multi" title="Distância entre as bordas dos furos">Entre elas <i>mm</i><input type="number" id="vao" min="6" max="60" step="1" value="16"></label>
+        </div>
+      </div></details>
+
+    <details open class="so-suporte"><summary>2. Forma do suporte</summary>
+      <div class="um">
+        <div class="seg cinco" role="group" aria-label="Perfil"><button type="button" data-perfil="cone" class="on">Cone</button><button type="button" data-perfil="aneis">Anéis</button><button type="button" data-perfil="barriga">Barriga</button><button type="button" data-perfil="cintura">Cintura</button><button type="button" data-perfil="reto">Reto</button></div>
+        <div class="dois perfil-amp"><label>Saliência <i>mm</i><input type="number" id="perfilAmp" min="1" max="14" step="0.5" value="5"></label><label class="so-aneis">Anéis<input type="number" id="aneis" min="2" max="8" step="1" value="3"></label></div>
+        <label class="faixa"><span>Altura (no meio) <i>mm</i></span><input type="range" id="altura" min="50" max="260" step="1" value="130"><input type="number" id="alturaN" min="50" max="260" value="130"></label>
+        <label class="faixa"><span>Base, de frente para trás <i>mm</i></span><input type="range" id="base" min="100" max="420" step="1" value="220"><input type="number" id="baseN" min="100" max="420" value="220"></label>
+        <label class="faixa"><span>Inclinação para o pet <i>°</i></span><input type="range" id="inclinacao" min="0" max="20" step="1" value="0"><input type="number" id="inclinacaoN" min="0" max="20" value="0"></label>
+        <div class="tres">
+          <label>Parede <i>mm</i><input type="number" id="parede" min="1.6" max="8" step="0.2" value="3.2"></label>
+          <label title="Largura do apoio da aba da tigela">Apoio <i>mm</i><input type="number" id="aba" min="4" max="20" step="0.5" value="7"></label>
+          <label title="Espessura do tampo onde a tigela apoia">Tampo <i>mm</i><input type="number" id="tampo" min="2.4" max="10" step="0.2" value="4"></label>
+        </div>
+        <div class="seg" role="group" aria-label="Fundo"><button type="button" data-fundo="aberto" class="on">Fundo aberto</button><button type="button" data-fundo="fechado">Fundo fechado</button></div>
+        <label class="so-fechado">Espessura do fundo <i>mm</i><input type="number" id="espFundoS" min="1.2" max="6" step="0.2" value="2"></label>
+        <label class="chk"><input type="checkbox" id="dedos" checked> Encaixes para os dedos (tirar a tigela fácil)</label>
+        <div class="dois so-dedos"><label>Largura <i>mm</i><input type="number" id="dedosLarg" min="20" max="70" step="1" value="38"></label><label>Fundura <i>mm</i><input type="number" id="dedosAlt" min="6" max="30" step="1" value="12"></label></div>
+      </div></details>
+
+    <!-- TIGELA -->
+    <details open class="so-tigela" hidden><summary>1. Formato da tigela</summary>
+      <div class="um">
+        <div class="formas" id="formas"></div>
+        <p class="nota">Orelhas, dedos e pontas ficam maciços; a comida fica no meio redondo, sem cantos para sujeira.</p>
+        <label class="faixa"><span>Largura <i>mm</i></span><input type="range" id="largura" min="80" max="280" step="1" value="160"><input type="number" id="larguraN" min="80" max="280" value="160"></label>
+        <label class="faixa"><span>Altura <i>mm</i></span><input type="range" id="alturaT" min="30" max="130" step="1" value="65"><input type="number" id="alturaTN" min="30" max="130" value="65"></label>
+        <div class="tres">
+          <label title="A base mais larga deixa a tigela firme (não vira)">Base maior <i>%</i><input type="number" id="baseMais" min="0" max="30" step="1" value="12"></label>
+          <label>Parede <i>mm</i><input type="number" id="paredeT" min="2.4" max="14" step="0.2" value="4"></label>
+          <label>Fundo <i>mm</i><input type="number" id="espFundoT" min="2" max="10" step="0.2" value="4"></label>
+        </div>
+        <label>Comedouro lento (o pet come devagar)<select id="lento"><option value="nenhum">Não</option><option value="aletas">Aletas</option><option value="pinos">Pinos</option></select></label>
+        <div class="dois so-lento"><label>Quantas aletas<input type="number" id="lentoQtd" min="3" max="10" step="1" value="5"></label><label>Altura <i>% da tigela</i><input type="number" id="lentoAlt" min="20" max="85" step="5" value="55"></label></div>
+      </div></details>
+
+    <details open><summary><span class="so-suporte">3.</span><span class="so-tigela" hidden>2.</span> Nome</summary>
+      <div class="um">
+        <label>Nome<input type="text" id="nome" value="THOR" maxlength="16"></label>
+        <div class="dois"><label>Fonte<select id="fonte"></select></label><label class="sec botao-fonte" style="margin-top:20px">Minha fonte<input type="file" id="arquivoFonte" accept=".ttf,.otf,.woff,.woff2"></label></div>
+        <div class="dois"><label class="chk"><input type="checkbox" id="negrito" checked> Negrito</label><label class="chk"><input type="checkbox" id="patinhasLado" checked> Ícone dos lados</label></div>
+        <label class="faixa"><span>Altura das letras <i>mm</i></span><input type="range" id="alturaLetras" min="8" max="70" step="1" value="30"><input type="number" id="alturaLetrasN" min="8" max="70" value="30"></label>
+        <label class="faixa"><span>Altura na parede <i>%</i></span><input type="range" id="posAltura" min="15" max="85" step="1" value="50"><input type="number" id="posAlturaN" min="15" max="85" value="50"></label>
+        <label class="faixa"><span>Espaço entre as letras <i>%</i></span><input type="range" id="espacamento" min="-8" max="40" step="1" value="4"><input type="number" id="espacamentoN" min="-8" max="40" value="4"></label>
+        <label class="faixa so-tigela" hidden><span>Posição ao redor <i>°</i></span><input type="range" id="giro" min="-180" max="180" step="1" value="0"><input type="number" id="giroN" min="-180" max="180" value="0"></label>
+        <div class="seg so-tigela" hidden role="group" aria-label="Onde vai o nome"><button type="button" data-lugar="parede" class="on">Na parede</button><button type="button" data-lugar="fundo">No fundo, por dentro</button></div>
+        <div class="seg" role="group" aria-label="Como o nome sai"><button type="button" data-escrita="relevo" class="on">Em relevo (2 cores)</button><button type="button" data-escrita="gravado">Gravado</button></div>
+        <div class="dois"><label class="so-relevo">Relevo <i>mm</i><input type="number" id="relevo" min="0.6" max="4" step="0.2" value="1.4"></label><label class="so-gravado" hidden>Fundura <i>mm</i><input type="number" id="profGravado" min="0.6" max="3" step="0.2" value="1.2"></label><label>Ícone dos lados<select id="iconeLado"></select></label></div>
+        <label>Frase embaixo do nome <i>(opcional)</i><input type="text" id="frase" value="" maxlength="28" placeholder="ex. BOM GAROTO"></label>
+        <label>Texto atrás <i>(opcional)</i><input type="text" id="textoTras" value="" maxlength="28" placeholder="ex. 2019 ♥"></label>
+      </div></details>
+
+    <details open><summary><span class="so-suporte">4.</span><span class="so-tigela" hidden>3.</span> Textura e enfeites</summary>
+      <div class="um">
+        <div class="texturas" id="texturas" role="group" aria-label="Textura da parede">
+          <button type="button" data-textura="liso" class="on">Lisa</button><button type="button" data-textura="retos">Frisos retos</button><button type="button" data-textura="diagonais">Frisos diagonais</button>
+          <button type="button" data-textura="ondas">Ondas</button><button type="button" data-textura="trancado">Trançado</button><button type="button" data-textura="vazados">Vazados</button>
+        </div>
+        <div class="dois so-textura"><label>Intensidade <i>mm</i><input type="number" id="texAmp" min="0.4" max="5" step="0.2" value="2.2"></label><label>Quantidade<input type="number" id="texQtd" min="6" max="90" step="1" value="36"></label></div>
+        <p class="nota">Atrás do nome, dos textos e dos ícones a parede fica lisa.</p>
+        <label>Ícones em volta<select id="padrao"></select></label>
+        <div class="dois so-padrao"><label>Tamanho <i>mm</i><input type="number" id="padraoTam" min="6" max="40" step="1" value="16"></label><label>Na cor<select id="padraoCor"><option value="nome">do nome</option><option value="detalhe">de detalhe (3ª cor)</option></select></label></div>
+        <label>Pés de borracha (rebaixo embaixo)<select id="pes"><option value="0">Sem pés</option><option value="8">8 mm</option><option value="10" selected>10 mm</option><option value="12">12 mm</option></select></label>
+      </div></details>
+
+    <details open><summary><span class="so-suporte">5.</span><span class="so-tigela" hidden>4.</span> Cores</summary>
+      <div class="um">
+        <div class="temas" role="group" aria-label="Combinações">
+          <button type="button" data-tema="azul" class="on" style="--a:#3E6FD8;--b:#FFFFFF"></button><button type="button" data-tema="rosa" style="--a:#EC5D9A;--b:#FFFFFF"></button><button type="button" data-tema="verde" style="--a:#2FA36B;--b:#FFFFFF"></button>
+          <button type="button" data-tema="preto" style="--a:#26252B;--b:#F5C518"></button><button type="button" data-tema="areia" style="--a:#E8DCC8;--b:#8C6A4F"></button><button type="button" data-tema="vermelho" style="--a:#D7263D;--b:#FFFFFF"></button>
+        </div>
+        <div class="tres cores3">
+          <label>Corpo<input type="color" id="corCorpo" value="#3E6FD8"></label>
+          <label>Nome<input type="color" id="corNome" value="#FFFFFF"></label>
+          <label>Detalhes<input type="color" id="corDetalhe" value="#F5C518"></label>
+        </div>
+        <p class="nota">Cada cor vai para uma extrusora. No Filuna Slicer as cores já aparecem nos filamentos.</p>
+      </div></details>
+
+    <div class="verificacao" id="verificacao"></div>
+    <div class="numeros" id="numeros"></div>
+    <div class="baixar">
+      <button class="pri" id="b3mf" type="button" data-plano="exportar-3mf" data-plano-rotulo="Exportar 3MF">Baixar 3MF para o Slicer</button>
+      <button class="sec" id="bzip" type="button" data-plano="exportar-partes" data-plano-rotulo="Exportar em partes separadas">Baixar STL das peças (ZIP)</button>
+    </div>
+    <p class="nota">Imprime em pé, aberto para cima, sem suporte. Para comida e água use PETG (ou PLA próprio para alimentos) e lave à mão; a tigela de aço é a melhor escolha para água.</p>
+    <p class="nota priv">Tudo é gerado neste computador e nada é enviado para a internet.</p>
+  </aside>
+
+  <main class="palco">
+    <canvas id="cena" aria-label="Comedouro em 3D"></canvas>
+    <div class="topo">
+      <div class="grupo" role="group" aria-label="Mostrar">
+        <button type="button" id="verAco" class="on so-suporte">Tigela de aço</button><button type="button" id="verCorte">Ver por dentro</button>
+      </div>
+      <label class="impressora">Mesa<select id="impressora">
+        <option value="256x256x256">Bambu X1 / P1 / P2S / A1</option><option value="180x180x180">Bambu A1 mini</option><option value="350x320x325">Bambu H2D</option>
+        <option value="220x220x250">Creality Ender-3 V3 / K1</option><option value="300x300x300">Creality K1 Max / K2</option><option value="256x256x256">Elegoo Centauri Carbon</option>
+        <option value="250x250x260">Anycubic Kobra 3</option><option value="250x210x220">Prusa MK4 / Core One</option><option value="180x180x180">Prusa MINI</option></select></label>
+    </div>
+    <div class="medidas" id="medidas"></div>
+    <div class="ocupado" id="ocupado" hidden>Gerando…</div>
+  </main>
+</div>
+<script type="module" src="app.js"></script>
+</body></html>
