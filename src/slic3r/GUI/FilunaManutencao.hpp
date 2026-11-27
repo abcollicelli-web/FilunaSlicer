@@ -18,6 +18,7 @@ namespace Slic3r { namespace GUI { namespace FilunaManutencao {
 void iniciar();                        // uma vez, na abertura
 void conta(const std::string& token);  // entrou/saiu da conta: verifica de novo
 std::string build_local();             // id do build instalado (filuna-build.json ao lado do executável)
+std::string versao_do_pacote();        // versão do pacote da Microsoft Store ("2.5.93.0"); vazio fora da Store
 
 // Erro para o servidor. Não repete o mesmo erro em 60 s; sem conta, só registra no log local.
 void diagnostico(const std::string& etapa, const std::string& mensagem, const nlohmann::json& contexto = nlohmann::json::object());

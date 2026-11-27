@@ -4,6 +4,7 @@
 #include "FilunaMakerWorld.hpp"
 #include "FilunaImpressao.hpp"
 #include "FilunaAutoajuda.hpp"
+#include "FilunaNovidades.hpp"
 #include <initializer_list>
 
 #include <wx/event.h>
@@ -3285,6 +3286,9 @@ wxMenu* MainFrame::generate_help_menu()
             [](wxCommandEvent&) { run_scene_benchmark(); });
 
     helpMenu->AppendSeparator();
+
+    const wxString novidades = wxString::FromUTF8(FilunaNovidades::rotulo_menu());
+    append_menu_item(helpMenu, wxID_ANY, novidades, novidades, [](wxCommandEvent&) { FilunaNovidades::mostrar(); });
 
     append_menu_item(helpMenu, wxID_ANY, _L("Show Tip of the Day"), _L("Show Tip of the Day"), [](wxCommandEvent&) {
         wxGetApp().plater()->get_dailytips()->open();

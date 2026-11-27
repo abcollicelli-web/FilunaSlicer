@@ -22,6 +22,7 @@
 #include "FilunaDispositivos.hpp"
 #include "FilunaAtualizacao.hpp"
 #include "FilunaManutencao.hpp"
+#include "FilunaNovidades.hpp"
 #include "FilunaSync.hpp"
 #include "slic3r/Utils/BBLCloudServiceAgent.hpp"
 #include "slic3r/Utils/CloudDeleteQueue.hpp"
@@ -1159,6 +1160,7 @@ void GUI_App::post_init()
 
             this->check_new_version_sf();
             FilunaManutencao::iniciar();
+            FilunaNovidades::ao_abrir(cw_showed || !m_last_config_version); // novidades da versão, uma vez depois de atualizar
             FilunaImpressao::farm_iniciar();
             // Filuna: previa das duas telas de imprimir (so com FILUNA_PREVIA_IMPRIMIR=1), para aprovar o visual.
             if (wxGetEnv("FILUNA_PREVIA_IMPRIMIR", nullptr))
