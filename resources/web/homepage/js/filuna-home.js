@@ -212,7 +212,7 @@ function FlUpdDesenhar() {
 	// busca manual (botão "Procurar atualização"): mostra o resultado em vez de esperar a busca automática
 	var $b = $("#FlUpdBuscar"), $r = $("#FlVersaoAtual .r");
 	// instalado pela Microsoft Store: quem atualiza o programa é a Store, então aqui não há o que procurar
-	if (s == "loja") { $b.hide(); $r.text("atualizado pela Microsoft Store"); FlLojaConferir(e.build, e.versao_loja); return; }
+	if (s == "loja") { $b.hide(); $r.text("atualizado pela Microsoft Store"); FlLojaConferir(e.build, e.versao_loja); FlLojaJanela(); return; }
 	$b.text(s == "verificando" ? "Procurando…" : "Procurar atualização").toggleClass("off", s == "verificando" || s == "baixando" || s == "aplicando");
 	if (m_FlBusca && s == "verificando") m_FlViuVerif = true;
 	// a resposta imediata ao clique ainda traz o estado de antes: só conclui depois de ver "procurando" ou após 3 s
@@ -237,10 +237,28 @@ function FlUpdDesenhar() {
 	$("#FlUpdDepois").prop("disabled", ocupado);
 }
 
-// Instalado pela Microsoft Store: a Store atualiza sozinha, mas no horário dela e sem avisar. O site diz se este build
-// é mais velho que o publicado na loja; aí aparece "Nova versão na Microsoft Store", que abre o app na Store para
-// atualizar na hora (pedido do dono, 21/11/2026). Confere ao abrir e a cada 30 min.
+// Instalado pela Microsoft Store: a Store atualiza sozinha, mas no horário dela e só com o Filuna fechado. O programa
+// pergunta à própria Store (loja_nova) e o site diz se este build é mais velho que o publicado; com versão nova aparece
+// o aviso, e "Atualizar agora" pede à Store para baixar e instalar na hora (o Filuna fecha e abre de novo).
+// Se a Store falhar, o botão vira "Abrir na Microsoft Store". Confere ao abrir e a cada 30 min.
 var m_FlLoja = { em: 0, dados: null };
+function FlLojaTemNova() {
+	return !!(m_FlUpd.loja_nova || (m_FlLoja.dados && m_FlLoja.dados.atualizar));
+}
+function FlLojaJanela() {
+	var e = m_FlUpd, st = e.loja_estado || "", ocupado = st == "baixando" || st == "instalando";
+	if (!$("#FlUpdJanela").is(":visible")) return;
+	var pub = m_FlLoja.dados && m_FlLoja.dados.publicada ? String(m_FlLoja.dados.publicada).replace(/\.0$/, "") : "";
+	$("#FlUpdTitulo").text("Filuna Slicer " + pub);
+	$("#FlUpdNotas").html("<li>Versão nova do Filuna pela Microsoft Store.</li>");
+	$("#FlUpdInternos").hide(); $("#FlUpdTam").text("");
+	$("#FlUpdBarra").toggle(ocupado); $("#FlUpdBarra i").css("width", (st == "instalando" ? 100 : (e.feito || 0)) + "%");
+	$("#FlUpdMsg").text(st == "baixando" ? "Baixando pela Microsoft Store… " + (e.feito || 0) + "%" : st == "instalando" ? "Instalando. O Filuna fecha e abre de novo sozinho." :
+		st == "erro" ? (e.erro || "A Store não concluiu.") + " Dá para atualizar pela página do Filuna na Store." :
+		"A Microsoft Store baixa e instala agora. O Filuna fecha e abre de novo sozinho: salve o seu projeto antes.").toggleClass("erro", st == "erro");
+	$("#FlUpdAgora").prop("disabled", ocupado).text(st == "erro" ? "Abrir na Microsoft Store" : "Atualizar agora");
+	$("#FlUpdDepois").prop("disabled", ocupado);
+}
 function FlLojaConferir(build, versao) {
 	if (!build || Date.now() - m_FlLoja.em < 1800000) return FlLojaDesenhar();
 	m_FlLoja.em = Date.now();
@@ -248,11 +266,13 @@ function FlLojaConferir(build, versao) {
 		.then(function (d) { m_FlLoja.dados = d; FlLojaDesenhar(); }).catch(function () { m_FlLoja.em = 0; });
 }
 function FlLojaDesenhar() {
-	var d = m_FlLoja.dados;
-	if (!d || !d.atualizar) return;
+	var d = m_FlLoja.dados || {}, st = m_FlUpd.loja_estado || "";
+	if (!FlLojaTemNova() && st != "baixando" && st != "instalando") return;
+	var pub = d.publicada ? " " + String(d.publicada).replace(/\.0$/, "") : "";
 	$("#FlUpdAviso").show().addClass("loja");
-	$("#FlUpdAviso .t").text("Nova versão " + String(d.publicada || "").replace(/\.0$/, "") + " na Microsoft Store · Atualizar")
-		.attr("title", "Abre o Filuna na Microsoft Store. A Store instala a versão nova quando o Filuna estiver fechado.");
+	$("#FlUpdAviso .t").text(st == "baixando" ? "Baixando pela Microsoft Store… " + (m_FlUpd.feito || 0) + "%" : st == "instalando" ? "Instalando a versão nova…" :
+		st == "erro" ? "Atualização não concluída" : "Nova versão" + pub + " na Microsoft Store · Atualizar")
+		.attr("title", "A Microsoft Store baixa e instala agora; o Filuna fecha e abre de novo sozinho.");
 	$("#FlVersaoAtual .r").text("");
 }
 
@@ -294,11 +314,8 @@ $(function () {
 		'<p>Você muda isso depois, quando quiser.</p>' +
 		'<div class="bt"><button id="FlPrefSalvar">Salvar</button></div></div></div>');
 	$("#FlUpdAviso").on("click", function () {
-		// na versão da Store o aviso abre o Filuna na Microsoft Store, onde fica o botão Atualizar
-		if (m_FlUpd.situacao == "loja" && m_FlLoja.dados && m_FlLoja.dados.atualizar) {
-			try { window.wx.postMessage(JSON.stringify({ command: "common_openurl", url: m_FlLoja.dados.abrir })); } catch (e) { }
-			return;
-		}
+		// na versão da Store o aviso abre a janela com "Atualizar agora", que pede a instalação à própria Store
+		if (m_FlUpd.situacao == "loja") { $("#FlUpdJanela").show(); FlLojaJanela(); return; }
 		$("#FlUpdJanela").show(); FlUpdDesenhar();
 	});
 	$("#FlUpdDepois").on("click", function () { $("#FlUpdJanela").hide(); });
@@ -312,7 +329,13 @@ $(function () {
 		setTimeout(function () { FlManut("atualizacao.estado"); }, 4000);
 		setTimeout(function () { FlManut("atualizacao.estado"); }, 15000);
 	});
-	$("#FlUpdAgora").on("click", function () { FlManut(m_FlUpd.situacao == "erro" ? "atualizacao.verificar" : "atualizacao.aplicar"); });
+	$("#FlUpdAgora").on("click", function () {
+		if (m_FlUpd.situacao == "loja" && m_FlUpd.loja_estado == "erro") {
+			try { window.wx.postMessage(JSON.stringify({ command: "common_openurl", url: (m_FlLoja.dados && m_FlLoja.dados.abrir) || "ms-windows-store://pdp/?ProductId=9MV6C5DJ3201" })); } catch (e) { }
+			return;
+		}
+		FlManut(m_FlUpd.situacao == "erro" ? "atualizacao.verificar" : "atualizacao.aplicar");
+	});
 	$("#FlPrefSalvar").on("click", function () {
 		FlManut("preferencias.gravar", { inicio_windows: $("#FlPrefWin").prop("checked"), manter_login: $("#FlPrefLogin").prop("checked"), auto_dispositivos: $("#FlPrefDisp").prop("checked") });
 		$("#FlPrimeira").hide();

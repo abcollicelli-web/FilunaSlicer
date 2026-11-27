@@ -3,6 +3,7 @@
 #include <set>
 #include <boost/algorithm/string/case_conv.hpp>
 
+#include "FilunaLoja.hpp"
 #include "FilunaPanel.hpp"
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
@@ -224,6 +225,40 @@ void situacao(const std::string& s, const json& mais = json::object())
     avisar_telas();
 }
 
+// Versão da Store: o que a própria Store diz (loja_nova) e o andamento do "Atualizar agora" (loja_estado: baixando,
+// instalando, erro; feito; erro). Fica guardado à parte porque cada situacao() troca o estado inteiro.
+json g_loja = json::object();
+
+void situacao_loja(const json& mudar)
+{
+    json e;
+    {
+        std::lock_guard<std::mutex> g(g_trava);
+        for (auto it = mudar.begin(); it != mudar.end(); ++it)
+            g_loja[it.key()] = it.value();
+        e = g_loja;
+    }
+    e["versao_loja"] = versao_da_loja();
+    situacao("loja", e);
+}
+
+// Pergunta à Store se há versão nova para a conta Microsoft do Windows (vale também para o voo de teste).
+void loja_procurar()
+{
+    if (g_ocupado.exchange(true))
+        return;
+    std::thread([] {
+        std::string erro;
+        const int   r = FilunaLoja::procurar(erro);
+        g_ocupado     = false;
+        if (r < 0) {
+            BOOST_LOG_TRIVIAL(warning) << "Filuna: a Microsoft Store não respondeu sobre atualização: " << erro;
+            return;
+        }
+        situacao_loja({{"loja_nova", r == 1}});
+    }).detach();
+}
+
 std::string token_atual()
 {
     std::lock_guard<std::mutex> g(g_trava);
@@ -234,8 +269,10 @@ void preparar_em_segundo_plano();
 
 void verificar_agora()
 {
-    if (via_microsoft_store())
-        return situacao("loja", json{{"versao_loja", versao_da_loja()}});
+    if (via_microsoft_store()) {
+        situacao_loja(json::object());
+        return loja_procurar();
+    }
     const std::string token = token_atual();
     if (token.empty() || g_ocupado.exchange(true))
         return;
@@ -571,8 +608,41 @@ void preparar_em_segundo_plano()
     }).detach();
 }
 
+// "Atualizar agora" na versão da Store: a própria Store baixa e instala; o Windows fecha o programa para trocar os
+// arquivos e o abre de novo (registro de reinício em FilunaLoja::instalar).
+void aplicar_pela_loja()
+{
+    if (g_ocupado.exchange(true))
+        return;
+    void* janela = wxGetApp().mainframe != nullptr ? reinterpret_cast<void*>(wxGetApp().mainframe->GetHandle()) : nullptr;
+    situacao_loja({{"loja_estado", "baixando"}, {"feito", 0}, {"erro", ""}});
+    std::thread([janela] {
+        std::string erro;
+        int         ultimo = -1;
+        const bool  ok     = FilunaLoja::instalar(janela, [&ultimo](int p) {
+            if (p != ultimo)
+                situacao_loja({{"feito", ultimo = p}});
+        }, erro);
+        g_ocupado = false;
+        if (!ok) {
+            diagnostico("atualizacao.loja", erro, {{"versao_loja", versao_da_loja()}});
+            return situacao_loja({{"loja_estado", "erro"}, {"erro", erro}});
+        }
+        situacao_loja({{"loja_estado", "instalando"}, {"feito", 100}});
+        // o normal é o Windows fechar o programa logo; se a Store deixou para depois, fecha pela janela principal
+        // (a pergunta de projeto não salvo vale) para a instalação acontecer
+        std::this_thread::sleep_for(std::chrono::seconds(20));
+        wxGetApp().CallAfter([] {
+            if (wxGetApp().mainframe != nullptr)
+                wxGetApp().mainframe->Close(false);
+        });
+    }).detach();
+}
+
 void aplicar_agora()
 {
+    if (via_microsoft_store())
+        return aplicar_pela_loja();
     json doc;
     {
         std::lock_guard<std::mutex> g(g_trava);
@@ -866,10 +936,17 @@ void iniciar()
         g_token = texto_cfg("filuna_token");
     }
     if (via_microsoft_store()) {
-        situacao("loja", json{{"versao_loja", versao_da_loja()}});
+        situacao_loja(json::object());
 #ifdef _WIN32
         correcao_da_loja_iniciar();
 #endif
+        std::thread([] {
+            std::this_thread::sleep_for(std::chrono::seconds(20));
+            for (;;) {
+                loja_procurar();
+                std::this_thread::sleep_for(std::chrono::minutes(60));
+            }
+        }).detach();
         return;
     }
     // atualização anterior que não conseguiu copiar: avisa o servidor
