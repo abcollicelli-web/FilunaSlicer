@@ -3750,6 +3750,10 @@
   "com estoque baixo": "running low",
   "entrada": "slot",
   "guardada": "stored",
-  "Impressora": "Printer"
+  "Impressora": "Printer",
+  "bobinas": "spools",
+  "bobina": "spool",
+  "nenhuma": "none",
+  "nenhum": "none"
  }
 }
