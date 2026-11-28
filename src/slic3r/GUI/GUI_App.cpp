@@ -2890,7 +2890,7 @@ void GUI_App::init_app_config()
     if (app_config->get("filuna_instancia_unica2").empty()) {
         app_config->set_bool("single_instance", true);
         app_config->set("filuna_instancia_unica2", "1");
-        if (wxThread::IsMain())   // fora da linha principal (testes) o save() é proibido; grava no próximo save normal
+        if (is_main_thread_active())   // a mesma regra do AppConfig::save() (nos testes o app nasce fora dela)
             app_config->save();
     }
     // Speed Dial opens on a bare Space from any page by default. Seed the flag so Preferences and the
