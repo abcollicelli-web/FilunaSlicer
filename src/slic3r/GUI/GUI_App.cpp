@@ -2884,6 +2884,14 @@ void GUI_App::init_app_config()
         }
 #endif // _WIN32
     }
+    // Filuna: liga "um programa só" uma vez para quem já tinha o app_config com o "false" padrão do Orca (sem ter
+    // escolhido). Feito depois de ler o arquivo e gravado na hora: a próxima abertura (o arquivo aberto pelo Windows)
+    // já lê ligado e manda o arquivo para esta janela. Quem desligar depois nas Preferências continua desligado.
+    if (app_config->get("filuna_instancia_unica2").empty()) {
+        app_config->set_bool("single_instance", true);
+        app_config->set("filuna_instancia_unica2", "1");
+        app_config->save();
+    }
     // Speed Dial opens on a bare Space from any page by default. Seed the flag so Preferences and the
     // MainFrame shortcut read the same value; an existing config (true or false) is left untouched.
     if (app_config->get("enable_speed_dial").empty())
