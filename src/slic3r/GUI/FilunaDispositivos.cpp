@@ -407,6 +407,25 @@ json extra_de(MachineObject* o)
     return ex;
 }
 
+// Câmera ao vivo que o agente da marca descobriu (Filuna::set_camera_url). Vídeo em HTTP-FLV (Anycubic e outras): a
+// tela lê pelo repasse local, que acrescenta a permissão que a impressora não manda; câmera pelo repasse local também
+// para as demais (permite à tela tirar uma foto para a IA conferir a mesa e mostrar o quadro nos cartões).
+void camera_do_agente(json& c, const std::string& dev_id)
+{
+    const std::string cam = Filuna::camera_url(dev_id);
+    if (cam.empty())
+        return;
+    c["camera_url"] = cam;
+    std::string h, pt, cm;
+    const int   porta = cam.size() > 4 && Filuna::CameraRelay::destino_valido(cam, h, pt, cm) ? Filuna::CameraRelay::porta() : 0;
+    if (porta <= 0)
+        return;
+    const std::string repasse = "http://127.0.0.1:" + std::to_string(porta) + "/cam?u=" + Http::url_encode(cam);
+    c["camera_repasse"]       = repasse;
+    if (cam.find("/flv") != std::string::npos)
+        c["camera_flv"] = repasse;
+}
+
 json card(MachineObject* o)
 {
     json c = {{"dev_id", o->get_dev_id()}, {"nome", o->get_dev_name()}, {"ip", o->get_dev_ip()}, {"modelo", o->printer_type},
@@ -474,24 +493,7 @@ json card(MachineObject* o)
             c["camera_flv"] = "http://127.0.0.1:" + std::to_string(porta) + "/bambu-rtsp?d=" + Http::url_encode(o->get_dev_id());
         }
     }
-    const std::string cam = Filuna::camera_url(o->get_dev_id());
-    if (!cam.empty())
-        c["camera_url"] = cam; // câmera ao vivo que o agente da marca descobriu
-    // vídeo em HTTP-FLV (Anycubic e outras): a tela lê pelo repasse local, que acrescenta a permissão que a
-    // impressora não manda
-    // câmera pelo repasse local também para as demais (permite à tela tirar uma foto para a IA conferir a mesa)
-    if (cam.size() > 4) {
-        std::string h, pt, cm;
-        const int   porta = Filuna::CameraRelay::destino_valido(cam, h, pt, cm) ? Filuna::CameraRelay::porta() : 0;
-        if (porta > 0)
-            c["camera_repasse"] = "http://127.0.0.1:" + std::to_string(porta) + "/cam?u=" + Http::url_encode(cam);
-    }
-    if (cam.size() > 4 && cam.find("/flv") != std::string::npos) {
-        std::string h, pt, cm;
-        const int   porta = Filuna::CameraRelay::destino_valido(cam, h, pt, cm) ? Filuna::CameraRelay::porta() : 0;
-        if (porta > 0)
-            c["camera_flv"] = "http://127.0.0.1:" + std::to_string(porta) + "/cam?u=" + Http::url_encode(cam);
-    }
+    camera_do_agente(c, o->get_dev_id());
     std::string err = Filuna::erro(o->get_dev_id());
     // Bambu: o erro vem no próprio relatório (print_error), com o texto oficial da Bambu quando conhecido
     // Cancelada pelo cliente (0300-400C): não é erro da impressora, nem para o site nem para o Raio X.
@@ -1294,6 +1296,12 @@ json estado()
                     const json av = FilunaAoVivo::estado_de(d);
                     for (auto& [k, v] : av.items())
                         c[k] = v;
+                    // câmera do agente em segundo plano (Anycubic, Elegoo, Klipper): o cartão da lista mostra o quadro
+                    if (c.value("ligada", false)) {
+                        camera_do_agente(c, d);
+                        if (c.contains("camera_url"))
+                            c["camera"] = true;
+                    }
                     break;
                 }
             lista.push_back(c);

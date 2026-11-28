@@ -3207,7 +3207,19 @@
   "✦ Pergunte à Filuna": "✦ Ask Filuna",
   "✦ Seu": "✦ Your",
   "✨ Escrever descrição com a IA Filuna": "✨ Write description with Filuna AI",
-  "✨ Sugerir resposta": "✨ Suggest reply"
+  "✨ Sugerir resposta": "✨ Suggest reply",
+  "Conectando à câmera…": "Connecting to camera…",
+  "Voltar ao Meu espaço": "Back to My space",
+  "Voltar ao endereço da impressora": "Back to the printer address",
+  "Voltar ao painel": "Back to the dashboard",
+  "Voltar ao passo": "Back to step",
+  "Voltar aos fabricantes": "Back to manufacturers",
+  "Voltar aos filamentos": "Back to filaments",
+  "Voltar aos modelos": "Back to models",
+  "Voltar aos modelos 3D": "Back to 3D models",
+  "Voltar para": "Back to",
+  "Voltar à procura na rede": "Back to network search",
+  "Voltar às impressoras": "Back to printers"
  },
  "padroes": {
   "\"{0}\" não é um endereço da sua rede (exemplo: 192.168.0.50). Ele aparece na tela da impressora, em Configurações › Rede (WLAN) › IP — não confunda com a versão do firmware.": "\"{0}\" isn't an address on your network (example: 192.168.0.50). It's shown on the printer screen under Settings › Network (WLAN) › IP — don't confuse it with the firmware version.",
@@ -3741,7 +3753,9 @@
   "Último: {0}": "Last: {0}",
   "✓ Você confirmou que está ao lado da impressora (vale {0} min).": "✓ You confirmed you're next to the printer (valid for {0} min).",
   "✓ {0} ângulos": "✓ {0} angles",
-  "✦ Seu {0} sugeriu mudanças": "✦ Your {0} suggested changes"
+  "✦ Seu {0} sugeriu mudanças": "✦ Your {0} suggested changes",
+  "Voltar ao passo {0}": "Back to step {0}",
+  "Voltar para {0}": "Back to {0}"
  },
  "trechos": {
   "bobinas no estoque": "spools in inventory",

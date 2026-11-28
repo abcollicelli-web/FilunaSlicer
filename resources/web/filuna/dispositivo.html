@@ -101,6 +101,21 @@
 .ctlvivo .ctlon{font-size:12.5px;color:#1B7F4B;font-weight:600}.ctlvivo{margin:14px 0 4px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08)}.ctlvivo h4{margin:0 0 6px}.ctlvivo .lin,.fils .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctlvivo label,.fils .lin label{min-width:138px;font-size:13px;color:#5e5752}.ctlvivo input,.ctlvivo select,.fils .lin input{width:78px;padding:6px 8px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font:inherit;background:#fff}
 .un .cores{display:flex;gap:6px;flex-wrap:wrap;margin:-12px 0 16px}.un .cores .dot{width:16px;height:16px;border:1px solid rgba(0,0,0,.15)}
 .un .ft{height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}.un .ft img{max-height:150px;max-width:100%;object-fit:contain}
+.un .n{display:flex;align-items:center;gap:10px;min-width:0}
+.un .n .nm{min-width:0;overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.15}
+.un .n .pillv{flex:none;margin-left:0}.un.comcam .n{font-size:20px}
+/* Cartão com câmera (pedido do dono, 28/11/2026): a câmera ocupa o espaço da foto e a foto vira ícone ao lado do nome.
+   Sem quadro (sem câmera, desligada, sem conexão) o cartão fica como antes, com a foto grande. */
+.un .camv,.un .ico{display:none}
+.un.comcam .camv{display:block}.un.comcam .ico{display:flex}.un.comcam>.ft,.un.comcam>.ilu{display:none}
+.un .ico{width:46px;height:46px;border-radius:12px;background:#fff;align-items:center;justify-content:center;overflow:hidden;flex:none;border:1px solid var(--line)}
+.un .ico img{max-width:40px;max-height:40px;object-fit:contain}.un .ico svg{width:40px;height:auto}
+.camv{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:var(--scene);margin-bottom:16px}
+.camv canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}.camv.tem canvas{display:block}
+.camesp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#cfcac3;font-size:13px}.camv.tem .camesp{display:none}
+.camtag{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.5);color:#fff;font-size:12px;font-weight:600;padding:5px 10px;border-radius:8px;display:none;align-items:center;gap:7px}
+.camv.tem .camtag{display:flex}.camtag i{width:8px;height:8px;border-radius:50%;background:#E0186B;box-shadow:0 0 0 3px rgba(224,24,107,.25)}
+.campr{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.18)}.campr i{display:block;height:100%;background:#E0186B}
 .pillv{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:#E6E2DC;color:var(--ink2);margin-left:8px}.pillv.on{background:#DFF3E7;color:var(--good)}.pillv.imp{background:var(--rose);color:var(--magenta-deep)}
 </style>
 </head>
@@ -109,6 +124,8 @@
 <script src="ponte.js"></script>
 <script src="mpegts.js"></script>
 <script src="camera-conta.js"></script>
+<script src="camera-cartoes.js"></script>
+<script src="voltar.js"></script>
 <script src="casa-plugins.js"></script>
 <script src="casa.js"></script>
 <script src="diagnostico.js"></script>
@@ -236,7 +253,11 @@ function galeria(app) {
 			var pill = v ? '<span class="pillv' + (v.estado == "imprimindo" ? " imp" : v.ligada ? " on" : "") + '">' + (v.ligada ? (v.estado == "imprimindo" ? "imprimindo" : "ligada") : "desligada") + "</span>" : "";
 			var cores = v && v.cores && v.cores.length ? '<div class="cores">' + v.cores.map(function (c) { return '<span class="dot" title="' + E((c.material || "") + " " + (c.unidade || "") + "/" + (c.slot || "")) + '" style="background:' + corCss(c.cor) + '"></span>'; }).join("") + "</div>" : "";
 			var foto = u.foto ? '<div class="ft"><img src="' + E(u.foto) + '" alt=""></div>' : '<div class="ilu">' + ilustracao(240) + '</div>';
-			return '<div class="un">' + foto + '<div class="n">' + E(u.nome) + pill + '</div><div class="st' + (v && v.ligada ? " ok" : l.ok ? " ok" : "") + '">' + E(st) + "</div>" + cores +
+			// câmera ao vivo no lugar da foto, que vira ícone ao lado do nome (camera-cartoes.js pega os quadros)
+			var cam = v && CamCartoes.usaCamera(v), ico = '<span class="ico">' + (u.foto ? '<img src="' + E(u.foto) + '" alt="" onerror="this.style.display=\'none\'">' : ilustracao(40)) + "</span>";
+			var camv = cam ? '<div class="camv" data-camslot="' + E(v.dev_id) + '"><div class="camesp"><span class="spin"></span>Conectando à câmera…</div>' +
+				'<div class="camtag"><i></i>Câmera ao vivo</div>' + (v.estado == "imprimindo" || v.estado == "pausada" ? '<div class="campr"><i style="width:' + Math.max(0, Math.min(100, +v.progresso || 0)) + '%"></i></div>' : "") + "</div>" : "";
+			return '<div class="un' + (cam ? " comcam" : "") + '">' + camv + foto + '<div class="n">' + (cam ? ico : "") + '<span class="nm" title="' + E(u.nome) + '">' + E(u.nome) + "</span>" + pill + '</div><div class="st' + (v && v.ligada ? " ok" : l.ok ? " ok" : "") + '">' + E(st) + "</div>" + cores +
 				'<button class="btn' + (k == 0 ? " primario" : "") + '" data-u="' + E(u.id) + '">› &nbsp;Abrir unidade</button></div>';
 		}).join("") + "</div>" : '<div class="vazio">Nenhuma unidade neste filtro.</div>') +
 		'<div class="nota">Cadastro não é presença. Estado desconhecido não é apresentado como online.</div>' + (estado.erro ? '<div class="erro">' + E(estado.erro) + "</div>" : "") + "</div>";
@@ -245,6 +266,7 @@ function galeria(app) {
 	app.querySelectorAll("[data-f]").forEach(function (x) { x.onclick = function () { estado.filtro = x.dataset.f; galeria(app); }; });
 	app.querySelectorAll("[data-u]").forEach(function (x) { x.onclick = function () { estado.sel = x.dataset.u; estado.vista = "unidade"; estado.confirmar = null; estado.msg = ""; estado.pedeCodigo = false; estado.selecionando = null; desenhar(); }; });
 	poeCats(app);
+	CamCartoes.montar(app, estado.vivas);
 }
 
 // ---- Categorias do topo: impressoras de filamento, impressoras de resina e Casa (Filuna Home) ----
@@ -291,6 +313,10 @@ function galeriaResina(app) {
 
 function desenhar() {
 	var app = document.getElementById("app");
+	desenharVista(app);
+	if (!app.querySelector("[data-camslot]")) CamCartoes.parar(); // fora da lista de filamento: nenhuma câmera de cartão
+}
+function desenharVista(app) {
 	if (estado.vista == "assistente") { assistente(app); return; }
 	var u = estado.unidades.filter(function (x) { return x.id == estado.sel; })[0];
 	if (estado.vista == "raiox" && u) { RaioX.desenhar(app, u, function () { estado.vista = "unidade"; desenhar(); }, desenhar); return; }
@@ -372,7 +398,7 @@ function unidade(app, u) {
 	var flv = ativa && v.camera_flv && window.mpegts && mpegts.isSupported() ? v.camera_flv : "";
 	var foto = flv ? '<video data-cam="1" crossorigin="anonymous" data-src="' + E(flv) + '" muted autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>' : camVivo ? '<img alt="" data-cam="1"' + (v.camera_repasse ? ' crossorigin="anonymous"' : "") + ' data-src="' + E(camVivo) + '" style="width:100%;height:100%;object-fit:contain;background:#000" src="' + E(camVivo) + '" onerror="this.style.display=\'none\'">' : i.camera_em ? '<img id="cam" alt="">' : '<div class="cena"><div class="gantry"></div><div class="rail"></div><div class="cab"></div><div class="mesa"></div><div class="peca" style="height:' + (20 + prog) + 'px;background:' + (t && t.cor ? E(t.cor) : "#a83557") + '"></div></div>';
 	var passos = ["Preparado", "Enviado", "Imprimindo", "Concluído"], nivel = !t ? -1 : ({ aguardando: 0, bloqueado: 0, enviado: 1, imprimindo: 2, concluido: 3 }[t.estado] || 0);
-	var html = '<div style="padding:16px 32px 0;display:flex;justify-content:space-between;align-items:center"><a class="voltar" id="voltar">‹ Unidades</a>' +
+	var html = '<div class="fl-voltar-linha" style="padding:16px 32px 0">' + FilunaVoltar.html("Voltar às impressoras", { id: "voltar" }) +
 		'<span style="display:flex;gap:18px">' + '<a class="voltar" id="abrirRaioX" title="Raio X da impressora: erros com a foto e a região, reparo com a Filuna, impressões e manutenção">Assistência técnica</a>' +
 		((u.viva || u.farm) ? '<a class="voltar" id="excluirImp" style="color:#D9480F" title="Tira esta impressora do Filuna, do site e do app">Excluir impressora</a>' : "") + "</span></div>" + cabecalho(i.nome, i.estado, i.modelo || "", local) +
 		(v && v.erro ? '<div class="aviso" style="background:#FDE8DF;color:#D9480F"><span><b>A impressora informou um problema:</b> ' + E(v.erro) + ".</span></div>" : "") +
@@ -805,7 +831,11 @@ function carregarFotos() {
 // ---------- Assistente: conectar nova impressora ----------
 function abrirAssistente() { estado.assist = { passo: "marcas", marcas: [], marca: null, modelos: [], modelo: null, comp: null, prog: null, achadas: [], tentativas: 0, erro: "", ip: "", codigo: "", nome: "" }; estado.vista = "assistente"; desenhar(); }
 function assistente(app) {
-	var a = estado.assist, html = '<div class="pg"><div class="topo"><a class="voltar" id="voltarA">‹ ' + (a.passo == "marcas" ? "Impressoras" : "Voltar") + '</a>';
+	var a = estado.assist;
+	// Voltar com o destino de cada passo (o mesmo caminho do clique abaixo)
+	var destino = { marcas: "Voltar às impressoras", modelos: "Voltar aos fabricantes", complemento: "Voltar aos modelos", procurar: "Voltar aos modelos",
+		ip: "Voltar à procura na rede", ponte: "Voltar ao endereço da impressora" }[a.passo] || "Voltar aos fabricantes";
+	var html = '<div class="pg"><div class="topo">' + FilunaVoltar.html(destino, { id: "voltarA", style: "margin-bottom:14px" });
 	if (a.passo == "marcas") {
 		html += '<div class="h1">Conectar nova impressora</div><div class="sub">Escolha o fabricante. Elegoo e Anycubic já foram testadas em impressora real; as demais foram validadas em simulador e estão em teste com os primeiros clientes.</div></div>';
 		if (!a.marcas.length) { html += '<div class="carregando"><span class="spin"></span>Lendo o catálogo…</div>'; Filuna.nativo("dispositivos.fabricantes").then(function (r) { a.marcas = r.fabricantes || []; a.conta = r.conta; desenhar(); }).catch(function (e) { a.erro = e.message; desenhar(); }); }

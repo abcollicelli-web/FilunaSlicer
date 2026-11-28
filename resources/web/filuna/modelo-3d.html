@@ -11,6 +11,7 @@
 <style>
 main.m3d{padding-top:28px}
 .m3d-trilha a{cursor:pointer}
+.fl-voltar{margin-bottom:16px}
 .fl-msg{margin:0 0 14px;padding:12px 16px;border-radius:12px;font-weight:600;font-size:15px}
 .fl-msg.ok{background:var(--good-soft);color:#155F40}.fl-msg.erro{background:var(--warn-soft);color:#8A2C06}
 .fl-trava{font-size:13.5px;color:var(--ink2);margin-top:10px}
@@ -19,6 +20,7 @@ main.m3d{padding-top:28px}
 <body>
 <main class="m3d wrap" id="pagina"><p style="padding:60px 0;color:var(--ink2)">Carregando o modelo…</p></main>
 <script src="ponte.js"></script>
+<script src="voltar.js"></script>
 <script src="m3d/three.js"></script>
 <script src="m3d/orbit.js"></script>
 <script src="m3d/visualizador.js"></script>
@@ -36,6 +38,7 @@ function pct(a, tot) { return Math.round(a / tot * 10000) / 100; }
 
 function render() {
 	var m = D.m, r = D.resumos[0] || null, lic = D.licenca, h = "";
+	h += FilunaVoltar.html("Voltar aos modelos 3D", { href: "modelos-3d.html" });
 	h += '<nav class="m3d-trilha" aria-label="Você está em"><a href="modelos-3d.html">Modelos 3D</a><span aria-hidden="true">/</span><span>' + E(m.categoria) + "</span></nav>";
 	h += '<div id="msg"></div><div class="m3d-topo"><section class="m3d-palco" aria-label="Modelo em 3D"><div class="m3d-vista" id="vista"></div><div class="m3d-carregando" id="carregando"><span class="barra"><i id="carga"></i></span>Montando o modelo em 3D</div><p class="m3d-dica" id="dica" hidden>Arraste para girar e role para aproximar</p>';
 	if (r && r.mesas.length > 1) {
@@ -147,7 +150,7 @@ Filuna.iniciar().then(function () {
 	var url = "https://filuna3d.com/api/slicer/v1/modelos3d/" + slug + "/pagina";
 	return (Filuna.temToken() ? Filuna.api("GET", "/modelos3d/" + slug + "/pagina") : fetch(url).then(function (r) { return r.json(); }));
 }).then(function (d) { if (d.erro) throw d; D = d; render(); })
-	.catch(function (e) { document.getElementById("pagina").innerHTML = '<p style="padding:60px 0">' + E((e && e.erro) || "Sem conexão com o site.") + ' <a href="modelos-3d.html">Voltar</a></p>'; });
+	.catch(function (e) { document.getElementById("pagina").innerHTML = FilunaVoltar.html("Voltar aos modelos 3D", { href: "modelos-3d.html" }) + '<p style="padding:24px 0 60px">' + E((e && e.erro) || "Sem conexão com o site.") + "</p>"; });
 })();
 </script>
 </body>

@@ -9,8 +9,8 @@
 /* casca da tela no Slicer: o resto é o visual do site (farm-site.css) */
 body{font-size:16px;padding:28px 32px 60px}
 .fl-topo{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-.fl-topo a{font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink2);padding:8px 14px;border-radius:999px;cursor:pointer}
-.fl-topo a.on{background:var(--mag-soft);color:var(--mag-deep)}
+.fl-topo a:not(.fl-voltar){font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink2);padding:8px 14px;border-radius:999px;cursor:pointer}
+.fl-topo a.on:not(.fl-voltar){background:var(--mag-soft);color:var(--mag-deep)}
 .fl-local{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--good);background:var(--good-soft);border-radius:999px;padding:4px 10px;margin-left:auto}
 .fl-ocupado{opacity:.55;pointer-events:none}
 .fl-carregando{padding:60px;text-align:center;color:var(--ink2)}
@@ -31,6 +31,7 @@ body{font-size:16px;padding:28px 32px 60px}
 <nav class="fl-topo" id="topo"></nav>
 <div id="tela"><div class="fl-carregando">Carregando a Farm…</div></div>
 <script src="ponte.js"></script>
+<script src="voltar.js"></script>
 <script src="farm-plano.js"></script>
 <script src="farm-wizard.js"></script>
 <script src="farm-app.js"></script>

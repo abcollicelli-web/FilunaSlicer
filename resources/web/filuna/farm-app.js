@@ -166,7 +166,7 @@ function vPainel(d) {
 }
 
 function vImpressoras(d) {
-	var h = '<div class="cab-pag"><div><h1>Impressoras</h1><p>' + d.imps.length + " de " + d.lim.farm_impressoras + " no plano " + E(d.lim.plano) + '. O Filuna Slicer atualiza estado e cores sozinho.</p></div><a class="btn btn-line btn-sm" href="/farm">Voltar para a Farm</a></div>';
+	var h = '<div class="cab-pag"><div><h1>Impressoras</h1><p>' + d.imps.length + " de " + d.lim.farm_impressoras + " no plano " + E(d.lim.plano) + '. O Filuna Slicer atualiza estado e cores sozinho.</p></div></div>';
 	if (!d.lim.farm_impressoras) return h + sem_plano(d.lim);
 	if (d.erro) h += '<div class="alerta erro">' + E(d.erro) + "</div>";
 	h += '<section class="bloco" style="padding:8px 24px"><table class="tab"><tr><th>Impressora</th><th>Mesa</th><th>Cores carregadas</th><th>Estado</th><th>Fila</th></tr>';
@@ -188,7 +188,7 @@ function vImpressoras(d) {
 
 function vImpressora(d) {
 	var imp = d.imp, t = imp.trabalho, h = '<div class="cab-pag"><div><h1>' + E(imp.nome) + " " + estado_imp(imp, d.estados) + "</h1><p>" + E(imp.modelo_nome || "Impressora") + " · mesa " + cm(imp.mesa_w) + " × " + cm(imp.mesa_d) + " × " + cm(imp.mesa_h) + " cm · " + E((d.multicor || {})[imp.multicor] || "") +
-		(imp.visto_em ? " · vista pelo Slicer em " + quando(imp.visto_em) : "") + '</p></div><a class="btn btn-line btn-sm" href="/farm">Voltar para a Farm</a></div><div class="fm-duas"><div class="fm-principal"><section class="bloco"><h2>Trabalho atual</h2>';
+		(imp.visto_em ? " · vista pelo Slicer em " + quando(imp.visto_em) : "") + '</p></div></div><div class="fm-duas"><div class="fm-principal"><section class="bloco"><h2>Trabalho atual</h2>';
 	if (t && ["imprimindo", "pausada", "limpar_mesa"].indexOf(imp.estado) >= 0) {
 		h += '<div class="fm-job grande">' + foto(t.peca_id, t.cor_hex) + "<div><b>" + E(t.descricao) + "</b><small>mesa " + t.numero + " de " + t.total + " · " + t.quantidade + " peça" + pl_(t.quantidade, "", "s") + ' · <a href="/farm/pedidos/' + E(t.pedido_id) + '">pedido #' + E(t.pedido_numero) + "</a> · " + E(t.arquivo) + "</small><small>" +
 			E(t.material + " " + (t.cor_nome || "")) + " · " + (t.gramas ? g(t.gramas) : "filamento a medir") + " · " + (t.tempo_s ? horas(t.tempo_s) : "tempo a medir") + "</small></div></div>";
@@ -219,7 +219,7 @@ function vImpressora(d) {
 }
 
 function vEstoque(d) {
-	var h = '<div class="cab-pag"><div><h1>Estoque de filamento</h1><p>Cada bobina tem seu número, mesmo quando são iguais. A baixa acontece sozinha ao fim de cada impressão.</p></div><a class="btn btn-line btn-sm" href="/farm">Voltar para a Farm</a></div>';
+	var h = '<div class="cab-pag"><div><h1>Estoque de filamento</h1><p>Cada bobina tem seu número, mesmo quando são iguais. A baixa acontece sozinha ao fim de cada impressão.</p></div></div>';
 	if (d.erro) h += '<div class="alerta erro">' + E(d.erro) + "</div>";
 	h += '<section class="bloco" style="padding:8px 24px"><div class="fm-rola"><table class="tab"><tr><th>Bobina</th><th>Marca</th><th>Onde está</th><th>Restante</th><th>Na fila</th><th>Preço/kg</th><th>Ajustar</th></tr>';
 	(d.bobinas || []).forEach(function (b) {

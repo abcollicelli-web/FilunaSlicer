@@ -34,6 +34,7 @@
 	<div class="principal" id="tela"></div>
 </div></div></div>
 <script src="ponte.js"></script>
+<script src="voltar.js"></script>
 <script>
 var E = Filuna.esc;
 var TIPOS = {
@@ -90,7 +91,7 @@ function desenhar() {
 	var T = TIPOS[st.tipo], a = st.atual || {};
 	var valorAtual = a[T.opcao];
 	var etapas = ["Configurar", "Imprimir o teste", "Escolher e aplicar"];
-	var h = '<div class="lbl">Calibração interativa</div><div class="h1" style="margin-top:6px">' + E(T.nome) + "</div>" +
+	var h = (st.etapa > 1 ? FilunaVoltar.html("Voltar ao passo " + (st.etapa - 1), { id: "voltarPasso", style: "margin-bottom:16px" }) : "") + '<div class="lbl">Calibração interativa</div><div class="h1" style="margin-top:6px">' + E(T.nome) + "</div>" +
 		'<div class="passos">' + etapas.map(function (n, k) { return '<div class="ps' + (k + 1 == st.etapa ? " on" : k + 1 < st.etapa ? " feito" : "") + '"><b>Passo ' + (k + 1) + "</b>" + n + "</div>"; }).join("") + "</div>" +
 		'<div class="dois"><div class="card">';
 	if (st.etapa == 1) {
@@ -131,6 +132,7 @@ function desenhar() {
 		g.disabled = true; st.erro = st.msg = "";
 		Filuna.nativo("calibracao.gerar", { tipo: st.tipo, parametros: st.p }).then(function () { st.etapa = 2; desenhar(); }, function (e) { st.erro = e.message; desenhar(); });
 	};
+	var vp = el.querySelector("#voltarPasso"); if (vp) vp.onclick = function () { st.etapa--; st.msg = st.erro = ""; desenhar(); };
 	var im = el.querySelector("#imprimi"); if (im) im.onclick = function () { st.etapa = 3; desenhar(); };
 	var rf = el.querySelector("#refazer"); if (rf) rf.onclick = function () { escolher(st.tipo); };
 	var ap = el.querySelector("#aplicar"); if (ap) ap.onclick = function () {

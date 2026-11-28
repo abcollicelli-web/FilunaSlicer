@@ -178,7 +178,7 @@ var RaioX = (function () {
 	function desenhar(app, u, voltar, redesenhar) {
 		if (!st.c && !st.erro) { app.innerHTML = CSS + '<div class="rx">Carregando o Raio X…</div>'; carregar(u, redesenhar); return; }
 		var c = st.c;
-		var topo = '<div class="rx"><div class="rx-volta"><a class="voltar" id="rxVoltar">‹ ' + E(u.nome) + "</a>" + (c ? '<a class="voltar" id="rxSite">Abrir no site</a>' : "") + "</div>" +
+		var topo = '<div class="rx"><div class="rx-volta">' + FilunaVoltar.html("Voltar para " + u.nome, { id: "rxVoltar" }) + (c ? '<a class="voltar" id="rxSite">Abrir no site</a>' : "") + "</div>" +
 			'<div class="lbl" style="margin-top:8px">Assistência técnica · Raio X</div><h1>' + E(u.nome) + '</h1><div class="rx-sub">' + E((c && c.modelo) || u.modelo || "") + "</div>";
 		if (!c) { app.innerHTML = CSS + topo + '<div class="aviso" style="margin-top:14px"><span>' + E(st.erro) + "</span></div></div>"; ligar(app, u, voltar, redesenhar); return; }
 		var ag = c.agora || {}, pontos = (c.capa && c.capa.regioes) || {}, fora = (c.capa && c.capa.fora) || [], regioes = c.regioes || {};

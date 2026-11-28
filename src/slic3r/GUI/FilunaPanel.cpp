@@ -660,8 +660,11 @@ bool FilunaPanel::Show(bool show)
     const bool changed = wxPanel::Show(show);
     if (show)
         send_event("mostrar");
-    else if (m_estado_timer)
-        m_estado_timer->Stop();
+    else {
+        send_event("esconder"); // a tela para o que só serve com ela na frente (câmeras dos cartões do Dispositivo)
+        if (m_estado_timer)
+            m_estado_timer->Stop();
+    }
     return changed;
 }
 
