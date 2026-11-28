@@ -1,93 +1,141 @@
 {
-  "formato": 1,
-  "sobre": "Novidades do Filuna Slicer mostradas ao cliente uma vez, na primeira abertura depois de uma atualização. Cada versão (três números, como 2.5.93) tem seus itens; cada item tem o texto em português (pt) e em inglês (en), um ícone (ia, cores, atualizar, mundo, inicio, impressora, loja, estrela) e, se quiser, \"abrir\" com a aba do botão Experimentar (home, design, prepare, filuna.dispositivo, filuna.espaco, filuna.loja, filuna.farm, filuna.parametricos, filuna.modelos) e a seção. O site (Admin › Novidades) pode trocar os textos de uma versão sem lançar outra.",
-  "versoes": [
+ "formato": 1,
+ "sobre": "Novidades do Filuna Slicer mostradas ao cliente uma vez, na primeira abertura depois de uma atualização. Cada versão (três números, como 2.5.93) tem seus itens; cada item tem o texto em português (pt) e em inglês (en), um ícone (ia, cores, atualizar, mundo, inicio, impressora, loja, estrela) e, se quiser, \"abrir\" com a aba do botão Experimentar (home, design, prepare, filuna.dispositivo, filuna.espaco, filuna.loja, filuna.farm, filuna.parametricos, filuna.modelos) e a seção. O site (Admin › Novidades) pode trocar os textos de uma versão sem lançar outra.",
+ "versoes": [
+  {
+   "versao": "2.5.94",
+   "itens": [
     {
-      "versao": "2.5.93",
-      "itens": [
-        {
-          "icone": "ia",
-          "pt": {
-            "titulo": "Sua IA enxerga a peça que você modela",
-            "texto": "No Filuna CAD, a sua IA acompanha a peça enquanto você desenha e confere se ela pode ser impressa antes de ir para a mesa."
-          },
-          "en": {
-            "titulo": "Your AI sees the part you are designing",
-            "texto": "In Filuna CAD, your AI follows the part while you design it and checks that it can be printed before it goes to the plate."
-          },
-          "abrir": { "aba": "design" }
-        },
-        {
-          "icone": "cores",
-          "pt": {
-            "titulo": "Paramétricos com as cores certas",
-            "texto": "As cores que você escolhe num modelo paramétrico agora chegam iguais na Preparação, prontas para imprimir."
-          },
-          "en": {
-            "titulo": "Parametric models keep their colors",
-            "texto": "The colors you pick in a parametric model now arrive exactly the same in Prepare, ready to print."
-          },
-          "abrir": { "aba": "filuna.parametricos" }
-        },
-        {
-          "icone": "atualizar",
-          "pt": {
-            "titulo": "Botão Atualizar agora",
-            "texto": "Saiu versão nova? Um toque em Atualizar agora e o Filuna busca e instala para você, sem precisar procurar na loja."
-          },
-          "en": {
-            "titulo": "Update now button",
-            "texto": "New version out? One click on Update now and Filuna gets it and installs it for you, no need to look for it in the store."
-          }
-        },
-        {
-          "icone": "mundo",
-          "pt": {
-            "titulo": "Filuna em inglês e em dólar",
-            "texto": "O programa agora também fala inglês e mostra os preços em dólar para quem está nos Estados Unidos."
-          },
-          "en": {
-            "titulo": "Filuna in English and in dollars",
-            "texto": "The app now speaks English too and shows prices in US dollars for customers in the United States."
-          }
-        },
-        {
-          "icone": "inicio",
-          "pt": {
-            "titulo": "Seu dia na tela Início",
-            "texto": "A agenda do dia, os filamentos que estão acabando e as vendas do Mercado Livre aparecem juntos assim que você abre o Filuna."
-          },
-          "en": {
-            "titulo": "Your day on the Home screen",
-            "texto": "Today's schedule, the filaments running low and your Mercado Livre sales show up together as soon as you open Filuna."
-          },
-          "abrir": { "aba": "home" }
-        },
-        {
-          "icone": "impressora",
-          "pt": {
-            "titulo": "Diagnóstico das impressoras",
-            "texto": "Descubra o que está acontecendo com a sua impressora: o Filuna faz uma leitura completa, guia testes simples e acompanha a saúde dela com o tempo."
-          },
-          "en": {
-            "titulo": "Printer check-up",
-            "texto": "Find out what is going on with your printer: Filuna reads it from end to end, walks you through simple tests and keeps track of its health over time."
-          },
-          "abrir": { "aba": "filuna.espaco", "secao": "oficina" }
-        },
-        {
-          "icone": "loja",
-          "pt": {
-            "titulo": "Sua loja do Mercado Livre completa",
-            "texto": "Cuide dos anúncios com fotos, acompanhe os pedidos, responda perguntas e organize os envios sem sair do Filuna."
-          },
-          "en": {
-            "titulo": "Your full Mercado Livre store",
-            "texto": "Manage listings with photos, follow your orders, answer questions and organize shipping without leaving Filuna."
-          },
-          "abrir": { "aba": "filuna.espaco", "secao": "loja" }
-        }
-      ]
+     "icone": "ia",
+     "pt": {
+      "titulo": "Sua IA enxerga a peça que você modela",
+      "texto": "No Filuna CAD, a sua IA acompanha a peça enquanto você desenha e confere se ela pode ser impressa antes de ir para a mesa."
+     },
+     "en": {
+      "titulo": "Your AI sees the part you are designing",
+      "texto": "In Filuna CAD, your AI follows the part while you design it and checks that it can be printed before it goes to the plate."
+     },
+     "abrir": {
+      "aba": "design"
+     }
+    },
+    {
+     "icone": "cores",
+     "pt": {
+      "titulo": "Paramétricos com as cores certas",
+      "texto": "As cores que você escolhe num modelo paramétrico agora chegam iguais na Preparação, prontas para imprimir."
+     },
+     "en": {
+      "titulo": "Parametric models keep their colors",
+      "texto": "The colors you pick in a parametric model now arrive exactly the same in Prepare, ready to print."
+     },
+     "abrir": {
+      "aba": "filuna.parametricos"
+     }
+    },
+    {
+     "icone": "atualizar",
+     "pt": {
+      "titulo": "Botão Atualizar agora",
+      "texto": "Saiu versão nova? Um toque em Atualizar agora e o Filuna busca e instala para você, sem precisar procurar na loja."
+     },
+     "en": {
+      "titulo": "Update now button",
+      "texto": "New version out? One click on Update now and Filuna gets it and installs it for you, no need to look for it in the store."
+     }
+    },
+    {
+     "icone": "mundo",
+     "pt": {
+      "titulo": "Filuna em inglês e em dólar",
+      "texto": "O programa agora também fala inglês e mostra os preços em dólar para quem está nos Estados Unidos."
+     },
+     "en": {
+      "titulo": "Filuna in English and in dollars",
+      "texto": "The app now speaks English too and shows prices in US dollars for customers in the United States."
+     }
+    },
+    {
+     "icone": "inicio",
+     "pt": {
+      "titulo": "Seu dia na tela Início",
+      "texto": "A agenda do dia, os filamentos que estão acabando e as vendas do Mercado Livre aparecem juntos assim que você abre o Filuna."
+     },
+     "en": {
+      "titulo": "Your day on the Home screen",
+      "texto": "Today's schedule, the filaments running low and your Mercado Livre sales show up together as soon as you open Filuna."
+     },
+     "abrir": {
+      "aba": "home"
+     }
+    },
+    {
+     "icone": "impressora",
+     "pt": {
+      "titulo": "Todas as impressoras ao vivo",
+      "texto": "Na tela Dispositivo, cada impressora ligada mostra a câmera ao vivo. Você acompanha de uma vez todas as que estão imprimindo."
+     },
+     "en": {
+      "titulo": "All your printers, live",
+      "texto": "On the Device screen, every printer that's on shows its live camera, so you can watch everything that's printing at a glance."
+     },
+     "abrir": {
+      "aba": "filuna.dispositivo"
+     }
+    },
+    {
+     "icone": "estrela",
+     "pt": {
+      "titulo": "Um Filuna só, vários arquivos",
+      "texto": "Abrir um arquivo não abre outro Filuna: ele entra na mesma janela. Troque entre os arquivos abertos pela coluna à esquerda da mesa e feche o que não precisar."
+     },
+     "en": {
+      "titulo": "One Filuna, many files",
+      "texto": "Opening a file no longer opens another Filuna: it joins the same window. Switch between your open files from the column beside the plate and close what you don't need."
+     }
+    },
+    {
+     "icone": "inicio",
+     "pt": {
+      "titulo": "Botão Voltar mais fácil",
+      "texto": "Em todas as telas, um botão Voltar bem à vista mostra para onde você volta."
+     },
+     "en": {
+      "titulo": "An easier Back button",
+      "texto": "Every screen now has a clear Back button that tells you where it takes you."
+     }
+    },
+    {
+     "icone": "impressora",
+     "pt": {
+      "titulo": "Diagnóstico das impressoras",
+      "texto": "Descubra o que está acontecendo com a sua impressora: o Filuna faz uma leitura completa, guia testes simples e acompanha a saúde dela com o tempo."
+     },
+     "en": {
+      "titulo": "Printer check-up",
+      "texto": "Find out what is going on with your printer: Filuna reads it from end to end, walks you through simple tests and keeps track of its health over time."
+     },
+     "abrir": {
+      "aba": "filuna.espaco",
+      "secao": "oficina"
+     }
+    },
+    {
+     "icone": "loja",
+     "pt": {
+      "titulo": "Sua loja do Mercado Livre completa",
+      "texto": "Cuide dos anúncios com fotos, acompanhe os pedidos, responda perguntas e organize os envios sem sair do Filuna."
+     },
+     "en": {
+      "titulo": "Your full Mercado Livre store",
+      "texto": "Manage listings with photos, follow your orders, answer questions and organize shipping without leaving Filuna."
+     },
+     "abrir": {
+      "aba": "filuna.espaco",
+      "secao": "loja"
+     }
     }
-  ]
+   ]
+  }
+ ]
 }
