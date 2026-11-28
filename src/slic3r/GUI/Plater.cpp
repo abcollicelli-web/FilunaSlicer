@@ -6,6 +6,7 @@
 #include "slic3r/Filuna/FilunaDb.hpp"
 #include "FilunaDados.hpp"
 #include "FilunaImpressao.hpp"
+#include "FilunaAbertos.hpp"
 #include "FilunaDispositivos.hpp"
 #include "DeviceCore/FilunaOEMOverlay.hpp"
 #include "../../../FILUNA/fabricantes/bambu/engine/BambuA1ConfigOverlay.hpp"
@@ -9333,9 +9334,13 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         for (size_t i = 0; i < evt.data.size(); ++i) {
             input_files.push_back(from_u8(evt.data[i].string()));
         }
-        wxGetApp().mainframe->Show();
-        wxGetApp().mainframe->Raise();
-        this->q->load_files(input_files);
+        // Filuna: o arquivo entra como arquivo novo na lista de abertos (não troca o projeto da tela sem perguntar).
+        MainFrame* janela = wxGetApp().mainframe;
+        if (janela->IsIconized())
+            janela->Iconize(false);
+        janela->Show();
+        janela->Raise();
+        FilunaAbertos::abrir_de_fora(input_files);
     });
     
     this->q->Bind(EVT_START_DOWNLOAD_OTHER_INSTANCE, [](StartDownloadOtherInstanceEvent& evt) {
@@ -19694,6 +19699,8 @@ void Plater::refresh_belt_view()
 }
 
 // BBS
+void Plater::set_project_name(const wxString& project_name) { p->set_project_name(project_name); }
+
 wxString Plater::get_project_name()
 {
     return p->get_project_name();

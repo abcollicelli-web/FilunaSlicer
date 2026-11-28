@@ -193,8 +193,13 @@ void AppConfig::set_defaults()
             set_bool("use_retina_opengl", true);
 #endif
 
-        if (get("single_instance").empty())
-            set_bool("single_instance", false);
+        // Filuna: um programa só; o arquivo aberto pelo Windows vai para a janela que já está aberta (lista de
+        // abertos). Quem já tinha o app_config ganhou o "false" padrão do Orca sem escolher: liga uma vez, marcada em
+        // filuna_instancia_unica; quem desligar depois nas Preferências fica desligado.
+        if (get("filuna_instancia_unica").empty()) {
+            set_bool("single_instance", true);
+            set("filuna_instancia_unica", "1");
+        }
 
 #ifdef SUPPORT_REMEMBER_OUTPUT_PATH
         if (get("remember_output_path").empty())

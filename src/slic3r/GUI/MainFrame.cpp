@@ -1,5 +1,6 @@
 #include "MainFrame.hpp"
 #include "FilunaIdioma.hpp"
+#include "FilunaAbertos.hpp"
 #include "FilunaPanel.hpp"
 #include "FilunaMakerWorld.hpp"
 #include "FilunaImpressao.hpp"
@@ -716,6 +717,11 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
             return wxGetApp().check_and_save_current_preset_changes(_L("Closing application"), _L("Closing Application while some presets are modified."));
         };
 
+        // Filuna: os outros arquivos abertos com mudança não salva perguntam antes (o da tela pergunta logo abaixo).
+        if (event.CanVeto() && !FilunaAbertos::confirmar_saida()) {
+            event.Veto();
+            return;
+        }
         // BBS: close save project
         int result;
         if (event.CanVeto() && ((result = m_plater->close_with_confirm(check)) == wxID_CANCEL)) {
@@ -744,6 +750,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
         //}
     #endif
 
+        FilunaAbertos::encerrar();
         MarkdownTip::ExitTip();
         // Prevent queued selection/UI refresh work from running as normal during reset.
         wxGetApp().set_closing(true);

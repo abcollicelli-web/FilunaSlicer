@@ -145,7 +145,20 @@ namespace instance_check_internal
 	}
 	static bool send_message(const std::string& message, const std::string &version)
 	{
-		if (!EnumWindows(EnumWindowsProc, 0)) {
+		// Filuna: a primeira instância só se apresenta no fim do post_init (propriedades da janela). Dois cliques
+		// seguidos, ou vários arquivos abertos juntos pelo Explorer, chegam antes disso: espera a janela em vez de
+		// sair e perder o arquivo.
+		bool achou = false;
+		for (int tentativa = 0; tentativa < 120 && !achou; ++tentativa) {
+			achou = !EnumWindows(EnumWindowsProc, 0);
+			if (!achou)
+				::Sleep(250);
+		}
+		if (achou) {
+			DWORD outro_processo = 0;
+			::GetWindowThreadProcessId(orca_slicer_hwnd, &outro_processo);
+			if (outro_processo != 0)
+				::AllowSetForegroundWindow(outro_processo); // a janela existente pode vir para a frente sozinha
 			std::wstring wstr = boost::nowide::widen(message);
 			std::unique_ptr<LPWSTR> command_line_args = std::make_unique<LPWSTR>(const_cast<LPWSTR>(wstr.c_str()));
 			/*LPWSTR command_line_args = new wchar_t[wstr.size() + 1];
@@ -318,7 +331,22 @@ bool instance_check(int argc, char** argv, bool app_config_single_instance)
 {
 	std::size_t hashed_path;
 #ifdef _WIN32
-	hashed_path = std::hash<std::string>{}(boost::filesystem::system_complete(argv[0]).string());
+	// Filuna: o caminho real do exe, em minúsculas. argv[0] muda com a forma de abrir (atalho do Iniciar, "Abrir com",
+	// alias do pacote da Microsoft Store em %LOCALAPPDATA%\Microsoft\WindowsApps, maiúsculas do Explorer) e cada
+	// variação virava outra "instância", que abria outra janela.
+	{
+		std::wstring exe(MAX_PATH, L'\0');
+		DWORD n = ::GetModuleFileNameW(nullptr, exe.data(), DWORD(exe.size()));
+		while (n == exe.size()) {
+			exe.resize(exe.size() * 2);
+			n = ::GetModuleFileNameW(nullptr, exe.data(), DWORD(exe.size()));
+		}
+		exe.resize(n);
+		if (exe.empty())
+			exe = boost::filesystem::system_complete(argv[0]).wstring();
+		::CharLowerBuffW(exe.data(), DWORD(exe.size()));
+		hashed_path = std::hash<std::string>{}(boost::nowide::narrow(exe));
+	}
 #else
 	boost::system::error_code ec;
 #ifdef __linux__
@@ -365,7 +393,13 @@ bool instance_check(int argc, char** argv, bool app_config_single_instance)
 	// get_lock() creates the lockfile therefore *cla.should_send is checked after
 	if (instance_check_internal::get_lock(lock_name + ".lock", data_dir() + "/cache/") && *cla.should_send) {
 #endif
-		instance_check_internal::send_message(cla.cl_string, lock_name);
+		if (!instance_check_internal::send_message(cla.cl_string, lock_name)) {
+#ifdef _WIN32
+			// A outra instância não apareceu (travada ou fechando): abre esta em vez de sumir com o arquivo.
+			BOOST_LOG_TRIVIAL(error) << "Instance check: another instance holds the lock but its window never answered; starting normally.";
+			return false;
+#endif
+		}
 		BOOST_LOG_TRIVIAL(error) << "Instance check: Another instance found. This instance will terminate. Lock file of current running instance is located at " << data_dir() << 
 #ifdef _WIN32
 			"\\cache\\"

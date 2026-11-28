@@ -543,6 +543,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/FilunaAtualizacao.hpp
     GUI/FilunaPanel.cpp
     GUI/FilunaPanel.hpp
+    GUI/FilunaAbertos.cpp
+    GUI/FilunaAbertos.hpp
     GUI/FilunaIdioma.cpp
     GUI/FilunaIdioma.hpp
     GUI/FilunaLateral.cpp
