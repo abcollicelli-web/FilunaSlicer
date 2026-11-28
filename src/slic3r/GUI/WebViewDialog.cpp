@@ -21,6 +21,7 @@
 #include "libslic3r/Utils.hpp"
 #include "slic3r/Filuna/FilunaRecursos.hpp"
 #include "slic3r/Filuna/FilunaVersoes.hpp"
+#include "FilunaIdioma.hpp"
 #include <wx/log.h>
 #include "libslic3r/Config.hpp"
 #include "slic3r/Utils/NetworkAgent.hpp"
@@ -321,6 +322,9 @@ void WebViewPanel::create_browser()
     // Created empty and loaded after the strings are added, so the first load already has them.
     m_browser = WebView::CreateWebView(this, wxEmptyString);
     m_browser->AddUserScript(wxString::FromUTF8(WebViewHostDialog::localized_strings_script(home_page_strings())));
+    // Filuna: partes da Início escritas em português (Seu dia, conta, Farm, estoque) saem em inglês com o programa em
+    // inglês, pelo mesmo dicionário e tradutor das telas Filuna; em português só diz o idioma.
+    m_browser->AddUserScript(wxString::FromUTF8(Filuna::roteiro_telas()));
     WebView::LoadUrl(m_browser, m_home_url);
     m_browser->Hide();
 }

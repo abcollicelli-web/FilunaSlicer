@@ -17,7 +17,7 @@ var FD_IC = {
 };
 
 function fdMoeda(v, moeda) {
-	try { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: moeda || (FD.dados && FD.dados.moeda) || "BRL" }).format(+v || 0); }
+	try { return new Intl.NumberFormat(FlLocal(), { style: "currency", currency: moeda || (FD.dados && FD.dados.moeda) || "BRL" }).format(+v || 0); }
 	catch (e) { return "R$ " + (+v || 0).toFixed(2).replace(".", ","); }
 }
 function fdAgoraHM() { var d = new Date(); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
@@ -26,7 +26,7 @@ function fdPrazo(iso) {
 	if (!d || isNaN(d)) return { txt: "", atrasado: false };
 	var hm = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2), hoje = new Date();
 	var mesmoDia = d.toDateString() == hoje.toDateString();
-	return { txt: (mesmoDia ? "hoje até " : ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + " até ") + hm, atrasado: d < hoje };
+	return { txt: (mesmoDia ? "hoje até " : d.toLocaleDateString(FlLocal(), { day: "2-digit", month: "2-digit" }) + " até ") + hm, atrasado: d < hoje };
 }
 
 /* ---------- conversa com o site ---------- */
@@ -80,7 +80,7 @@ function fdAgenda(d) {
 	var prox = vem.filter(function (a) { return a.hora; })[0];
 	var h = vem.concat(foi).slice(0, 3).map(function (a) {
 		return '<a class="FdLin t-' + FlEsc(a.tipo) + (a.hora && a.hora < agora ? " passou" : "") + (a === prox ? " prox" : "") + '" data-i="' + fdItem(a) + '" title="' + FlEsc(a.titulo + " · " + (a.detalhe || "")) + '">' +
-			'<span class="FdHora">' + FlEsc(a.hora || "hoje") + '</span><span class="FdTx"><b>' + FlEsc(a.titulo) + "</b><small>" + FlEsc((FD_TIPOS[a.tipo] || "") + (a.detalhe ? " · " + a.detalhe : "")) + "</small></span></a>";
+			'<span class="FdHora">' + FlEsc(a.hora || "hoje") + '</span><span class="FdTx"><b>' + FlEsc(a.titulo) + "</b><small><span>" + FlEsc(FD_TIPOS[a.tipo] || "") + "</span>" + FlEsc(a.detalhe ? " · " + a.detalhe : "") + "</small></span></a>";
 	}).join("");
 	var total = d.agenda_total || l.length;
 	return fdBloco("FdAgenda", "agenda", "violeta", "Agenda de hoje", total ? String(total) : "", { rotulo: "Farm", link_aba: "filuna.farm" },
@@ -95,7 +95,7 @@ function fdEstoque(d) {
 		var bob = window.Filuna && Filuna.bobinaSVG ? Filuna.bobinaSVG(b.cor || "#C2185B", 30, frac) : '<i class="FdCor" style="background:' + FlEsc(b.cor) + '"></i>';
 		return '<a class="FdLin FdBob' + (b.restante_g < lim / 2 ? " critico" : "") + '" data-i="' + fdItem({ link_aba: "filuna.espaco", secao: "estoque" }) + '" title="' + FlEsc("Limite de estoque baixo: " + lim + " g") + '">' +
 			'<span class="FdBobImg">' + bob + '</span><span class="FdTx"><b>' + FlEsc((b.material || "") + " " + (b.cor_nome || "")) + "</b><small>" +
-			FlEsc((b.marca ? b.marca + " · " : "") + (b.bobina || "") + (b.na_impressora ? " · na " + b.na_impressora : " · guardada")) + '</small></span><span class="FdG">' + FlEsc(FlGramas(b.restante_g)) + "</span></a>";
+			FlEsc((b.marca ? b.marca + " · " : "") + (b.bobina || "") + " · ") + "<span>" + FlEsc(b.na_impressora ? "na " + b.na_impressora : "guardada") + "</span>" + '</small></span><span class="FdG">' + FlEsc(FlGramas(b.restante_g)) + "</span></a>";
 	}).join("");
 	return fdBloco("FdEstoque", "estoque", "laranja", "Estoque baixo", l.length ? String(d.estoque_baixo_total || l.length) : "", { rotulo: "Estoque", link_aba: "filuna.espaco", secao: "estoque" },
 		h || fdVazio("Todas as bobinas acima de " + lim + " g."));
@@ -145,7 +145,7 @@ function fdDesenhar() {
 	if (!d) { el.find(".FdGrade").html('<p class="FdVazio">Carregando o seu dia…</p>'); return; }
 	FD.itens = [];
 	var dt = new Date(d.hoje + "T12:00:00");
-	$("#FdData").text(isNaN(dt) ? "" : dt.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" }));
+	$("#FdData").text(isNaN(dt) ? "" : dt.toLocaleDateString(FlLocal(), { weekday: "long", day: "numeric", month: "long" }));
 	$("#FdHora").text("atualizado às " + fdAgoraHM());
 	el.find(".FdGrade").html(fdAgenda(d) + fdEstoque(d) + fdVendas(d) + fdEnviar(d));
 	el.find("img").on("error", function () { $(this).replaceWith(FD_IC.vendas); });

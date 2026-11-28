@@ -176,7 +176,7 @@ var FilunaCasa = (function () {
 		redesenhar();
 	}
 
-	function quando(iso) { try { var d = new Date(iso); return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
+	function quando(iso) { try { var d = new Date(iso); return d.toLocaleDateString(Filuna.local(), { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString(Filuna.local(), { hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
 
 	function redesenhar() {
 		if (!alvo || st.janela) return;
@@ -187,7 +187,7 @@ var FilunaCasa = (function () {
 			'<p>O Filuna encontra os aparelhos da sua casa e ensina a ligar cada um. Depois de um teste, você escolhe o texto, a cor e o estilo de cada aviso: impressão concluída, erro, pausa e nova venda chegam na TV, nas luzes, no celular e na tela do computador.</p></div>' +
 			'<div class="fh-busca' + (st.procurando ? " girando" : "") + '"><span class="fh-radar"></span><div><b>' +
 			(st.procurando ? "Procurando na sua rede…" : lista.length + (lista.length == 1 ? " aparelho" : " aparelhos")) + "</b><small>" +
-			(st.procurando ? "TVs, tomadas, luzes, roteador e central" : st.quando ? "Busca deste computador · " + new Date(st.quando).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "Ainda não procurou") +
+			(st.procurando ? "TVs, tomadas, luzes, roteador e central" : st.quando ? "Busca deste computador · " + new Date(st.quando).toLocaleTimeString(Filuna.local(), { hour: "2-digit", minute: "2-digit" }) : "Ainda não procurou") +
 			'</small></div><button class="btn" id="fh-procurar"' + (st.procurando ? " disabled" : "") + ">Procurar de novo</button></div></div>";
 		if (!Filuna.temToken()) h += '<div class="fh-aviso-top">Entre na sua conta Filuna para a configuração valer também no site e no app. Sem conta, ela fica só neste computador.</div>';
 		if (st.erro) h += '<div class="fh-aviso-top">' + E(st.erro) + "</div>";

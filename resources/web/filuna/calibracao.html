@@ -149,7 +149,7 @@ function historico(el) {
 	Filuna.api("GET", "/calibracoes").then(function (r) {
 		var l = r.calibracoes || [];
 		el.querySelector("#h").innerHTML = l.length ? '<table class="hist" style="width:100%;border-collapse:collapse"><tr><th>Quando</th><th>Teste</th><th>Filamento</th><th>Impressora</th><th>Valor</th></tr>' +
-			l.map(function (c) { var T = TIPOS[c.tipo]; return "<tr><td>" + E((c.em || "").slice(0, 10).split("-").reverse().join("/")) + "</td><td>" + E(T ? T.nome : c.tipo) + "</td><td>" + E(c.filamento) + "</td><td>" + E(c.impressora) + "</td><td><b>" + E(T ? T.formato(c.valor) : c.valor) + "</b></td></tr>"; }).join("") + "</table>"
+			l.map(function (c) { var T = TIPOS[c.tipo]; return "<tr><td>" + E((function (p) { return p.length < 3 ? "" : Filuna.local() == "en-US" ? p[1] + "/" + p[2] + "/" + p[0] : p[2] + "/" + p[1] + "/" + p[0]; })((c.em || "").slice(0, 10).split("-"))) + "</td><td>" + E(T ? T.nome : c.tipo) + "</td><td>" + E(c.filamento) + "</td><td>" + E(c.impressora) + "</td><td><b>" + E(T ? T.formato(c.valor) : c.valor) + "</b></td></tr>"; }).join("") + "</table>"
 			: '<div class="vazio">Nenhuma calibração salva ainda.</div>';
 	}, function (e) { el.querySelector("#h").innerHTML = '<div class="erro">' + E(e.erro) + "</div>"; });
 }

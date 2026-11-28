@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Frases em português das telas Filuna e do C++ da Filuna, para o dicionário de inglês.
 
-Varre as telas web (resources/web/filuna: HTML, textos e atributos, e as strings dos scripts) e o C++ da Filuna
+Varre as telas web (resources/web/filuna: HTML, textos e atributos, e as strings dos scripts; e as partes Filuna da
+tela Início, resources/web/homepage/index.html e js/filuna-*.js) e o C++ da Filuna
 (src/slic3r/GUI/Filuna*.cpp, CAD/*Filuna*, src/slic3r/Filuna). Junta as partes de frases montadas com variáveis
 ("A impressora " + nome + " parou") em padrões com {0}, {1}... e compara com resources/web/filuna/i18n/en.json.
 
@@ -26,6 +27,7 @@ from html.parser import HTMLParser
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 TELAS = os.path.join(RAIZ, "resources", "web", "filuna")
 DICIONARIO = os.path.join(TELAS, "i18n", "en.json")
+INICIO = os.path.join(RAIZ, "resources", "web", "homepage")
 IGNORAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ignorar.json")
 
 # Telas: tudo em resources/web/filuna menos bibliotecas de terceiros e o próprio dicionário.
@@ -483,9 +485,14 @@ class LeitorHtml(HTMLParser):
 def arquivos_web():
     for p in sorted(glob.glob(os.path.join(TELAS, "**", "*"), recursive=True)):
         rel = os.path.relpath(p, TELAS).replace(os.sep, "/")
-        if rel in FORA_WEB or rel.startswith("farm-py/") or not re.search(r"\.(html|js)$", rel):
+        if rel in FORA_WEB or rel.startswith("farm-py/") or rel.endswith(".test.js") or not re.search(r"\.(html|js)$", rel):
             continue
         yield p, rel
+    # Tela Início: as partes da Filuna (o resto é do OrcaSlicer, traduzido pelo i18n.js dele). O programa injeta o
+    # mesmo tradutor nela (WebViewDialog.cpp).
+    for p in [os.path.join(INICIO, "index.html")] + sorted(glob.glob(os.path.join(INICIO, "js", "filuna-*.js"))):
+        if os.path.exists(p):
+            yield p, "homepage/" + os.path.relpath(p, INICIO).replace(os.sep, "/")
 
 
 def coletar():

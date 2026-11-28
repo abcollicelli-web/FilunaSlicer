@@ -59,7 +59,10 @@ function FlEsc(s) {
 	});
 }
 
-function FlGramas(g) { return Math.round(g || 0).toLocaleString("pt-BR") + " g"; }
+// Datas e números no idioma do programa (o tradutor das telas Filuna diz qual): "en-US" em inglês, senão "pt-BR".
+function FlLocal() { return window.FilunaI18n && FilunaI18n.idioma() == "en" ? "en-US" : "pt-BR"; }
+
+function FlGramas(g) { return Math.round(g || 0).toLocaleString(FlLocal()) + " g"; }
 
 function FlErro(msg) { $("#FlErro").text(msg || ""); }
 
@@ -103,7 +106,7 @@ function FlAtualizar() {
 		});
 		$("#FlAvisos").html(h || '<p class="FlVazio">Nada precisa de você agora.</p>');
 		FlStatus(true, "Sincronizado");
-		$(".FlStatus").attr("title", "Última sincronização com o site: " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+		$(".FlStatus").attr("title", "Última sincronização com o site: " + new Date().toLocaleTimeString(FlLocal(), { hour: "2-digit", minute: "2-digit" }));
 		if ($(".BtnItemSelected").attr("menu") === "filuna_farm") FlImpressoras();
 		if ($(".BtnItemSelected").attr("menu") === "filuna_estoque") FlEstoque();
 	}).catch(function (e) {
@@ -118,8 +121,8 @@ function FlImpressoras() {
 		var h = "";
 		r.impressoras.forEach(function (i) {
 			h += '<div class="FlImp"><div class="FlImpCab"><b>' + FlEsc(i.nome) + '</b><span class="FlPilula FlEstado-' + FlEsc(i.estado) + '">' +
-				FlEsc(FL_ESTADOS[i.estado] || i.estado) + "</span></div><small>Mesa " + (i.mesa.w / 10).toLocaleString("pt-BR") + " × " +
-				(i.mesa.d / 10).toLocaleString("pt-BR") + " cm</small>";
+				FlEsc(FL_ESTADOS[i.estado] || i.estado) + "</span></div><small>Mesa " + (i.mesa.w / 10).toLocaleString(FlLocal()) + " × " +
+				(i.mesa.d / 10).toLocaleString(FlLocal()) + " cm</small>";
 			i.slots.forEach(function (s) {
 				h += '<div class="FlSlot"><i style="background:' + FlEsc(s.cor || "#EFE9DF") + '"></i><span>' +
 					(s.material ? FlEsc(s.material + " " + s.cor_nome) : "Posição " + s.posicao + " vazia") + "</span><em>" +
@@ -352,7 +355,7 @@ $(function () {
  * Com a autorização em vigor, o suporte da Filuna pode ler os dados do Filuna Slicer deste computador e pedir
  * ações de uma lista fechada (ver ponte.js), só nas categorias que o cliente marcou (diagnóstico sempre; conexão e
  * reparos, impressoras e o fatiador completo só se marcar). Tudo o que for feito aparece no histórico abaixo. */
-function FlSupData(iso) { try { return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
+function FlSupData(iso) { try { return new Date(iso).toLocaleString(FlLocal(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
 
 function FlSupDesenhar(r) {
 	var h = "";

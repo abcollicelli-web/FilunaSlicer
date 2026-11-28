@@ -51,7 +51,7 @@ var RaioX = (function () {
 		busca: { q: "", achados: null, erro: "", buscando: false },
 		conversa: { caso: "", msgs: null, erro: "", enviando: false, rascunho: "" } };
 
-	function quando(iso) { try { return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
+	function quando(iso) { try { return new Date(iso).toLocaleString(Filuna.local(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso || ""; } }
 	function cor(c) { c = String(c || ""); return /^#?[0-9a-f]{6}/i.test(c) ? "#" + c.replace("#", "").slice(0, 6) : "#ccc"; }
 	function num(v) { return String(v == null ? 0 : v).replace(".", ","); }
 	function capa(c, fotoLocal) { return c && c.foto ? "../../profiles/" + c.foto.replace(/^\/static\/raiox\/capas\//, "") : fotoLocal || ""; }

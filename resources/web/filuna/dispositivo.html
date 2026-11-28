@@ -758,7 +758,7 @@ function arquivosHtml(v) {
 	if (v && v.selecionada && (v.controles || []).indexOf("arquivos") >= 0 && (!v.arquivos || !v.arquivos.length))
 		return '<div class="arqs"><button class="btn peq" data-ctl="arquivos">Ver arquivos guardados na impressora</button></div>';
 	if (!v || !v.arquivos || !v.arquivos.length) return "";
-	var quando = function (t) { if (!t) return ""; var d = new Date(t > 1e12 ? t : t * 1000); return isNaN(d) ? "" : d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
+	var quando = function (t) { if (!t) return ""; var d = new Date(t > 1e12 ? t : t * 1000); return isNaN(d) ? "" : d.toLocaleDateString(Filuna.local()) + " " + d.toLocaleTimeString(Filuna.local(), { hour: "2-digit", minute: "2-digit" }); };
 	var dur = function (s) { s = +s || 0; return s <= 0 ? "" : s >= 3600 ? Math.floor(s / 3600) + "h" + ("0" + Math.floor(s % 3600 / 60)).slice(-2) : Math.max(1, Math.round(s / 60)) + " min"; };
 	return '<div class="arqs"><div class="lbl">Últimos arquivos na impressora</div>' + v.arquivos.slice(0, 6).map(function (a) {
 		return '<div class="arq"><span class="an">' + E(a.nome) + '</span><span class="ai">' + E([quando(a.impresso_em), dur(a.tempo_s), a.vezes ? a.vezes + "×" : ""].filter(Boolean).join(" · ")) + "</span></div>"; }).join("") + "</div>";

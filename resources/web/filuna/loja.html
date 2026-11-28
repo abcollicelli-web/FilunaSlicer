@@ -280,7 +280,7 @@ function mfConversa() {
 	var d = st.mfConversa.dados;
 	el().innerHTML = cab("Mercado Filuna · Mensagens", d.comprador, d.pedido ? "Conversa de um pedido." : "Pergunta sobre um anúncio.") +
 		'<div class="mf-chat">' + (d.mensagens || []).map(function (m) {
-			return '<div class="mf-msg' + (m.autor == "vendedor" ? " eu" : "") + '">' + E(m.texto) + "<small>" + (m.autor == "vendedor" ? "Você" : E(d.comprador)) + " · " + E(dataHora(m.data)) + "</small></div>"; }).join("") + "</div>" +
+			return '<div class="mf-msg' + (m.autor == "vendedor" ? " eu" : "") + '">' + E(m.texto) + "<small>" + (m.autor == "vendedor" ? "<span>Você</span>" : E(d.comprador)) + " · " + E(dataHora(m.data)) + "</small></div>"; }).join("") + "</div>" +
 		'<textarea rows="3" id="mfTexto" placeholder="Sua resposta"></textarea><div class="linha" style="margin-top:8px"><button class="btn primario" id="mfEnviar">Enviar</button>' +
 		'<button class="btn" id="mfIA">✨ Sugerir resposta</button><button class="btn" id="mfVoltar">Voltar</button></div>';
 	var chat = el().querySelector(".mf-chat"); chat.scrollTop = chat.scrollHeight;
@@ -504,7 +504,7 @@ function mensagens() {
 		return '<div class="it" style="cursor:pointer' + (st.pack == p.pack_id ? ";background:var(--rose);border-radius:10px;padding-inline:8px" : "") + '" data-msg="' + E(p.pack_id) + '">' + foto(p.foto) +
 			'<div class="tx"><b>' + E(p.comprador) + "</b><span>" + E(p.titulo) + " · " + E(p.data_txt) + "</span></div>" + (nl[p.pack_id] ? '<span class="bolinha">' + nl[p.pack_id] + "</span>" : "") + "</div>"; }).join("") : vazio("Sem vendas recentes.");
 	var conversa = !st.pack ? vazio("Escolha uma venda para ver a conversa com o comprador.") : !c ? '<div class="carregando">Abrindo a conversa…</div>' :
-		'<div class="chat">' + (c.mensagens.length ? c.mensagens.map(function (m) { return '<div class="balao' + (m.de_mim ? " meu" : "") + '">' + E(m.texto) + "<small>" + (m.de_mim ? "Você" : "Comprador") + " · " + E(m.data_txt) + (m.anexos ? " · " + m.anexos + " anexo(s)" : "") + "</small></div>"; }).join("") : vazio("Nenhuma mensagem nesta venda ainda.")) +
+		'<div class="chat">' + (c.mensagens.length ? c.mensagens.map(function (m) { return '<div class="balao' + (m.de_mim ? " meu" : "") + '">' + E(m.texto) + "<small><span>" + (m.de_mim ? "Você" : "Comprador") + "</span> · " + E(m.data_txt) + (m.anexos ? " · " + m.anexos + " anexo(s)" : "") + "</small></div>"; }).join("") : vazio("Nenhuma mensagem nesta venda ainda.")) +
 		(c.bloqueada ? '<div class="erro">O Mercado Livre bloqueou novas mensagens nesta venda.</div>' : '<textarea id="txtMsg" rows="3" maxlength="350" placeholder="Mensagem ao comprador (até 350 caracteres)"></textarea><div class="linha" style="margin-top:8px"><button class="btn primario peq" id="envMsg">Enviar</button></div>') + "</div>";
 	el().innerHTML = cab("Mercado Livre", "Mensagens", "Conversas pós-venda com os compradores.") + '<div class="duas">' + card("Vendas", lista) + card(st.pack ? "Venda " + st.pack : "Conversa", conversa) + "</div>";
 	el().querySelectorAll("[data-msg]").forEach(function (b) { b.onclick = function () { abrirConversa(b.dataset.msg); }; });

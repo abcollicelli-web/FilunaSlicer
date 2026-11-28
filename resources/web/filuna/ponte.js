@@ -379,7 +379,11 @@ var Filuna = (function () {
 			'<ellipse cx="' + (A.cx + 1) + '" cy="' + A.cy + '" rx="' + (A.rx * 0.12) + '" ry="' + (A.ry * 0.12) + '" fill="#171A2C"/>' +
 			'</svg>';
 	}
-	function gramas(g) { g = Number(g || 0); return g >= 1000 ? (g / 1000).toFixed(2).replace(".", ",") + " kg" : Math.round(g) + " g"; }
+	// Idioma do programa para datas e números: "en-US" em inglês, "pt-BR" no resto (o resultado em português não muda).
+	function ingles() { return !!(window.FilunaI18n && FilunaI18n.idioma() == "en"); }
+	function local() { return ingles() ? "en-US" : "pt-BR"; }
+	function decimal(t) { return ingles() ? t : t.replace(".", ","); }
+	function gramas(g) { g = Number(g || 0); return g >= 1000 ? decimal((g / 1000).toFixed(2)) + " kg" : Math.round(g) + " g"; }
 	function tempo(s) { s = Math.max(0, Math.round(s || 0)); var h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); if (m == 60) { h++; m = 0; } return (h ? h + "h" : "") + (m < 10 && h ? "0" : "") + m + "min"; }
 	// Dinheiro na moeda da conta: real "R$ 12,50" (como sempre) ou dólar "$1,234.56".
 	function reais(v) {
@@ -403,7 +407,7 @@ var Filuna = (function () {
 		var n = parseFloat(t);
 		return isFinite(n) ? n : null;
 	}
-	function num(v, casas) { return Number(v || 0).toFixed(casas == null ? 2 : casas).replace(".", ","); }
+	function num(v, casas) { return decimal(Number(v || 0).toFixed(casas == null ? 2 : casas)); }
 	// Seção "modelo:<slug>" (aba.abrir de outra tela, ex.: cartão da tela inicial): abre a página do modelo.
 	function abrirModeloPedido(secao) {
 		if (!secao || secao.indexOf("modelo:") != 0) return false;
@@ -582,6 +586,6 @@ var Filuna = (function () {
 	return { nativo: nativo, api: api, enviarArquivo: enviarArquivo, imagem: imagem, iniciar: iniciar, plano: plano, prefs: prefs, enviarPrefs: enviarPrefs, lerLocal: lerLocal, guardarLocal: guardarLocal,
 		pendentesLocais: pendentesLocais, conexao: function () { return conexao; }, entrar: entrar, sair: sair, ouvir: ouvir, _resposta: _resposta, _evento: _evento,
 		temToken: function () { return !!token; }, esc: esc,
-		idioma: function () { return window.FilunaI18n ? FilunaI18n.idioma() : "pt"; }, t: function (s) { return window.FilunaI18n ? FilunaI18n.t(s) : s; }, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num,
+		idioma: function () { return window.FilunaI18n ? FilunaI18n.idioma() : "pt"; }, local: local, t: function (s) { return window.FilunaI18n ? FilunaI18n.t(s) : s; }, bobinaSVG: bobinaSVG, corRgb: corRgb, gramas: gramas, tempo: tempo, reais: reais, num: num,
 		dinheiro: reais, simbolo: simbolo, valorCampo: valorCampo, lerValor: lerValor, moeda: function () { return moeda; }, abrirLink: abrirLink, abrirModeloPedido: abrirModeloPedido, telaLogin: telaLogin };
 })();

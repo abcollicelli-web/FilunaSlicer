@@ -506,7 +506,7 @@ function errosDaBobina(x) {
 		var l = r.eventos || [];
 		document.getElementById("rxLista").innerHTML = (r.padroes && r.padroes.length ? '<div class="rxpad">' + r.padroes.map(E).join("<br>") + "</div>" : "") +
 			(l.length ? l.map(function (e) {
-				var d = new Date(e.criado_em), q = isNaN(d) ? "" : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+				var d = new Date(e.criado_em), q = isNaN(d) ? "" : d.toLocaleString(Filuna.local(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 				return '<div class="rxev">' + (e.foto_url ? '<img alt="" src="https://filuna3d.com' + E(e.foto_url) + '">' : "") + "<div><b>" + E(e.texto) + "</b><div class='s'>" + E(q) + " · " + E(e.nome) +
 					" · região " + e.regiao + " (" + E(e.regiao_nome) + ")" + (e.camada ? " · camada " + e.camada : "") + (e.z != null ? " · " + String(e.z).replace(".", ",") + " mm" : "") +
 					(e.resolvido_em ? " · resolvido" : "") + "</div></div></div>";
@@ -574,7 +574,7 @@ function estadoSincronizacao() {
 		var txt;
 		if (!e.ligado) txt = "Entre na sua conta Filuna para ter cópia do estoque no site e no app do celular.";
 		else if (e.ultimo_erro) txt = "Cópia no filuna3d.com: não sincronizou (" + E(e.ultimo_erro) + "). Tenta de novo sozinho.";
-		else if (e.ultimo_ok) txt = "Cópia no filuna3d.com e no app: sincronizado às " + new Date(e.ultimo_ok).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) +
+		else if (e.ultimo_ok) txt = "Cópia no filuna3d.com e no app: sincronizado às " + new Date(e.ultimo_ok).toLocaleTimeString(Filuna.local(), { hour: "2-digit", minute: "2-digit" }) +
 			(e.pendentes ? " · " + (e.pendentes == 1 ? "1 alteração para subir" : e.pendentes + " alterações para subir") : "");
 		else txt = "Cópia no filuna3d.com e no app: sincronizando…";
 		a.innerHTML = txt + (e.ligado ? ' <a id="sincAgora" style="color:var(--mag);font-weight:600;cursor:pointer">Sincronizar agora</a>' : "");
@@ -769,7 +769,7 @@ function historico() {
 		document.getElementById("r").outerHTML = '<div id="r" style="margin-top:18px">' + (l.length ? '<div class="etab"><table><tr><th>Quando</th><th>Produto</th><th>Impressora</th><th>Filamento</th><th>Tempo</th><th>Situação</th><th></th></tr>' +
 			l.map(function (t, k) {
 				var aberto = t.estado == "fatiado" || t.estado == "enviado" || t.estado == "imprimindo";
-				var dt = new Date(t.criado_em), quando = isNaN(dt) ? "" : dt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+				var dt = new Date(t.criado_em), quando = isNaN(dt) ? "" : dt.toLocaleString(Filuna.local(), { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 				var arq = t.arquivo ? (t.arquivo.situacao == "aqui" ? "<br><a class='s' data-abrir='" + k + "' style='color:var(--mag);cursor:pointer'>Abrir " + E(t.arquivo.nome) + "</a>"
 					: "<br><span class='s'>" + (t.arquivo.situacao == "ausente" ? "Arquivo não encontrado neste computador" : "Arquivo em outro computador") + "</span> <a class='s' data-localizar='" + k + "' style='color:var(--mag);cursor:pointer'>Localizar arquivo</a>") : "";
 				return "<tr><td>" + E(quando) + "</td><td><b>" + E(t.produto || "Sem nome") + "</b>" + arq + "</td><td>" + E(t.impressora || "—") + "</td>" +

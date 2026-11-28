@@ -32,7 +32,7 @@ var RaioXDiag = (function () {
 	// os que movimentam só entram se o cliente disser que a mesa está vazia. Calibração (PID) fica de fora: é avulsa.
 	var ORDEM = ["consultas", "ruido_acelerometro", "coolers", "aquecimento_bico", "aquecimento_mesa"], ORDEM_MOVE = ["eixos", "malha_mesa", "precisao_sonda", "ressonancia"];
 
-	function quando(iso) { try { return new Date(typeof iso == "number" ? iso * 1000 : iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
+	function quando(iso) { try { return new Date(typeof iso == "number" ? iso * 1000 : iso).toLocaleString(Filuna.local(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
 	function nivel(n) { return { falha: "Problema", atencao: "Atenção", info: "Ok", ok: "Normal", confirmar: "Confirmar", interrompido: "Parado", indisponivel: "Sem recurso" }[n] || n || ""; }
 	function achadosHtml(l) {
 		if (!l || !l.length) return '<p class="rx-txt">Nada registrado.</p>';
