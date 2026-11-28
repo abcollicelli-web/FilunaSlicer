@@ -8,7 +8,7 @@ var API = "/farm";
 // ---------------- etapa 1: novo pedido (sempre local no Slicer) ----------------
 function vNovo(d) {
 	var lim = (st.dados || {}).lim || { farm_impressoras: 1, plano: "" };
-	var h = '<div class="cab-pag"><div><h1>Imprimir</h1><p>Escolha o arquivo. O Filuna abre aqui no computador, separa as peças e as cores e faz as perguntas uma etapa por vez.</p></div><a class="btn btn-line btn-sm" href="/farm">Voltar para a Farm</a></div>';
+	var h = '<div class="cab-pag"><div><h1>Imprimir</h1><p>Escolha o arquivo. O Filuna abre aqui no computador, separa as peças e as cores e faz as perguntas uma etapa por vez.</p></div></div>';
 	if (!lim.farm_impressoras) return h + T.sem_plano(lim);
 	h += '<div class="fw">' + T.etapas(W.PASSOS, 1, 1) + '<div class="fw-palco">';
 	if (d.erro) h += '<div class="alerta erro">' + E(d.erro) + "</div>";
@@ -27,7 +27,7 @@ function vNovo(d) {
 function vPedido(c) {
 	var ped = c.ped, r = c.r, passo = c.passo, volta = "/farm/pedidos/" + ped.id + "?passo=" + passo, h = "";
 	h += '<div class="cab-pag"><div><h1>Pedido' + (ped.numero ? " #" + E(ped.numero) : "") + "</h1><p>" + E(ped.nome) + " · " + E(ped.arquivo) + (ped.criado_em ? " · enviado em " + quando(ped.criado_em) : " · no Filuna Slicer") +
-		'</p></div><a class="btn btn-line btn-sm" href="/farm">Voltar para a Farm</a></div><div class="fw">' + T.etapas(W.PASSOS, passo, c.alcancado, ped.id, c.enviado) + '<div class="fw-palco">';
+		'</p></div></div><div class="fw">' + T.etapas(W.PASSOS, passo, c.alcancado, ped.id, c.enviado) + '<div class="fw-palco">';
 	if (ped.estado == "calculando" && passo < 6) h += '<div class="fw-medindo"><span class="fw-gira"></span><div><b>Medindo tempo e filamento</b><small>' + E(ped.progresso || "Preparando") + "… " + (c.local ? "O Filuna Slicer fatia cada arquivo com os perfis da sua impressora." : "O servidor fatia cada peça de verdade.") + "</small></div></div>";
 	if (c.medida_erro) h += '<div class="alerta erro">' + E(c.medida_erro) + "</div>";
 	if (passo == 2) {
@@ -260,7 +260,9 @@ function dados() { return Filuna.api("GET", "/farm-dados").then(function (d) { s
 function ir(caminho) { st.rota = caminho; desenhar(); window.scrollTo(0, 0); }
 function topo() {
 	var r = st.rota, itens = [["/farm", "Painel"], ["/farm/novo", "Novo projeto"], ["/farm/impressoras", "Impressoras"], ["/farm/estoque", "Estoque"]];
-	document.getElementById("topo").innerHTML = itens.map(function (i) { return '<a href="' + i[0] + '" class="' + (r.split("?")[0] == i[0] || (i[0] == "/farm/novo" && /local/.test(r)) ? "on" : "") + '">' + i[1] + "</a>"; }).join("") +
+	// Voltar único das telas Filuna (voltar.js): fora do painel, volta um nível (impressora → impressoras, o resto → painel)
+	var base = r.split("?")[0], volta = base == "/farm" ? null : /^\/farm\/impressoras\/./.test(base) ? ["/farm/impressoras", "Voltar às impressoras"] : ["/farm", "Voltar ao painel"];
+	document.getElementById("topo").innerHTML = (volta ? FilunaVoltar.html(volta[1], { href: volta[0], style: "margin-right:10px" }) : "") + itens.map(function (i) { return '<a href="' + i[0] + '" class="' + (r.split("?")[0] == i[0] || (i[0] == "/farm/novo" && /local/.test(r)) ? "on" : "") + '">' + i[1] + "</a>"; }).join("") +
 		'<span class="fl-local">● Rodando no Filuna Slicer</span>';
 }
 function desenhar() {

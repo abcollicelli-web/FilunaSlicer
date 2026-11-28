@@ -172,6 +172,7 @@ table.l th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spa
 	<div class="principal" id="tela"><div class="carregando">Carregando…</div></div>
 </div></div></div>
 <script src="ponte.js"></script>
+<script src="voltar.js"></script>
 <script src="qr.js"></script>
 <script>
 var E = Filuna.esc;
@@ -584,7 +585,7 @@ function estadoSincronizacao() {
 }
 var MATERIAIS = ["PLA", "PETG", "ABS", "TPU", "ASA", "PA", "PC"];
 function novaBobina() {
-	el().innerHTML = '<div class="etop"><div><a class="voltar" id="voltar" style="color:var(--ink2);font-weight:600;font-size:13.5px">‹ Filamentos</a><div class="h1">Adicionar filamento</div>' +
+	el().innerHTML = '<div class="etop"><div>' + FilunaVoltar.html("Voltar aos filamentos", { id: "voltar", style: "margin-bottom:14px" }) + '<div class="h1">Adicionar filamento</div>' +
 		'<div class="sub">Cadastre uma ou várias bobinas iguais de uma vez. Fica guardado neste computador e funciona sem internet.</div></div></div>' +
 		'<div class="bloco" style="margin-top:20px;max-width:760px"><div class="bb" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 18px">' +
 		'<div class="campo"><label>Material</label><select id="fMat">' + MATERIAIS.map(function (m) { return "<option>" + m + "</option>"; }).join("") + "</select></div>" +
@@ -638,7 +639,7 @@ function arquivarBobina(x) {
 }
 function etiquetaBobina(x) {
 	Filuna.nativo("bobina.etiqueta", { id: x.id }).then(function (t) {
-		el().innerHTML = '<a class="voltar" id="voltar" style="color:var(--ink2);font-weight:600;font-size:13.5px">‹ Filamentos</a>' +
+		el().innerHTML = FilunaVoltar.html("Voltar aos filamentos", { id: "voltar", style: "margin-bottom:14px" }) +
 			'<div class="h1" style="margin-top:6px">Etiqueta da bobina</div><div class="sub">Imprima e cole na bobina. O código identifica esta bobina na confirmação de cada impressão, e o QR abre a bobina no app Filuna.</div>' +
 			'<div class="bloco" style="margin-top:20px;max-width:420px"><div class="bb" style="text-align:center">' +
 			'<div style="font-size:44px;font-weight:800;letter-spacing:1px">' + E(t.codigo) + '</div>' +
