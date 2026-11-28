@@ -236,6 +236,8 @@ wxDECLARE_EVENT(EVT_GLCANVAS_ADAPTIVE_LAYER_HEIGHT_PROFILE, Event<float>);
 wxDECLARE_EVENT(EVT_GLCANVAS_SMOOTH_LAYER_HEIGHT_PROFILE, HeightProfileSmoothEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_PRINTABLE, SimpleEvent);
 
+namespace FilunaAbertos { struct Coluna; }
+
 class GLCanvas3D
 {
     static const double DefaultCameraZoomToBoxMarginFactor;
@@ -671,6 +673,8 @@ private:
     std::vector<std::unique_ptr<IMToolbarItem>> m_plate_switcher_items;
     unsigned m_plate_switcher_version{ unsigned(-1) };
     bool     m_plate_switcher_scrollbar{ false };
+    // Filuna: coluna dos arquivos abertos (texturas das miniaturas desta vista).
+    std::shared_ptr<FilunaAbertos::Coluna> m_filuna_abertos;
     mutable GLToolbar m_assemble_view_toolbar;
     mutable IMReturnToolbar m_return_toolbar;
     mutable Vec2i32 m_canvas_toolbar_pos = {140, 5};
@@ -1611,6 +1615,9 @@ private:
     void _render_imgui_select_plate_toolbar();
     // Prepare: picks the plate to show while the inactive ones are hidden.
     void _render_plate_switcher();
+    bool  _filuna_abertos_visivel() const;
+    float _filuna_abertos_largura() const;
+    void  _render_filuna_abertos();
     void _render_assemble_view_toolbar() const;
     void _render_return_toolbar() const;
     void _render_canvas_toolbar();

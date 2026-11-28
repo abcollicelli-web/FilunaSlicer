@@ -66,6 +66,7 @@
 #include <string_view>
 #include "slic3r/GUI/Selection.hpp"
 #include "GLCanvas3D.hpp"
+#include "FilunaAbertos.hpp"
 #include "SequentialPrintClearance.hpp"
 #ifdef SLIC3R_CAD
 #include "slic3r/GUI/CAD/DesignSketchTool.hpp"   // Design tab: interactive 2D sketch tool
@@ -10253,6 +10254,7 @@ void GLCanvas3D::_render_overlays()
     _render_assemble_info();
 
     //BBS: GUI refactor: GLToolbar
+    _render_filuna_abertos();
     _render_imgui_select_plate_toolbar();
     _render_plate_switcher();
     _render_return_toolbar();
@@ -10717,7 +10719,8 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, show_scroll ? (6.f * f_scale) : (button_radius + margin_size + frame_padding + ImGui::GetStyle().WindowPadding.x));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, button_radius + margin_size);
 
-    imgui.set_next_window_pos(canvas_w * 0 + 5.0f * f_scale, canvas_h * 0 + y_offset, ImGuiCond_Always, 0, 0); // ORCA Add slight gap on left edge so toolbar looks like floating and it creates separation with sidebar
+    const float filuna_abertos = _filuna_abertos_largura(); // Filuna: a coluna dos arquivos abertos fica na borda
+    imgui.set_next_window_pos(canvas_w * 0 + 5.0f * f_scale + (filuna_abertos > 0.f ? filuna_abertos + 3.f * f_scale : 0.f), canvas_h * 0 + y_offset, ImGuiCond_Always, 0, 0); // ORCA Add slight gap on left edge so toolbar looks like floating and it creates separation with sidebar
     imgui.set_next_window_size(window_width, window_height, ImGuiCond_Always);
 
     if (show_scroll)
@@ -10988,6 +10991,49 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
     imgui.end();
 }
 
+// Filuna: escala das barras da vista (no Windows, a do monitor, como as outras barras de ImGui).
+static float filuna_escala_barras(const GLCanvas3D& canvas)
+{
+    float sc = canvas.get_scale();
+#ifdef WIN32
+    sc *= (float) get_dpi_for_window(wxGetApp().GetTopWindow()) / (float) DPI_DEFAULT;
+#endif // WIN32
+    return sc;
+}
+
+// Filuna: a coluna dos arquivos abertos, na borda esquerda da Preparação e da Visualização. Sai do caminho das
+// ferramentas (pintar, cortar...) e não aparece nas vistas de montagem e de desenho.
+bool GLCanvas3D::_filuna_abertos_visivel() const
+{
+    if (m_canvas_type != ECanvasType::CanvasView3D && m_canvas_type != ECanvasType::CanvasPreview)
+        return false;
+    if (m_design_canvas || !wxGetApp().is_editor() || wxGetApp().plater() == nullptr)
+        return false;
+    return m_canvas_type != ECanvasType::CanvasView3D || m_gizmos.get_current_type() == GLGizmosManager::Undefined;
+}
+
+float GLCanvas3D::_filuna_abertos_largura() const
+{
+    return _filuna_abertos_visivel() ? FilunaAbertos::largura(filuna_escala_barras(*this)) : 0.f;
+}
+
+void GLCanvas3D::_render_filuna_abertos()
+{
+    if (!_filuna_abertos_visivel())
+        return;
+    if (!m_filuna_abertos)
+        m_filuna_abertos = std::make_shared<FilunaAbertos::Coluna>();
+    const float sc = filuna_escala_barras(*this);
+    // Entre a barra de cima (ferramentas da Preparação; na Visualização, o botão de recolher o painel) e o canto de
+    // baixo (cubo de navegação e botões da vista).
+    const float topo = (m_canvas_type == ECanvasType::CanvasView3D
+                            ? std::max(m_main_toolbar.get_height(), m_gizmos.get_scaled_total_height())
+                            : (is_collapse_toolbar_on_left() ? get_collapse_toolbar_height() + 5.f : 0.f)) +
+                       CANVAS_TOOLBAR_MARGIN * sc;
+    const float base = float(get_canvas_size().get_height()) - (canvas_corner_height() + CANVAS_TOOLBAR_MARGIN) * sc;
+    FilunaAbertos::desenhar(*m_filuna_abertos, 8.f * sc, topo, base, sc, m_is_dark);
+}
+
 void GLCanvas3D::_render_plate_switcher()
 {
     Plater*        plater      = wxGetApp().plater();
@@ -11038,7 +11084,8 @@ void GLCanvas3D::_render_plate_switcher()
     ImGui::PushStyleColor(ImGuiCol_WindowBg, m_is_dark ? ImVec4(.13f, .13f, .15f, .5f) : ImVec4(1.f, 1.f, 1.f, .7f));
     push_plate_toolbar_scrollbar_style(m_is_dark, scrollbar);
 
-    imgui.set_next_window_pos(CANVAS_TOOLBAR_MARGIN * sc, top, ImGuiCond_Always, 0.f, 0.f);
+    // Filuna: ao lado da coluna dos arquivos abertos, que fica na borda.
+    imgui.set_next_window_pos(CANVAS_TOOLBAR_MARGIN * sc + _filuna_abertos_largura(), top, ImGuiCond_Always, 0.f, 0.f);
     imgui.set_next_window_size(btn_size.x + 2.f * padding.x + (scroll ? scrollbar : 0.f), std::min(content_h, max_h), ImGuiCond_Always);
     imgui.begin(std::string("##PlateSwitcher"), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
                                                 ImGuiWindowFlags_NoCollapse | (scroll ? 0 : ImGuiWindowFlags_NoScrollbar));
